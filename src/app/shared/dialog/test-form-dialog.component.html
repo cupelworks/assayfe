@@ -1,0 +1,16 @@
+<assay-dialog [kicker]="kicker()" [title]="title()" [wide]="true" [primaryLabel]="busy() ? 'Saving…' : submitLabel()" [primaryDisabled]="!valid() || busy()" [error]="error()" (primary)="go()" (close)="closed.emit()">
+  <div class="field"><label for="tf-name">Name <span class="hint">— optional</span></label><input id="tf-name" class="input" [ngModel]="name()" (ngModelChange)="name.set($event)" placeholder="Case 047 — refund window" autofocus></div>
+  <div class="field"><label for="tf-in">Input</label><textarea id="tf-in" class="input ta" rows="4" [ngModel]="inp()" (ngModelChange)="inp.set($event)" placeholder="The prompt or user message sent to the model"></textarea></div>
+  <div class="two">
+    <div class="field"><label for="tf-exp">Expected output</label><textarea id="tf-exp" class="input ta" rows="4" [ngModel]="expected()" (ngModelChange)="expected.set($event)" placeholder="What a correct answer looks like"></textarea></div>
+    <div class="field"><label for="tf-mo">Model output <span class="hint">— optional, if already captured</span></label><textarea id="tf-mo" class="input ta" rows="4" [ngModel]="modelOut()" (ngModelChange)="modelOut.set($event)" placeholder="The response the system under test produced"></textarea></div>
+  </div>
+  <div class="field">
+    <label>Test types <span class="hint">— evaluation strategies; a test with none can't be run</span></label>
+    <div class="chips">
+      @for (t of types(); track t) { <button type="button" class="btn btn-primary btn-sm" (click)="toggle(t)">{{ t }} ×</button> }
+      @for (t of suggestions; track t) { @if (!types().includes(t)) { <button type="button" class="btn btn-secondary btn-sm" (click)="toggle(t)">{{ t }}</button> } }
+    </div>
+    <div class="custom"><input class="input" [ngModel]="custom()" (ngModelChange)="custom.set($event)" placeholder="other strategy name…" (keydown.enter)="addCustom(); $event.preventDefault()"><button type="button" class="btn btn-ghost btn-sm" (click)="addCustom()" [disabled]="!custom().trim()">Add</button></div>
+  </div>
+</assay-dialog>

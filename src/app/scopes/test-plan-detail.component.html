@@ -1,0 +1,39 @@
+<div class="crumbs"><a routerLink="/test-plans">Test plans</a><span>/</span><span class="cur">{{ name() }}</span></div>
+<div class="hero">
+  <div><div class="kicker">Test plan</div><h1>{{ name() }}</h1></div>
+  <div class="hero-actions">
+    <button class="btn btn-ghost" (click)="open('rename')">Rename</button>
+    <button class="btn btn-ghost" (click)="open('delete')" [disabled]="hasRuns()" [title]="hasRuns() ? 'Blocked: plan has been executed' : ''">Delete</button>
+    <button class="btn btn-secondary" (click)="open('link')">Link test sets</button>
+    <button class="btn btn-primary" (click)="runLive()" [disabled]="busy() || !page.total()">{{ busy() ? 'Working…' : 'Run live' }}</button>
+  </div>
+</div>
+@if (msg(); as m) { <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div> }
+<section class="split">
+  <div class="cell cell-r">
+    <div class="row-head"><h2>Linked test sets</h2><span class="small">{{ linkedTotal() }} sets · live links, never frozen</span></div>
+    <table class="table">
+      <colgroup><col><col style="width:110px"><col style="width:120px"><col style="width:90px"></colgroup>
+      <thead><tr><th>Test set</th><th>Entries</th><th>Created</th><th></th></tr></thead>
+      <tbody>
+        @for (l of links(); track l.id) {
+          <tr>
+            <td class="strong"><a class="plain" [routerLink]="['/test-sets', l.test_set.id]">{{ l.test_set.name }}</a></td>
+            <td class="num">{{ entryCounts()[l.test_set.id] ?? '…' }}</td>
+            <td class="muted">{{ rel(l.test_set.created_at) }}</td>
+            <td><button class="btn btn-ghost btn-sm" (click)="open('unlink', l)">Remove</button></td>
+          </tr>
+        } @empty { @if (!page.loading()) { <tr><td colspan="4" class="empty">No test sets linked — live execution returns 409 until at least one is.</td></tr> } }
+      </tbody>
+    </table>
+    <assay-pager [total]="page.total()" [offset]="page.offset()" [limit]="page.limit()" (offsetChange)="page.go($event)" (limitChange)="page.size($event)" />
+  </div>
+  <div class="cell"><assay-executions-panel kind="test-plans" [id]="id()" [version]="version()" [busy]="busy()" (replay)="replay($event)" /></div>
+</section>
+
+@switch (dlg()) {
+  @case ('rename') { <assay-name-dialog [kicker]="name()" title="Rename test plan" submitLabel="Rename" [initial]="name()" [busy]="busy()" [error]="err()" (confirm)="rename($event)" (closed)="dlg.set(null)" /> }
+  @case ('delete') { <assay-confirm-dialog [kicker]="name()" title="Delete this test plan?" body="Removes the plan and its links; linked test sets are untouched. Blocked (409) once the plan has been executed." confirmLabel="Delete test plan" [busy]="busy()" [error]="err()" (confirm)="remove()" (closed)="dlg.set(null)" /> }
+  @case ('link') { <assay-pick-dialog [kicker]="name()" title="Link test sets" [rows]="pickRows()" [submitLabel]="pickLabel" emptyText="No test sets exist yet." [busy]="busy()" [error]="err()" (confirm)="link($event)" (closed)="dlg.set(null)" /> }
+  @case ('unlink') { <assay-confirm-dialog [kicker]="name()" [title]="'Remove “' + unlinkTarget()?.test_set?.name + '”?'" body="Only the link is removed. The set, its entries, and any past executions of this plan are unaffected." confirmLabel="Remove link" [danger]="false" [busy]="busy()" [error]="err()" (confirm)="unlink()" (closed)="dlg.set(null)" /> }
+}

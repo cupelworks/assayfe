@@ -1,0 +1,30 @@
+<div class="crumbs"><a routerLink="/tests">Tests</a><span>/</span><span class="cur">{{ name() }}</span></div>
+<div class="hero">
+  <div><div class="kicker">Test</div><h1>{{ name() }}</h1></div>
+  <div class="hero-actions">
+    <button class="btn btn-ghost" (click)="err.set(null); dlg.set('delete')">Delete</button>
+    <button class="btn btn-secondary" (click)="err.set(null); dlg.set('edit')">Edit</button>
+    <button class="btn btn-primary" (click)="run()" [disabled]="busy() || !canRun()" [title]="canRun() ? '' : 'Assign at least one test type first'">{{ busy() ? 'Enqueuing…' : 'Run standalone' }}</button>
+  </div>
+</div>
+@if (msg(); as m) { <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div> }
+@if (test(); as t) {
+<section class="split">
+  <div class="cell cell-r" style="display:flex;flex-direction:column;gap:20px">
+    <div class="tags">@for (x of t.test_type_names ?? []; track x) { <span class="tag tag-outline">{{ x }}</span> } @empty { <span class="small">No test types — this test can't be run until one is assigned.</span> }</div>
+    @for (f of fields(); track f[0]) { <div class="field-ro"><div class="label">{{ f[0] }}</div><div class="body">{{ f[1] }}</div></div> }
+  </div>
+  <div class="cell">
+    <div class="row-head" style="margin-bottom:8px"><h2>Standalone runs</h2><span class="small">{{ runsPage.total() }} total</span></div>
+    <p class="hero-note" style="margin-bottom:20px">Ad-hoc runs against the live test — no live/replay concept; each reads the test as it is now.</p>
+    @for (r of runs(); track r.id) {
+      <a class="exec plain" [routerLink]="['/tests', id(), 'runs', r.id]">
+        <div class="exec-main"><span class="st"><span class="dot" [style.background]="statusColor(r.status)"></span>{{ r.status }}</span><span class="muted">{{ short(r.id) }} · {{ rel(r.created_at) }}</span></div>
+      </a>
+    } @empty { @if (!runsPage.loading()) { <div class="exec empty">Never run.</div> } }
+    <assay-pager [total]="runsPage.total()" [offset]="runsPage.offset()" [limit]="runsPage.limit()" (offsetChange)="runsPage.go($event)" (limitChange)="runsPage.size($event)" />
+  </div>
+</section>
+}
+@if (dlg() === 'edit') { <assay-test-form-dialog [kicker]="name()" title="Edit test" submitLabel="Save changes" [initial]="test()" [busy]="busy()" [error]="err()" (confirm)="save($event)" (closed)="dlg.set(null)" /> }
+@if (dlg() === 'delete') { <assay-confirm-dialog [kicker]="name()" title="Delete this test?" body="Blocked (409) while it is in a test set or has runs." confirmLabel="Delete test" [busy]="busy()" [error]="err()" (confirm)="remove()" (closed)="dlg.set(null)" /> }

@@ -1,0 +1,7 @@
+.hint{color:var(--color-neutral-500);font-weight:400;font-size:12px}
+.ta{resize:vertical;font-family:inherit}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.btn-sm{font-size:12px;padding:6px 12px}
+.custom{display:flex;gap:8px;margin-top:10px}
+.custom .input{max-width:280px}

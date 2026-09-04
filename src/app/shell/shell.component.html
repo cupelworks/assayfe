@@ -1,0 +1,23 @@
+<div class="page">
+  <header class="nav">
+    <a routerLink="/" class="brand"><span class="brand-mark"></span>Assay</a>
+    <nav class="links">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Overview</a>
+      <a routerLink="/datasets" routerLinkActive="active">Datasets</a>
+      <a routerLink="/tests" routerLinkActive="active">Tests</a>
+      <a routerLink="/test-sets" routerLinkActive="active">Test sets</a>
+      <a routerLink="/test-plans" routerLinkActive="active">Test plans</a>
+    </nav>
+    <div class="conn">
+      <span class="dot" [style.background]="store.loading() ? 'var(--color-neutral-400)' : store.error() ? 'var(--color-accent)' : 'var(--color-text)'"></span>
+      <span class="text-muted conn-label">{{ store.statusLabel() }}</span>
+      <button class="btn btn-secondary btn-sm" (click)="store.load()">Refresh</button>
+      <button class="btn btn-ghost btn-sm" (click)="theme.toggle()">{{ theme.isDark() ? 'Light' : 'Dark' }}</button>
+    </div>
+  </header>
+  @if (store.error() && !store.loading()) {
+    <div class="banner"><div><strong>Could not reach the Assay API.</strong> <span>Check the server is running and CORS allows this origin. {{ store.error() }}</span></div><code>{{ apiBase }}</code></div>
+  }
+  <router-outlet />
+  <footer class="foot text-muted"><span>API {{ apiBase }}</span><span>Assay 0.9.0</span></footer>
+</div>
