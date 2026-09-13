@@ -1,47 +1,28 @@
-# Handoff: Assay web app (Angular)
+# Assay FE
 
-## Overview
-Full front-end for **Assay**, an LLM evaluation backend (FastAPI, `http://localhost:8000`, OpenAPI at `/docs`). Screens: Overview, Datasets, Tests, Test sets, Test set detail, Test plans, Test plan detail, Execution (run list), Run detail. QA/eval users trigger **live** executions and **replay** past ones; runs are enqueued only and stay `pending` until a worker picks them up.
+Angular 22 front-end for the Assay evaluation API (v0.9.0). Modernist design system (Archivo, red/ink on light ground, zero radius, 2px rules); dark mode via `[data-theme="dark"]`.
 
-## About the design files
-`reference/Assay App.dc.html` is the **design reference** (HTML, hash-routed, falls back to sample data when the API is unreachable). Not production code — the `../../Downloads/design_handoff_assay_dashboard/angular` folder is the implementation, mirroring it 1:1 with Angular 17+ standalone components, signals, `@if/@for`, `HttpClient`, and route-data → component-input binding.
+## Run
+```
+npm install
+npm start          # http://localhost:4200
+```
+Backend must allow CORS from `http://localhost:4200`. API base is set in `src/app/app.config.ts` (`ASSAY_API_BASE`).
 
-## Fidelity
-High-fidelity, Modernist design system: Archivo, ground `#f3f2f2` / ink `#201e1d` / accent `#ec3013`, zero radius, 2px section rules, flush-left labels. All tokens in `../../Downloads/design_handoff_assay_dashboard/angular/src/styles.css` — never hard-code values it carries. Dark mode: `[data-theme="dark"]` block at the end of `styles.css`; `ThemeService` persists light/dark/system and follows `prefers-color-scheme`.
+## Screens → endpoints
+- **Overview** - counts, recent executions (all sets/plans), status of the 12 newest executions' runs. New test.
+- **Datasets** - list; *Import from JSONL* (`POST /datasets/path`). **Dataset detail** - paged rows (`GET /datasets/{id}/rows`), edit row (`PATCH /datasets/rows`), add rows / replace all rows (paste JSONL → `POST`/`PUT /datasets/rows`), delete selected rows (`DELETE /datasets/rows`), rename (`PATCH /datasets/name`), delete (`DELETE /datasets`), *Create tests from rows* (`POST /tests/from-dataset`).
+- **Tests** - list, filter, bulk delete (`DELETE /tests`), New test (`POST /tests`). **Test detail** - edit (`PATCH /tests/{id}`), delete, *Run standalone* (`POST /runs/standalone/{id}`), standalone runs list → **Standalone run detail** (`GET /runs/standalone/{id}/test-runs[/{run}]`).
+- **Test sets** - list, New (`POST /test-sets`). **Test set detail** - entries (`GET …/entries`), *Add tests* (`POST …/entries` `[{id}]`), *Unlink* (`PATCH …/entries`), *Delete entries* (`DELETE …/entries`), edit frozen entry (`PATCH …/entries/{entry}`), rename, delete, *Run live* (`POST /runs/test-sets/{id}`), executions + *Replay* (`POST /runs/test-sets/{id}/executions/{exec}`).
+- **Test plans** - list, New. **Test plan detail** - linked sets (`GET …/entries`), *Link* (`POST …/entries`), *Remove* (`DELETE …/entries`), rename, delete, Run live / Replay under `/runs/test-plans/…`.
+- **Execution** - status counts + run list (`GET …/executions/{exec}/test-runs`), Replay. **Run detail** - status, error, scores, frozen entry snapshot (`GET …/test-runs/{run}`), link to originating test, "Test these scores" → z-test.
+- **Test types** - catalogue from `GET /tests/types?test_category=…` (all three categories fetched in parallel): category tiles filter, text filter, show-inactive toggle, cards with description / best for / limitations / cost / needs-reference; click a card for id, created, category. `TestTypesStore` caches it for the forms.
+- **Statistics / z-test** - `POST /statistical-tests/z-test`; accepts `?scores=` from a run page.
 
-## Setup
-1. `ng new AssayFE --standalone --style=css --routing --skip-tests` (Angular ≥17).
-2. Replace the generated `src/` with `../../Downloads/design_handoff_assay_dashboard/angular/src`.
-3. Backend: add `CORSMiddleware` allowing `http://localhost:4200`.
-4. `ng serve`.
+## Structure
+`api/` models + one-method-per-endpoint service + root `CatalogStore` · `shared/` formatters, page.css, dialogs (generic, name, confirm, pick, test form) · one folder per area (`datasets`, `tests`, `scopes`, `runs`, `stats`) · `shell/` header/footer/theme.
 
-## File map
-- `app/api/assay-api.service.ts` — typed client for every endpoint used. `api-base.token.ts` — base URL DI token.
-- `app/api/catalog.store.ts` — root store: loads the four catalogs, all executions (per set/plan), runs of the 12 newest executions. Pages read its signals; mutations call `store.load()`.
-- `app/shell/*` — header (brand, nav, connection dot, Refresh, Dark/Light), error banner, footer, `<router-outlet>`.
-- `app/overview/*` — stats (link to catalogs), recent executions table, run-status bar.
-- `app/catalog/catalog-list.component.*` — one component for all four lists; `kind` from route data. Filter input; set/plan names link to detail.
-- `app/detail/scope-detail.component.*` — test set or plan: entries table (plan = entries across linked sets), execution list with Replay, "Run live" primary action, result/409 message.
-- `app/execution/*` — one execution: status counts + run table; "Replay this execution".
-- `app/run/*` — one run: status/timing, error, scores with bars, frozen entry snapshot (types, input, expected, model output).
-- `app/shared/format.ts` — `rel()`, `short()`, `STATUS` colors, `errText()` (reads FastAPI `detail`).
-- `app.routes.ts`, `app.config.ts`, `app.component.ts`, `main.ts`, `index.html`.
-
-## API used (verify against /docs)
-- `GET /datasets | /tests | /test-sets | /test-plans` (`?offset&limit`, `{items}` or array)
-- `GET /test-sets/{id}/entries` → frozen entries (`name,input,expected_output,model_output,test_type_names,has_runs?`)
-- `GET /test-plans/{id}/entries` → links (`test_set_id`) — detail page fans out to each set's entries
-- `GET /runs/{test-sets|test-plans}/{id}/executions` → `{id,created_at,run_count,replayed_execution_id}`
-- `GET .../executions/{execId}/test-runs` → `{id,status,created_at,test_set_entry_id}`
-- `GET .../test-runs/{runId}` → run details + entry snapshot (`scores`, `error`, `executed_at`, `test_case_snapshot_at`)
-- `POST /runs/{kind}/{id}` live · `POST /runs/{kind}/{id}/executions/{execId}` replay — 201 `{id,run_count}`; 404/409 `detail` shown verbatim
-Field names for entries/run details were inferred from the dev notes — adjust the interfaces in `assay-api.service.ts` if the schema differs.
-
-## Layout system (all screens)
-- Page header: optional breadcrumb row (12px, 1px rule) → hero (48/40/24 padding, kicker 11px uppercase accent, h1 44px/1.05/-.02em, actions bottom-right) → optional message strip (surface fill; accent-100/accent-700 on error) → content. Every boundary is a 2px `--color-divider` rule; cells are 32/40 padding; sub-rows 1px rules.
-- Status colors: pending neutral-400, running accent-400, completed text, failed accent.
-- Tags: scope `tag-neutral`, Live `tag-accent`, Replay `tag-outline`, test types `tag-outline`.
-- Buttons: primary = Run live / Replay this execution; ghost = per-execution Replay; secondary = Refresh.
-
-## Not built (ask before adding)
-Create/edit forms (datasets upload, test authoring, add entries, link sets), standalone (single test) runs, pagination past 100, run polling.
+## Notes
+- Test types: every form (new/edit test, edit entry, create tests from dataset) uses `shared/test-type-picker` - grouped by category, active types only (an inactive type stays visible if already assigned), hover shows best-for/limitations, and "needs reference" is highlighted red when the test has no expected output. Names not in the catalogue (legacy) are listed separately with a remove button.
+- Pagination: every list the API pages (`?offset&limit` + `total`) has a shared pager (Previous/Next, range label, 5/10/25/50 per page) - datasets, dataset rows, tests, test sets/plans, set entries, plan links, executions, execution runs, standalone runs. `shared/paged.ts` holds the page state; `shared/pager.component.ts` renders it. The `CatalogStore` still preloads the first 100 of each catalog for counts, name lookups and the overview. Text filters apply to the current page only. The execution page's status tiles summarise the current page (no aggregate endpoint). Runs are enqueue-only - status stays `Pending` until the worker runs; use Refresh.
+- Delete buttons are pre-disabled where the API would 409 (set/plan with executions); other 409s (tests in sets, entries with runs) are shown verbatim.
