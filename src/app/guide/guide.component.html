@@ -1,0 +1,381 @@
+<div class="hero">
+  <div>
+    <div class="kicker">Guide</div>
+    <h1>How Assay works</h1>
+  </div>
+  <p class="hero-note text-muted">
+    The mental model behind datasets, tests, test sets, test plans and runs - and why the app
+    behaves the way it does.
+  </p>
+</div>
+
+<section class="cell cell-b">
+  <h2>The building blocks</h2>
+  <p class="section-lead">
+    Four concepts, each built on the one before it. Everything else in the app is a view onto these.
+  </p>
+  <div class="blocks">
+    <div class="block">
+      <span class="dot" style="background: var(--color-neutral-500)"></span>
+      <h3>Dataset</h3>
+      <p>
+        A named collection of prompt / expected-output / model-output rows, usually imported from a
+        <code>.jsonl</code> file. Source material for bulk test creation - never run directly.
+      </p>
+    </div>
+    <div class="block">
+      <span class="dot" style="background: var(--color-accent)"></span>
+      <h3>Test</h3>
+      <p>
+        A live, always-editable input with an optional expected/actual output and a set of assigned
+        test types. Can be run on its own at any time.
+      </p>
+    </div>
+    <div class="block">
+      <span class="dot" style="background: var(--color-accent-2)"></span>
+      <h3>Test set</h3>
+      <p>
+        A named collection of frozen test snapshots ("entries"). Adding a test copies its current
+        state in - the set never re-syncs with the live test afterward.
+      </p>
+    </div>
+    <div class="block">
+      <span class="dot" style="background: var(--color-neutral-800)"></span>
+      <h3>Test plan</h3>
+      <p>
+        A named campaign made of test sets. Running a plan fans out over every entry in every set
+        currently linked to it.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="cell cell-b">
+  <h2>Test types</h2>
+  <p class="section-lead">
+    The evaluation strategies a test is scored with - assigned per test, not fixed. A test with none
+    assigned can't be run.
+  </p>
+  <p>
+    Each type belongs to a category, and some require a reference - an
+    <code>expected_output</code> to compare against - and can't score a test that doesn't have one.
+    Inactive types stay visible for history but can no longer be newly assigned.
+  </p>
+  <div class="callout">
+    See the full <a routerLink="/test-types">test types catalogue</a> for the current list of
+    categories, costs, limitations and what each one is best for.
+  </div>
+</section>
+
+<section class="cell cell-b">
+  <h2>From editable to frozen</h2>
+  <p class="section-lead">
+    The one rule the whole app is built around: once a run exists against something, that something
+    stops changing. This is what makes a past run's record trustworthy months later.
+  </p>
+  <div class="stepper">
+    <div class="step">
+      <div class="n">1</div>
+      <div class="t">Test created</div>
+      <div class="d">Freely editable, forever - even after it has standalone runs against it.</div>
+    </div>
+    <div class="step">
+      <div class="n">2</div>
+      <div class="t">Added to a test set</div>
+      <div class="d">
+        Its current input, expected output and test types are copied into a new entry. The live test
+        and the entry are now independent.
+      </div>
+    </div>
+    <div class="step">
+      <div class="n">3</div>
+      <div class="t">Entry still editable</div>
+      <div class="d">
+        You can fix a typo or adjust test types on the entry itself, same as any live test - until
+        step 4.
+      </div>
+    </div>
+    <div class="step">
+      <div class="n">4</div>
+      <div class="t">First run created</div>
+      <div class="d">
+        The moment any run references the entry - even while still <em>Pending</em> - it freezes. No
+        unfreeze path, ever.
+      </div>
+    </div>
+  </div>
+  <div class="callout">
+    A frozen entry can still be <strong>unlinked</strong> from its set (it keeps its content and run
+    history, it just leaves the set's membership) or <strong>deleted</strong> along with the whole
+    set - but its content itself never changes again.
+  </div>
+</section>
+
+<section class="cell cell-b">
+  <h2>Standalone, live, and replay</h2>
+  <p class="section-lead">
+    Every run is created one of these three ways. That choice decides what the run reads, and
+    whether it can be replayed later.
+  </p>
+  <div class="modes">
+    <div class="mode">
+      <div class="badges"><span class="tag tag-neutral">Standalone</span></div>
+      <h4>Run a test directly</h4>
+      <p>
+        Reads the test exactly as it is right now. No set, no plan, nothing frozen - so there's no
+        "replay" concept for it either.
+      </p>
+    </div>
+    <div class="mode">
+      <div class="badges">
+        <span class="tag tag-accent">Live</span><span class="tag tag-outline">Replay</span>
+      </div>
+      <h4>Run a test set</h4>
+      <p>
+        <strong>Live</strong> fans out over whichever entries are in the set right now.
+        <strong>Replay</strong> re-runs the exact same entries a past execution used, with their
+        content exactly as it was back then - even if the set's membership has changed since, or the
+        live tests they came from have since been edited.
+      </p>
+    </div>
+    <div class="mode">
+      <div class="badges">
+        <span class="tag tag-accent">Live</span><span class="tag tag-outline">Replay</span>
+      </div>
+      <h4>Run a test plan</h4>
+      <p>
+        Same live/replay shape, one level up: fans out across every entry in every test set
+        <strong>currently linked</strong> to the plan (live), or the exact entries a past plan
+        execution used (replay).
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="cell cell-b">
+  <h2>Putting it into practice</h2>
+  <p class="section-lead">
+    The building blocks above, combined into the three flows you'll actually use.
+  </p>
+
+  <div class="workflow">
+    <div class="workflow-head">
+      <div class="workflow-num">Workflow 1</div>
+      <h3>Quick check on a single test</h3>
+      <p>
+        You're authoring or tweaking a test and want to see how it scores right now, with no
+        ceremony. Use this while iterating - not for anything you'll want to compare against later,
+        since nothing here is frozen.
+      </p>
+    </div>
+    <div class="flow flow-center">
+      <div class="flow-step">
+        <span class="dot" style="background: var(--color-accent)"></span>Test
+      </div>
+      <div class="flow-arrow">
+        <span class="arrow-glyph">→</span><span class="arrow-label">run standalone</span>
+      </div>
+      <div class="flow-step">
+        <span class="dot" style="background: var(--color-text)"></span>Run
+      </div>
+    </div>
+    <p class="workflow-note">
+      Reads the <strong>live</strong> test at the instant it runs. Edit the test again afterward and
+      the next run reflects the change - there's no snapshot, and no live/replay pair, because
+      nothing here is ever frozen.
+    </p>
+  </div>
+
+  <div class="workflow">
+    <div class="workflow-head">
+      <div class="workflow-num">Workflow 2</div>
+      <h3>Reproducible testing through a test set</h3>
+      <p>
+        You want a stable, comparable baseline - a fixed group of tests you can re-run over and
+        over, on demand or after a change, and trust that "the same test" means the same input every
+        time.
+      </p>
+    </div>
+    <div class="flow flow-center">
+      <div class="flow-step">
+        <span class="dot" style="background: var(--color-neutral-500)"></span>Dataset
+      </div>
+      <div class="flow-arrow">
+        <span class="arrow-glyph">→</span><span class="arrow-label">import rows</span>
+      </div>
+      <div class="flow-step">
+        <span class="dot" style="background: var(--color-accent)"></span>Test
+      </div>
+      <div class="flow-arrow">
+        <span class="arrow-glyph">→</span><span class="arrow-label">add to set</span>
+      </div>
+      <div class="flow-step">
+        <span class="dot" style="background: var(--color-accent-2)"></span>Test set entry
+      </div>
+      <div class="flow-arrow">
+        <span class="arrow-glyph">→</span><span class="arrow-label">run live / replay</span>
+      </div>
+      <div class="flow-step">
+        <span class="dot" style="background: var(--color-text)"></span>Run
+      </div>
+    </div>
+    <p class="workflow-note">
+      The dataset step is optional - a test can be written by hand instead. What matters is the
+      moment it's <strong>added to the set</strong>: its content is copied into a frozen-eligible
+      entry, independent from the live test from then on. <strong>Live</strong> re-runs whatever
+      entries are in the set today. <strong>Replay</strong> re-runs the exact same entries a past
+      execution used, with their content exactly as it was back then - even if you've since edited
+      the live test, or the set's membership has changed. Nothing that happens afterward can change
+      what a replay sees.
+    </p>
+  </div>
+
+  <div class="workflow">
+    <div class="workflow-head">
+      <div class="workflow-num">Workflow 3</div>
+      <h3>Running a campaign across several sets</h3>
+      <p>
+        You want to execute multiple test sets together as one unit - a release check, say, that
+        spans several baselines at once - and track them as a single campaign over time.
+      </p>
+    </div>
+    <div class="flow flow-center">
+      <div class="flow-step">
+        <span class="dot" style="background: var(--color-accent-2)"></span>Test set
+      </div>
+      <div class="flow-arrow">
+        <span class="arrow-glyph">→</span><span class="arrow-label">link to plan</span>
+      </div>
+      <div class="flow-step">
+        <span class="dot" style="background: var(--color-neutral-800)"></span>Test plan
+      </div>
+      <div class="flow-arrow">
+        <span class="arrow-glyph">→</span><span class="arrow-label">run live / replay</span>
+      </div>
+      <div class="flow-step">
+        <span class="dot" style="background: var(--color-text)"></span>Run
+        <span class="small">&nbsp;× every entry, every linked set</span>
+      </div>
+    </div>
+    <p class="workflow-note">
+      One level up from workflow 2, same live/replay shape. A plan can link any number of test sets,
+      and one run fans out over <strong>every entry in every set currently linked</strong> - live
+      uses today's links, replay reuses exactly what a past plan execution touched. The links
+      themselves never freeze, so you can add or remove sets from the plan at any time, even after
+      it's been run.
+    </p>
+  </div>
+</section>
+
+<section class="cell cell-b">
+  <h2>Test plans link, they don't own</h2>
+  <p class="section-lead">
+    A plan's connection to a test set is a pointer, not a snapshot - and that pointer never freezes.
+  </p>
+  <p>
+    You can link or unlink test sets to a plan at any time, even after the plan has been run - this
+    is the one relationship in the app that's exempt from the freeze rule above. What still freezes,
+    exactly as before, is the content each linked set's entries ran against. So re-linking or
+    unlinking sets never rewrites history: a past plan execution stays anchored to whichever entries
+    it actually used, no matter how the plan's membership changes afterward.
+  </p>
+  <div class="callout">
+    Unlinking a test set from a plan - or an entry from a set - never deletes anything or breaks a
+    past run's record. It only changes what a <em>future</em> live run will fan out over.
+  </div>
+</section>
+
+<section class="cell cell-b">
+  <h2>Run lifecycle &amp; statuses</h2>
+  <p class="section-lead">
+    Every run moves through the same four states, however it was triggered.
+  </p>
+  <div class="status-grid" style="margin-bottom: 16px">
+    <div class="status">
+      <div class="label">
+        <span class="dot" style="background: var(--color-neutral-400)"></span>Pending
+      </div>
+      <div class="small">Created, not yet picked up.</div>
+    </div>
+    <div class="status">
+      <div class="label">
+        <span class="dot" style="background: var(--color-accent-400)"></span>Running
+      </div>
+      <div class="small">Currently executing.</div>
+    </div>
+    <div class="status">
+      <div class="label">
+        <span class="dot" style="background: var(--color-text)"></span>Completed
+      </div>
+      <div class="small">Finished - <code>scores</code> populated.</div>
+    </div>
+    <div class="status">
+      <div class="label">
+        <span class="dot" style="background: var(--color-accent)"></span>Failed
+      </div>
+      <div class="small">Finished - <code>error</code> populated instead.</div>
+    </div>
+  </div>
+</section>
+
+<section class="cell">
+  <h2>Guardrails you'll bump into</h2>
+  <p class="section-lead">Short answers to the "why won't it let me do that?" moments.</p>
+  <div class="guards">
+    <div class="guard">
+      <div class="q">?</div>
+      <div class="a">
+        <strong>Why did renaming to the same name just work, instead of failing?</strong>
+        Resubmitting a dataset's, test set's, or test plan's own current name is always treated as
+        success - the uniqueness check only runs when the name actually changes.
+      </div>
+    </div>
+    <div class="guard">
+      <div class="q">?</div>
+      <div class="a">
+        <strong>Why can't I delete this test?</strong> A test is blocked while it's still
+        snapshotted into any test set, or has any run - standalone or otherwise - against it. Unlink
+        or clean those up first.
+      </div>
+    </div>
+    <div class="guard">
+      <div class="q">?</div>
+      <div class="a">
+        <strong>Why can't I edit this entry anymore?</strong> Once any run references a test set
+        entry, it freezes for good. You can still unlink it from the set (content and run history
+        stay intact) or delete it outright if it's never been run.
+      </div>
+    </div>
+    <div class="guard">
+      <div class="q">?</div>
+      <div class="a">
+        <strong>Why won't this test set or test plan delete?</strong> A test set is blocked while
+        any of its entries has ever been run. A test plan is blocked once it has ever been executed
+        at all - full stop, no "force delete." A plan's <em>links</em> to its test sets are the one
+        exception: those can always be added or removed.
+      </div>
+    </div>
+    <div class="guard">
+      <div class="q">?</div>
+      <div class="a">
+        <strong
+          >I deleted a dataset (or some rows) I'd already used to create tests - did that break
+          those tests?</strong
+        >
+        No. A test owns a full copy of its own data from the moment it's created; deleting the
+        source dataset or rows only clears a traceability pointer, never the test's content.
+      </div>
+    </div>
+    <div class="guard">
+      <div class="q">?</div>
+      <div class="a">
+        <strong
+          >I selected several rows and the bulk action failed - why did nothing happen at
+          all?</strong
+        >
+        Every bulk action (delete, unlink, add, link) is all-or-nothing. If any single selected item
+        fails a guard, the whole batch is rejected - there's no partial success.
+      </div>
+    </div>
+  </div>
+</section>
