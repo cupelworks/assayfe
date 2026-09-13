@@ -1,0 +1,92 @@
+<div class="ttp">
+  <div class="ttp-toolbar">
+    <input
+      class="input"
+      placeholder="Filter test types…"
+      [ngModel]="search()"
+      (ngModelChange)="search.set($event)"
+    />
+    <div class="chips">
+      @for (c of categories; track c.key) {
+        <button type="button" class="chip-btn" (click)="toggleCategory(c.key)">
+          <span
+            class="tag"
+            [class.tag-accent]="categoryFilter() === c.key"
+            [class.tag-outline]="categoryFilter() !== c.key"
+            >{{ c.label }}</span
+          >
+        </button>
+      }
+    </div>
+    @if (!hasReference()) {
+      <label class="chk-row"
+        ><input
+          type="checkbox"
+          class="chk"
+          [checked]="onlyCompatible()"
+          (change)="onlyCompatible.set(!onlyCompatible())"
+        />
+        Hide types needing a reference</label
+      >
+    }
+  </div>
+
+  @for (g of groups(); track g.key) {
+    <div class="ttp-group">
+      <div class="ttp-cat">{{ g.label }}</div>
+      @for (t of g.items; track t.id) {
+        <label class="ttp-row" [class.inactive]="!t.is_active">
+          <input
+            type="checkbox"
+            class="chk"
+            [checked]="selected().includes(t.name)"
+            (change)="toggle(t.name)"
+          />
+          <span class="ttp-txt">
+            <span class="ttp-name">{{ t.name }}</span>
+            @if (t.best_for) {
+              <span class="ttp-desc">{{ t.best_for }}</span>
+            }
+          </span>
+          <span class="ttp-tags">
+            @if (t.cost) {
+              <span class="tag tag-neutral">{{ t.cost }}</span>
+            }
+            @if (t.required_reference && !hasReference()) {
+              <span class="tag tag-accent">needs reference</span>
+            }
+            @if (!t.is_active) {
+              <span class="tag tag-outline">inactive</span>
+            }
+          </span>
+        </label>
+      }
+    </div>
+  } @empty {
+    <div class="small ttp-empty">
+      {{
+        store.loading()
+          ? 'Loading test types…'
+          : search() || categoryFilter() !== 'all' || onlyCompatible()
+            ? 'No test types match these filters.'
+            : 'No test types available.'
+      }}
+    </div>
+  }
+
+  @if (unknown().length) {
+    <div class="ttp-unknown">
+      <span class="small">Not in the catalogue:</span>
+      @for (n of unknown(); track n) {
+        <button type="button" class="chip-btn" (click)="remove(n)">
+          <span class="tag tag-outline">{{ n }} ×</span>
+        </button>
+      }
+    </div>
+  }
+
+  <div class="ttp-foot">
+    <span class="small">{{ selected().length }} selected</span
+    ><a routerLink="/test-types" target="_blank" class="small link">Full catalogue →</a>
+  </div>
+</div>

@@ -1,0 +1,126 @@
+<div class="hero">
+  <div>
+    <div class="kicker">Catalog</div>
+    <h1>Test types</h1>
+  </div>
+  <p class="hero-note text-muted">
+    The evaluation strategies a test can be assigned. Seeded on the server - nothing here is
+    editable from the app.
+  </p>
+</div>
+
+<section class="stats">
+  @for (c of categories; track c.key) {
+    <button
+      type="button"
+      class="stat cat"
+      [class.active]="category() === c.key"
+      (click)="toggleCategory(c.key)"
+    >
+      <div class="label">{{ c.label }}</div>
+      <div class="big">{{ counts()[c.key] }}</div>
+      <div class="small blurb">{{ c.blurb }}</div>
+      <div class="small go">{{ category() === c.key ? 'Showing only this' : 'Show only →' }}</div>
+    </button>
+  }
+  <div class="stat legend">
+    <div class="label">Reading a card</div>
+    <div class="legend-rows">
+      <div>
+        <span class="tag tag-neutral">fast</span><span class="small">relative cost to compute</span>
+      </div>
+      <div>
+        <span class="tag tag-outline">needs reference</span
+        ><span class="small">requires an expected output</span>
+      </div>
+      <div>
+        <span class="tag tag-outline">inactive</span
+        ><span class="small">kept for history, not offered</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cell">
+  <div class="toolbar">
+    <input
+      class="input"
+      placeholder="Filter by name, description, best for…"
+      [ngModel]="filter()"
+      (ngModelChange)="filter.set($event)"
+    />
+    <label class="chk-row"
+      ><input
+        type="checkbox"
+        class="chk"
+        [checked]="showInactive()"
+        (change)="showInactive.set(!showInactive())"
+      />
+      Show inactive</label
+    >
+    <span class="small">{{ total() }} shown</span>
+    <button class="btn btn-ghost btn-sm" (click)="store.load(true)">Refresh</button>
+  </div>
+  @if (store.loading() && !store.loaded()) {
+    <div class="empty">Loading catalogue…</div>
+  }
+  @for (g of groups(); track g.key) {
+    <div class="group">
+      <div class="row-head">
+        <h2>{{ g.label }}</h2>
+        <span class="small">{{ g.types.length }} type{{ g.types.length === 1 ? '' : 's' }}</span>
+      </div>
+      <div class="grid">
+        @for (t of g.types; track t.id) {
+          <article
+            class="card type"
+            [class.inactive]="!t.is_active"
+            [class.open]="openId() === t.id"
+            (click)="toggle(t)"
+          >
+            <div class="type-head">
+              <h3>{{ t.name }}</h3>
+              <div class="tags">
+                <span class="tag tag-neutral">{{ t.cost }}</span>
+                @if (t.required_reference) {
+                  <span class="tag tag-outline">needs reference</span>
+                }
+                @if (!t.is_active) {
+                  <span class="tag tag-outline">inactive</span>
+                }
+              </div>
+            </div>
+            <p class="desc">{{ t.description }}</p>
+            <dl>
+              <dt>Best for</dt>
+              <dd>{{ t.best_for }}</dd>
+              <dt>Limitations</dt>
+              <dd>{{ t.limitations }}</dd>
+              @if (openId() === t.id) {
+                <dt>Category</dt>
+                <dd>{{ g.label }}</dd>
+                <dt>Reference</dt>
+                <dd>
+                  {{
+                    t.required_reference
+                      ? 'Required - the test needs an expected_output'
+                      : 'Not required - scores the output on its own'
+                  }}
+                </dd>
+                <dt>Added</dt>
+                <dd>{{ rel(t.created_at) }}</dd>
+              }
+            </dl>
+            <div class="more small">{{ openId() === t.id ? 'Less ↑' : 'More ↓' }}</div>
+          </article>
+        } @empty {
+          <div class="empty">
+            No {{ showInactive() ? '' : 'active ' }}types in this category{{
+              filter() ? ' match the filter' : ''
+            }}.
+          </div>
+        }
+      </div>
+    </div>
+  }
+</section>
