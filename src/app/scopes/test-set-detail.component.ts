@@ -14,43 +14,147 @@ import { Paged } from '../shared/paged';
 
 type Dlg = null | 'rename' | 'delete' | 'add' | 'unlink' | 'deleteEntries' | 'editEntry';
 
-@Component({ selector: 'assay-test-set-detail', standalone: true, imports: [RouterLink, NameDialogComponent, ConfirmDialogComponent, PickDialogComponent, TestFormDialogComponent, ExecutionsPanelComponent, PagerComponent], templateUrl: './test-set-detail.component.html', styleUrls: ['../shared/page.css'] })
+@Component({
+  selector: 'assay-test-set-detail',
+  standalone: true,
+  imports: [
+    RouterLink,
+    NameDialogComponent,
+    ConfirmDialogComponent,
+    PickDialogComponent,
+    TestFormDialogComponent,
+    ExecutionsPanelComponent,
+    PagerComponent,
+  ],
+  templateUrl: './test-set-detail.component.html',
+  styleUrls: ['../shared/page.css'],
+})
 export class TestSetDetailComponent {
   id = input.required<string>();
-  api = inject(AssayApiService); store = inject(CatalogStore); router = inject(Router); rel = rel; short = short;
+  api = inject(AssayApiService);
+  store = inject(CatalogStore);
+  router = inject(Router);
+  rel = rel;
+  short = short;
   page = new Paged<TestSetEntry>((o, l) => this.api.testSetEntries(this.id(), o, l), 25, errText);
-  entries = this.page.items; version = signal(0); selected = signal<string[]>([]); editing = signal<TestSetEntry | null>(null);
-  dlg = signal<Dlg>(null); busy = signal(false); err = signal<string | null>(null); msg = signal<{ ok: boolean; text: string } | null>(null);
+  entries = this.page.items;
+  version = signal(0);
+  selected = signal<string[]>([]);
+  editing = signal<TestSetEntry | null>(null);
+  dlg = signal<Dlg>(null);
+  busy = signal(false);
+  err = signal<string | null>(null);
+  msg = signal<{ ok: boolean; text: string } | null>(null);
   meta = computed(() => this.store.parent('test-sets', this.id()));
   name = computed(() => this.meta()?.name ?? short(this.id()));
   execs = computed(() => this.store.byParent('test-sets', this.id()));
   hasRuns = computed(() => this.execs().length > 0);
-  allChecked = computed(() => this.entries().length > 0 && this.entries().every(e => this.selected().includes(e.id)));
+  allChecked = computed(
+    () => this.entries().length > 0 && this.entries().every((e) => this.selected().includes(e.id)),
+  );
   pickRows = computed<PickRow[]>(() => {
-    const inSet = new Set(this.entries().map(e => e.test_case_id.id));
-    return this.store.tests().map(t => { const dup = inSet.has(t.id), noTypes = !t.test_type_names?.length; return { id: t.id, name: t.name || 'Untitled · ' + short(t.id), sub: t.input, meta: dup ? 'already in set' : noTypes ? 'no test types' : t.test_type_names!.join(', '), disabled: dup, dim: noTypes }; });
+    const inSet = new Set(this.entries().map((e) => e.test_case_id.id));
+    return this.store.tests().map((t) => {
+      const dup = inSet.has(t.id),
+        noTypes = !t.test_type_names?.length;
+      return {
+        id: t.id,
+        name: t.name || 'Untitled · ' + short(t.id),
+        sub: t.input,
+        meta: dup ? 'already in set' : noTypes ? 'no test types' : t.test_type_names!.join(', '),
+        disabled: dup,
+        dim: noTypes,
+      };
+    });
   });
   pickLabel = (n: number) => `Add ${n || ''} as frozen entries`;
 
-  constructor() { effect(() => { this.id(); this.page.reset(); }); }
-  loadEntries() { this.selected.set([]); this.page.reload(); }
-  toggle(id: string) { this.selected.update(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]); }
-  toggleAll() { this.selected.set(this.allChecked() ? [] : this.entries().map(e => e.id)); }
-  open(d: Dlg, entry?: TestSetEntry) { this.err.set(null); if (entry) this.editing.set(entry); this.dlg.set(d); }
-
-  private run(req: { subscribe: Function }, ok: (r: any) => string, after?: () => void) {
-    this.busy.set(true); this.err.set(null);
-    req.subscribe({
-      next: (r: any) => { this.busy.set(false); this.dlg.set(null); this.msg.set({ ok: true, text: ok(r) }); this.loadEntries(); this.version.update(v => v + 1); this.store.load(); after?.(); },
-      error: (e: unknown) => { this.busy.set(false); const t = errText(e); this.dlg() ? this.err.set(t) : this.msg.set({ ok: false, text: t }); },
+  constructor() {
+    effect(() => {
+      this.id();
+      this.page.reset();
     });
   }
-  rename(n: string) { this.run(this.api.renameTestSet(this.id(), n), () => `Renamed to “${n}”.`); }
-  remove() { this.run(this.api.deleteTestSet(this.id()), () => 'Test set deleted.', () => this.router.navigate(['/test-sets'])); }
-  add(ids: string[]) { this.run(this.api.addTestsToSet(this.id(), ids), () => `Added ${ids.length} test${ids.length === 1 ? '' : 's'} as frozen entries.`); }
-  unlink() { const ids = this.selected(); this.run(this.api.unlinkEntries(this.id(), ids), () => `Unlinked ${ids.length} entr${ids.length === 1 ? 'y' : 'ies'} — content and runs preserved.`); }
-  deleteEntries() { const ids = this.selected(); this.run(this.api.deleteEntries(this.id(), ids), () => `Deleted ${ids.length} entr${ids.length === 1 ? 'y' : 'ies'}.`); }
-  saveEntry(b: TestCaseBody) { this.run(this.api.updateTestSetEntry(this.id(), this.editing()!.id, b), () => 'Entry updated.'); }
-  runLive() { this.run(this.api.runLive('test-sets', this.id()), r => `Enqueued ${r.run_count} pending runs.`); }
-  replay(execId: string) { this.run(this.api.replay('test-sets', this.id(), execId), r => `Enqueued ${r.run_count} pending runs (replay of ${short(execId)}).`); }
+  loadEntries() {
+    this.selected.set([]);
+    this.page.reload();
+  }
+  toggle(id: string) {
+    this.selected.update((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  }
+  toggleAll() {
+    this.selected.set(this.allChecked() ? [] : this.entries().map((e) => e.id));
+  }
+  open(d: Dlg, entry?: TestSetEntry) {
+    this.err.set(null);
+    if (entry) this.editing.set(entry);
+    this.dlg.set(d);
+  }
+
+  private run(req: { subscribe: Function }, ok: (r: any) => string, after?: () => void) {
+    this.busy.set(true);
+    this.err.set(null);
+    req.subscribe({
+      next: (r: any) => {
+        this.busy.set(false);
+        this.dlg.set(null);
+        this.msg.set({ ok: true, text: ok(r) });
+        this.loadEntries();
+        this.version.update((v) => v + 1);
+        this.store.load();
+        after?.();
+      },
+      error: (e: unknown) => {
+        this.busy.set(false);
+        const t = errText(e);
+        this.dlg() ? this.err.set(t) : this.msg.set({ ok: false, text: t });
+      },
+    });
+  }
+  rename(n: string) {
+    this.run(this.api.renameTestSet(this.id(), n), () => `Renamed to “${n}”.`);
+  }
+  remove() {
+    this.run(
+      this.api.deleteTestSet(this.id()),
+      () => 'Test set deleted.',
+      () => this.router.navigate(['/test-sets']),
+    );
+  }
+  add(ids: string[]) {
+    this.run(
+      this.api.addTestsToSet(this.id(), ids),
+      () => `Added ${ids.length} test${ids.length === 1 ? '' : 's'} as frozen entries.`,
+    );
+  }
+  unlink() {
+    const ids = this.selected();
+    this.run(
+      this.api.unlinkEntries(this.id(), ids),
+      () =>
+        `Unlinked ${ids.length} entr${ids.length === 1 ? 'y' : 'ies'} - content and runs preserved.`,
+    );
+  }
+  deleteEntries() {
+    const ids = this.selected();
+    this.run(
+      this.api.deleteEntries(this.id(), ids),
+      () => `Deleted ${ids.length} entr${ids.length === 1 ? 'y' : 'ies'}.`,
+    );
+  }
+  saveEntry(b: TestCaseBody) {
+    this.run(this.api.updateTestSetEntry(this.id(), this.editing()!.id, b), () => 'Entry updated.');
+  }
+  runLive() {
+    this.run(
+      this.api.runLive('test-sets', this.id()),
+      (r) => `Enqueued ${r.run_count} pending runs.`,
+    );
+  }
+  replay(execId: string) {
+    this.run(
+      this.api.replay('test-sets', this.id(), execId),
+      (r) => `Enqueued ${r.run_count} pending runs (replay of ${short(execId)}).`,
+    );
+  }
 }

@@ -1,30 +1,93 @@
-<div class="crumbs"><a [routerLink]="['/', kind()]">{{ kindLabel() }}s</a><span>/</span><a [routerLink]="['/', kind(), id()]">{{ name() }}</a><span>/</span><span class="cur">{{ short(execId()) }}</span></div>
+<div class="crumbs">
+  <a [routerLink]="['/', kind()]">{{ kindLabel() }}s</a><span>/</span
+  ><a [routerLink]="['/', kind(), id()]">{{ name() }}</a
+  ><span>/</span><span class="cur">{{ short(execId()) }}</span>
+</div>
 <div class="hero">
   <div>
-    <div class="kicker">{{ exec()?.replayed_execution_id ? 'Replay execution' : 'Live execution' }}</div>
+    <div class="kicker">
+      {{ exec()?.replayed_execution_id ? 'Replay execution' : 'Live execution' }}
+    </div>
     <h1>{{ name() }} · {{ short(execId()) }}</h1>
-    @if (exec(); as e) { <p class="hero-note" style="margin-top:12px">{{ rel(e.created_at) }}@if (e.replayed_execution_id) { · replayed <a [routerLink]="['/', kind(), id(), 'executions', e.replayed_execution_id.id]">{{ short(e.replayed_execution_id.id) }}</a> }</p> }
+    @if (exec(); as e) {
+      <p class="hero-note" style="margin-top: 12px">
+        {{ rel(e.created_at) }}
+        @if (e.replayed_execution_id) {
+          · replayed
+          <a [routerLink]="['/', kind(), id(), 'executions', e.replayed_execution_id.id]">{{
+            short(e.replayed_execution_id.id)
+          }}</a>
+        }
+      </p>
+    }
   </div>
-  <div class="hero-actions"><button class="btn btn-primary" (click)="replay()" [disabled]="busy()">{{ busy() ? 'Enqueuing…' : 'Replay this execution' }}</button></div>
+  <div class="hero-actions">
+    <button class="btn btn-primary" (click)="replay()" [disabled]="busy()">
+      {{ busy() ? 'Enqueuing…' : 'Replay this execution' }}
+    </button>
+  </div>
 </div>
-@if (msg(); as m) { <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div> }
+@if (msg(); as m) {
+  <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
+}
 <section class="stats">
-  @for (s of statuses(); track s.key) { <div class="stat"><div class="label"><span class="dot" [style.background]="s.color"></span>{{ s.key }}</div><div class="big" style="font-size:40px">{{ s.value }}</div><div class="small">on this page</div></div> }
+  @for (s of statuses(); track s.key) {
+    <div class="stat">
+      <div class="label"><span class="dot" [style.background]="s.color"></span>{{ s.key }}</div>
+      <div class="big" style="font-size: 40px">{{ s.value }}</div>
+      <div class="small">on this page</div>
+    </div>
+  }
 </section>
 <section class="cell">
   <table class="table">
-    <colgroup><col style="width:140px"><col style="width:140px"><col><col style="width:140px"></colgroup>
-    <thead><tr><th>Status</th><th>Run</th><th>Frozen entry</th><th>Created</th></tr></thead>
+    <colgroup>
+      <col style="width: 140px" />
+      <col style="width: 140px" />
+      <col />
+      <col style="width: 140px" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Run</th>
+        <th>Frozen entry</th>
+        <th>Created</th>
+      </tr>
+    </thead>
     <tbody>
       @for (r of runs(); track r.id) {
         <tr>
-          <td><span class="st"><span class="dot" [style.background]="statusColor(r.status)"></span>{{ r.status }}</span></td>
-          <td class="strong"><a class="plain" [routerLink]="['/', kind(), id(), 'executions', execId(), 'runs', r.id]">{{ short(r.id) }}</a></td>
+          <td>
+            <span class="st"
+              ><span class="dot" [style.background]="statusColor(r.status)"></span
+              >{{ r.status }}</span
+            >
+          </td>
+          <td class="strong">
+            <a
+              class="plain"
+              [routerLink]="['/', kind(), id(), 'executions', execId(), 'runs', r.id]"
+              >{{ short(r.id) }}</a
+            >
+          </td>
           <td class="muted">{{ short(r.test_set_entry_id?.id) }}</td>
           <td class="muted">{{ rel(r.created_at) }}</td>
         </tr>
-      } @empty { @if (!page.loading()) { <tr><td colspan="4" class="empty">No runs.</td></tr> } }
+      } @empty {
+        @if (!page.loading()) {
+          <tr>
+            <td colspan="4" class="empty">No runs.</td>
+          </tr>
+        }
+      }
     </tbody>
   </table>
-  <assay-pager [total]="page.total()" [offset]="page.offset()" [limit]="page.limit()" (offsetChange)="page.go($event)" (limitChange)="page.size($event)" />
+  <assay-pager
+    [total]="page.total()"
+    [offset]="page.offset()"
+    [limit]="page.limit()"
+    (offsetChange)="page.go($event)"
+    (limitChange)="page.size($event)"
+  />
 </section>

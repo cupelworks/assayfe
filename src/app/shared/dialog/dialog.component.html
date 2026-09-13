@@ -1,10 +1,30 @@
 <div class="dialog-backdrop wrap" (click)="close.emit()" (keydown.escape)="close.emit()">
-  <div class="dialog box" [class.wide]="wide()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
-    <div class="head">@if (kicker()) { <div class="kicker">{{ kicker() }}</div> }<h2>{{ title() }}</h2></div>
+  <div
+    class="dialog box"
+    [class.wide]="wide()"
+    (click)="$event.stopPropagation()"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="head">
+      @if (kicker()) {
+        <div class="kicker">{{ kicker() }}</div>
+      }
+      <h2>{{ title() }}</h2>
+    </div>
     <div class="body"><ng-content /></div>
-    @if (error(); as e) { <div class="err">{{ e }}</div> }
+    @if (error(); as e) {
+      <div class="err">{{ e }}</div>
+    }
     <div class="dialog-actions foot">
-      <button class="btn btn-primary" [class.danger]="danger()" (click)="primary.emit()" [disabled]="primaryDisabled()">{{ primaryLabel() }}</button>
+      <button
+        class="btn btn-primary"
+        [class.danger]="danger()"
+        (click)="primary.emit()"
+        [disabled]="primaryDisabled()"
+      >
+        {{ primaryLabel() }}
+      </button>
       <button class="btn btn-ghost" (click)="close.emit()">Cancel</button>
     </div>
   </div>

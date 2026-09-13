@@ -1,17 +1,73 @@
 <div class="hero">
-  <div><div class="kicker">Catalog</div><h1>{{ title() }}</h1></div>
-  <div class="hero-actions"><button class="btn btn-primary" (click)="err.set(null); dlg.set(true)">New {{ single() }}</button></div>
+  <div>
+    <div class="kicker">Catalog</div>
+    <h1>{{ title() }}</h1>
+  </div>
+  <div class="hero-actions">
+    <button class="btn btn-primary" (click)="err.set(null); dlg.set(true)">
+      New {{ single() }}
+    </button>
+  </div>
 </div>
 <section class="cell">
-  <div class="toolbar"><input class="input" placeholder="Filter…" [ngModel]="filter()" (ngModelChange)="filter.set($event)"><span class="small">{{ filter() ? rows().length + ' shown on this page' : page.total() + ' total' }}</span></div>
+  <div class="toolbar">
+    <input
+      class="input"
+      placeholder="Filter…"
+      [ngModel]="filter()"
+      (ngModelChange)="filter.set($event)"
+    /><span class="small">{{
+      filter() ? rows().length + ' shown on this page' : page.total() + ' total'
+    }}</span>
+  </div>
   <table class="table">
-    <colgroup><col><col style="width:140px"><col style="width:160px"></colgroup>
-    <thead><tr><th>{{ isSet() ? 'Test set' : 'Test plan' }}</th><th>Executions</th><th>Created</th></tr></thead>
+    <colgroup>
+      <col />
+      <col style="width: 140px" />
+      <col style="width: 160px" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>{{ isSet() ? 'Test set' : 'Test plan' }}</th>
+        <th>Executions</th>
+        <th>Created</th>
+      </tr>
+    </thead>
     <tbody>
-      @for (r of rows(); track r.id) { <tr><td class="strong"><a class="plain arrow" [routerLink]="['/', kind(), r.id]">{{ r.name }}</a></td><td class="num">{{ r.execs }}</td><td class="muted">{{ rel(r.created_at) }}</td></tr> }
-      @empty { @if (!page.loading()) { <tr><td colspan="3" class="empty">No {{ title().toLowerCase() }} yet.</td></tr> } }
+      @for (r of rows(); track r.id) {
+        <tr>
+          <td class="strong">
+            <a class="plain arrow" [routerLink]="['/', kind(), r.id]">{{ r.name }}</a>
+          </td>
+          <td class="num">{{ r.execs }}</td>
+          <td class="muted">{{ rel(r.created_at) }}</td>
+        </tr>
+      } @empty {
+        @if (!page.loading()) {
+          <tr>
+            <td colspan="3" class="empty">No {{ title().toLowerCase() }} yet.</td>
+          </tr>
+        }
+      }
     </tbody>
   </table>
-  <assay-pager [total]="page.total()" [offset]="page.offset()" [limit]="page.limit()" (offsetChange)="page.go($event)" (limitChange)="page.size($event)" />
+  <assay-pager
+    [total]="page.total()"
+    [offset]="page.offset()"
+    [limit]="page.limit()"
+    (offsetChange)="page.go($event)"
+    (limitChange)="page.size($event)"
+  />
 </section>
-@if (dlg()) { <assay-name-dialog [kicker]="title()" [title]="'New ' + single()" [submitLabel]="'Create ' + single()" [placeholder]="isSet() ? 'Regression Suite' : 'Release 2.5 gate'" [busy]="busy()" [error]="err()" (confirm)="create($event)" (closed)="dlg.set(false)" /> }
+@if (dlg()) {
+  <assay-name-dialog
+    [kicker]="title()"
+    [title]="'New ' + single()"
+    [submitLabel]="'Create ' + single()"
+    [placeholder]="isSet() ? 'Regression Suite' : 'Release 2.5 gate'"
+    [busy]="busy()"
+    [error]="err()"
+    (confirm)="create($event)"
+    (closed)="dlg.set(false)"
+  />
+}

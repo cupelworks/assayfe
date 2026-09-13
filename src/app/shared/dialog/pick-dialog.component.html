@@ -1,12 +1,41 @@
-<assay-dialog [kicker]="kicker()" [title]="title()" [primaryLabel]="busy() ? 'Saving…' : submitLabel()(picked().length)" [primaryDisabled]="!picked().length || busy()" [error]="error()" (primary)="confirm.emit(picked())" (close)="closed.emit()">
-  <div class="toolbar"><input class="input" [ngModel]="filter()" (ngModelChange)="filter.set($event)" placeholder="Filter…" autofocus><button class="btn btn-ghost btn-sm" type="button" (click)="all()">Toggle all</button><span class="hint">{{ picked().length }} selected</span></div>
+<assay-dialog
+  [kicker]="kicker()"
+  [title]="title()"
+  [primaryLabel]="busy() ? 'Saving…' : submitLabel()(picked().length)"
+  [primaryDisabled]="!picked().length || busy()"
+  [error]="error()"
+  (primary)="confirm.emit(picked())"
+  (close)="closed.emit()"
+>
+  <div class="toolbar">
+    <input
+      class="input"
+      [ngModel]="filter()"
+      (ngModelChange)="filter.set($event)"
+      placeholder="Filter…"
+      autofocus
+    /><button class="btn btn-ghost btn-sm" type="button" (click)="all()">Toggle all</button
+    ><span class="hint">{{ picked().length }} selected</span>
+  </div>
   <div class="list">
     @for (r of shown(); track r.id) {
       <label class="row" [class.off]="r.disabled">
-        <input type="checkbox" [checked]="picked().includes(r.id)" [disabled]="r.disabled" (change)="toggle(r.id)">
-        <span class="txt"><span class="nm" [class.dim]="r.dim">{{ r.name }}</span>@if (r.sub) { <span class="sub">{{ r.sub }}</span> }</span>
+        <input
+          type="checkbox"
+          [checked]="picked().includes(r.id)"
+          [disabled]="r.disabled"
+          (change)="toggle(r.id)"
+        />
+        <span class="txt"
+          ><span class="nm" [class.dim]="r.dim">{{ r.name }}</span>
+          @if (r.sub) {
+            <span class="sub">{{ r.sub }}</span>
+          }
+        </span>
         <span class="hint">{{ r.meta }}</span>
       </label>
-    } @empty { <div class="empty">{{ emptyText() }}</div> }
+    } @empty {
+      <div class="empty">{{ emptyText() }}</div>
+    }
   </div>
 </assay-dialog>

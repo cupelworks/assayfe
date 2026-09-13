@@ -1,40 +1,128 @@
 <div class="hero">
-  <div><div class="kicker">Evaluation overview</div><h1>What has been tested,<br>and what's waiting.</h1></div>
-  <div class="hero-actions"><button class="btn btn-secondary" (click)="newTest.set(true)">New test</button></div>
+  <div>
+    <div class="kicker">Evaluation overview</div>
+    <h1>What has been tested,<br />and what's waiting.</h1>
+  </div>
+  <div class="hero-actions">
+    <button class="btn btn-secondary" (click)="newTest.set(true)">New test</button>
+  </div>
 </div>
-@if (msg(); as m) { <div class="msg">{{ m }}</div> }
+@if (msg(); as m) {
+  <div class="msg">{{ m }}</div>
+}
 <section class="stats">
-  <a routerLink="/datasets" class="stat plain tile"><div class="label">Datasets</div><div class="big">{{ store.datasets().length }}</div><div class="small tile-foot"><span>source rows for tests</span><span class="go">View →</span></div></a>
-  <a routerLink="/tests" class="stat plain tile"><div class="label">Tests</div><div class="big">{{ store.tests().length }}</div><div class="small tile-foot"><span>live authoring surface</span><span class="go">View →</span></div></a>
-  <a routerLink="/test-sets" class="stat plain tile"><div class="label">Test sets</div><div class="big">{{ store.sets().length }}</div><div class="small tile-foot"><span>frozen snapshots</span><span class="go">View →</span></div></a>
-  <a routerLink="/test-plans" class="stat plain tile"><div class="label">Test plans</div><div class="big">{{ store.plans().length }}</div><div class="small tile-foot"><span>multi-set campaigns</span><span class="go">View →</span></div></a>
+  <a routerLink="/datasets" class="stat plain tile"
+    ><div class="label">Datasets</div>
+    <div class="big">{{ store.datasets().length }}</div>
+    <div class="small tile-foot">
+      <span>source rows for tests</span><span class="go">View →</span>
+    </div></a
+  >
+  <a routerLink="/tests" class="stat plain tile"
+    ><div class="label">Tests</div>
+    <div class="big">{{ store.tests().length }}</div>
+    <div class="small tile-foot">
+      <span>live authoring surface</span><span class="go">View →</span>
+    </div></a
+  >
+  <a routerLink="/test-sets" class="stat plain tile"
+    ><div class="label">Test sets</div>
+    <div class="big">{{ store.sets().length }}</div>
+    <div class="small tile-foot">
+      <span>frozen snapshots</span><span class="go">View →</span>
+    </div></a
+  >
+  <a routerLink="/test-plans" class="stat plain tile"
+    ><div class="label">Test plans</div>
+    <div class="big">{{ store.plans().length }}</div>
+    <div class="small tile-foot">
+      <span>multi-set campaigns</span><span class="go">View →</span>
+    </div></a
+  >
 </section>
 <section class="main">
   <div class="cell cell-r">
-    <div class="row-head"><h2>Recent executions</h2><span class="small">{{ store.executions().length }} total</span></div>
+    <div class="row-head">
+      <h2>Recent executions</h2>
+      <span class="small">{{ store.executions().length }} total</span>
+    </div>
     <table class="table">
-      <colgroup><col style="width:110px"><col><col style="width:90px"><col style="width:70px"><col style="width:120px"></colgroup>
-      <thead><tr><th>Scope</th><th>Target</th><th>Mode</th><th>Runs</th><th>Triggered</th></tr></thead>
+      <colgroup>
+        <col style="width: 110px" />
+        <col />
+        <col style="width: 90px" />
+        <col style="width: 70px" />
+        <col style="width: 120px" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Scope</th>
+          <th>Target</th>
+          <th>Mode</th>
+          <th>Runs</th>
+          <th>Triggered</th>
+        </tr>
+      </thead>
       <tbody>
         @for (e of recent(); track e.id) {
           <tr>
-            <td><span class="tag tag-neutral">{{ e.scope }}</span></td>
-            <td class="strong"><a class="plain" [routerLink]="['/', e.kind, e.parentId, 'executions', e.id]">{{ e.target }}</a></td>
-            <td><span class="tag" [class.tag-outline]="e.replayed_execution_id" [class.tag-accent]="!e.replayed_execution_id">{{ e.replayed_execution_id ? 'Replay' : 'Live' }}</span></td>
+            <td>
+              <span class="tag tag-neutral">{{ e.scope }}</span>
+            </td>
+            <td class="strong">
+              <a class="plain" [routerLink]="['/', e.kind, e.parentId, 'executions', e.id]">{{
+                e.target
+              }}</a>
+            </td>
+            <td>
+              <span
+                class="tag"
+                [class.tag-outline]="e.replayed_execution_id"
+                [class.tag-accent]="!e.replayed_execution_id"
+                >{{ e.replayed_execution_id ? 'Replay' : 'Live' }}</span
+              >
+            </td>
             <td class="num">{{ e.run_count }}</td>
             <td class="muted">{{ rel(e.created_at) }}</td>
           </tr>
-        } @empty { @if (!store.loading()) { <tr><td colspan="5" class="empty">No executions yet — open a test set or plan and run it live.</td></tr> } }
+        } @empty {
+          @if (!store.loading()) {
+            <tr>
+              <td colspan="5" class="empty">
+                No executions yet - open a test set or plan and run it live.
+              </td>
+            </tr>
+          }
+        }
       </tbody>
     </table>
   </div>
   <div class="cell">
     <h2>Run status</h2>
-    <p class="hero-note" style="margin-bottom:20px">Runs are enqueued only — they stay <em>Pending</em> until the worker picks them up.</p>
-    <div class="bar">@for (b of bars(); track b.color) { <div [style.width]="b.pct" [style.background]="b.color"></div> }</div>
+    <p class="hero-note" style="margin-bottom: 20px">
+      Runs are enqueued only - they stay <em>Pending</em> until the worker picks them up.
+    </p>
+    <div class="bar">
+      @for (b of bars(); track b.color) {
+        <div [style.width]="b.pct" [style.background]="b.color"></div>
+      }
+    </div>
     <div class="status-grid">
-      @for (s of statuses(); track s.key) { <div class="status"><div class="label"><span class="dot" [style.background]="s.color"></span>{{ s.key }}</div><div class="mid">{{ s.value }}</div></div> }
+      @for (s of statuses(); track s.key) {
+        <div class="status">
+          <div class="label"><span class="dot" [style.background]="s.color"></span>{{ s.key }}</div>
+          <div class="mid">{{ s.value }}</div>
+        </div>
+      }
     </div>
   </div>
 </section>
-@if (newTest()) { <assay-test-form-dialog kicker="Tests" [busy]="busy()" [error]="err()" (confirm)="create($event)" (closed)="newTest.set(false)" /> }
+@if (newTest()) {
+  <assay-test-form-dialog
+    kicker="Tests"
+    [busy]="busy()"
+    [error]="err()"
+    (confirm)="create($event)"
+    (closed)="newTest.set(false)"
+  />
+}

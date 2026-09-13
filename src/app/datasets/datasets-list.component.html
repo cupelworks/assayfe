@@ -1,24 +1,99 @@
 <div class="hero">
-  <div><div class="kicker">Catalog</div><h1>Datasets</h1></div>
-  <div class="hero-actions"><button class="btn btn-primary" (click)="dialog.set(true)">Import from JSONL</button></div>
+  <div>
+    <div class="kicker">Catalog</div>
+    <h1>Datasets</h1>
+  </div>
+  <div class="hero-actions">
+    <button class="btn btn-primary" (click)="dialog.set(true)">Import from JSONL</button>
+  </div>
 </div>
-@if (msg(); as m) { <div class="msg">{{ m }}</div> }
+@if (msg(); as m) {
+  <div class="msg">{{ m }}</div>
+}
 <section class="cell">
-  <div class="toolbar"><input class="input" placeholder="Filter…" [ngModel]="filter()" (ngModelChange)="filter.set($event)"><span class="small">{{ filter() ? rows().length + ' shown on this page' : page.total() + ' total' }}</span></div>
+  <div class="toolbar">
+    <input
+      class="input"
+      placeholder="Filter…"
+      [ngModel]="filter()"
+      (ngModelChange)="filter.set($event)"
+    /><span class="small">{{
+      filter() ? rows().length + ' shown on this page' : page.total() + ' total'
+    }}</span>
+  </div>
   <table class="table">
-    <colgroup><col><col style="width:200px"></colgroup>
-    <thead><tr><th>Dataset</th><th>Created</th></tr></thead>
+    <colgroup>
+      <col />
+      <col style="width: 200px" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Dataset</th>
+        <th>Created</th>
+      </tr>
+    </thead>
     <tbody>
-      @for (d of rows(); track d.id) { <tr><td class="strong"><a class="plain arrow" [routerLink]="['/datasets', d.id]">{{ d.name }}</a></td><td class="muted">{{ rel(d.created_at) }}</td></tr> }
-      @empty { @if (!page.loading()) { <tr><td colspan="2" class="empty">No datasets. Import a <code>.jsonl</code> file to start.</td></tr> } }
+      @for (d of rows(); track d.id) {
+        <tr>
+          <td class="strong">
+            <a class="plain arrow" [routerLink]="['/datasets', d.id]">{{ d.name }}</a>
+          </td>
+          <td class="muted">{{ rel(d.created_at) }}</td>
+        </tr>
+      } @empty {
+        @if (!page.loading()) {
+          <tr>
+            <td colspan="2" class="empty">
+              No datasets. Import a <code>.jsonl</code> file to start.
+            </td>
+          </tr>
+        }
+      }
     </tbody>
   </table>
-  <assay-pager [total]="page.total()" [offset]="page.offset()" [limit]="page.limit()" (offsetChange)="page.go($event)" (limitChange)="page.size($event)" />
+  <assay-pager
+    [total]="page.total()"
+    [offset]="page.offset()"
+    [limit]="page.limit()"
+    (offsetChange)="page.go($event)"
+    (limitChange)="page.size($event)"
+  />
 </section>
 @if (dialog()) {
-  <assay-dialog kicker="Datasets" title="Import dataset" [primaryLabel]="busy() ? 'Importing…' : 'Import'" [primaryDisabled]="!path().trim() || !name().trim() || busy()" [error]="err()" (primary)="import()" (close)="dialog.set(false)">
-    <p class="muted" style="margin:0">Loads a <code>.jsonl</code> file from the server's filesystem. Each line needs <code>prompt</code>, <code>expected_output</code> and <code>model_output</code>; the whole file is rejected if any line is invalid.</p>
-    <div class="field"><label for="ds-name">Dataset name</label><input id="ds-name" class="input" [ngModel]="name()" (ngModelChange)="name.set($event)" placeholder="Support tickets — EN" autofocus></div>
-    <div class="field"><label for="ds-path">Path on server</label><input id="ds-path" class="input" [ngModel]="path()" (ngModelChange)="path.set($event)" placeholder="/data/support_en.jsonl"></div>
+  <assay-dialog
+    kicker="Datasets"
+    title="Import dataset"
+    [primaryLabel]="busy() ? 'Importing…' : 'Import'"
+    [primaryDisabled]="!path().trim() || !name().trim() || busy()"
+    [error]="err()"
+    (primary)="import()"
+    (close)="dialog.set(false)"
+  >
+    <p class="muted" style="margin: 0">
+      Loads a <code>.jsonl</code> file from the server's filesystem. Each line needs
+      <code>prompt</code>, <code>expected_output</code> and <code>model_output</code>; the whole
+      file is rejected if any line is invalid.
+    </p>
+    <div class="field">
+      <label for="ds-name">Dataset name</label
+      ><input
+        id="ds-name"
+        class="input"
+        [ngModel]="name()"
+        (ngModelChange)="name.set($event)"
+        placeholder="Support tickets - EN"
+        autofocus
+      />
+    </div>
+    <div class="field">
+      <label for="ds-path">Path on server</label
+      ><input
+        id="ds-path"
+        class="input"
+        [ngModel]="path()"
+        (ngModelChange)="path.set($event)"
+        placeholder="/data/support_en.jsonl"
+      />
+    </div>
   </assay-dialog>
 }

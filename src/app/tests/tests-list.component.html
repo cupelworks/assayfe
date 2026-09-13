@@ -1,29 +1,117 @@
 <div class="hero">
-  <div><div class="kicker">Catalog</div><h1>Tests</h1></div>
-  <div class="hero-actions"><button class="btn btn-primary" (click)="err.set(null); dlg.set('new')">New test</button></div>
+  <div>
+    <div class="kicker">Catalog</div>
+    <h1>Tests</h1>
+  </div>
+  <div class="hero-actions">
+    <button class="btn btn-primary" (click)="err.set(null); dlg.set('new')">New test</button>
+  </div>
 </div>
-@if (msg(); as m) { <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div> }
+@if (msg(); as m) {
+  <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
+}
 <section class="cell">
   <div class="toolbar">
-    <input class="input" placeholder="Filter…" [ngModel]="filter()" (ngModelChange)="filter.set($event)">
-    @if (selected().length) { <button class="btn btn-ghost btn-sm" (click)="err.set(null); dlg.set('delete')">Delete {{ selected().length }} selected</button> }
-    <span class="small">{{ filter() ? rows().length + ' shown on this page' : page.total() + ' total' }}</span>
+    <input
+      class="input"
+      placeholder="Filter…"
+      [ngModel]="filter()"
+      (ngModelChange)="filter.set($event)"
+    />
+    @if (selected().length) {
+      <button class="btn btn-ghost btn-sm" (click)="err.set(null); dlg.set('delete')">
+        Delete {{ selected().length }} selected
+      </button>
+    }
+    <span class="small">{{
+      filter() ? rows().length + ' shown on this page' : page.total() + ' total'
+    }}</span>
   </div>
   <table class="table">
-    <colgroup><col style="width:36px"><col style="width:26%"><col><col style="width:26%"></colgroup>
-    <thead><tr><th><input type="checkbox" class="chk" [checked]="allChecked()" (change)="toggleAll()"></th><th>Test</th><th>Input</th><th>Test types</th></tr></thead>
+    <colgroup>
+      <col style="width: 36px" />
+      <col style="width: 26%" />
+      <col />
+      <col style="width: 26%" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>
+          <input type="checkbox" class="chk" [checked]="allChecked()" (change)="toggleAll()" />
+        </th>
+        <th>Test</th>
+        <th>Input</th>
+        <th>Test types</th>
+      </tr>
+    </thead>
     <tbody>
       @for (t of rows(); track t.id) {
         <tr>
-          <td><input type="checkbox" class="chk" [checked]="selected().includes(t.id)" (change)="toggle(t.id)"></td>
-          <td class="strong"><a class="plain arrow" [routerLink]="['/tests', t.id]">{{ t.name || 'Untitled · ' + t.id.slice(0, 8) }}</a></td>
-          <td class="muted ellip" style="width:auto">{{ t.input }}</td>
-          <td>@if (t.test_type_names?.length) { <div class="tags">@for (x of t.test_type_names; track x) { <span class="tag tag-outline">{{ x }}</span> }</div> } @else { <span class="small">none — can't run</span> }</td>
+          <td>
+            <input
+              type="checkbox"
+              class="chk"
+              [checked]="selected().includes(t.id)"
+              (change)="toggle(t.id)"
+            />
+          </td>
+          <td class="strong">
+            <a class="plain arrow" [routerLink]="['/tests', t.id]">{{
+              t.name || 'Untitled · ' + t.id.slice(0, 8)
+            }}</a>
+          </td>
+          <td class="muted ellip" style="width: auto">{{ t.input }}</td>
+          <td>
+            @if (t.test_type_names?.length) {
+              <div class="tags">
+                @for (x of t.test_type_names; track x) {
+                  <span class="tag tag-outline">{{ x }}</span>
+                }
+              </div>
+            } @else {
+              <span class="small"
+                >none - <a class="plain" routerLink="/test-types">pick a type</a></span
+              >
+            }
+          </td>
         </tr>
-      } @empty { @if (!page.loading()) { <tr><td colspan="4" class="empty">No tests yet. Create one, or generate them from a dataset.</td></tr> } }
+      } @empty {
+        @if (!page.loading()) {
+          <tr>
+            <td colspan="4" class="empty">
+              No tests yet. Create one, or generate them from a dataset.
+            </td>
+          </tr>
+        }
+      }
     </tbody>
   </table>
-  <assay-pager [total]="page.total()" [offset]="page.offset()" [limit]="page.limit()" (offsetChange)="page.go($event)" (limitChange)="page.size($event)" />
+  <assay-pager
+    [total]="page.total()"
+    [offset]="page.offset()"
+    [limit]="page.limit()"
+    (offsetChange)="page.go($event)"
+    (limitChange)="page.size($event)"
+  />
 </section>
-@if (dlg() === 'new') { <assay-test-form-dialog kicker="Tests" [busy]="busy()" [error]="err()" (confirm)="create($event)" (closed)="dlg.set(null)" /> }
-@if (dlg() === 'delete') { <assay-confirm-dialog kicker="Tests" [title]="'Delete ' + selected().length + ' test' + (selected().length === 1 ? '' : 's') + '?'" body="Blocked (409) if any test is still in a test set or has runs — unlink or clean those up first." confirmLabel="Delete tests" [busy]="busy()" [error]="err()" (confirm)="remove()" (closed)="dlg.set(null)" /> }
+@if (dlg() === 'new') {
+  <assay-test-form-dialog
+    kicker="Tests"
+    [busy]="busy()"
+    [error]="err()"
+    (confirm)="create($event)"
+    (closed)="dlg.set(null)"
+  />
+}
+@if (dlg() === 'delete') {
+  <assay-confirm-dialog
+    kicker="Tests"
+    [title]="'Delete ' + selected().length + ' test' + (selected().length === 1 ? '' : 's') + '?'"
+    body="Blocked (409) if any test is still in a test set or has runs - unlink or clean those up first."
+    confirmLabel="Delete tests"
+    [busy]="busy()"
+    [error]="err()"
+    (confirm)="remove()"
+    (closed)="dlg.set(null)"
+  />
+}

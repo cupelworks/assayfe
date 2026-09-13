@@ -1,51 +1,206 @@
-<div class="crumbs"><a routerLink="/test-sets">Test sets</a><span>/</span><span class="cur">{{ name() }}</span></div>
+<div class="crumbs">
+  <a routerLink="/test-sets">Test sets</a><span>/</span><span class="cur">{{ name() }}</span>
+</div>
 <div class="hero">
-  <div><div class="kicker">Test set</div><h1>{{ name() }}</h1></div>
+  <div>
+    <div class="kicker">Test set</div>
+    <h1>{{ name() }}</h1>
+  </div>
   <div class="hero-actions">
     <button class="btn btn-ghost" (click)="open('rename')">Rename</button>
-    <button class="btn btn-ghost" (click)="open('delete')" [disabled]="hasRuns()" [title]="hasRuns() ? 'Blocked: entries have runs' : ''">Delete</button>
+    <button
+      class="btn btn-ghost"
+      (click)="open('delete')"
+      [disabled]="hasRuns()"
+      [title]="hasRuns() ? 'Blocked: entries have runs' : ''"
+    >
+      Delete
+    </button>
     <button class="btn btn-secondary" (click)="open('add')">Add tests</button>
-    <button class="btn btn-primary" (click)="runLive()" [disabled]="busy() || !page.total()">{{ busy() ? 'Working…' : 'Run live' }}</button>
+    <button class="btn btn-primary" (click)="runLive()" [disabled]="busy() || !page.total()">
+      {{ busy() ? 'Working…' : 'Run live' }}
+    </button>
   </div>
 </div>
-@if (msg(); as m) { <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div> }
+@if (msg(); as m) {
+  <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
+}
 <section class="split">
   <div class="cell cell-r">
     <div class="row-head">
       <h2>Entries</h2>
       <div class="tools">
         @if (selected().length) {
-          <button class="btn btn-ghost btn-sm" (click)="open('unlink')">Unlink {{ selected().length }}</button>
-          <button class="btn btn-ghost btn-sm" (click)="open('deleteEntries')">Delete {{ selected().length }}</button>
+          <button class="btn btn-ghost btn-sm" (click)="open('unlink')">
+            Unlink {{ selected().length }}
+          </button>
+          <button class="btn btn-ghost btn-sm" (click)="open('deleteEntries')">
+            Delete {{ selected().length }}
+          </button>
         }
         <span class="small">{{ page.total() }} frozen</span>
       </div>
     </div>
     <table class="table">
-      <colgroup><col style="width:36px"><col style="width:28%"><col><col style="width:24%"><col style="width:60px"></colgroup>
-      <thead><tr><th><input type="checkbox" class="chk" [checked]="allChecked()" (change)="toggleAll()"></th><th>Entry</th><th>Input</th><th>Test types</th><th></th></tr></thead>
+      <colgroup>
+        <col style="width: 36px" />
+        <col style="width: 28%" />
+        <col />
+        <col style="width: 24%" />
+        <col style="width: 60px" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th>
+            <input type="checkbox" class="chk" [checked]="allChecked()" (change)="toggleAll()" />
+          </th>
+          <th>Entry</th>
+          <th>Input</th>
+          <th>Test types</th>
+          <th></th>
+        </tr>
+      </thead>
       <tbody>
         @for (e of entries(); track e.id) {
           <tr>
-            <td><input type="checkbox" class="chk" [checked]="selected().includes(e.id)" (change)="toggle(e.id)"></td>
-            <td class="strong">{{ e.name || 'Untitled · ' + short(e.id) }}<div class="small">from <a class="plain" [routerLink]="['/tests', e.test_case_id.id]">test {{ short(e.test_case_id.id) }}</a></div></td>
-            <td class="muted ellip" style="width:auto">{{ e.input }}</td>
-            <td><div class="tags">@for (t of e.test_type_names ?? []; track t) { <span class="tag tag-outline">{{ t }}</span> } @empty { <span class="small">none</span> }</div></td>
-            <td><button class="btn btn-ghost btn-sm" (click)="open('editEntry', e)">Edit</button></td>
+            <td>
+              <input
+                type="checkbox"
+                class="chk"
+                [checked]="selected().includes(e.id)"
+                (change)="toggle(e.id)"
+              />
+            </td>
+            <td class="strong">
+              {{ e.name || 'Untitled · ' + short(e.id) }}
+              <div class="small">
+                from
+                <a class="plain" [routerLink]="['/tests', e.test_case_id.id]"
+                  >test {{ short(e.test_case_id.id) }}</a
+                >
+              </div>
+            </td>
+            <td class="muted ellip" style="width: auto">{{ e.input }}</td>
+            <td>
+              <div class="tags">
+                @for (t of e.test_type_names ?? []; track t) {
+                  <span class="tag tag-outline">{{ t }}</span>
+                } @empty {
+                  <span class="small">none</span>
+                }
+              </div>
+            </td>
+            <td>
+              <button class="btn btn-ghost btn-sm" (click)="open('editEntry', e)">Edit</button>
+            </td>
           </tr>
-        } @empty { @if (!page.loading()) { <tr><td colspan="5" class="empty">No entries — live execution returns 409 until tests are added.</td></tr> } }
+        } @empty {
+          @if (!page.loading()) {
+            <tr>
+              <td colspan="5" class="empty">
+                No entries - live execution returns 409 until tests are added.
+              </td>
+            </tr>
+          }
+        }
       </tbody>
     </table>
-    <assay-pager [total]="page.total()" [offset]="page.offset()" [limit]="page.limit()" (offsetChange)="selected.set([]); page.go($event)" (limitChange)="selected.set([]); page.size($event)" />
+    <assay-pager
+      [total]="page.total()"
+      [offset]="page.offset()"
+      [limit]="page.limit()"
+      (offsetChange)="selected.set([]); page.go($event)"
+      (limitChange)="selected.set([]); page.size($event)"
+    />
   </div>
-  <div class="cell"><assay-executions-panel kind="test-sets" [id]="id()" [version]="version()" [busy]="busy()" (replay)="replay($event)" /></div>
+  <div class="cell">
+    <assay-executions-panel
+      kind="test-sets"
+      [id]="id()"
+      [version]="version()"
+      [busy]="busy()"
+      (replay)="replay($event)"
+    />
+  </div>
 </section>
 
 @switch (dlg()) {
-  @case ('rename') { <assay-name-dialog [kicker]="name()" title="Rename test set" submitLabel="Rename" [initial]="name()" [busy]="busy()" [error]="err()" (confirm)="rename($event)" (closed)="dlg.set(null)" /> }
-  @case ('delete') { <assay-confirm-dialog [kicker]="name()" title="Delete this test set?" body="Removes the set and its entries. Blocked (409) if any entry has ever been run." confirmLabel="Delete test set" [busy]="busy()" [error]="err()" (confirm)="remove()" (closed)="dlg.set(null)" /> }
-  @case ('add') { <assay-pick-dialog [kicker]="name()" title="Add tests to set" [rows]="pickRows()" [submitLabel]="pickLabel" emptyText="No tests to add — create one first." [busy]="busy()" [error]="err()" (confirm)="add($event)" (closed)="dlg.set(null)" /> }
-  @case ('unlink') { <assay-confirm-dialog [kicker]="name()" [title]="'Unlink ' + selected().length + ' entr' + (selected().length === 1 ? 'y' : 'ies') + '?'" body="Non-destructive: clears membership in this set. Frozen content and any runs stay reachable through past executions." confirmLabel="Unlink" [danger]="false" [busy]="busy()" [error]="err()" (confirm)="unlink()" (closed)="dlg.set(null)" /> }
-  @case ('deleteEntries') { <assay-confirm-dialog [kicker]="name()" [title]="'Delete ' + selected().length + ' entr' + (selected().length === 1 ? 'y' : 'ies') + '?'" body="Permanently removes the frozen snapshots. Blocked (409) if any has been run — unlink instead. The originating live tests are not affected." confirmLabel="Delete entries" [busy]="busy()" [error]="err()" (confirm)="deleteEntries()" (closed)="dlg.set(null)" /> }
-  @case ('editEntry') { <assay-test-form-dialog [kicker]="name()" title="Edit frozen entry" submitLabel="Save entry" [initial]="editing()" [busy]="busy()" [error]="err()" (confirm)="saveEntry($event)" (closed)="dlg.set(null)" /> }
+  @case ('rename') {
+    <assay-name-dialog
+      [kicker]="name()"
+      title="Rename test set"
+      submitLabel="Rename"
+      [initial]="name()"
+      [busy]="busy()"
+      [error]="err()"
+      (confirm)="rename($event)"
+      (closed)="dlg.set(null)"
+    />
+  }
+  @case ('delete') {
+    <assay-confirm-dialog
+      [kicker]="name()"
+      title="Delete this test set?"
+      body="Removes the set and its entries. Blocked (409) if any entry has ever been run."
+      confirmLabel="Delete test set"
+      [busy]="busy()"
+      [error]="err()"
+      (confirm)="remove()"
+      (closed)="dlg.set(null)"
+    />
+  }
+  @case ('add') {
+    <assay-pick-dialog
+      [kicker]="name()"
+      title="Add tests to set"
+      [rows]="pickRows()"
+      [submitLabel]="pickLabel"
+      emptyText="No tests to add - create one first."
+      [busy]="busy()"
+      [error]="err()"
+      (confirm)="add($event)"
+      (closed)="dlg.set(null)"
+    />
+  }
+  @case ('unlink') {
+    <assay-confirm-dialog
+      [kicker]="name()"
+      [title]="
+        'Unlink ' + selected().length + ' entr' + (selected().length === 1 ? 'y' : 'ies') + '?'
+      "
+      body="Non-destructive: clears membership in this set. Frozen content and any runs stay reachable through past executions."
+      confirmLabel="Unlink"
+      [danger]="false"
+      [busy]="busy()"
+      [error]="err()"
+      (confirm)="unlink()"
+      (closed)="dlg.set(null)"
+    />
+  }
+  @case ('deleteEntries') {
+    <assay-confirm-dialog
+      [kicker]="name()"
+      [title]="
+        'Delete ' + selected().length + ' entr' + (selected().length === 1 ? 'y' : 'ies') + '?'
+      "
+      body="Permanently removes the frozen snapshots. Blocked (409) if any has been run - unlink instead. The originating live tests are not affected."
+      confirmLabel="Delete entries"
+      [busy]="busy()"
+      [error]="err()"
+      (confirm)="deleteEntries()"
+      (closed)="dlg.set(null)"
+    />
+  }
+  @case ('editEntry') {
+    <assay-test-form-dialog
+      [kicker]="name()"
+      title="Edit frozen entry"
+      submitLabel="Save entry"
+      [initial]="editing()"
+      [busy]="busy()"
+      [error]="err()"
+      (confirm)="saveEntry($event)"
+      (closed)="dlg.set(null)"
+    />
+  }
 }
