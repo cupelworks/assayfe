@@ -1,6 +1,6 @@
 import { Component, inject, input, signal, computed, effect } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { AssayApiService } from '../api/assay-api.service';
+import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { Kind, RunMetadata } from '../api/models';
 import { rel, short, countByStatus, statusColor, errText } from '../shared/format';
@@ -18,7 +18,7 @@ export class ExecutionComponent {
   kind = input.required<Kind>();
   id = input.required<string>();
   execId = input.required<string>();
-  api = inject(AssayApiService);
+  api = inject(RunsApiService);
   store = inject(CatalogStore);
   router = inject(Router);
   rel = rel;

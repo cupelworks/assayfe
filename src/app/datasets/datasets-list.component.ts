@@ -2,7 +2,7 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CatalogStore } from '../api/catalog.store';
-import { AssayApiService } from '../api/assay-api.service';
+import { DatasetsApiService } from '../api/datasets-api.service';
 import { rel, errText } from '../shared/format';
 import { DialogComponent } from '../shared/dialog/dialog.component';
 import { PagerComponent } from '../shared/pager.component';
@@ -18,7 +18,7 @@ import { DataSetMetadata } from '../api/models';
 })
 export class DatasetsListComponent {
   store = inject(CatalogStore);
-  api = inject(AssayApiService);
+  api = inject(DatasetsApiService);
   router = inject(Router);
   rel = rel;
   filter = signal('');

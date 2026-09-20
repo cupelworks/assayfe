@@ -1,7 +1,8 @@
 import { Component, inject, input, signal, computed, effect } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { AssayApiService } from '../api/assay-api.service';
+import { RunsApiService } from '../api/runs-api.service';
+import { TestsApiService } from '../api/tests-api.service';
 import { StandaloneRunDetails, TestCase } from '../api/models';
 import { short, errText } from '../shared/format';
 import { RunBodyComponent } from './run-body.component';
@@ -33,7 +34,8 @@ import { RunBodyComponent } from './run-body.component';
 export class StandaloneRunDetailComponent {
   id = input.required<string>();
   runId = input.required<string>();
-  api = inject(AssayApiService);
+  runsApi = inject(RunsApiService);
+  testsApi = inject(TestsApiService);
   short = short;
   run = signal<StandaloneRunDetails | null>(null);
   test = signal<TestCase | null>(null);
@@ -42,8 +44,8 @@ export class StandaloneRunDetailComponent {
   constructor() {
     effect(() =>
       forkJoin({
-        run: this.api.standaloneRun(this.id(), this.runId()),
-        test: this.api.test(this.id()),
+        run: this.runsApi.standaloneRun(this.id(), this.runId()),
+        test: this.testsApi.test(this.id()),
       }).subscribe({
         next: (r) => {
           this.run.set(r.run);

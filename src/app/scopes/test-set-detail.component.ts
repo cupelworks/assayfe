@@ -1,6 +1,7 @@
 import { Component, inject, input, signal, computed, effect } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { AssayApiService } from '../api/assay-api.service';
+import { TestSetsApiService } from '../api/test-sets-api.service';
+import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { TestCaseBody, TestSetEntry } from '../api/models';
 import { rel, short, errText } from '../shared/format';
@@ -31,12 +32,17 @@ type Dlg = null | 'rename' | 'delete' | 'add' | 'unlink' | 'deleteEntries' | 'ed
 })
 export class TestSetDetailComponent {
   id = input.required<string>();
-  api = inject(AssayApiService);
+  testSetsApi = inject(TestSetsApiService);
+  runsApi = inject(RunsApiService);
   store = inject(CatalogStore);
   router = inject(Router);
   rel = rel;
   short = short;
-  page = new Paged<TestSetEntry>((o, l) => this.api.testSetEntries(this.id(), o, l), 25, errText);
+  page = new Paged<TestSetEntry>(
+    (o, l) => this.testSetsApi.testSetEntries(this.id(), o, l),
+    25,
+    errText,
+  );
   entries = this.page.items;
   version = signal(0);
   selected = signal<string[]>([]);
@@ -112,25 +118,25 @@ export class TestSetDetailComponent {
     });
   }
   rename(n: string) {
-    this.run(this.api.renameTestSet(this.id(), n), () => `Renamed to “${n}”.`);
+    this.run(this.testSetsApi.renameTestSet(this.id(), n), () => `Renamed to “${n}”.`);
   }
   remove() {
     this.run(
-      this.api.deleteTestSet(this.id()),
+      this.testSetsApi.deleteTestSet(this.id()),
       () => 'Test set deleted.',
       () => this.router.navigate(['/test-sets']),
     );
   }
   add(ids: string[]) {
     this.run(
-      this.api.addTestsToSet(this.id(), ids),
+      this.testSetsApi.addTestsToSet(this.id(), ids),
       () => `Added ${ids.length} test${ids.length === 1 ? '' : 's'} as frozen entries.`,
     );
   }
   unlink() {
     const ids = this.selected();
     this.run(
-      this.api.unlinkEntries(this.id(), ids),
+      this.testSetsApi.unlinkEntries(this.id(), ids),
       () =>
         `Unlinked ${ids.length} entr${ids.length === 1 ? 'y' : 'ies'} - content and runs preserved.`,
     );
@@ -138,22 +144,25 @@ export class TestSetDetailComponent {
   deleteEntries() {
     const ids = this.selected();
     this.run(
-      this.api.deleteEntries(this.id(), ids),
+      this.testSetsApi.deleteEntries(this.id(), ids),
       () => `Deleted ${ids.length} entr${ids.length === 1 ? 'y' : 'ies'}.`,
     );
   }
   saveEntry(b: TestCaseBody) {
-    this.run(this.api.updateTestSetEntry(this.id(), this.editing()!.id, b), () => 'Entry updated.');
+    this.run(
+      this.testSetsApi.updateTestSetEntry(this.id(), this.editing()!.id, b),
+      () => 'Entry updated.',
+    );
   }
   runLive() {
     this.run(
-      this.api.runLive('test-sets', this.id()),
+      this.runsApi.runLive('test-sets', this.id()),
       (r) => `Enqueued ${r.run_count} pending runs.`,
     );
   }
   replay(execId: string) {
     this.run(
-      this.api.replay('test-sets', this.id(), execId),
+      this.runsApi.replay('test-sets', this.id(), execId),
       (r) => `Enqueued ${r.run_count} pending runs (replay of ${short(execId)}).`,
     );
   }

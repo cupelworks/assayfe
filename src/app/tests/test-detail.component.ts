@@ -1,6 +1,7 @@
 import { Component, inject, input, signal, computed, effect } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { AssayApiService } from '../api/assay-api.service';
+import { TestsApiService } from '../api/tests-api.service';
+import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { StandaloneRun, TestCase, TestCaseBody } from '../api/models';
 import { rel, short, errText, statusColor } from '../shared/format';
@@ -18,7 +19,8 @@ import { PagerComponent } from '../shared/pager.component';
 })
 export class TestDetailComponent {
   id = input.required<string>();
-  api = inject(AssayApiService);
+  testsApi = inject(TestsApiService);
+  runsApi = inject(RunsApiService);
   store = inject(CatalogStore);
   router = inject(Router);
   rel = rel;
@@ -26,7 +28,7 @@ export class TestDetailComponent {
   statusColor = statusColor;
   test = signal<TestCase | null>(null);
   runsPage = new Paged<StandaloneRun>(
-    (o, l) => this.api.standaloneRunsPage(this.id(), o, l),
+    (o, l) => this.runsApi.standaloneRunsPage(this.id(), o, l),
     10,
     errText,
   );
@@ -54,7 +56,7 @@ export class TestDetailComponent {
     });
   }
   load() {
-    this.api.test(this.id()).subscribe({
+    this.testsApi.test(this.id()).subscribe({
       next: (t) => this.test.set(t),
       error: (e) => this.msg.set({ ok: false, text: errText(e) }),
     });
@@ -63,7 +65,7 @@ export class TestDetailComponent {
   save(b: TestCaseBody) {
     this.busy.set(true);
     this.err.set(null);
-    this.api.updateTest(this.id(), b).subscribe({
+    this.testsApi.updateTest(this.id(), b).subscribe({
       next: () => {
         this.busy.set(false);
         this.dlg.set(null);
@@ -80,7 +82,7 @@ export class TestDetailComponent {
   remove() {
     this.busy.set(true);
     this.err.set(null);
-    this.api.deleteTests([this.id()]).subscribe({
+    this.testsApi.deleteTests([this.id()]).subscribe({
       next: () => {
         this.busy.set(false);
         this.store.load();
@@ -95,7 +97,7 @@ export class TestDetailComponent {
   run() {
     this.busy.set(true);
     this.msg.set(null);
-    this.api.runStandalone(this.id()).subscribe({
+    this.runsApi.runStandalone(this.id()).subscribe({
       next: (r) => {
         this.busy.set(false);
         this.msg.set({ ok: true, text: `Enqueued standalone run ${short(r.id)} - pending.` });

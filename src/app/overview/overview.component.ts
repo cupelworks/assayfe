@@ -1,7 +1,7 @@
 import { Component, inject, computed, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CatalogStore } from '../api/catalog.store';
-import { AssayApiService } from '../api/assay-api.service';
+import { TestsApiService } from '../api/tests-api.service';
 import { TestCaseBody } from '../api/models';
 import { rel, countByStatus, errText } from '../shared/format';
 import { TestFormDialogComponent } from '../shared/dialog/test-form-dialog.component';
@@ -15,7 +15,7 @@ import { TestFormDialogComponent } from '../shared/dialog/test-form-dialog.compo
 })
 export class OverviewComponent {
   store = inject(CatalogStore);
-  api = inject(AssayApiService);
+  api = inject(TestsApiService);
   rel = rel;
   newTest = signal(false);
   busy = signal(false);

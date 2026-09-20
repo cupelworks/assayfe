@@ -1,7 +1,11 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { forkJoin, of, switchMap, map } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { AssayApiService } from './assay-api.service';
+import { DatasetsApiService } from './datasets-api.service';
+import { TestsApiService } from './tests-api.service';
+import { TestSetsApiService } from './test-sets-api.service';
+import { TestPlansApiService } from './test-plans-api.service';
+import { RunsApiService } from './runs-api.service';
 import {
   DataSetMetadata,
   ExecutionMetadata,
@@ -21,7 +25,11 @@ export interface ExecRow extends ExecutionMetadata {
 /** Root store: catalogs + every execution (per set/plan) + runs of the newest 12 executions. Pages read signals; mutations call load(). */
 @Injectable({ providedIn: 'root' })
 export class CatalogStore {
-  private api = inject(AssayApiService);
+  private datasetsApi = inject(DatasetsApiService);
+  private testsApi = inject(TestsApiService);
+  private testSetsApi = inject(TestSetsApiService);
+  private testPlansApi = inject(TestPlansApiService);
+  private runsApi = inject(RunsApiService);
   loading = signal(true);
   error = signal<string | null>(null);
   datasets = signal<DataSetMetadata[]>([]);
@@ -44,13 +52,17 @@ export class CatalogStore {
   load() {
     this.loading.set(true);
     this.error.set(null);
-    this.api
-      .overview()
+    forkJoin({
+      datasets: this.datasetsApi.datasets().pipe(map((p) => p.items)),
+      tests: this.testsApi.tests().pipe(map((p) => p.test_cases)),
+      sets: this.testSetsApi.testSets().pipe(map((p) => p.items)),
+      plans: this.testPlansApi.testPlans().pipe(map((p) => p.items)),
+    })
       .pipe(
         switchMap((o) => {
           const reqs = [
             ...o.sets.map((s) =>
-              this.api.executions('test-sets', s.id).pipe(
+              this.runsApi.executions('test-sets', s.id).pipe(
                 map((x) =>
                   x.map((e) => ({
                     ...e,
@@ -63,7 +75,7 @@ export class CatalogStore {
               ),
             ),
             ...o.plans.map((p) =>
-              this.api.executions('test-plans', p.id).pipe(
+              this.runsApi.executions('test-plans', p.id).pipe(
                 map((x) =>
                   x.map((e) => ({
                     ...e,
@@ -88,7 +100,7 @@ export class CatalogStore {
         switchMap((o) => {
           const reqs = o.executions
             .slice(0, 12)
-            .map((e) => this.api.executionRuns(e.kind, e.parentId, e.id));
+            .map((e) => this.runsApi.executionRuns(e.kind, e.parentId, e.id));
           return (reqs.length ? forkJoin(reqs) : of([] as RunMetadata[][])).pipe(
             map((r) => ({ ...o, runs: r.flat() })),
           );

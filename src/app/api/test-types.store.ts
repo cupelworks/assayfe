@@ -1,5 +1,5 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { AssayApiService } from './assay-api.service';
+import { TestsApiService } from './tests-api.service';
 import { TestCategory, TestType } from './models';
 
 export const CATEGORIES: { key: TestCategory; label: string; blurb: string }[] = [
@@ -24,7 +24,7 @@ export const CATEGORIES: { key: TestCategory; label: string; blurb: string }[] =
 /** Test type catalogue, loaded once and shared by the catalogue page and every test form. */
 @Injectable({ providedIn: 'root' })
 export class TestTypesStore {
-  private api = inject(AssayApiService);
+  private api = inject(TestsApiService);
   all = signal<TestType[]>([]);
   loading = signal(false);
   loaded = signal(false);

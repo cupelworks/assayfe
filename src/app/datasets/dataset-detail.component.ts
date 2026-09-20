@@ -1,7 +1,8 @@
 import { Component, inject, input, signal, computed, effect } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { AssayApiService } from '../api/assay-api.service';
+import { DatasetsApiService } from '../api/datasets-api.service';
+import { TestsApiService } from '../api/tests-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { DataSetMetadata, DataSetRow, DataSetRowSchema } from '../api/models';
 import { rel, short, errText } from '../shared/format';
@@ -32,7 +33,8 @@ const EMPTY: DataSetRowSchema = { prompt: '', expected_output: '', model_output:
 })
 export class DatasetDetailComponent {
   id = input.required<string>();
-  api = inject(AssayApiService);
+  datasetsApi = inject(DatasetsApiService);
+  testsApi = inject(TestsApiService);
   store = inject(CatalogStore);
   router = inject(Router);
   rel = rel;
@@ -97,11 +99,11 @@ export class DatasetDetailComponent {
     });
   }
   load() {
-    this.api.dataset(this.id()).subscribe({
+    this.datasetsApi.dataset(this.id()).subscribe({
       next: (m) => this.meta.set(m),
       error: (e) => this.msg.set({ ok: false, text: errText(e) }),
     });
-    this.api.datasetRows(this.id(), this.offset(), this.limit()).subscribe({
+    this.datasetsApi.datasetRows(this.id(), this.offset(), this.limit()).subscribe({
       next: (p) => {
         this.rows.set(p.items);
         this.total.set(p.total);
@@ -158,31 +160,31 @@ export class DatasetDetailComponent {
     });
   }
   rename(n: string) {
-    this.run(this.api.renameDataset(this.id(), n), () => `Renamed to “${n}”.`);
+    this.run(this.datasetsApi.renameDataset(this.id(), n), () => `Renamed to “${n}”.`);
   }
   remove() {
     this.run(
-      this.api.deleteDataset(this.id()),
+      this.datasetsApi.deleteDataset(this.id()),
       (r) => `Deleted dataset (${(r as any).deleted?.n ?? 0} rows).`,
       () => this.router.navigate(['/datasets']),
     );
   }
   addRows() {
     this.run(
-      this.api.addDatasetRows(this.id(), this.parsedRows() as DataSetRowSchema[]),
+      this.datasetsApi.addDatasetRows(this.id(), this.parsedRows() as DataSetRowSchema[]),
       (r) => `Added ${(r as any).loaded.n} rows.`,
     );
   }
   replaceRows() {
     this.run(
-      this.api.replaceDatasetRows(this.id(), this.parsedRows() as DataSetRowSchema[]),
+      this.datasetsApi.replaceDatasetRows(this.id(), this.parsedRows() as DataSetRowSchema[]),
       (r) => `Replaced all rows - ${(r as any).loaded.n} loaded.`,
     );
   }
   deleteRows() {
     const ids = this.selected();
     this.run(
-      this.api.deleteDatasetRows(ids),
+      this.datasetsApi.deleteDatasetRows(ids),
       () =>
         `Deleted ${ids.length} row${ids.length === 1 ? '' : 's'}. Tests referencing them are unlinked, not deleted.`,
     );
@@ -190,13 +192,13 @@ export class DatasetDetailComponent {
   saveRow() {
     const r = this.editing()!;
     this.run(
-      this.api.updateDatasetRows([{ id: r.id, row_info: this.draft() }]),
+      this.datasetsApi.updateDatasetRows([{ id: r.id, row_info: this.draft() }]),
       () => 'Row updated.',
     );
   }
   toTests() {
     this.run(
-      this.api.createTestsFromDataset(this.id(), this.typeNames()),
+      this.testsApi.createTestsFromDataset(this.id(), this.typeNames()),
       (r) => `Created ${(r as any).test_cases.length} tests from this dataset.`,
       () => this.router.navigate(['/tests']),
     );

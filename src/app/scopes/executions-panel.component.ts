@@ -1,6 +1,6 @@
 import { Component, inject, input, output, effect } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AssayApiService } from '../api/assay-api.service';
+import { RunsApiService } from '../api/runs-api.service';
 import { ExecutionMetadata, Kind } from '../api/models';
 import { rel, short, errText } from '../shared/format';
 import { Paged } from '../shared/paged';
@@ -68,7 +68,7 @@ export class ExecutionsPanelComponent {
   /** Bump to force a reload after run live / replay. */
   version = input(0);
   replay = output<string>();
-  private api = inject(AssayApiService);
+  private api = inject(RunsApiService);
   rel = rel;
   short = short;
   page = new Paged<ExecutionMetadata>(

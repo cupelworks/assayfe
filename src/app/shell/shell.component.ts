@@ -2,7 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CatalogStore } from '../api/catalog.store';
 import { ThemeService } from '../theme/theme.service';
-import { AssayApiService } from '../api/assay-api.service';
+import { ASSAY_API_BASE } from '../api/api-base.token';
 @Component({
   selector: 'assay-shell',
   standalone: true,
@@ -13,7 +13,7 @@ import { AssayApiService } from '../api/assay-api.service';
 export class ShellComponent implements OnInit {
   store = inject(CatalogStore);
   theme = inject(ThemeService);
-  apiBase = inject(AssayApiService).base;
+  apiBase = inject(ASSAY_API_BASE).replace(/\/$/, '');
   ngOnInit() {
     this.store.load();
   }

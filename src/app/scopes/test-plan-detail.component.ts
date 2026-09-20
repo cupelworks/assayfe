@@ -1,7 +1,9 @@
 import { Component, inject, input, signal, computed, effect } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { forkJoin, map } from 'rxjs';
-import { AssayApiService } from '../api/assay-api.service';
+import { TestPlansApiService } from '../api/test-plans-api.service';
+import { TestSetsApiService } from '../api/test-sets-api.service';
+import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { TestPlanEntry, TestSetEntry } from '../api/models';
 import { rel, short, errText } from '../shared/format';
@@ -30,12 +32,18 @@ type Dlg = null | 'rename' | 'delete' | 'link' | 'unlink';
 })
 export class TestPlanDetailComponent {
   id = input.required<string>();
-  api = inject(AssayApiService);
+  testPlansApi = inject(TestPlansApiService);
+  testSetsApi = inject(TestSetsApiService);
+  runsApi = inject(RunsApiService);
   store = inject(CatalogStore);
   router = inject(Router);
   rel = rel;
   short = short;
-  page = new Paged<TestPlanEntry>((o, l) => this.api.testPlanEntries(this.id(), o, l), 25, errText);
+  page = new Paged<TestPlanEntry>(
+    (o, l) => this.testPlansApi.testPlanEntries(this.id(), o, l),
+    25,
+    errText,
+  );
   links = this.page.items;
   version = signal(0);
   entryCounts = signal<Record<string, number>>({});
@@ -78,7 +86,7 @@ export class TestPlanDetailComponent {
       }
       forkJoin(
         links.map((l) =>
-          this.api
+          this.testSetsApi
             .testSetEntries(l.test_set.id, 0, 1)
             .pipe(map((p) => [l.test_set.id, p.total] as [string, number])),
         ),
@@ -114,37 +122,37 @@ export class TestPlanDetailComponent {
     });
   }
   rename(n: string) {
-    this.run(this.api.renameTestPlan(this.id(), n), () => `Renamed to “${n}”.`);
+    this.run(this.testPlansApi.renameTestPlan(this.id(), n), () => `Renamed to “${n}”.`);
   }
   remove() {
     this.run(
-      this.api.deleteTestPlan(this.id()),
+      this.testPlansApi.deleteTestPlan(this.id()),
       () => 'Test plan deleted.',
       () => this.router.navigate(['/test-plans']),
     );
   }
   link(ids: string[]) {
     this.run(
-      this.api.linkSetsToPlan(this.id(), ids),
+      this.testPlansApi.linkSetsToPlan(this.id(), ids),
       () => `Linked ${ids.length} test set${ids.length === 1 ? '' : 's'}.`,
     );
   }
   unlink() {
     const s = this.unlinkTarget()!.test_set;
     this.run(
-      this.api.unlinkSetsFromPlan(this.id(), [s.id]),
+      this.testPlansApi.unlinkSetsFromPlan(this.id(), [s.id]),
       () => `Removed “${s.name}” from this plan.`,
     );
   }
   runLive() {
     this.run(
-      this.api.runLive('test-plans', this.id()),
+      this.runsApi.runLive('test-plans', this.id()),
       (r) => `Enqueued ${r.run_count} pending runs.`,
     );
   }
   replay(execId: string) {
     this.run(
-      this.api.replay('test-plans', this.id(), execId),
+      this.runsApi.replay('test-plans', this.id(), execId),
       (r) => `Enqueued ${r.run_count} pending runs (replay of ${short(execId)}).`,
     );
   }

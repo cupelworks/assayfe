@@ -2,7 +2,7 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CatalogStore } from '../api/catalog.store';
-import { AssayApiService } from '../api/assay-api.service';
+import { TestsApiService } from '../api/tests-api.service';
 import { TestCase, TestCaseBody } from '../api/models';
 import { PagerComponent } from '../shared/pager.component';
 import { Paged } from '../shared/paged';
@@ -25,7 +25,7 @@ import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.componen
 })
 export class TestsListComponent {
   store = inject(CatalogStore);
-  api = inject(AssayApiService);
+  api = inject(TestsApiService);
   filter = signal('');
   selected = signal<string[]>([]);
   dlg = signal<null | 'new' | 'delete'>(null);
