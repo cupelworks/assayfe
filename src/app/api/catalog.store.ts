@@ -15,8 +15,14 @@ import {
   TestCase,
 } from './models';
 
-/** How many of the newest executions feed "Recent executions" and the "Run status" sample on the overview page. */
+/** How many of the newest executions the "Recent executions" table on the overview page shows. */
 export const RECENT_EXECUTIONS_LIMIT = 10;
+/**
+ * How many of the newest executions' runs feed the "Run status" sample on the overview page.
+ * Independent of RECENT_EXECUTIONS_LIMIT - a placeholder until a dedicated "latest N runs"
+ * endpoint replaces this per-execution fetch.
+ */
+export const RUN_STATUS_SAMPLE_LIMIT = 10;
 
 export interface ExecRow extends ExecutionMetadata {
   kind: Kind;
@@ -25,7 +31,7 @@ export interface ExecRow extends ExecutionMetadata {
   target: string;
 }
 
-/** Root store: catalogs + every execution (per set/plan) + runs of the newest 12 executions. Pages read signals; mutations call load(). */
+/** Root store: catalogs + every execution (per set/plan) + a run-status sample. Pages read signals; mutations call load(). */
 @Injectable({ providedIn: 'root' })
 export class CatalogStore {
   private datasetsApi = inject(DatasetsApiService);
@@ -102,7 +108,7 @@ export class CatalogStore {
         }),
         switchMap((o) => {
           const reqs = o.executions
-            .slice(0, RECENT_EXECUTIONS_LIMIT)
+            .slice(0, RUN_STATUS_SAMPLE_LIMIT)
             .map((e) => this.runsApi.executionRuns(e.kind, e.parentId, e.id));
           return (reqs.length ? forkJoin(reqs) : of([] as RunMetadata[][])).pipe(
             map((r) => ({ ...o, runs: r.flat() })),
