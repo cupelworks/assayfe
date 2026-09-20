@@ -100,7 +100,8 @@
   <div class="cell">
     <h2>Run status</h2>
     <p class="hero-note" style="margin-bottom: 20px">
-      Runs are enqueued only - they stay <em>Pending</em> until the worker picks them up.
+      Status breakdown of the last {{ runStatusLimit }} runs, across every test, test set, and test
+      plan.
     </p>
     <div class="bar">
       @for (b of bars(); track b.color) {
