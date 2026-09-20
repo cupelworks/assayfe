@@ -48,4 +48,15 @@ export class RunsApiService extends ApiBase {
       this.u(`/runs/${kind}/${id}/executions/${execId}/test-runs/${runId}`),
     );
   }
+
+  // ---- run (all) ----
+  /** Every run in the system regardless of origin, newest first. */
+  latestRunsPage(offset = 0, limit = 100) {
+    return this.http.get<M.Page<M.AnyRunMetadata>>(this.u('/runs'), {
+      params: PAGE(offset, limit),
+    });
+  }
+  latestRuns(limit = 100) {
+    return this.safe(this.items(this.latestRunsPage(0, limit)));
+  }
 }

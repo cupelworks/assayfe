@@ -117,6 +117,18 @@ export interface StandaloneRunDetails extends StandaloneRun {
   error: string | null;
   scores: Record<string, number> | null;
 }
+export type RunOrigin = 'Standalone' | 'TestSet' | 'TestPlan';
+/** A row from GET /runs - every run in the system, regardless of origin. Only the ID field(s) `origin` implies are non-null. */
+export interface AnyRunMetadata {
+  id: string;
+  status: TestStatus;
+  created_at: string;
+  origin: RunOrigin;
+  test_case_id?: Ref | null;
+  test_set_entry_id?: Ref | null;
+  test_set_execution_id?: Ref | null;
+  test_plan_execution_id?: Ref | null;
+}
 
 // Test types catalogue
 export type TestCategory = 'deterministic' | 'nlp_metric' | 'llm_as_judge';

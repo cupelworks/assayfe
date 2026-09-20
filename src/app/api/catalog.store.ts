@@ -7,22 +7,18 @@ import { TestSetsApiService } from './test-sets-api.service';
 import { TestPlansApiService } from './test-plans-api.service';
 import { RunsApiService } from './runs-api.service';
 import {
+  AnyRunMetadata,
   DataSetMetadata,
   ExecutionMetadata,
   Kind,
-  RunMetadata,
   ScopeMetadata,
   TestCase,
 } from './models';
 
 /** How many of the newest executions the "Recent executions" table on the overview page shows. */
 export const RECENT_EXECUTIONS_LIMIT = 10;
-/**
- * How many of the newest executions' runs feed the "Run status" sample on the overview page.
- * Independent of RECENT_EXECUTIONS_LIMIT - a placeholder until a dedicated "latest N runs"
- * endpoint replaces this per-execution fetch.
- */
-export const RUN_STATUS_SAMPLE_LIMIT = 10;
+/** How many of the newest runs (any origin) feed the "Run status" sample on the overview page. */
+export const RUN_STATUS_SAMPLE_LIMIT = 500;
 
 export interface ExecRow extends ExecutionMetadata {
   kind: Kind;
@@ -46,7 +42,7 @@ export class CatalogStore {
   sets = signal<ScopeMetadata[]>([]);
   plans = signal<ScopeMetadata[]>([]);
   executions = signal<ExecRow[]>([]);
-  recentRuns = signal<RunMetadata[]>([]);
+  recentRuns = signal<AnyRunMetadata[]>([]);
   statusLabel = computed(() =>
     this.loading() ? 'Connecting…' : this.error() ? 'API unreachable' : 'Connected',
   );
@@ -66,6 +62,7 @@ export class CatalogStore {
       tests: this.testsApi.tests().pipe(map((p) => p.test_cases)),
       sets: this.testSetsApi.testSets().pipe(map((p) => p.items)),
       plans: this.testPlansApi.testPlans().pipe(map((p) => p.items)),
+      runs: this.runsApi.latestRuns(RUN_STATUS_SAMPLE_LIMIT),
     })
       .pipe(
         switchMap((o) => {
@@ -104,14 +101,6 @@ export class CatalogStore {
                 .flat()
                 .sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)),
             })),
-          );
-        }),
-        switchMap((o) => {
-          const reqs = o.executions
-            .slice(0, RUN_STATUS_SAMPLE_LIMIT)
-            .map((e) => this.runsApi.executionRuns(e.kind, e.parentId, e.id));
-          return (reqs.length ? forkJoin(reqs) : of([] as RunMetadata[][])).pipe(
-            map((r) => ({ ...o, runs: r.flat() })),
           );
         }),
       )
