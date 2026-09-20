@@ -15,6 +15,9 @@ import {
   TestCase,
 } from './models';
 
+/** How many of the newest executions feed "Recent executions" and the "Run status" sample on the overview page. */
+export const RECENT_EXECUTIONS_LIMIT = 10;
+
 export interface ExecRow extends ExecutionMetadata {
   kind: Kind;
   parentId: string;
@@ -99,7 +102,7 @@ export class CatalogStore {
         }),
         switchMap((o) => {
           const reqs = o.executions
-            .slice(0, 12)
+            .slice(0, RECENT_EXECUTIONS_LIMIT)
             .map((e) => this.runsApi.executionRuns(e.kind, e.parentId, e.id));
           return (reqs.length ? forkJoin(reqs) : of([] as RunMetadata[][])).pipe(
             map((r) => ({ ...o, runs: r.flat() })),

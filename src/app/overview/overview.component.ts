@@ -1,6 +1,6 @@
 import { Component, inject, computed, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CatalogStore } from '../api/catalog.store';
+import { CatalogStore, RECENT_EXECUTIONS_LIMIT } from '../api/catalog.store';
 import { TestsApiService } from '../api/tests-api.service';
 import { TestCaseBody } from '../api/models';
 import { rel, countByStatus, errText } from '../shared/format';
@@ -28,7 +28,8 @@ export class OverviewComponent {
       .filter((s) => s.value)
       .map((s) => ({ color: s.color, pct: (s.value / t) * 100 + '%' }));
   });
-  recent = computed(() => this.store.executions().slice(0, 12));
+  recentLimit = RECENT_EXECUTIONS_LIMIT;
+  recent = computed(() => this.store.executions().slice(0, RECENT_EXECUTIONS_LIMIT));
   create(b: TestCaseBody) {
     this.busy.set(true);
     this.err.set(null);
