@@ -86,7 +86,7 @@
             <td class="muted">{{ rel(e.created_at) }}</td>
           </tr>
         } @empty {
-          @if (!store.loading()) {
+          @if (!store.executionsLoading()) {
             <tr>
               <td colspan="5" class="empty">
                 No executions yet - open a test set or plan and run it live.

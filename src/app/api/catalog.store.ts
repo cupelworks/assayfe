@@ -1,5 +1,5 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { forkJoin, of, switchMap, map } from 'rxjs';
+import { forkJoin, of, map } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DatasetsApiService } from './datasets-api.service';
 import { TestsApiService } from './tests-api.service';
@@ -35,8 +35,13 @@ export class CatalogStore {
   private testSetsApi = inject(TestSetsApiService);
   private testPlansApi = inject(TestPlansApiService);
   private runsApi = inject(RunsApiService);
+  /** Catalog (datasets/tests/sets/plans) loading/error - drives the shell's connection status. */
   loading = signal(true);
   error = signal<string | null>(null);
+  /** Independent of `loading`: true while the per-scope executions fetch is in flight. */
+  executionsLoading = signal(true);
+  /** Independent of `loading`: true while the global run-status sample is in flight. */
+  runsLoading = signal(true);
   datasets = signal<DataSetMetadata[]>([]);
   tests = signal<TestCase[]>([]);
   sets = signal<ScopeMetadata[]>([]);
@@ -54,7 +59,13 @@ export class CatalogStore {
     return (kind === 'test-sets' ? this.sets() : this.plans()).find((x) => x.id === id);
   }
 
+  /** Three independent pipelines: catalog, executions (needs the sets/plans catalog loaded first), and the run-status sample. None blocks the others. */
   load() {
+    this.loadCatalog();
+    this.loadRunStatus();
+  }
+
+  private loadCatalog() {
     this.loading.set(true);
     this.error.set(null);
     forkJoin({
@@ -62,62 +73,67 @@ export class CatalogStore {
       tests: this.testsApi.tests().pipe(map((p) => p.test_cases)),
       sets: this.testSetsApi.testSets().pipe(map((p) => p.items)),
       plans: this.testPlansApi.testPlans().pipe(map((p) => p.items)),
-      runs: this.runsApi.latestRuns(RUN_STATUS_SAMPLE_LIMIT),
-    })
-      .pipe(
-        switchMap((o) => {
-          const reqs = [
-            ...o.sets.map((s) =>
-              this.runsApi.executions('test-sets', s.id).pipe(
-                map((x) =>
-                  x.map((e) => ({
-                    ...e,
-                    kind: 'test-sets' as Kind,
-                    parentId: s.id,
-                    scope: 'Test set' as const,
-                    target: s.name,
-                  })),
-                ),
-              ),
-            ),
-            ...o.plans.map((p) =>
-              this.runsApi.executions('test-plans', p.id).pipe(
-                map((x) =>
-                  x.map((e) => ({
-                    ...e,
-                    kind: 'test-plans' as Kind,
-                    parentId: p.id,
-                    scope: 'Test plan' as const,
-                    target: p.name,
-                  })),
-                ),
-              ),
-            ),
-          ];
-          return (reqs.length ? forkJoin(reqs) : of([] as ExecRow[][])).pipe(
-            map((ex) => ({
-              ...o,
-              executions: ex
-                .flat()
-                .sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)),
+    }).subscribe({
+      next: (o) => {
+        this.datasets.set(o.datasets);
+        this.tests.set(o.tests);
+        this.sets.set(o.sets);
+        this.plans.set(o.plans);
+        this.loading.set(false);
+        this.loadExecutions(o.sets, o.plans);
+      },
+      error: (e: HttpErrorResponse) => {
+        this.error.set(e.message);
+        this.loading.set(false);
+      },
+    });
+  }
+
+  private loadExecutions(sets: ScopeMetadata[], plans: ScopeMetadata[]) {
+    this.executionsLoading.set(true);
+    const reqs = [
+      ...sets.map((s) =>
+        this.runsApi.executions('test-sets', s.id).pipe(
+          map((x) =>
+            x.map((e) => ({
+              ...e,
+              kind: 'test-sets' as Kind,
+              parentId: s.id,
+              scope: 'Test set' as const,
+              target: s.name,
             })),
-          );
-        }),
+          ),
+        ),
+      ),
+      ...plans.map((p) =>
+        this.runsApi.executions('test-plans', p.id).pipe(
+          map((x) =>
+            x.map((e) => ({
+              ...e,
+              kind: 'test-plans' as Kind,
+              parentId: p.id,
+              scope: 'Test plan' as const,
+              target: p.name,
+            })),
+          ),
+        ),
+      ),
+    ];
+    (reqs.length ? forkJoin(reqs) : of([] as ExecRow[][]))
+      .pipe(
+        map((ex) => ex.flat().sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at))),
       )
-      .subscribe({
-        next: (o) => {
-          this.datasets.set(o.datasets);
-          this.tests.set(o.tests);
-          this.sets.set(o.sets);
-          this.plans.set(o.plans);
-          this.executions.set(o.executions);
-          this.recentRuns.set(o.runs);
-          this.loading.set(false);
-        },
-        error: (e: HttpErrorResponse) => {
-          this.error.set(e.message);
-          this.loading.set(false);
-        },
+      .subscribe((executions) => {
+        this.executions.set(executions);
+        this.executionsLoading.set(false);
       });
+  }
+
+  private loadRunStatus() {
+    this.runsLoading.set(true);
+    this.runsApi.latestRuns(RUN_STATUS_SAMPLE_LIMIT).subscribe((runs) => {
+      this.recentRuns.set(runs);
+      this.runsLoading.set(false);
+    });
   }
 }
