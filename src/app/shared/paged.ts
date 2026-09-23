@@ -1,4 +1,4 @@
-import { signal } from '@angular/core';
+import { signal, WritableSignal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Page } from '../api/models';
 
@@ -7,7 +7,7 @@ export class Paged<T> {
   items = signal<T[]>([]);
   total = signal(0);
   offset = signal(0);
-  limit = signal(50);
+  limit: WritableSignal<number>;
   loading = signal(false);
   error = signal<string | null>(null);
   constructor(
@@ -15,7 +15,7 @@ export class Paged<T> {
     limit = 25,
     private onError?: (e: unknown) => string,
   ) {
-    this.limit.set(limit);
+    this.limit = signal(limit);
   }
   reload() {
     this.loading.set(true);

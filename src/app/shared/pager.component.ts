@@ -8,13 +8,9 @@ import { Component, input, output, computed } from '@angular/core';
       <span>{{ label() }}</span>
       <label class="ps"
         >Per page
-        <select
-          class="input"
-          [value]="limit()"
-          (change)="limitChange.emit(+$any($event.target).value)"
-        >
+        <select class="input" (change)="limitChange.emit(+$any($event.target).value)">
           @for (n of sizes; track n) {
-            <option [value]="n">{{ n }}</option>
+            <option [value]="n" [selected]="n === limit()">{{ n }}</option>
           }
         </select>
       </label>
