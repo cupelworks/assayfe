@@ -76,6 +76,10 @@ export class TestSetDetailComponent {
   pickLabel = (n: number) => `Add ${n || ''} as frozen entries`;
 
   constructor() {
+    // tests: "Add tests" picker. sets: this set's own name (store.parent). executions: hasRuns guard.
+    this.store.loadTests();
+    this.store.loadSets();
+    this.store.loadExecutions();
     effect(() => {
       this.id();
       this.page.reset();

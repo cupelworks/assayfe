@@ -41,11 +41,13 @@ export class ExecutionComponent {
   statuses = computed(() => countByStatus(this.runs()));
   constructor() {
     effect(() => {
-      this.kind();
+      // This scope's own name (store.parent) - only sets or plans is needed, by kind.
+      this.kind() === 'test-sets' ? this.store.loadSets() : this.store.loadPlans();
       this.id();
       this.execId();
       this.page.reset();
     });
+    this.store.loadExecutions(); // exec() lookup via store.byParent
   }
   replay() {
     this.busy.set(true);

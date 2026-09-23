@@ -48,10 +48,12 @@ export class RunDetailComponent {
   kindLabel = computed(() => (this.kind() === 'test-sets' ? 'Test set' : 'Test plan'));
   name = computed(() => this.store.parent(this.kind(), this.id())?.name ?? short(this.id()));
   constructor() {
-    effect(() =>
+    effect(() => {
+      // This scope's own name (store.parent) - only sets or plans is needed, by kind.
+      this.kind() === 'test-sets' ? this.store.loadSets() : this.store.loadPlans();
       this.api
         .runDetails(this.kind(), this.id(), this.execId(), this.runId())
-        .subscribe({ next: (r) => this.run.set(r), error: (e) => this.err.set(errText(e)) }),
-    );
+        .subscribe({ next: (r) => this.run.set(r), error: (e) => this.err.set(errText(e)) });
+    });
   }
 }

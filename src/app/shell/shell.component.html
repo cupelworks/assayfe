@@ -13,32 +13,11 @@
       <a routerLink="/guide" routerLinkActive="active">Guide</a>
     </nav>
     <div class="conn">
-      <span
-        class="dot"
-        [style.background]="
-          store.loading()
-            ? 'var(--color-neutral-400)'
-            : store.error()
-              ? 'var(--color-accent)'
-              : 'var(--color-text)'
-        "
-      ></span>
-      <span class="text-muted conn-label">{{ store.statusLabel() }}</span>
-      <button class="btn btn-secondary btn-sm" (click)="store.load()">Refresh</button>
       <button class="btn btn-ghost btn-sm" (click)="theme.toggle()">
         {{ theme.isDark() ? 'Light' : 'Dark' }}
       </button>
     </div>
   </header>
-  @if (store.error() && !store.loading()) {
-    <div class="banner">
-      <div>
-        <strong>Could not reach the Assay API.</strong>
-        <span>Check the server is running and CORS allows this origin. {{ store.error() }}</span>
-      </div>
-      <code>{{ apiBase }}</code>
-    </div>
-  }
   <router-outlet />
   <footer class="foot text-muted">
     <span><a [href]="apiBase + '/docs'" target="_blank" rel="noopener">API documentation</a></span

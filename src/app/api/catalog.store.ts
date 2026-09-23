@@ -1,6 +1,4 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { forkJoin, map } from 'rxjs';
-import { HttpErrorResponse } from '@angular/common/http';
 import { DatasetsApiService } from './datasets-api.service';
 import { TestsApiService } from './tests-api.service';
 import { TestSetsApiService } from './test-sets-api.service';
@@ -17,13 +15,19 @@ import {
   TestCase,
 } from './models';
 
-/**
- * How many of the newest test-set/test-plan executions CatalogStore fetches and the "Recent
- * executions" table on the overview page shows - the fetch and the display are the same size,
- * so this also bounds the byParent()/hasRuns() lookups other pages use to predict 409s (a scope
- * whose most recent execution isn't in this window reads as "no runs" until it 409s for real).
- */
+/** How many of the newest test-set/test-plan executions the Overview table displays. */
 export const RECENT_EXECUTIONS_LIMIT = 10;
+/**
+ * How many of the newest test-set/test-plan executions CatalogStore actually fetches -
+ * independent of RECENT_EXECUTIONS_LIMIT (Overview only ever shows the first 10 of these).
+ * Matches PagerComponent's largest page size (50): the scopes list's "Executions" column
+ * (byParent() per row) needs the sample to cover at least as many executions as a full page
+ * of test sets/plans can show, or most rows beyond the first few read 0 even when they
+ * genuinely have runs. Still not a hard guarantee - a handful of very active scopes can still
+ * crowd a quieter one out of this global sample - but it's aligned with the UI's own limits
+ * instead of an arbitrary smaller number picked for Overview alone.
+ */
+export const EXECUTIONS_SAMPLE_LIMIT = 50;
 /** How many of the newest runs (any origin) feed the "Run status" sample on the overview page. */
 export const RUN_STATUS_SAMPLE_LIMIT = 500;
 
@@ -34,7 +38,13 @@ export interface ExecRow extends ExecutionMetadata {
   target: string;
 }
 
-/** Root store: catalogs + every execution (per set/plan) + a run-status sample. Pages read signals; mutations call load(). */
+/**
+ * Root store: catalogs + every execution (per set/plan) + a run-status sample - but nothing
+ * loads itself. Every field has its own independent load*() method; pages call only the ones
+ * they actually read from, in their own ngOnInit()/constructor. There is no app-wide bootstrap
+ * fetch here - the shell doesn't touch this store at all, so visiting any page only ever
+ * triggers what that specific page needs.
+ */
 @Injectable({ providedIn: 'root' })
 export class CatalogStore {
   private datasetsApi = inject(DatasetsApiService);
@@ -42,13 +52,6 @@ export class CatalogStore {
   private testSetsApi = inject(TestSetsApiService);
   private testPlansApi = inject(TestPlansApiService);
   private runsApi = inject(RunsApiService);
-  /** Catalog (datasets/tests/sets/plans) loading/error - drives the shell's connection status. */
-  loading = signal(true);
-  error = signal<string | null>(null);
-  /** Independent of `loading`: true while the global executions sample is in flight. */
-  executionsLoading = signal(true);
-  /** Independent of `loading`: true while the global run-status sample is in flight. */
-  runsLoading = signal(true);
   datasets = signal<DataSetMetadata[]>([]);
   tests = signal<TestCase[]>([]);
   sets = signal<ScopeMetadata[]>([]);
@@ -56,10 +59,11 @@ export class CatalogStore {
   private rawExecutions = signal<AnyExecutionMetadata[]>([]);
   /** Joins the raw GET /runs/executions rows against sets()/plans() for a display name - reactive to either changing. */
   executions = computed<ExecRow[]>(() => this.rawExecutions().map((e) => this.toExecRow(e)));
+  /** Independent of every other loading flag: true while the global executions sample is in flight. */
+  executionsLoading = signal(true);
   recentRuns = signal<AnyRunMetadata[]>([]);
-  statusLabel = computed(() =>
-    this.loading() ? 'Connecting…' : this.error() ? 'API unreachable' : 'Connected',
-  );
+  /** Independent of every other loading flag: true while the global run-status sample is in flight. */
+  runsLoading = signal(true);
 
   byParent(kind: Kind, id: string) {
     return this.executions().filter((e) => e.kind === kind && e.parentId === id);
@@ -68,45 +72,45 @@ export class CatalogStore {
     return (kind === 'test-sets' ? this.sets() : this.plans()).find((x) => x.id === id);
   }
 
-  /** Three independent pipelines: catalog, executions, and the run-status sample. None blocks the others. */
+  /** Everything - used only by OverviewComponent, which reads every field. */
   load() {
-    this.loadCatalog();
+    this.loadDatasets();
+    this.loadTests();
+    this.loadSets();
+    this.loadPlans();
     this.loadExecutions();
     this.loadRunStatus();
   }
 
-  private loadCatalog() {
-    this.loading.set(true);
-    this.error.set(null);
-    forkJoin({
-      datasets: this.datasetsApi.datasets().pipe(map((p) => p.items)),
-      tests: this.testsApi.tests().pipe(map((p) => p.test_cases)),
-      sets: this.testSetsApi.testSets().pipe(map((p) => p.items)),
-      plans: this.testPlansApi.testPlans().pipe(map((p) => p.items)),
-    }).subscribe({
-      next: (o) => {
-        this.datasets.set(o.datasets);
-        this.tests.set(o.tests);
-        this.sets.set(o.sets);
-        this.plans.set(o.plans);
-        this.loading.set(false);
-      },
-      error: (e: HttpErrorResponse) => {
-        this.error.set(e.message);
-        this.loading.set(false);
-      },
-    });
+  loadDatasets() {
+    this.datasetsApi
+      .datasets()
+      .subscribe({ next: (p) => this.datasets.set(p.items), error: () => {} });
   }
 
-  private loadExecutions() {
+  loadTests() {
+    this.testsApi.tests().subscribe({ next: (p) => this.tests.set(p.test_cases), error: () => {} });
+  }
+
+  loadSets() {
+    this.testSetsApi.testSets().subscribe({ next: (p) => this.sets.set(p.items), error: () => {} });
+  }
+
+  loadPlans() {
+    this.testPlansApi
+      .testPlans()
+      .subscribe({ next: (p) => this.plans.set(p.items), error: () => {} });
+  }
+
+  loadExecutions() {
     this.executionsLoading.set(true);
-    this.runsApi.latestExecutions(RECENT_EXECUTIONS_LIMIT).subscribe((executions) => {
+    this.runsApi.latestExecutions(EXECUTIONS_SAMPLE_LIMIT).subscribe((executions) => {
       this.rawExecutions.set(executions);
       this.executionsLoading.set(false);
     });
   }
 
-  private loadRunStatus() {
+  loadRunStatus() {
     this.runsLoading.set(true);
     this.runsApi.latestRuns(RUN_STATUS_SAMPLE_LIMIT).subscribe((runs) => {
       this.recentRuns.set(runs);

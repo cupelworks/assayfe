@@ -44,6 +44,8 @@ export class ScopesListComponent {
       .map((s) => ({ ...s, execs: this.store.byParent(this.kind(), s.id).length }));
   });
   constructor() {
+    // Needed for each row's execs count (store.byParent) - loaded once, not kind-scoped.
+    this.store.loadExecutions();
     effect(() => {
       this.kind();
       this.page.reset();

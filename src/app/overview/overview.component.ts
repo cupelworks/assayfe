@@ -1,4 +1,4 @@
-import { Component, inject, computed, signal } from '@angular/core';
+import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   CatalogStore,
@@ -17,7 +17,7 @@ import { TestFormDialogComponent } from '../shared/dialog/test-form-dialog.compo
   templateUrl: './overview.component.html',
   styleUrls: ['../shared/page.css', './overview.component.css'],
 })
-export class OverviewComponent {
+export class OverviewComponent implements OnInit {
   store = inject(CatalogStore);
   api = inject(TestsApiService);
   rel = rel;
@@ -34,7 +34,13 @@ export class OverviewComponent {
   });
   recentLimit = RECENT_EXECUTIONS_LIMIT;
   runStatusLimit = RUN_STATUS_SAMPLE_LIMIT;
-  recent = computed(() => this.store.executions());
+  recent = computed(() => this.store.executions().slice(0, RECENT_EXECUTIONS_LIMIT));
+  ngOnInit() {
+    // Overview reads every CatalogStore field (stat tiles, executions, run status), and
+    // nothing loads it automatically anymore - the shell doesn't touch CatalogStore at
+    // all. Re-fires each time this page is (re)visited.
+    this.store.load();
+  }
   create(b: TestCaseBody) {
     this.busy.set(true);
     this.err.set(null);

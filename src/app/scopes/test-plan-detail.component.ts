@@ -73,6 +73,11 @@ export class TestPlanDetailComponent {
   pickLabel = (n: number) => `Link ${n || ''} test set${n === 1 ? '' : 's'}`;
 
   constructor() {
+    // sets: "Link test sets" picker + pickRows' execs count. plans: this plan's own name
+    // (store.parent). executions: hasRuns guard + pickRows' execs count.
+    this.store.loadSets();
+    this.store.loadPlans();
+    this.store.loadExecutions();
     effect(() => {
       this.id();
       this.load();
