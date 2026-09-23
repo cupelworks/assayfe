@@ -129,6 +129,18 @@ export interface AnyRunMetadata {
   test_set_execution_id?: Ref | null;
   test_plan_execution_id?: Ref | null;
 }
+export type ExecutionOrigin = 'TestSet' | 'TestPlan';
+/** A row from GET /runs/executions - every test-set/test-plan execution, no standalone runs (they have no execution wrapper). Only the ID field(s) `origin` implies are non-null. */
+export interface AnyExecutionMetadata {
+  id: string;
+  created_at: string;
+  origin: ExecutionOrigin;
+  run_count: number;
+  test_set_id?: Ref | null;
+  replayed_test_set_execution_id?: Ref | null;
+  test_plan_id?: Ref | null;
+  replayed_test_plan_execution_id?: Ref | null;
+}
 
 // Test types catalogue
 export type TestCategory = 'deterministic' | 'nlp_metric' | 'llm_as_judge';

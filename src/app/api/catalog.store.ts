@@ -1,12 +1,14 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { forkJoin, of, map } from 'rxjs';
+import { forkJoin, map } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DatasetsApiService } from './datasets-api.service';
 import { TestsApiService } from './tests-api.service';
 import { TestSetsApiService } from './test-sets-api.service';
 import { TestPlansApiService } from './test-plans-api.service';
 import { RunsApiService } from './runs-api.service';
+import { short } from '../shared/format';
 import {
+  AnyExecutionMetadata,
   AnyRunMetadata,
   DataSetMetadata,
   ExecutionMetadata,
@@ -19,6 +21,12 @@ import {
 export const RECENT_EXECUTIONS_LIMIT = 10;
 /** How many of the newest runs (any origin) feed the "Run status" sample on the overview page. */
 export const RUN_STATUS_SAMPLE_LIMIT = 500;
+/**
+ * How many of the newest test-set/test-plan executions CatalogStore keeps loaded - feeds both
+ * "Recent executions" (further sliced to RECENT_EXECUTIONS_LIMIT) and the byParent()/hasRuns()
+ * lookups other pages use to predict 409s.
+ */
+export const EXECUTIONS_SAMPLE_LIMIT = 100;
 
 export interface ExecRow extends ExecutionMetadata {
   kind: Kind;
@@ -38,7 +46,7 @@ export class CatalogStore {
   /** Catalog (datasets/tests/sets/plans) loading/error - drives the shell's connection status. */
   loading = signal(true);
   error = signal<string | null>(null);
-  /** Independent of `loading`: true while the per-scope executions fetch is in flight. */
+  /** Independent of `loading`: true while the global executions sample is in flight. */
   executionsLoading = signal(true);
   /** Independent of `loading`: true while the global run-status sample is in flight. */
   runsLoading = signal(true);
@@ -46,7 +54,9 @@ export class CatalogStore {
   tests = signal<TestCase[]>([]);
   sets = signal<ScopeMetadata[]>([]);
   plans = signal<ScopeMetadata[]>([]);
-  executions = signal<ExecRow[]>([]);
+  private rawExecutions = signal<AnyExecutionMetadata[]>([]);
+  /** Joins the raw GET /runs/executions rows against sets()/plans() for a display name - reactive to either changing. */
+  executions = computed<ExecRow[]>(() => this.rawExecutions().map((e) => this.toExecRow(e)));
   recentRuns = signal<AnyRunMetadata[]>([]);
   statusLabel = computed(() =>
     this.loading() ? 'Connecting…' : this.error() ? 'API unreachable' : 'Connected',
@@ -59,9 +69,10 @@ export class CatalogStore {
     return (kind === 'test-sets' ? this.sets() : this.plans()).find((x) => x.id === id);
   }
 
-  /** Three independent pipelines: catalog, executions (needs the sets/plans catalog loaded first), and the run-status sample. None blocks the others. */
+  /** Three independent pipelines: catalog, executions, and the run-status sample. None blocks the others. */
   load() {
     this.loadCatalog();
+    this.loadExecutions();
     this.loadRunStatus();
   }
 
@@ -80,7 +91,6 @@ export class CatalogStore {
         this.sets.set(o.sets);
         this.plans.set(o.plans);
         this.loading.set(false);
-        this.loadExecutions(o.sets, o.plans);
       },
       error: (e: HttpErrorResponse) => {
         this.error.set(e.message);
@@ -89,44 +99,12 @@ export class CatalogStore {
     });
   }
 
-  private loadExecutions(sets: ScopeMetadata[], plans: ScopeMetadata[]) {
+  private loadExecutions() {
     this.executionsLoading.set(true);
-    const reqs = [
-      ...sets.map((s) =>
-        this.runsApi.executions('test-sets', s.id).pipe(
-          map((x) =>
-            x.map((e) => ({
-              ...e,
-              kind: 'test-sets' as Kind,
-              parentId: s.id,
-              scope: 'Test set' as const,
-              target: s.name,
-            })),
-          ),
-        ),
-      ),
-      ...plans.map((p) =>
-        this.runsApi.executions('test-plans', p.id).pipe(
-          map((x) =>
-            x.map((e) => ({
-              ...e,
-              kind: 'test-plans' as Kind,
-              parentId: p.id,
-              scope: 'Test plan' as const,
-              target: p.name,
-            })),
-          ),
-        ),
-      ),
-    ];
-    (reqs.length ? forkJoin(reqs) : of([] as ExecRow[][]))
-      .pipe(
-        map((ex) => ex.flat().sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at))),
-      )
-      .subscribe((executions) => {
-        this.executions.set(executions);
-        this.executionsLoading.set(false);
-      });
+    this.runsApi.latestExecutions(EXECUTIONS_SAMPLE_LIMIT).subscribe((executions) => {
+      this.rawExecutions.set(executions);
+      this.executionsLoading.set(false);
+    });
   }
 
   private loadRunStatus() {
@@ -135,5 +113,23 @@ export class CatalogStore {
       this.recentRuns.set(runs);
       this.runsLoading.set(false);
     });
+  }
+
+  private toExecRow(e: AnyExecutionMetadata): ExecRow {
+    const isSet = e.origin === 'TestSet';
+    const kind: Kind = isSet ? 'test-sets' : 'test-plans';
+    const parentId = (isSet ? e.test_set_id : e.test_plan_id)!.id;
+    const replayed = isSet ? e.replayed_test_set_execution_id : e.replayed_test_plan_execution_id;
+    const name = (isSet ? this.sets() : this.plans()).find((x) => x.id === parentId)?.name;
+    return {
+      id: e.id,
+      created_at: e.created_at,
+      run_count: e.run_count,
+      replayed_execution_id: replayed ?? null,
+      kind,
+      parentId,
+      scope: isSet ? 'Test set' : 'Test plan',
+      target: name ?? short(parentId),
+    };
   }
 }

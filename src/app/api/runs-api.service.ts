@@ -59,4 +59,13 @@ export class RunsApiService extends ApiBase {
   latestRuns(limit = 100) {
     return this.safe(this.items(this.latestRunsPage(0, limit)));
   }
+  /** Every test set and test plan execution in the system, newest first. Excludes standalone runs - they have no execution wrapper. */
+  latestExecutionsPage(offset = 0, limit = 100) {
+    return this.http.get<M.Page<M.AnyExecutionMetadata>>(this.u('/runs/executions'), {
+      params: PAGE(offset, limit),
+    });
+  }
+  latestExecutions(limit = 100) {
+    return this.safe(this.items(this.latestExecutionsPage(0, limit)));
+  }
 }
