@@ -47,6 +47,13 @@ export class TestPlanDetailComponent {
   links = this.page.items;
   version = signal(0);
   entryCounts = signal<Record<string, number>>({});
+  /** True execution count per test set, for pickRows below - loaded fresh each time the "Link
+   *  test sets" dialog opens (see open()), not eagerly, since it's only ever shown there.
+   *  Deliberately not CatalogStore.executions (capped, recency-biased - see
+   *  scopes-list.component.ts's identical comment for why that can't give an accurate count).
+   *  limit=0: the API returns items: [] plus the real `total`, nothing but the count itself
+   *  is ever transferred. */
+  pickExecCounts = signal<Record<string, number>>({});
   unlinkTarget = signal<TestPlanEntry | null>(null);
   dlg = signal<Dlg>(null);
   busy = signal(false);
@@ -60,12 +67,14 @@ export class TestPlanDetailComponent {
   linkedTotal = this.page.total;
   pickRows = computed<PickRow[]>(() => {
     const linked = new Set(this.links().map((l) => l.test_set.id));
+    const counts = this.pickExecCounts();
     return this.store.sets().map((s) => {
-      const n = this.store.byParent('test-sets', s.id).length;
+      const n = counts[s.id];
+      const execLabel = n === undefined ? '…' : `${n} execution${n === 1 ? '' : 's'}`;
       return {
         id: s.id,
         name: s.name,
-        meta: linked.has(s.id) ? 'already linked' : `${n} execution${n === 1 ? '' : 's'}`,
+        meta: linked.has(s.id) ? 'already linked' : execLabel,
         disabled: linked.has(s.id),
       };
     });
@@ -73,8 +82,9 @@ export class TestPlanDetailComponent {
   pickLabel = (n: number) => `Link ${n || ''} test set${n === 1 ? '' : 's'}`;
 
   constructor() {
-    // sets: "Link test sets" picker + pickRows' execs count. plans: this plan's own name
-    // (store.parent). executions: hasRuns guard + pickRows' execs count.
+    // sets: "Link test sets" picker's set list. plans: this plan's own name (store.parent).
+    // executions: hasRuns guard only now - pickRows' own execution counts come from
+    // pickExecCounts (loaded per-set on demand, see open()), not this global sample.
     this.store.loadSets();
     this.store.loadPlans();
     this.store.loadExecutions();
@@ -84,7 +94,7 @@ export class TestPlanDetailComponent {
       // scopes-list.component.ts's identical comment.
       untracked(() => this.load());
     });
-    // entry counts for the sets on the current page (1-row fetch per set - only total is used)
+    // entry counts for the sets on the current page (zero-row fetch per set - only total is used)
     effect(() => {
       const links = this.links();
       if (!links.length) {
@@ -94,7 +104,7 @@ export class TestPlanDetailComponent {
       forkJoin(
         links.map((l) =>
           this.testSetsApi
-            .testSetEntries(l.test_set.id, 0, 1)
+            .testSetEntries(l.test_set.id, 0, 0)
             .pipe(map((p) => [l.test_set.id, p.total] as [string, number])),
         ),
       ).subscribe((pairs) => this.entryCounts.set(Object.fromEntries(pairs)));
@@ -106,7 +116,22 @@ export class TestPlanDetailComponent {
   open(d: Dlg, l?: TestPlanEntry) {
     this.err.set(null);
     if (l) this.unlinkTarget.set(l);
+    if (d === 'link') this.loadPickExecCounts();
     this.dlg.set(d);
+  }
+  private loadPickExecCounts() {
+    const sets = this.store.sets();
+    if (!sets.length) {
+      this.pickExecCounts.set({});
+      return;
+    }
+    forkJoin(
+      sets.map((s) =>
+        this.runsApi
+          .executionsPage('test-sets', s.id, 0, 0)
+          .pipe(map((p) => [s.id, p.total] as [string, number])),
+      ),
+    ).subscribe((pairs) => this.pickExecCounts.set(Object.fromEntries(pairs)));
   }
   private run(req: { subscribe: Function }, ok: (r: any) => string, after?: () => void) {
     this.busy.set(true);

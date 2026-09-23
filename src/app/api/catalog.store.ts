@@ -20,12 +20,14 @@ export const RECENT_EXECUTIONS_LIMIT = 10;
 /**
  * How many of the newest test-set/test-plan executions CatalogStore actually fetches -
  * independent of RECENT_EXECUTIONS_LIMIT (Overview only ever shows the first 10 of these).
- * Matches PagerComponent's largest page size (50): the scopes list's "Executions" column
- * (byParent() per row) needs the sample to cover at least as many executions as a full page
- * of test sets/plans can show, or most rows beyond the first few read 0 even when they
- * genuinely have runs. Still not a hard guarantee - a handful of very active scopes can still
- * crowd a quieter one out of this global sample - but it's aligned with the UI's own limits
- * instead of an arbitrary smaller number picked for Overview alone.
+ * Feeds the hasRuns() delete-guard on test-set/test-plan detail pages and
+ * ExecutionComponent's exec() lookup - both tolerate an incomplete sample (hasRuns() just
+ * reads false, exec() just renders without the extra detail it would show), so there's no
+ * hard requirement driving this number; 50 is a generous-but-cheap default. NOT used for any
+ * displayed count anymore - the scopes list's "Executions" column moved to a per-row fetch
+ * against the scoped endpoint instead, since this capped, recency-biased sample can never
+ * give an accurate count for an arbitrary row (see dev_notes.md's "Scopes list 'Executions'
+ * column moved off the global sample" note).
  */
 export const EXECUTIONS_SAMPLE_LIMIT = 50;
 /** How many of the newest runs (any origin) feed the "Run status" sample on the overview page. */
