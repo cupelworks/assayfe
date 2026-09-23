@@ -34,7 +34,7 @@ export class OverviewComponent {
   });
   recentLimit = RECENT_EXECUTIONS_LIMIT;
   runStatusLimit = RUN_STATUS_SAMPLE_LIMIT;
-  recent = computed(() => this.store.executions().slice(0, RECENT_EXECUTIONS_LIMIT));
+  recent = computed(() => this.store.executions());
   create(b: TestCaseBody) {
     this.busy.set(true);
     this.err.set(null);

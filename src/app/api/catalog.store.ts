@@ -17,16 +17,15 @@ import {
   TestCase,
 } from './models';
 
-/** How many of the newest executions the "Recent executions" table on the overview page shows. */
+/**
+ * How many of the newest test-set/test-plan executions CatalogStore fetches and the "Recent
+ * executions" table on the overview page shows - the fetch and the display are the same size,
+ * so this also bounds the byParent()/hasRuns() lookups other pages use to predict 409s (a scope
+ * whose most recent execution isn't in this window reads as "no runs" until it 409s for real).
+ */
 export const RECENT_EXECUTIONS_LIMIT = 10;
 /** How many of the newest runs (any origin) feed the "Run status" sample on the overview page. */
 export const RUN_STATUS_SAMPLE_LIMIT = 500;
-/**
- * How many of the newest test-set/test-plan executions CatalogStore keeps loaded - feeds both
- * "Recent executions" (further sliced to RECENT_EXECUTIONS_LIMIT) and the byParent()/hasRuns()
- * lookups other pages use to predict 409s.
- */
-export const EXECUTIONS_SAMPLE_LIMIT = 100;
 
 export interface ExecRow extends ExecutionMetadata {
   kind: Kind;
@@ -101,7 +100,7 @@ export class CatalogStore {
 
   private loadExecutions() {
     this.executionsLoading.set(true);
-    this.runsApi.latestExecutions(EXECUTIONS_SAMPLE_LIMIT).subscribe((executions) => {
+    this.runsApi.latestExecutions(RECENT_EXECUTIONS_LIMIT).subscribe((executions) => {
       this.rawExecutions.set(executions);
       this.executionsLoading.set(false);
     });
