@@ -1,4 +1,4 @@
-import { Component, inject, input, signal, computed, effect } from '@angular/core';
+import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { TestsApiService } from '../api/tests-api.service';
 import { RunsApiService } from '../api/runs-api.service';
@@ -52,7 +52,9 @@ export class TestDetailComponent {
   constructor() {
     effect(() => {
       this.id();
-      this.load();
+      // untracked: load() -> runsPage.reload() reads runsPage's own offset()/limit() signals -
+      // see scopes-list.component.ts's identical comment.
+      untracked(() => this.load());
     });
   }
   load() {

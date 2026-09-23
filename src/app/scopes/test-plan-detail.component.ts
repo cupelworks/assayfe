@@ -1,4 +1,4 @@
-import { Component, inject, input, signal, computed, effect } from '@angular/core';
+import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { forkJoin, map } from 'rxjs';
 import { TestPlansApiService } from '../api/test-plans-api.service';
@@ -80,7 +80,9 @@ export class TestPlanDetailComponent {
     this.store.loadExecutions();
     effect(() => {
       this.id();
-      this.load();
+      // untracked: load() -> page.reset() reads page's own offset()/limit() signals - see
+      // scopes-list.component.ts's identical comment.
+      untracked(() => this.load());
     });
     // entry counts for the sets on the current page (1-row fetch per set - only total is used)
     effect(() => {

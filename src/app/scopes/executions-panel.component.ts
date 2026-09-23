@@ -1,4 +1,4 @@
-import { Component, inject, input, output, effect } from '@angular/core';
+import { Component, inject, input, output, effect, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { RunsApiService } from '../api/runs-api.service';
 import { ExecutionMetadata, Kind } from '../api/models';
@@ -81,7 +81,10 @@ export class ExecutionsPanelComponent {
       this.kind();
       this.id();
       this.version();
-      this.page.reload();
+      // untracked: see scopes-list.component.ts's identical comment. Here it "only" caused a
+      // duplicate fetch per pager interaction (reload() doesn't reset offset), not a silent
+      // Next-button revert - but still a real, needless extra request every time.
+      untracked(() => this.page.reload());
     });
   }
 }

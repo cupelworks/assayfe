@@ -1,4 +1,4 @@
-import { Component, inject, input, signal, computed, effect } from '@angular/core';
+import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CatalogStore } from '../api/catalog.store';
@@ -48,7 +48,10 @@ export class ScopesListComponent {
     this.store.loadExecutions();
     effect(() => {
       this.kind();
-      this.page.reset();
+      // untracked: page.reset() -> reload() reads page's own offset()/limit() signals - left
+      // untracked so this effect doesn't also fire every time the pager changes them (it did;
+      // that's what caused the duplicate-fetch / Next-gets-silently-reset bug).
+      untracked(() => this.page.reset());
     });
   }
   create(name: string) {

@@ -1,4 +1,4 @@
-import { Component, inject, input, signal, computed, effect } from '@angular/core';
+import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
@@ -45,7 +45,8 @@ export class ExecutionComponent {
       this.kind() === 'test-sets' ? this.store.loadSets() : this.store.loadPlans();
       this.id();
       this.execId();
-      this.page.reset();
+      // untracked: see scopes-list.component.ts's identical comment.
+      untracked(() => this.page.reset());
     });
     this.store.loadExecutions(); // exec() lookup via store.byParent
   }

@@ -1,4 +1,4 @@
-import { Component, inject, input, signal, computed, effect } from '@angular/core';
+import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { TestSetsApiService } from '../api/test-sets-api.service';
 import { RunsApiService } from '../api/runs-api.service';
@@ -82,7 +82,8 @@ export class TestSetDetailComponent {
     this.store.loadExecutions();
     effect(() => {
       this.id();
-      this.page.reset();
+      // untracked: see scopes-list.component.ts's identical comment.
+      untracked(() => this.page.reset());
     });
   }
   loadEntries() {

@@ -1,4 +1,4 @@
-import { Component, inject, input, signal, computed, effect } from '@angular/core';
+import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DatasetsApiService } from '../api/datasets-api.service';
@@ -94,8 +94,14 @@ export class DatasetDetailComponent {
   constructor() {
     effect(() => {
       this.id();
-      this.offset.set(0);
-      this.load();
+      // untracked: load() reads this.offset()/this.limit() (this component's own pagination
+      // signals, not a Paged instance, but the same hazard) - see scopes-list.component.ts's
+      // identical comment. Without this, go()/size() writing those signals retriggered this
+      // effect, which reset offset back to 0 - Next silently did nothing on this page.
+      untracked(() => {
+        this.offset.set(0);
+        this.load();
+      });
     });
   }
   load() {
