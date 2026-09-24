@@ -5,7 +5,12 @@ import { DatasetsApiService } from '../api/datasets-api.service';
 import { TestsApiService } from '../api/tests-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { DataSetMetadata, DataSetRow, DataSetRowSchema, TestTypeAssignment } from '../api/models';
-import { TestTypesStore, assignmentFields, numericFieldIssue } from '../api/test-types.store';
+import {
+  TestTypesStore,
+  assignmentFields,
+  needsReference,
+  numericFieldIssue,
+} from '../api/test-types.store';
 import { rel, short, errText } from '../shared/format';
 import { TestTypePickerComponent } from '../shared/test-type-picker.component';
 import { TestTypeConfigFieldsComponent } from '../shared/test-type-config-fields.component';
@@ -85,6 +90,20 @@ export class DatasetDetailComponent {
       }
     }
     return out;
+  });
+  /** Batch-picked type names that need a non-empty expected_output per row - informational only,
+   *  not part of configIssues() (which only blocks on things provably wrong from what's loaded
+   *  here). Unlike the single-test form, this dialog can't check every dataset row's own
+   *  expected_output without fetching the whole dataset just for this, so it can't say which
+   *  rows (if any) are actually empty - only that some selected type needs one. The backend now
+   *  rejects the create call outright (422, listing the offending row ids) if any row is
+   *  missing one - see docs/test_type_config/dev_notes.md note 10. */
+  referenceTypesInBatch = computed(() => {
+    const byName = this.testTypesStore.byName();
+    return this.typeNames().filter((name) => {
+      const t = byName.get(name);
+      return t && needsReference(t);
+    });
   });
   editing = signal<DataSetRow | null>(null);
   draft = signal<DataSetRowSchema>({ ...EMPTY });

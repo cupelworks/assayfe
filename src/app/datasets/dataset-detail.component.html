@@ -257,6 +257,12 @@
         @if (configIssues().length) {
           <div class="note-warn">Fix before saving: {{ configIssues().join(', ') }}</div>
         }
+        @if (referenceTypesInBatch().length) {
+          <div class="note-info">
+            Needs a non-empty expected output: {{ referenceTypesInBatch().join(', ') }} - rows
+            missing one will fail to convert (checked and rejected per row on create).
+          </div>
+        }
       </div>
     </assay-dialog>
   }
