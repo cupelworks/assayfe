@@ -1,7 +1,8 @@
-import { Component, input, computed } from '@angular/core';
+import { Component, inject, input, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { RunDetails, StandaloneRunDetails, TestTypeAssignment } from '../api/models';
 import { rel, absTime, statusColor, statusLabel } from '../shared/format';
+import { TestTypesStore, assignmentFields } from '../api/test-types.store';
 
 /** Status / error / per-type results (left) + frozen or live test content (right). */
 @Component({
@@ -57,6 +58,9 @@ import { rel, absTime, statusColor, statusLabel } from '../shared/format';
               }
               @if (s.pct) {
                 <div class="track"><div [style.width]="s.pct"></div></div>
+              }
+              @if (s.config) {
+                <div class="detail muted">{{ s.config }}</div>
               }
               @if (s.detail) {
                 <div class="detail muted">{{ s.detail }}</div>
@@ -115,6 +119,23 @@ export class RunBodyComponent {
   absTime = absTime;
   statusColor = statusColor;
   statusLabel = statusLabel;
+  private testTypes = inject(TestTypesStore);
+  constructor() {
+    this.testTypes.load();
+  }
+  /** The config the type was actually run with (e.g. "Threshold: 0.75") - without it a failed
+   *  score like BERTScore 0.56 is unexplained, since the pass/fail line alone doesn't say what it
+   *  needed to clear. Built from the assignment's own config values, labeled via the matching
+   *  TestType's config_fields (assignmentFields excludes "reference", which never appears here). */
+  private configText(name: string): string | null {
+    const config = this.content()?.test_type_assignments?.find((a) => a.name === name)?.config;
+    const type = this.testTypes.byName().get(name);
+    if (!config || !type) return null;
+    const parts = assignmentFields(type)
+      .filter((f) => config[f.key] != null && config[f.key] !== '')
+      .map((f) => `${f.label}: ${config[f.key]}`);
+    return parts.length ? parts.join(' · ') : null;
+  }
   results = computed(() =>
     Object.entries(this.run()?.results ?? {}).map(([name, r]) => ({
       name,
@@ -122,6 +143,7 @@ export class RunBodyComponent {
       valueText: r.score != null ? r.score.toFixed(3) : null,
       pct: r.score != null ? Math.min(1, Math.max(0, r.score)) * 100 + '%' : null,
       detail: r.detail,
+      config: this.configText(name),
     })),
   );
   /** "2 of 3 test types passed" - a headline the per-type dots+labels otherwise make the reader
