@@ -10,6 +10,12 @@ export function rel(iso?: string | null) {
   return `${Math.round(h / 24)} d ago`;
 }
 export const short = (id?: string | null) => String(id ?? '').slice(0, 8);
+/** Absolute timestamp for a title/tooltip alongside rel()'s relative one - "4 d ago" alone loses
+ *  precision the moment it matters. */
+export function absTime(iso?: string | null) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
 export const STATUS: { key: TestStatus; color: string }[] = [
   { key: 'Pending', color: 'var(--color-neutral-400)' },
   { key: 'Running', color: 'var(--color-accent-400)' },

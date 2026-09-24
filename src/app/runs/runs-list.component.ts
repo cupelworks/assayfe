@@ -4,7 +4,7 @@ import { Observable, forkJoin, map, catchError, of } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
 import { TestsApiService } from '../api/tests-api.service';
 import { AnyRunMetadata, RunOrigin, TestStatus } from '../api/models';
-import { rel, short, statusColor } from '../shared/format';
+import { rel, absTime, short, statusColor } from '../shared/format';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
 
@@ -35,6 +35,7 @@ export class RunsListComponent {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   rel = rel;
+  absTime = absTime;
   short = short;
   statusColor = statusColor;
   origins = ORIGINS;

@@ -1,7 +1,7 @@
 import { Component, input, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { RunDetails, StandaloneRunDetails, TestTypeAssignment } from '../api/models';
-import { rel, statusColor } from '../shared/format';
+import { rel, absTime, statusColor } from '../shared/format';
 
 /** Status / error / per-type results (left) + frozen or live test content (right). */
 @Component({
@@ -17,7 +17,12 @@ import { rel, statusColor } from '../shared/format';
           <div class="status-line">
             <span class="dot lg" [style.background]="statusColor(r.status)"></span>{{ r.status }}
           </div>
-          <div class="muted">
+          <div
+            class="muted"
+            [title]="
+              absTime(r.created_at) + (r.executed_at ? ' · executed ' + absTime(r.executed_at) : '')
+            "
+          >
             {{
               r.executed_at
                 ? 'created ' + rel(r.created_at) + ' · executed ' + rel(r.executed_at)
@@ -29,7 +34,12 @@ import { rel, statusColor } from '../shared/format';
           <pre class="error">{{ r.error }}</pre>
         }
         <div>
-          <div class="label">Results</div>
+          <div class="row-head" style="margin-bottom: 12px">
+            <div class="label">Results</div>
+            @if (resultsSummary(); as summary) {
+              <span class="small muted">{{ summary }}</span>
+            }
+          </div>
           @for (s of results(); track s.name) {
             <div class="score">
               <div class="strong">
@@ -66,7 +76,9 @@ import { rel, statusColor } from '../shared/format';
         <div class="row-head">
           <h2>{{ heading() }}</h2>
           @if (snapshotAt()) {
-            <span class="small">snapshot {{ rel(snapshotAt()) }}</span>
+            <span class="small" [title]="absTime(snapshotAt())"
+              >snapshot {{ rel(snapshotAt()) }}</span
+            >
           }
         </div>
         <div class="tags">
@@ -99,6 +111,7 @@ export class RunBodyComponent {
   snapshotAt = input<string | null>(null);
   sourceLink = input<any[] | null>(null);
   rel = rel;
+  absTime = absTime;
   statusColor = statusColor;
   results = computed(() =>
     Object.entries(this.run()?.results ?? {}).map(([name, r]) => ({
@@ -109,6 +122,14 @@ export class RunBodyComponent {
       detail: r.detail,
     })),
   );
+  /** "2 of 3 test types passed" - a headline the per-type dots+labels otherwise make the reader
+   *  count out themselves. Null (hidden) while there's nothing to summarize yet. */
+  resultsSummary = computed(() => {
+    const r = this.results();
+    if (!r.length) return null;
+    const passed = r.filter((x) => x.passed).length;
+    return `${passed} of ${r.length} test type${r.length === 1 ? '' : 's'} passed`;
+  });
   fields = computed(() => {
     const c = this.content();
     return c

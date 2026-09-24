@@ -18,3 +18,6 @@
 .sort-arrow {
   color: var(--color-accent);
 }
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}

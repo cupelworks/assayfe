@@ -10,7 +10,7 @@
     </div>
     <h1>{{ name() }} · {{ short(execId()) }}</h1>
     @if (exec(); as e) {
-      <p class="hero-note" style="margin-top: 12px">
+      <p class="hero-note" style="margin-top: 12px" [title]="absTime(e.created_at)">
         {{ rel(e.created_at) }}
         @if (e.replayed_execution_id) {
           · replayed
@@ -72,7 +72,7 @@
             >
           </td>
           <td class="muted">{{ short(r.test_set_entry_id?.id) }}</td>
-          <td class="muted">{{ rel(r.created_at) }}</td>
+          <td class="muted" [title]="absTime(r.created_at)">{{ rel(r.created_at) }}</td>
         </tr>
       } @empty {
         @if (!page.loading()) {

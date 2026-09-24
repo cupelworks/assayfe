@@ -3,7 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { Kind, RunMetadata } from '../api/models';
-import { rel, short, countByStatus, statusColor, errText } from '../shared/format';
+import { rel, absTime, short, countByStatus, statusColor, errText } from '../shared/format';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
 
@@ -22,6 +22,7 @@ export class ExecutionComponent {
   store = inject(CatalogStore);
   router = inject(Router);
   rel = rel;
+  absTime = absTime;
   short = short;
   statusColor = statusColor;
   page = new Paged<RunMetadata>(
