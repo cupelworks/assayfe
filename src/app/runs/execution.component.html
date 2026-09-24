@@ -43,15 +43,15 @@
   <table class="table">
     <colgroup>
       <col style="width: 140px" />
-      <col style="width: 140px" />
       <col />
+      <col style="width: 120px" />
       <col style="width: 140px" />
     </colgroup>
     <thead>
       <tr>
         <th>Status</th>
+        <th>Name</th>
         <th>Run</th>
-        <th>Frozen entry</th>
         <th>Created</th>
       </tr>
     </thead>
@@ -68,10 +68,10 @@
             <a
               class="plain"
               [routerLink]="['/', kind(), id(), 'executions', execId(), 'runs', r.id]"
-              >{{ short(r.id) }}</a
+              >{{ runNames()[r.id] ?? '…' }}</a
             >
           </td>
-          <td class="muted">{{ short(r.test_set_entry_id?.id) }}</td>
+          <td class="small mono" [title]="r.id">{{ short(r.id) }}</td>
           <td class="muted" [title]="absTime(r.created_at)">{{ rel(r.created_at) }}</td>
         </tr>
       } @empty {

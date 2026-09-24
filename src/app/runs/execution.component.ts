@@ -1,5 +1,6 @@
 import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { Observable, forkJoin, map, catchError, of } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { Kind, RunMetadata } from '../api/models';
@@ -12,7 +13,7 @@ import { PagerComponent } from '../shared/pager.component';
   standalone: true,
   imports: [RouterLink, PagerComponent],
   templateUrl: './execution.component.html',
-  styleUrls: ['../shared/page.css'],
+  styleUrls: ['../shared/page.css', './execution.component.css'],
 })
 export class ExecutionComponent {
   kind = input.required<Kind>();
@@ -40,6 +41,11 @@ export class ExecutionComponent {
   );
   /** Status breakdown of the current page (the API has no aggregate endpoint). */
   statuses = computed(() => countByStatus(this.runs()));
+  /** Resolved frozen-entry name per run id, keyed by row - one GET .../test-runs/{runId} call
+   *  per visible row (25/page), same pattern as RunsListComponent. Every row here is TestSet/
+   *  TestPlan (this page only exists for an execution, which Standalone runs never have), so
+   *  unlike the global runs list there's only ever the one lookup shape to make. */
+  runNames = signal<Record<string, string>>({});
   constructor() {
     effect(() => {
       // This scope's own name (store.parent) - only sets or plans is needed, by kind.
@@ -50,6 +56,23 @@ export class ExecutionComponent {
       untracked(() => this.page.reset());
     });
     this.store.loadExecutions(); // exec() lookup via store.byParent
+    effect(() => {
+      const items = this.page.items();
+      if (!items.length) {
+        this.runNames.set({});
+        return;
+      }
+      forkJoin(items.map((r) => this.resolveName(r))).subscribe((pairs) =>
+        this.runNames.set(Object.fromEntries(pairs)),
+      );
+    });
+  }
+  private resolveName(r: RunMetadata): Observable<[string, string]> {
+    const fallback = `Untitled · ${short(r.id)}`;
+    return this.api.runDetails(this.kind(), this.id(), this.execId(), r.id).pipe(
+      map((d) => [r.id, d.name?.trim() || fallback] as [string, string]),
+      catchError(() => of([r.id, fallback] as [string, string])),
+    );
   }
   replay() {
     this.busy.set(true);
