@@ -24,18 +24,18 @@
   <table class="table">
     <colgroup>
       <col style="width: 140px" />
+      <col />
       <col style="width: 120px" />
       <col style="width: 140px" />
-      <col />
-      <col style="width: 140px" />
+      <col style="width: 120px" />
     </colgroup>
     <thead>
       <tr>
         <th>Status</th>
-        <th>Origin</th>
-        <th>Run</th>
         <th>Target</th>
+        <th>Origin</th>
         <th>Created</th>
+        <th>Run</th>
       </tr>
     </thead>
     <tbody>
@@ -47,22 +47,16 @@
               >{{ r.status }}</span
             >
           </td>
-          <td class="muted">{{ originLabel(r.origin) }}</td>
           <td class="strong">
             @if (runLink(r); as link) {
-              <a class="plain" [routerLink]="link">{{ short(r.id) }}</a>
+              <a class="plain" [routerLink]="link">{{ names()[r.id] ?? '…' }}</a>
             } @else {
-              {{ short(r.id) }}
+              {{ names()[r.id] ?? '…' }}
             }
           </td>
-          <td class="muted">
-            @if (r.origin === 'Standalone') {
-              test {{ short(r.test_case_id?.id) }}
-            } @else {
-              entry {{ short(r.test_set_entry_id?.id) }}
-            }
-          </td>
+          <td class="muted">{{ originLabel(r.origin) }}</td>
           <td class="muted">{{ rel(r.created_at) }}</td>
+          <td class="muted">{{ short(r.id) }}</td>
         </tr>
       } @empty {
         @if (!page.loading()) {
