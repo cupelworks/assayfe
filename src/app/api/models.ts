@@ -8,7 +8,21 @@ export interface Page<T> {
   limit: number;
   items: T[];
 }
-export type TestStatus = 'Pending' | 'Running' | 'Completed' | 'Failed';
+/** Pending/Running are lifecycle only. The terminal values are an outcome roll-up of every
+ *  assigned test type's own pass/fail (see TestTypeResult), not just "did it finish": Green
+ *  (every type passed), Amber (some passed, some didn't), Red (every type was evaluated and
+ *  none passed), NotRan (nothing could be attempted at all - a model-call/infra failure, the
+ *  only status `error` is ever set for). */
+export type TestStatus = 'Pending' | 'Running' | 'Green' | 'Amber' | 'Red' | 'NotRan';
+/** One assigned test type's outcome within a run's `results`. `passed` is always present.
+ *  `score` is populated for deterministic/nlp_metric types, sometimes for llm_as_judge. `detail`
+ *  carries a judge's rationale, or this specific type's own error message if only it failed to
+ *  evaluate while the rest of the run's other types proceeded normally. */
+export interface TestTypeResult {
+  passed: boolean;
+  score: number | null;
+  detail: string | null;
+}
 
 // Datasets
 export interface DataSetMetadata {
@@ -107,8 +121,11 @@ export interface RunMetadata {
 }
 export interface RunDetails extends RunMetadata, TestCaseBody {
   executed_at: string | null;
+  /** Set only when status is NotRan - a run-level failure, mutually exclusive with results. */
   error: string | null;
-  scores: Record<string, number> | null;
+  /** Per-assigned-type outcomes, keyed by type name. Populated once status is Green/Amber/Red;
+   *  null while Pending/Running, and for NotRan (see error instead). */
+  results: Record<string, TestTypeResult> | null;
   test_case_id: Ref;
   test_set_id?: Ref | null;
   test_plan_id?: Ref;
@@ -122,8 +139,11 @@ export interface StandaloneRun {
 }
 export interface StandaloneRunDetails extends StandaloneRun {
   executed_at: string | null;
+  /** Set only when status is NotRan - a run-level failure, mutually exclusive with results. */
   error: string | null;
-  scores: Record<string, number> | null;
+  /** Per-assigned-type outcomes, keyed by type name. Populated once status is Green/Amber/Red;
+   *  null while Pending/Running, and for NotRan (see error instead). */
+  results: Record<string, TestTypeResult> | null;
 }
 export type RunOrigin = 'Standalone' | 'TestSet' | 'TestPlan';
 /** A row from GET /runs - every run in the system, regardless of origin. Only the ID field(s) `origin` implies are non-null. */

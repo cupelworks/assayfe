@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { RunDetails, StandaloneRunDetails, TestTypeAssignment } from '../api/models';
 import { rel, statusColor } from '../shared/format';
 
-/** Status / error / scores (left) + frozen or live test content (right). */
+/** Status / error / per-type results (left) + frozen or live test content (right). */
 @Component({
   selector: 'assay-run-body',
   standalone: true,
@@ -29,19 +29,34 @@ import { rel, statusColor } from '../shared/format';
           <pre class="error">{{ r.error }}</pre>
         }
         <div>
-          <div class="label">Scores</div>
-          @for (s of scores(); track s.name) {
+          <div class="label">Results</div>
+          @for (s of results(); track s.name) {
             <div class="score">
-              <div class="strong">{{ s.name }}</div>
-              <div class="val">{{ s.value }}</div>
-              <div class="track"><div [style.width]="s.pct"></div></div>
+              <div class="strong">
+                <span
+                  class="dot"
+                  [style.background]="
+                    s.passed ? 'var(--color-status-green)' : 'var(--color-accent)'
+                  "
+                ></span>
+                {{ s.name }}
+              </div>
+              @if (s.valueText) {
+                <div class="val">{{ s.valueText }}</div>
+              }
+              @if (s.pct) {
+                <div class="track"><div [style.width]="s.pct"></div></div>
+              }
+              @if (s.detail) {
+                <div class="detail muted">{{ s.detail }}</div>
+              }
             </div>
           } @empty {
             <div class="score muted">
               {{
-                r.status === 'Completed'
-                  ? 'No scores recorded.'
-                  : 'No scores yet - run is ' + r.status + '.'
+                r.status === 'NotRan'
+                  ? 'Run failed before anything could be evaluated - see error above.'
+                  : 'No results yet - run is ' + r.status + '.'
               }}
             </div>
           }
@@ -85,11 +100,13 @@ export class RunBodyComponent {
   sourceLink = input<any[] | null>(null);
   rel = rel;
   statusColor = statusColor;
-  scores = computed(() =>
-    Object.entries(this.run()?.scores ?? {}).map(([name, v]) => ({
+  results = computed(() =>
+    Object.entries(this.run()?.results ?? {}).map(([name, r]) => ({
       name,
-      value: v.toFixed(3),
-      pct: Math.min(1, Math.max(0, v)) * 100 + '%',
+      passed: r.passed,
+      valueText: r.score != null ? r.score.toFixed(3) : null,
+      pct: r.score != null ? Math.min(1, Math.max(0, r.score)) * 100 + '%' : null,
+      detail: r.detail,
     })),
   );
   fields = computed(() => {

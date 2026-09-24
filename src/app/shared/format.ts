@@ -13,8 +13,10 @@ export const short = (id?: string | null) => String(id ?? '').slice(0, 8);
 export const STATUS: { key: TestStatus; color: string }[] = [
   { key: 'Pending', color: 'var(--color-neutral-400)' },
   { key: 'Running', color: 'var(--color-accent-400)' },
-  { key: 'Completed', color: 'var(--color-text)' },
-  { key: 'Failed', color: 'var(--color-accent)' },
+  { key: 'Green', color: 'var(--color-status-green)' },
+  { key: 'Amber', color: 'var(--color-status-amber)' },
+  { key: 'Red', color: 'var(--color-accent)' },
+  { key: 'NotRan', color: 'var(--color-neutral-800)' },
 ];
 export const statusColor = (s?: string) =>
   STATUS.find((x) => x.key === s)?.color ?? STATUS[0].color;

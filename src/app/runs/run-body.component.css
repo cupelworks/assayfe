@@ -34,6 +34,11 @@
   border-top: 1px solid var(--color-divider);
   font-size: 14px;
 }
+.score .strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
 .val {
   font-size: 24px;
   font-weight: var(--font-heading-weight);
@@ -47,4 +52,9 @@
 .track div {
   height: 100%;
   background: var(--color-text);
+}
+.detail {
+  grid-column: 1/-1;
+  font-size: 13px;
+  line-height: 1.4;
 }

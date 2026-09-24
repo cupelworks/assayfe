@@ -9,6 +9,12 @@
   --color-accent-2: #e15b47;
   --color-divider: color-mix(in srgb, #201e1d 40%, transparent);
 
+  /* Run-outcome semantics only (Green/Amber/Red/NotRan status) - genuine hues, not part of the
+     single-accent brand ramp above, since a traffic-light roll-up needs real color contrast
+     between outcomes to be readable at a glance. */
+  --color-status-green: #1a7f37;
+  --color-status-amber: #9a6700;
+
   /* Tonal ramps - generated in OKLCH on one shared lightness scale, so the
      same step of any role matches the others in visual value. */
   --color-neutral-100: #f8f4f4;
@@ -498,6 +504,8 @@ textarea.input {
   --color-accent: #ff563c;
   --color-accent-2: #ff7a63;
   --color-divider: color-mix(in srgb, #f1efee 35%, transparent);
+  --color-status-green: #3fb950;
+  --color-status-amber: #d29922;
   --color-neutral-100: #1d1b1b;
   --color-neutral-200: #2d2b2b;
   --color-neutral-300: #444141;

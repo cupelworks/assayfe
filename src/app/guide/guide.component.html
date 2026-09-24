@@ -288,7 +288,8 @@
 <section class="cell cell-b">
   <h2>Run lifecycle &amp; statuses</h2>
   <p class="section-lead">
-    Every run moves through the same four states, however it was triggered.
+    Every run moves through the same two lifecycle states, then lands on one of four outcomes - a
+    roll-up of how each assigned test type scored, not just "did it finish."
   </p>
   <div class="status-grid" style="margin-bottom: 16px">
     <div class="status">
@@ -305,15 +306,28 @@
     </div>
     <div class="status">
       <div class="label">
-        <span class="dot" style="background: var(--color-text)"></span>Completed
+        <span class="dot" style="background: var(--color-status-green)"></span>Green
       </div>
-      <div class="small">Finished - <code>scores</code> populated.</div>
+      <div class="small">Every assigned test type passed - <code>results</code> populated.</div>
     </div>
     <div class="status">
       <div class="label">
-        <span class="dot" style="background: var(--color-accent)"></span>Failed
+        <span class="dot" style="background: var(--color-status-amber)"></span>Amber
       </div>
-      <div class="small">Finished - <code>error</code> populated instead.</div>
+      <div class="small">Some assigned test types passed, some didn't.</div>
+    </div>
+    <div class="status">
+      <div class="label"><span class="dot" style="background: var(--color-accent)"></span>Red</div>
+      <div class="small">Every assigned test type was evaluated - none passed.</div>
+    </div>
+    <div class="status">
+      <div class="label">
+        <span class="dot" style="background: var(--color-neutral-800)"></span>NotRan
+      </div>
+      <div class="small">
+        Nothing could be attempted at all (model/infra failure) - <code>error</code> populated
+        instead of <code>results</code>.
+      </div>
     </div>
   </div>
 </section>
