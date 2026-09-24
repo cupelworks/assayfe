@@ -1,4 +1,4 @@
-import { Component, inject, input, computed } from '@angular/core';
+import { Component, inject, input, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { RunDetails, StandaloneRunDetails, TestTypeAssignment } from '../api/models';
 import { rel, absTime, statusColor, statusLabel } from '../shared/format';
@@ -59,8 +59,15 @@ import { TestTypesStore, assignmentFields } from '../api/test-types.store';
               @if (s.pct) {
                 <div class="track"><div [style.width]="s.pct"></div></div>
               }
-              @if (s.config) {
-                <div class="detail muted">{{ s.config }}</div>
+              @for (c of s.config; track c.key) {
+                <div class="detail muted cfg" [class.clamp]="c.long && !isConfigOpen(c.key)">
+                  <span class="strong">{{ c.label }}:</span> {{ c.value }}
+                </div>
+                @if (c.long) {
+                  <button type="button" class="more small" (click)="toggleConfig(c.key)">
+                    {{ isConfigOpen(c.key) ? 'Less ↑' : 'More ↓' }}
+                  </button>
+                }
               }
               @if (s.detail) {
                 <div class="detail muted">{{ s.detail }}</div>
@@ -120,21 +127,41 @@ export class RunBodyComponent {
   statusColor = statusColor;
   statusLabel = statusLabel;
   private testTypes = inject(TestTypesStore);
+  /** Which long config values (keyed "<type name>:<field key>") are expanded past their clamp -
+   *  a rubric can run to a full paragraph, so it starts collapsed like a test type card's "More". */
+  private openConfigKeys = signal<Set<string>>(new Set());
   constructor() {
     this.testTypes.load();
   }
-  /** The config the type was actually run with (e.g. "Threshold: 0.75") - without it a failed
-   *  score like BERTScore 0.56 is unexplained, since the pass/fail line alone doesn't say what it
-   *  needed to clear. Built from the assignment's own config values, labeled via the matching
-   *  TestType's config_fields (assignmentFields excludes "reference", which never appears here). */
-  private configText(name: string): string | null {
+  isConfigOpen(key: string) {
+    return this.openConfigKeys().has(key);
+  }
+  toggleConfig(key: string) {
+    this.openConfigKeys.update((s) => {
+      const next = new Set(s);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }
+  /** The config the type was actually run with (e.g. "Minimum score to pass: 0.75") - without it
+   *  a failed score like BERTScore 0.56 is unexplained, since the pass/fail line alone doesn't say
+   *  what it needed to clear. One entry per field, labeled via the matching TestType's
+   *  config_fields (assignmentFields excludes "reference", which never appears here); a non-numeric
+   *  value over 140 chars (a rubric, typically) is flagged `long` for the template to clamp. */
+  private configFields(
+    name: string,
+  ): { key: string; label: string; value: string; long: boolean }[] {
     const config = this.content()?.test_type_assignments?.find((a) => a.name === name)?.config;
     const type = this.testTypes.byName().get(name);
-    if (!config || !type) return null;
-    const parts = assignmentFields(type)
+    if (!config || !type) return [];
+    return assignmentFields(type)
       .filter((f) => config[f.key] != null && config[f.key] !== '')
-      .map((f) => `${f.label}: ${config[f.key]}`);
-    return parts.length ? parts.join(' · ') : null;
+      .map((f) => ({
+        key: `${name}:${f.key}`,
+        label: f.label,
+        value: config[f.key],
+        long: f.kind !== 'numeric' && config[f.key].length > 140,
+      }));
   }
   results = computed(() =>
     Object.entries(this.run()?.results ?? {}).map(([name, r]) => ({
@@ -143,7 +170,7 @@ export class RunBodyComponent {
       valueText: r.score != null ? r.score.toFixed(3) : null,
       pct: r.score != null ? Math.min(1, Math.max(0, r.score)) * 100 + '%' : null,
       detail: r.detail,
-      config: this.configText(name),
+      config: this.configFields(name),
     })),
   );
   /** "2 of 3 test types passed" - a headline the per-type dots+labels otherwise make the reader
