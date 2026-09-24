@@ -26,18 +26,18 @@
       <col style="width: 140px" />
       <col />
       <col style="width: 120px" />
-      <col style="width: 140px" />
       <col style="width: 120px" />
+      <col style="width: 140px" />
     </colgroup>
     <thead>
       <tr>
         <th>Status</th>
         <th>Name</th>
         <th>Origin</th>
+        <th>Run</th>
         <th class="sortable" (click)="toggleSort()">
           Created<span class="sort-arrow">{{ sortDir() === 'desc' ? ' ↓' : ' ↑' }}</span>
         </th>
-        <th>Run</th>
       </tr>
     </thead>
     <tbody>
@@ -57,8 +57,8 @@
             }
           </td>
           <td class="muted">{{ originLabel(r.origin) }}</td>
-          <td class="muted">{{ rel(r.created_at) }}</td>
           <td class="muted">{{ short(r.id) }}</td>
+          <td class="muted">{{ rel(r.created_at) }}</td>
         </tr>
       } @empty {
         @if (!page.loading()) {
