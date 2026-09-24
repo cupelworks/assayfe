@@ -30,7 +30,7 @@
 @if (msg(); as m) {
   <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
 }
-<section class="stats">
+<section class="stats stats-6">
   @for (s of statuses(); track s.key) {
     <div class="stat">
       <div class="label"><span class="dot" [style.background]="s.color"></span>{{ s.key }}</div>

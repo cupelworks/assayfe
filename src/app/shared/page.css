@@ -215,6 +215,19 @@ button {
 .stat:last-child {
   border-right: 0;
 }
+/* Modifier for a fixed 6-item .stats grid (the run-status breakdown: Pending/Running/
+   Green/Amber/Red/NotRan) - 4 columns leaves an uneven, dividerless 4+2 wrap since 6 isn't a
+   multiple of 4. 3 columns divides evenly into two full rows instead, with its own right/bottom
+   border logic to match. */
+.stats-6 {
+  grid-template-columns: repeat(3, 1fr);
+}
+.stats-6 .stat:nth-child(3n) {
+  border-right: 0;
+}
+.stats-6 .stat:nth-child(-n + 3) {
+  border-bottom: 1px solid var(--color-divider);
+}
 .big {
   font-size: 56px;
   font-weight: var(--font-heading-weight);
