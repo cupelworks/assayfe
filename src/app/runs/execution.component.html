@@ -33,7 +33,7 @@
 <section class="stats stats-6">
   @for (s of statuses(); track s.key) {
     <div class="stat">
-      <div class="label"><span class="dot" [style.background]="s.color"></span>{{ s.key }}</div>
+      <div class="label"><span class="dot" [style.background]="s.color"></span>{{ s.label }}</div>
       <div class="big" style="font-size: 40px">{{ s.value }}</div>
       <div class="small">on this page</div>
     </div>
@@ -63,7 +63,7 @@
           <td>
             <span class="st"
               ><span class="dot" [style.background]="statusColor(r.status)"></span
-              >{{ r.status }}</span
+              >{{ statusLabel(r.status) }}</span
             >
           </td>
           <td class="strong">

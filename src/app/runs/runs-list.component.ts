@@ -4,7 +4,7 @@ import { Observable, forkJoin, map, catchError, of } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
 import { TestsApiService } from '../api/tests-api.service';
 import { AnyRunMetadata, RunOrigin, TestStatus } from '../api/models';
-import { rel, absTime, copyText, short, statusColor } from '../shared/format';
+import { rel, absTime, copyText, short, statusColor, statusLabel } from '../shared/format';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
 
@@ -38,6 +38,7 @@ export class RunsListComponent {
   absTime = absTime;
   short = short;
   statusColor = statusColor;
+  statusLabel = statusLabel;
   origins = ORIGINS;
   /** Resolved "Name" column value per run id, keyed by row - fetched one call per visible row (25/page)
    *  since there's no batch lookup: GET /tests/{id} for Standalone (its run details carry no
@@ -50,7 +51,10 @@ export class RunsListComponent {
   copiedId = signal<string | null>(null);
   originLabel = (o: string) => ORIGIN_LABEL[o] ?? o;
   title = computed(() => {
-    const bits = [this.status() ?? '', this.origin() ? this.originLabel(this.origin()!) : ''];
+    const bits = [
+      this.status() ? statusLabel(this.status()) : '',
+      this.origin() ? this.originLabel(this.origin()!) : '',
+    ];
     const label = bits.filter(Boolean).join(' ');
     return label ? `${label} runs` : 'All runs';
   });

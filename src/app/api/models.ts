@@ -12,7 +12,9 @@ export interface Page<T> {
  *  assigned test type's own pass/fail (see TestTypeResult), not just "did it finish": Green
  *  (every type passed), Amber (some passed, some didn't), Red (every type was evaluated and
  *  none passed), NotRan (nothing could be attempted at all - a model-call/infra failure, the
- *  only status `error` is ever set for). */
+ *  only status `error` is ever set for). NotRan is the wire value (matches the API's enum
+ *  exactly, no space) - it displays as "Not Ran" via format.ts's statusLabel(), never shown to
+ *  the user as the raw key. */
 export type TestStatus = 'Pending' | 'Running' | 'Green' | 'Amber' | 'Red' | 'NotRan';
 /** One assigned test type's outcome within a run's `results`. `passed` is always present.
  *  `score` is populated for deterministic/nlp_metric types, sometimes for llm_as_judge. `detail`

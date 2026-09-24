@@ -1,7 +1,7 @@
 import { Component, input, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { RunDetails, StandaloneRunDetails, TestTypeAssignment } from '../api/models';
-import { rel, absTime, statusColor } from '../shared/format';
+import { rel, absTime, statusColor, statusLabel } from '../shared/format';
 
 /** Status / error / per-type results (left) + frozen or live test content (right). */
 @Component({
@@ -15,7 +15,8 @@ import { rel, absTime, statusColor } from '../shared/format';
         <div>
           <div class="label">Status</div>
           <div class="status-line">
-            <span class="dot lg" [style.background]="statusColor(r.status)"></span>{{ r.status }}
+            <span class="dot lg" [style.background]="statusColor(r.status)"></span
+            >{{ statusLabel(r.status) }}
           </div>
           <div
             class="muted"
@@ -66,7 +67,7 @@ import { rel, absTime, statusColor } from '../shared/format';
               {{
                 r.status === 'NotRan'
                   ? 'Run failed before anything could be evaluated - see error above.'
-                  : 'No results yet - run is ' + r.status + '.'
+                  : 'No results yet - run is ' + statusLabel(r.status) + '.'
               }}
             </div>
           }
@@ -113,6 +114,7 @@ export class RunBodyComponent {
   rel = rel;
   absTime = absTime;
   statusColor = statusColor;
+  statusLabel = statusLabel;
   results = computed(() =>
     Object.entries(this.run()?.results ?? {}).map(([name, r]) => ({
       name,

@@ -110,7 +110,9 @@
     <div class="status-grid">
       @for (s of statuses(); track s.key) {
         <a class="status plain tile" routerLink="/runs" [queryParams]="{ status: s.key }">
-          <div class="label"><span class="dot" [style.background]="s.color"></span>{{ s.key }}</div>
+          <div class="label">
+            <span class="dot" [style.background]="s.color"></span>{{ s.label }}
+          </div>
           <div class="mid">{{ s.value }}</div>
         </a>
       }

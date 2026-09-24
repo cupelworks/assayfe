@@ -11,6 +11,7 @@ import {
   short,
   countByStatus,
   statusColor,
+  statusLabel,
   errText,
 } from '../shared/format';
 import { Paged } from '../shared/paged';
@@ -34,6 +35,7 @@ export class ExecutionComponent {
   absTime = absTime;
   short = short;
   statusColor = statusColor;
+  statusLabel = statusLabel;
   page = new Paged<RunMetadata>(
     (o, l) => this.api.executionRunsPage(this.kind(), this.id(), this.execId(), o, l),
     25,

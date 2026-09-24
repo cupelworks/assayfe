@@ -26,16 +26,21 @@ export async function copyText(text: string): Promise<boolean> {
     return false;
   }
 }
-export const STATUS: { key: TestStatus; color: string }[] = [
-  { key: 'Pending', color: 'var(--color-neutral-400)' },
-  { key: 'Running', color: 'var(--color-accent-400)' },
-  { key: 'Green', color: 'var(--color-status-green)' },
-  { key: 'Amber', color: 'var(--color-status-amber)' },
-  { key: 'Red', color: 'var(--color-accent)' },
-  { key: 'NotRan', color: 'var(--color-neutral-800)' },
+/** `key` is the wire value (must match the API's TestStatus enum exactly - e.g. "NotRan", no
+ *  space - it's both compared against real run.status values and sent as the ?status= query
+ *  param). `label` is display-only and free to read however's clearest ("Not Ran"); never use
+ *  `key` as user-facing text. */
+export const STATUS: { key: TestStatus; label: string; color: string }[] = [
+  { key: 'Pending', label: 'Pending', color: 'var(--color-neutral-400)' },
+  { key: 'Running', label: 'Running', color: 'var(--color-accent-400)' },
+  { key: 'Green', label: 'Green', color: 'var(--color-status-green)' },
+  { key: 'Amber', label: 'Amber', color: 'var(--color-status-amber)' },
+  { key: 'Red', label: 'Red', color: 'var(--color-accent)' },
+  { key: 'NotRan', label: 'Not Ran', color: 'var(--color-neutral-800)' },
 ];
 export const statusColor = (s?: string) =>
   STATUS.find((x) => x.key === s)?.color ?? STATUS[0].color;
+export const statusLabel = (s?: string) => STATUS.find((x) => x.key === s)?.label ?? s ?? '';
 export function countByStatus(runs: { status: TestStatus }[]) {
   return STATUS.map((s) => ({ ...s, value: runs.filter((r) => r.status === s.key).length }));
 }
