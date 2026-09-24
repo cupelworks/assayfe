@@ -69,25 +69,14 @@
             >
           </td>
           <td>
-            @if (resultDots(r.id); as dots) {
-              @if (dots.length) {
-                <span class="dot-cluster">
-                  @for (d of dots.slice(0, 8); track d.name) {
-                    <span
-                      class="dot"
-                      [title]="d.name + ': ' + (d.passed ? 'passed' : 'failed')"
-                      [style.background]="
-                        d.passed ? 'var(--color-status-green)' : 'var(--color-accent)'
-                      "
-                    ></span>
-                  }
-                  @if (dots.length > 8) {
-                    <span class="small muted">+{{ dots.length - 8 }}</span>
-                  }
+            @if (resultSummary(r.id); as s) {
+              <span class="result-cell" [title]="s.title">
+                <span class="result-bar">
+                  <span class="seg pass" [style.width]="s.passPct"></span>
+                  <span class="seg fail" [style.width]="s.failPct"></span>
                 </span>
-              } @else {
-                <span class="muted">-</span>
-              }
+                <span class="small muted">{{ s.passed }}/{{ s.total }}</span>
+              </span>
             } @else {
               <span class="muted">-</span>
             }

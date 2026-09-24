@@ -103,13 +103,26 @@ export class ExecutionComponent {
       ),
     );
   }
-  /** Per-type dots for the Results column - null (rendered as a dash) while the run's had
-   *  nothing to evaluate yet. */
-  resultDots(id: string): { name: string; passed: boolean }[] | null {
+  /** Results-column summary: a fixed-width pass/fail bar plus "x/y" - scales to any number of
+   *  test types, unlike a dot per type. Null (rendered as a dash) while the run's had nothing to
+   *  evaluate yet. */
+  resultSummary(
+    id: string,
+  ): { passed: number; total: number; passPct: string; failPct: string; title: string } | null {
     const results = this.runResults()[id];
-    return results
-      ? Object.entries(results).map(([name, r]) => ({ name, passed: r.passed }))
-      : null;
+    if (!results) return null;
+    const entries = Object.entries(results);
+    if (!entries.length) return null;
+    const total = entries.length;
+    const failing = entries.filter(([, r]) => !r.passed).map(([name]) => name);
+    const passed = total - failing.length;
+    return {
+      passed,
+      total,
+      passPct: (passed / total) * 100 + '%',
+      failPct: (failing.length / total) * 100 + '%',
+      title: failing.length ? `Failed: ${failing.join(', ')}` : 'All test types passed',
+    };
   }
   async copyId(id: string) {
     if (await copyText(id)) {

@@ -10,9 +10,22 @@
 .copyable:hover {
   color: var(--color-accent);
 }
-.dot-cluster {
+.result-cell {
   display: flex;
   align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
+  gap: 8px;
+}
+.result-bar {
+  width: 56px;
+  height: 8px;
+  flex: none;
+  display: flex;
+  background: var(--color-divider);
+  overflow: hidden;
+}
+.result-bar .seg.pass {
+  background: var(--color-status-green);
+}
+.result-bar .seg.fail {
+  background: var(--color-accent);
 }
