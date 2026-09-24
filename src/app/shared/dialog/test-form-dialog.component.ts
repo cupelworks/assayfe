@@ -2,7 +2,7 @@ import { Component, inject, input, output, signal, computed } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { DialogComponent } from './dialog.component';
 import { TestCaseBody, TestTypeAssignment } from '../../api/models';
-import { TestTypesStore, assignmentFields } from '../../api/test-types.store';
+import { TestTypesStore, assignmentFields, numericFieldIssue } from '../../api/test-types.store';
 import { TestTypePickerComponent } from '../test-type-picker.component';
 import { TestTypeConfigFieldsComponent } from '../test-type-config-fields.component';
 
@@ -35,10 +35,10 @@ export class TestFormDialogComponent {
   /** "<field label> (<type name>) - <problem>" for every selected type's config_fields entry
    *  that isn't fit to submit yet: a required field left empty (a "reference" entry checks
    *  expected_output, shared; everything else checks this type's own configs() slot), or a
-   *  "numeric" entry that isn't a plain number in [0, 1]. Drives both the submit-disable guard
-   *  and the on-screen hint - the API accepts both problems silently (see
+   *  "numeric" entry outside its own min/max (see numericFieldIssue). Drives both the
+   *  submit-disable guard and the on-screen hint - the API accepts both problems silently (see
    *  docs/test_type_config/next_move.md 3.1 for the required-field gap on "reference", and the
-   *  "numeric" kind's own handover note for the lack of any format/range check at all), so this
+   *  "numeric" kind's own handover notes for the lack of any format/range check at all), so this
    *  is the only thing standing between the user and a test that can never be scored correctly. */
   configIssues = computed(() => {
     const byName = this.store.byName();
@@ -58,10 +58,8 @@ export class TestFormDialogComponent {
           continue;
         }
         if (f.kind === 'numeric') {
-          const n = Number(raw);
-          if (!Number.isFinite(n) || n < 0 || n > 1) {
-            out.push(`${f.label} (${name}) - must be a number between 0 and 1`);
-          }
+          const issue = numericFieldIssue(f, raw);
+          if (issue) out.push(`${f.label} (${name}) - ${issue}`);
         }
       }
     }

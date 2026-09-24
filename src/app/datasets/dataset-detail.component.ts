@@ -5,7 +5,7 @@ import { DatasetsApiService } from '../api/datasets-api.service';
 import { TestsApiService } from '../api/tests-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { DataSetMetadata, DataSetRow, DataSetRowSchema, TestTypeAssignment } from '../api/models';
-import { TestTypesStore, assignmentFields } from '../api/test-types.store';
+import { TestTypesStore, assignmentFields, numericFieldIssue } from '../api/test-types.store';
 import { rel, short, errText } from '../shared/format';
 import { TestTypePickerComponent } from '../shared/test-type-picker.component';
 import { TestTypeConfigFieldsComponent } from '../shared/test-type-config-fields.component';
@@ -60,7 +60,7 @@ export class DatasetDetailComponent {
   batchConfig = signal<Record<string, Record<string, string>>>({});
   /** "<field label> (<type name>) - <problem>" for every batch-picked type's non-reference
    *  config_fields entry that isn't fit to submit - a required field left empty, or a "numeric"
-   *  entry that isn't a plain number in [0, 1]. No "reference" case here (unlike
+   *  entry outside its own min/max (see numericFieldIssue). No "reference" case here (unlike
    *  TestFormDialogComponent's equivalent): every row already carries its own expected_output
    *  via DataSetRowSchema, so a reference field is always satisfied for this batch. Drives the
    *  submit-disable guard and on-screen hint - the API accepts both problems silently (see
@@ -79,10 +79,8 @@ export class DatasetDetailComponent {
           continue;
         }
         if (f.kind === 'numeric') {
-          const n = Number(raw);
-          if (!Number.isFinite(n) || n < 0 || n > 1) {
-            out.push(`${f.label} (${name}) - must be a number between 0 and 1`);
-          }
+          const issue = numericFieldIssue(f, raw);
+          if (issue) out.push(`${f.label} (${name}) - ${issue}`);
         }
       }
     }

@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { TestsApiService } from './tests-api.service';
-import { TestCategory, TestType } from './models';
+import { ConfigFieldDescriptor, TestCategory, TestType } from './models';
 
 /** Whether a type needs an expected_output to work at all - derived from config_fields instead
  *  of the removed required_reference bool, since a type can now need config without needing a
@@ -16,6 +16,20 @@ export const needsSetup = (t: TestType) => t.config_fields.some((f) => f.require
  *  always resolve from the test case's own expected_output and are never written into config. */
 export const assignmentFields = (t: TestType) =>
   t.config_fields.filter((f) => f.kind !== 'reference');
+/** For a non-empty "numeric" field value: null if it parses to a plain number within the
+ *  descriptor's own min/max (each independently optional), otherwise a short problem phrase to
+ *  append to the field's label. Bounds come from the descriptor, never assumed - the API sends
+ *  min/max as advisory metadata and does not itself validate a submitted value against them (or
+ *  that it's numeric at all), so this is the only check it gets. */
+export const numericFieldIssue = (f: ConfigFieldDescriptor, raw: string): string | null => {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return 'must be a number';
+  if (f.min != null && f.max != null)
+    return n < f.min || n > f.max ? `must be between ${f.min} and ${f.max}` : null;
+  if (f.min != null) return n < f.min ? `must be at least ${f.min}` : null;
+  if (f.max != null) return n > f.max ? `must be at most ${f.max}` : null;
+  return null;
+};
 
 export const CATEGORIES: { key: TestCategory; label: string; blurb: string }[] = [
   {

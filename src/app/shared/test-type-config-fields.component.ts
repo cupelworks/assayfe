@@ -6,9 +6,10 @@ import { TestTypesStore, assignmentFields } from '../api/test-types.store';
  * Per-assignment config for the currently-selected test types - one labeled field per
  * non-reference config_fields entry ("reference" always resolves from the test case's own
  * expected_output instead and never appears here, see TestType.config_fields): a textarea for
- * "multiline"/"rubric", a bounded number input for "numeric" (the API stores it as a plain
- * string and does not validate format or range itself, so the 0-1 clamp here is the only guard
- * it gets). Grouped by type so it's clear which field belongs to which selected type, since two
+ * "multiline"/"rubric", a bounded number input for "numeric" clamped to that field's own
+ * min/max (the API stores it as a plain string and does not validate format or range itself, so
+ * these client-side bounds - read from the descriptor, not assumed - are the only guard it
+ * gets). Grouped by type so it's clear which field belongs to which selected type, since two
  * types can each contribute their own fields to the same test case.
  */
 @Component({

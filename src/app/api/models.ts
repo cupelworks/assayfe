@@ -165,6 +165,11 @@ export interface ConfigFieldDescriptor {
   label: string;
   kind: ConfigFieldKind;
   required: boolean;
+  /** Advisory bounds for a "numeric" field - null for every other kind. The API does not
+   *  validate a submitted value against these (or that it's numeric at all), so they only drive
+   *  the FE's own input constraints and validation. */
+  min?: number | null;
+  max?: number | null;
 }
 export interface TestType {
   id: string;
