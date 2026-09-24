@@ -50,10 +50,10 @@ export class RunsApiService extends ApiBase {
   }
 
   // ---- run (all) ----
-  /** Every run in the system regardless of origin, newest first. */
-  latestRunsPage(offset = 0, limit = 100) {
+  /** Every run in the system regardless of origin, newest first - optionally restricted to one status. */
+  latestRunsPage(offset = 0, limit = 100, status?: M.TestStatus) {
     return this.http.get<M.Page<M.AnyRunMetadata>>(this.u('/runs'), {
-      params: PAGE(offset, limit),
+      params: status ? PAGE(offset, limit).set('status', status) : PAGE(offset, limit),
     });
   }
   latestRuns(limit = 100) {

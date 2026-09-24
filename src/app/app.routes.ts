@@ -9,6 +9,7 @@ import { ScopesListComponent } from './scopes/scopes-list.component';
 import { TestSetDetailComponent } from './scopes/test-set-detail.component';
 import { TestPlanDetailComponent } from './scopes/test-plan-detail.component';
 import { ExecutionComponent } from './runs/execution.component';
+import { RunsListComponent } from './runs/runs-list.component';
 import { RunDetailComponent } from './runs/run-detail.component';
 import { StandaloneRunDetailComponent } from './runs/standalone-run-detail.component';
 import { TestTypesComponent } from './test-types/test-types.component';
@@ -21,6 +22,7 @@ export const routes: Routes = [
     component: ShellComponent,
     children: [
       { path: '', component: OverviewComponent },
+      { path: 'runs', component: RunsListComponent },
       { path: 'datasets', component: DatasetsListComponent },
       { path: 'datasets/:id', component: DatasetDetailComponent },
       { path: 'tests', component: TestsListComponent },
