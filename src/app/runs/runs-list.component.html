@@ -34,12 +34,14 @@
         <th>Status</th>
         <th>Name</th>
         <th>Origin</th>
-        <th>Created</th>
+        <th class="sortable" (click)="toggleSort()">
+          Created<span class="sort-arrow">{{ sortDir() === 'desc' ? ' ↓' : ' ↑' }}</span>
+        </th>
         <th>Run</th>
       </tr>
     </thead>
     <tbody>
-      @for (r of runs(); track r.id) {
+      @for (r of sortedRuns(); track r.id) {
         <tr>
           <td>
             <span class="st"

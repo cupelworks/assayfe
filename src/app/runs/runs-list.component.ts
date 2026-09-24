@@ -55,6 +55,18 @@ export class RunsListComponent {
     25,
   );
   runs = this.page.items;
+  /** Created-column sort, client-side over whatever page is currently loaded - the API always
+   *  returns newest-first with no sort param of its own, so this only reorders the visible page,
+   *  not the underlying dataset across pages. Persists across pagination/filter changes rather
+   *  than resetting, same as any other sort toggle. */
+  sortDir = signal<'desc' | 'asc'>('desc');
+  sortedRuns = computed(() => {
+    const dir = this.sortDir();
+    return [...this.runs()].sort((a, b) => {
+      const diff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      return dir === 'asc' ? diff : -diff;
+    });
+  });
   constructor() {
     effect(() => {
       this.status();
@@ -94,6 +106,9 @@ export class RunsListComponent {
       map((n) => [r.id, n?.trim() || fallback] as [string, string]),
       catchError(() => of([r.id, fallback] as [string, string])),
     );
+  }
+  toggleSort() {
+    this.sortDir.update((d) => (d === 'desc' ? 'asc' : 'desc'));
   }
   /** Toggles the ?origin= query param in place - clicking the active chip clears it back to "every origin". */
   toggleOrigin(o: RunOrigin) {

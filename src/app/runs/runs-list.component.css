@@ -8,3 +8,13 @@
   all: unset;
   cursor: pointer;
 }
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+.sortable:hover {
+  color: var(--color-text);
+}
+.sort-arrow {
+  color: var(--color-accent);
+}
