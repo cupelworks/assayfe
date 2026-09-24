@@ -10,3 +10,9 @@
 .copyable:hover {
   color: var(--color-accent);
 }
+.dot-cluster {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}

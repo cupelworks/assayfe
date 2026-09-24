@@ -3,7 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Observable, forkJoin, map, catchError, of } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
-import { Kind, RunMetadata } from '../api/models';
+import { Kind, RunMetadata, TestTypeResult } from '../api/models';
 import {
   rel,
   absTime,
@@ -56,6 +56,9 @@ export class ExecutionComponent {
    *  TestPlan (this page only exists for an execution, which Standalone runs never have), so
    *  unlike the global runs list there's only ever the one lookup shape to make. */
   runNames = signal<Record<string, string>>({});
+  /** Per-type pass/fail, from that same per-row RunDetails fetch (already made for the name) -
+   *  null while the run has nothing to show yet (Pending/Running/NotRan). */
+  runResults = signal<Record<string, Record<string, TestTypeResult> | null>>({});
   /** The id whose "Copied" feedback is currently showing (Entry or Run cell) - cleared 1.2s
    *  after a successful copy. */
   copiedId = signal<string | null>(null);
@@ -73,19 +76,40 @@ export class ExecutionComponent {
       const items = this.page.items();
       if (!items.length) {
         this.runNames.set({});
+        this.runResults.set({});
         return;
       }
-      forkJoin(items.map((r) => this.resolveName(r))).subscribe((pairs) =>
-        this.runNames.set(Object.fromEntries(pairs)),
-      );
+      forkJoin(items.map((r) => this.resolveRow(r))).subscribe((rows) => {
+        this.runNames.set(Object.fromEntries(rows.map(([id, name]) => [id, name])));
+        this.runResults.set(Object.fromEntries(rows.map(([id, , results]) => [id, results])));
+      });
     });
   }
-  private resolveName(r: RunMetadata): Observable<[string, string]> {
+  private resolveRow(
+    r: RunMetadata,
+  ): Observable<[string, string, Record<string, TestTypeResult> | null]> {
     const fallback = `Untitled · ${short(r.id)}`;
     return this.api.runDetails(this.kind(), this.id(), this.execId(), r.id).pipe(
-      map((d) => [r.id, d.name?.trim() || fallback] as [string, string]),
-      catchError(() => of([r.id, fallback] as [string, string])),
+      map(
+        (d) =>
+          [r.id, d.name?.trim() || fallback, d.results ?? null] as [
+            string,
+            string,
+            Record<string, TestTypeResult> | null,
+          ],
+      ),
+      catchError(() =>
+        of([r.id, fallback, null] as [string, string, Record<string, TestTypeResult> | null]),
+      ),
     );
+  }
+  /** Per-type dots for the Results column - null (rendered as a dash) while the run's had
+   *  nothing to evaluate yet. */
+  resultDots(id: string): { name: string; passed: boolean }[] | null {
+    const results = this.runResults()[id];
+    return results
+      ? Object.entries(results).map(([name, r]) => ({ name, passed: r.passed }))
+      : null;
   }
   async copyId(id: string) {
     if (await copyText(id)) {

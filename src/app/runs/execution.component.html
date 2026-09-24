@@ -43,6 +43,7 @@
   <table class="table">
     <colgroup>
       <col style="width: 140px" />
+      <col style="width: 160px" />
       <col />
       <col style="width: 120px" />
       <col style="width: 120px" />
@@ -51,6 +52,7 @@
     <thead>
       <tr>
         <th>Status</th>
+        <th>Results</th>
         <th>Name</th>
         <th>Entry</th>
         <th>Run</th>
@@ -65,6 +67,30 @@
               ><span class="dot" [style.background]="statusColor(r.status)"></span
               >{{ statusLabel(r.status) }}</span
             >
+          </td>
+          <td>
+            @if (resultDots(r.id); as dots) {
+              @if (dots.length) {
+                <span class="dot-cluster">
+                  @for (d of dots.slice(0, 8); track d.name) {
+                    <span
+                      class="dot"
+                      [title]="d.name + ': ' + (d.passed ? 'passed' : 'failed')"
+                      [style.background]="
+                        d.passed ? 'var(--color-status-green)' : 'var(--color-accent)'
+                      "
+                    ></span>
+                  }
+                  @if (dots.length > 8) {
+                    <span class="small muted">+{{ dots.length - 8 }}</span>
+                  }
+                </span>
+              } @else {
+                <span class="muted">-</span>
+              }
+            } @else {
+              <span class="muted">-</span>
+            }
           </td>
           <td class="strong">
             <a
@@ -90,7 +116,7 @@
       } @empty {
         @if (!page.loading()) {
           <tr>
-            <td colspan="5" class="empty">No runs.</td>
+            <td colspan="6" class="empty">No runs.</td>
           </tr>
         }
       }
