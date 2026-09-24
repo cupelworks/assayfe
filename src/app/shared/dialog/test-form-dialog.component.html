@@ -71,5 +71,13 @@
       [hasReference]="hasReference()"
       (selectedChange)="types.set($event)"
     />
+    <assay-test-type-config-fields
+      [selected]="types()"
+      [value]="configs()"
+      (valueChange)="configs.set($event)"
+    />
+    @if (missingRequired().length) {
+      <div class="note note-warn">Missing required: {{ missingRequired().join(', ') }}</div>
+    }
   </div>
 </assay-dialog>

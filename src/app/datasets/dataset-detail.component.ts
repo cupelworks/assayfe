@@ -4,9 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { DatasetsApiService } from '../api/datasets-api.service';
 import { TestsApiService } from '../api/tests-api.service';
 import { CatalogStore } from '../api/catalog.store';
-import { DataSetMetadata, DataSetRow, DataSetRowSchema } from '../api/models';
+import { DataSetMetadata, DataSetRow, DataSetRowSchema, TestTypeAssignment } from '../api/models';
+import { TestTypesStore, assignmentFields } from '../api/test-types.store';
 import { rel, short, errText } from '../shared/format';
 import { TestTypePickerComponent } from '../shared/test-type-picker.component';
+import { TestTypeConfigFieldsComponent } from '../shared/test-type-config-fields.component';
 import { DialogComponent } from '../shared/dialog/dialog.component';
 import { NameDialogComponent } from '../shared/dialog/name-dialog.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
@@ -27,6 +29,7 @@ const EMPTY: DataSetRowSchema = { prompt: '', expected_output: '', model_output:
     ConfirmDialogComponent,
     PagerComponent,
     TestTypePickerComponent,
+    TestTypeConfigFieldsComponent,
   ],
   templateUrl: './dataset-detail.component.html',
   styleUrls: ['../shared/page.css', './dataset-detail.component.css'],
@@ -35,6 +38,7 @@ export class DatasetDetailComponent {
   id = input.required<string>();
   datasetsApi = inject(DatasetsApiService);
   testsApi = inject(TestsApiService);
+  testTypesStore = inject(TestTypesStore);
   store = inject(CatalogStore);
   router = inject(Router);
   rel = rel;
@@ -51,6 +55,9 @@ export class DatasetDetailComponent {
   msg = signal<{ ok: boolean; text: string } | null>(null);
   jsonl = signal('');
   typeNames = signal<string[]>([]);
+  /** Config values for the "Create tests from rows" batch - one shared value per field across
+   *  every row created, same shape as TestFormDialogComponent's per-test configs. */
+  batchConfig = signal<Record<string, Record<string, string>>>({});
   editing = signal<DataSetRow | null>(null);
   draft = signal<DataSetRowSchema>({ ...EMPTY });
   name = computed(() => this.meta()?.name ?? short(this.id()));
@@ -137,6 +144,7 @@ export class DatasetDetailComponent {
     this.err.set(null);
     this.jsonl.set('');
     this.typeNames.set([]);
+    this.batchConfig.set({});
     if (row) {
       this.editing.set(row);
       this.draft.set({ ...row.row_info });
@@ -203,8 +211,18 @@ export class DatasetDetailComponent {
     );
   }
   toTests() {
+    const byName = this.testTypesStore.byName();
+    const cfg = this.batchConfig();
+    const assignments: TestTypeAssignment[] = this.typeNames().map((name) => {
+      const t = byName.get(name);
+      const fields = t ? assignmentFields(t) : [];
+      const config: Record<string, string> = {};
+      for (const f of fields)
+        if (cfg[name]?.[f.key]?.trim()) config[f.key] = cfg[name][f.key].trim();
+      return { name, config: Object.keys(config).length ? config : null };
+    });
     this.run(
-      this.testsApi.createTestsFromDataset(this.id(), this.typeNames()),
+      this.testsApi.createTestsFromDataset(this.id(), assignments),
       (r) => `Created ${(r as any).test_cases.length} tests from this dataset.`,
       () => this.router.navigate(['/tests']),
     );

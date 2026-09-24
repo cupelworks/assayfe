@@ -52,7 +52,7 @@
             @if (t.cost) {
               <span class="tag tag-neutral">{{ t.cost }}</span>
             }
-            @if (t.required_reference && !hasReference()) {
+            @if (needsReference(t) && !hasReference()) {
               <span class="tag tag-accent">needs reference</span>
             }
             @if (!t.is_active) {

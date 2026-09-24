@@ -48,7 +48,7 @@ export class TestDetailComponent {
         ].filter((f) => f[1]) as [string, string][])
       : [];
   });
-  canRun = computed(() => !!this.test()?.test_type_names?.length);
+  canRun = computed(() => !!this.test()?.test_type_assignments?.length);
   constructor() {
     effect(() => {
       this.id();

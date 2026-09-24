@@ -239,7 +239,8 @@
     >
       <p class="muted" style="margin: 0">
         Every row becomes a live test (prompt → input, expected → expected output, model output
-        copied). All share the test types you pick here; leave empty to assign later.
+        copied). All share the test types and config values you set here; leave empty to assign
+        later.
       </p>
       <div class="field">
         <label>Test types</label
@@ -247,6 +248,11 @@
           [selected]="typeNames()"
           [hasReference]="true"
           (selectedChange)="typeNames.set($event)"
+        />
+        <assay-test-type-config-fields
+          [selected]="typeNames()"
+          [value]="batchConfig()"
+          (valueChange)="batchConfig.set($event)"
         />
       </div>
     </assay-dialog>

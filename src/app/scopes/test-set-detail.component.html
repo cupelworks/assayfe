@@ -83,8 +83,8 @@
             <td class="muted ellip" style="width: auto">{{ e.input }}</td>
             <td>
               <div class="tags">
-                @for (t of e.test_type_names ?? []; track t) {
-                  <span class="tag tag-outline">{{ t }}</span>
+                @for (t of e.test_type_assignments ?? []; track t.name) {
+                  <span class="tag tag-outline">{{ t.name }}</span>
                 } @empty {
                   <span class="small">none</span>
                 }

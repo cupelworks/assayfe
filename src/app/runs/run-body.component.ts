@@ -1,6 +1,6 @@
 import { Component, input, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { RunDetails, StandaloneRunDetails } from '../api/models';
+import { RunDetails, StandaloneRunDetails, TestTypeAssignment } from '../api/models';
 import { rel, statusColor } from '../shared/format';
 
 /** Status / error / scores (left) + frozen or live test content (right). */
@@ -55,8 +55,8 @@ import { rel, statusColor } from '../shared/format';
           }
         </div>
         <div class="tags">
-          @for (t of content()?.test_type_names ?? []; track t) {
-            <span class="tag tag-outline">{{ t }}</span>
+          @for (t of content()?.test_type_assignments ?? []; track t.name) {
+            <span class="tag tag-outline">{{ t.name }}</span>
           }
         </div>
         @for (f of fields(); track f[0]) {
@@ -78,7 +78,7 @@ export class RunBodyComponent {
     input?: string;
     expected_output?: string | null;
     model_output?: string | null;
-    test_type_names?: string[];
+    test_type_assignments?: TestTypeAssignment[];
   } | null>(null);
   heading = input('Frozen entry');
   snapshotAt = input<string | null>(null);

@@ -1,0 +1,25 @@
+@if (sections().length) {
+  <div class="ttc">
+    @for (s of sections(); track s.name) {
+      <div class="ttc-section">
+        <div class="ttc-head">{{ s.name }}</div>
+        @for (f of s.fields; track f.key) {
+          <div class="field">
+            <label>
+              {{ f.label }}
+              @if (!f.required) {
+                <span class="hint">- optional</span>
+              }
+            </label>
+            <textarea
+              class="input ta"
+              rows="3"
+              [ngModel]="fieldValue(s.name, f.key)"
+              (ngModelChange)="setFieldValue(s.name, f.key, $event)"
+            ></textarea>
+          </div>
+        }
+      </div>
+    }
+  </div>
+}

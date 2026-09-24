@@ -1,0 +1,28 @@
+.ttc {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 10px;
+}
+.ttc-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-divider);
+  border-radius: 8px;
+}
+.ttc-head {
+  font-size: 12px;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+.hint {
+  color: var(--color-neutral-500);
+  font-weight: 400;
+  font-size: 12px;
+}
+.ta {
+  resize: vertical;
+  font-family: inherit;
+}

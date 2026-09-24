@@ -48,12 +48,20 @@ export interface DataSetMutationResult {
 }
 
 // Tests
+/** Per-field config values for one assigned test type, keyed by the type's config_fields[].key.
+ *  Never carries a `reference`-kind field - that always resolves from the test case's own
+ *  expected_output instead (see TestType.config_fields). Null when the type has no non-reference
+ *  fields, or none were filled in. */
+export interface TestTypeAssignment {
+  name: string;
+  config?: Record<string, string> | null;
+}
 export interface TestCaseBody {
   name?: string;
   input: string;
   expected_output?: string | null;
   model_output?: string | null;
-  test_type_names?: string[];
+  test_type_assignments?: TestTypeAssignment[];
 }
 export interface TestCase extends TestCaseBody {
   id: string;
@@ -144,6 +152,18 @@ export interface AnyExecutionMetadata {
 
 // Test types catalogue
 export type TestCategory = 'deterministic' | 'nlp_metric' | 'llm_as_judge';
+/** reference: reserved - always resolves from the test case's expected_output, never stored in
+ *  an assignment's config. multiline: freeform text, no format validation (e.g. a regex pattern
+ *  or a substring - stored as given). rubric: freeform text injected into the LLM-as-judge
+ *  prompt at evaluation time. Closed set - extend only when a type needs a shape none of these
+ *  cover (e.g. numeric, enum/select). */
+export type ConfigFieldKind = 'reference' | 'multiline' | 'rubric';
+export interface ConfigFieldDescriptor {
+  key: string;
+  label: string;
+  kind: ConfigFieldKind;
+  required: boolean;
+}
 export interface TestType {
   id: string;
   name: string;
@@ -154,7 +174,7 @@ export interface TestType {
   best_for: string;
   cost: string;
   limitations: string;
-  required_reference: boolean;
+  config_fields: ConfigFieldDescriptor[];
 }
 
 export type Kind = 'test-sets' | 'test-plans';

@@ -62,10 +62,10 @@
           </td>
           <td class="muted ellip" style="width: auto">{{ t.input }}</td>
           <td>
-            @if (t.test_type_names?.length) {
+            @if (t.test_type_assignments?.length) {
               <div class="tags">
-                @for (x of t.test_type_names; track x) {
-                  <span class="tag tag-outline">{{ x }}</span>
+                @for (x of t.test_type_assignments; track x.name) {
+                  <span class="tag tag-outline">{{ x.name }}</span>
                 }
               </div>
             } @else {

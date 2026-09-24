@@ -124,3 +124,10 @@ dd {
   margin-top: auto;
   color: var(--color-accent);
 }
+.config-fields {
+  margin: 0;
+  padding-left: 16px;
+}
+.config-fields li + li {
+  margin-top: 2px;
+}

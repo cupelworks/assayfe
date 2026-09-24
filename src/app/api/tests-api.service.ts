@@ -35,10 +35,10 @@ export class TestsApiService extends ApiBase {
   deleteTests(ids: string[]) {
     return this.http.delete<unknown>(this.u('/tests'), { body: this.ids(ids) });
   }
-  createTestsFromDataset(datasetId: string, test_type_names?: string[]) {
+  createTestsFromDataset(datasetId: string, test_type_assignments?: M.TestTypeAssignment[]) {
     return this.http.post<{ id: string; test_cases: M.Ref[] }>(this.u('/tests/from-dataset'), {
       id: datasetId,
-      ...(test_type_names?.length ? { test_type_names } : {}),
+      ...(test_type_assignments?.length ? { test_type_assignments } : {}),
     });
   }
 

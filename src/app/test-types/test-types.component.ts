@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TestTypesStore, CATEGORIES } from '../api/test-types.store';
+import { TestTypesStore, CATEGORIES, needsReference } from '../api/test-types.store';
 import { TestCategory, TestType } from '../api/models';
 import { rel } from '../shared/format';
 
@@ -15,6 +15,7 @@ export class TestTypesComponent implements OnInit {
   store = inject(TestTypesStore);
   categories = CATEGORIES;
   rel = rel;
+  needsReference = needsReference;
   category = signal<TestCategory | 'all'>('all');
   showInactive = signal(false);
   filter = signal('');

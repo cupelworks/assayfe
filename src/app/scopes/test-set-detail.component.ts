@@ -62,12 +62,16 @@ export class TestSetDetailComponent {
     const inSet = new Set(this.entries().map((e) => e.test_case_id.id));
     return this.store.tests().map((t) => {
       const dup = inSet.has(t.id),
-        noTypes = !t.test_type_names?.length;
+        noTypes = !t.test_type_assignments?.length;
       return {
         id: t.id,
         name: t.name || 'Untitled · ' + short(t.id),
         sub: t.input,
-        meta: dup ? 'already in set' : noTypes ? 'no test types' : t.test_type_names!.join(', '),
+        meta: dup
+          ? 'already in set'
+          : noTypes
+            ? 'no test types'
+            : t.test_type_assignments!.map((a) => a.name).join(', '),
         disabled: dup,
         dim: noTypes,
       };

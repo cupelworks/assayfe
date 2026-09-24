@@ -79,7 +79,7 @@
               <h3>{{ t.name }}</h3>
               <div class="tags">
                 <span class="tag tag-neutral">{{ t.cost }}</span>
-                @if (t.required_reference) {
+                @if (needsReference(t)) {
                   <span class="tag tag-outline">needs reference</span>
                 }
                 @if (!t.is_active) {
@@ -96,13 +96,25 @@
               @if (openId() === t.id) {
                 <dt>Category</dt>
                 <dd>{{ g.label }}</dd>
-                <dt>Reference</dt>
+                <dt>Configuration</dt>
                 <dd>
-                  {{
-                    t.required_reference
-                      ? 'Required - the test needs an expected_output'
-                      : 'Not required - scores the output on its own'
-                  }}
+                  @if (t.config_fields.length) {
+                    <ul class="config-fields">
+                      @for (f of t.config_fields; track f.key) {
+                        <li>
+                          {{ f.label }}
+                          <span class="small">
+                            ({{ f.required ? 'required' : 'optional'
+                            }}{{ f.kind === 'reference' ? ' - uses expected output' : '' }})
+                          </span>
+                        </li>
+                      }
+                    </ul>
+                  } @else {
+                    <span class="small"
+                      >No configuration needed - scores the output on its own.</span
+                    >
+                  }
                 </dd>
                 <dt>Added</dt>
                 <dd>{{ rel(t.created_at) }}</dd>

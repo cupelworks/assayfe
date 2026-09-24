@@ -1,7 +1,7 @@
 import { Component, inject, input, output, signal, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { TestTypesStore, CATEGORIES } from '../api/test-types.store';
+import { TestTypesStore, CATEGORIES, needsReference } from '../api/test-types.store';
 import { TestCategory } from '../api/models';
 
 /**
@@ -26,6 +26,7 @@ export class TestTypePickerComponent implements OnInit {
 
   store = inject(TestTypesStore);
   categories = CATEGORIES;
+  needsReference = needsReference;
   search = signal('');
   categoryFilter = signal<TestCategory | 'all'>('all');
   onlyCompatible = signal(false);
@@ -43,10 +44,7 @@ export class TestTypePickerComponent implements OnInit {
           .filter(
             (t) =>
               (t.is_active || sel.includes(t.name)) &&
-              (!compatOnly ||
-                !t.required_reference ||
-                this.hasReference() ||
-                sel.includes(t.name)) &&
+              (!compatOnly || !needsReference(t) || this.hasReference() || sel.includes(t.name)) &&
               (!f || (t.name + ' ' + t.description + ' ' + t.best_for).toLowerCase().includes(f)),
           ),
       }))

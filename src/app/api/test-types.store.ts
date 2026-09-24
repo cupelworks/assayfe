@@ -2,6 +2,16 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { TestsApiService } from './tests-api.service';
 import { TestCategory, TestType } from './models';
 
+/** Whether a type needs an expected_output to work at all - derived from config_fields instead
+ *  of the removed required_reference bool, since a type can now need config without needing a
+ *  reference (Regex Match/Contains: required config_fields, but kind "multiline" not "reference"). */
+export const needsReference = (t: TestType) =>
+  t.config_fields.some((f) => f.kind === 'reference' && f.required);
+/** The fields a type actually needs stored per-assignment - excludes "reference" entries, which
+ *  always resolve from the test case's own expected_output and are never written into config. */
+export const assignmentFields = (t: TestType) =>
+  t.config_fields.filter((f) => f.kind !== 'reference');
+
 export const CATEGORIES: { key: TestCategory; label: string; blurb: string }[] = [
   {
     key: 'deterministic',

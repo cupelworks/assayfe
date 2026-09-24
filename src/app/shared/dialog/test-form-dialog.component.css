@@ -38,3 +38,6 @@
   align-items: center;
   flex-wrap: wrap;
 }
+.note-warn {
+  color: var(--color-accent-700);
+}
