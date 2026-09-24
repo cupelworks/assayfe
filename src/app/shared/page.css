@@ -273,10 +273,6 @@ button {
   border-top: 1px solid var(--color-divider);
   padding-top: 10px;
 }
-.status.plain.tile {
-  padding: 10px 14px 18px;
-  margin: 0 -14px;
-}
 .st {
   display: inline-flex;
   align-items: center;
