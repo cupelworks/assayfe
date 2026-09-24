@@ -1,0 +1,10 @@
+.chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 16px 0 24px;
+}
+.chip-btn {
+  all: unset;
+  cursor: pointer;
+}

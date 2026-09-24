@@ -9,6 +9,18 @@
 </div>
 
 <section class="cell">
+  <div class="chips">
+    @for (o of origins; track o) {
+      <button type="button" class="chip-btn" (click)="toggleOrigin(o)">
+        <span
+          class="tag"
+          [class.tag-accent]="origin() === o"
+          [class.tag-outline]="origin() !== o"
+          >{{ originLabel(o) }}</span
+        >
+      </button>
+    }
+  </div>
   <table class="table">
     <colgroup>
       <col style="width: 140px" />
@@ -57,7 +69,9 @@
       } @empty {
         @if (!page.loading()) {
           <tr>
-            <td colspan="5" class="empty">No runs{{ status() ? ' with this status' : '' }} yet.</td>
+            <td colspan="5" class="empty">
+              No {{ status() || origin() ? 'matching ' : '' }}runs yet.
+            </td>
           </tr>
         }
       }

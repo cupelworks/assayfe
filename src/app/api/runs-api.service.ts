@@ -50,11 +50,12 @@ export class RunsApiService extends ApiBase {
   }
 
   // ---- run (all) ----
-  /** Every run in the system regardless of origin, newest first - optionally restricted to one status. */
-  latestRunsPage(offset = 0, limit = 100, status?: M.TestStatus) {
-    return this.http.get<M.Page<M.AnyRunMetadata>>(this.u('/runs'), {
-      params: status ? PAGE(offset, limit).set('status', status) : PAGE(offset, limit),
-    });
+  /** Every run in the system, newest first - optionally restricted to one status and/or one origin. */
+  latestRunsPage(offset = 0, limit = 100, status?: M.TestStatus, origin?: M.RunOrigin) {
+    let params = PAGE(offset, limit);
+    if (status) params = params.set('status', status);
+    if (origin) params = params.set('origin', origin);
+    return this.http.get<M.Page<M.AnyRunMetadata>>(this.u('/runs'), { params });
   }
   latestRuns(limit = 100) {
     return this.safe(this.items(this.latestRunsPage(0, limit)));
