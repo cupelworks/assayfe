@@ -68,6 +68,7 @@
             <a
               class="plain"
               [routerLink]="['/', kind(), id(), 'executions', execId(), 'runs', r.id]"
+              [title]="'entry ' + (r.test_set_entry_id?.id ?? '')"
               >{{ runNames()[r.id] ?? '…' }}</a
             >
           </td>
