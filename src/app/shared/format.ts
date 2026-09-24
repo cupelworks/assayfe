@@ -16,6 +16,16 @@ export function absTime(iso?: string | null) {
   if (!iso) return '';
   return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 }
+/** Best-effort clipboard write - false (never throws) if the Clipboard API is unavailable or
+ *  permission is denied, so a caller can skip its "Copied" feedback rather than show it falsely. */
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
 export const STATUS: { key: TestStatus; color: string }[] = [
   { key: 'Pending', color: 'var(--color-neutral-400)' },
   { key: 'Running', color: 'var(--color-accent-400)' },

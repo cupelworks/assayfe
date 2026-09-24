@@ -4,7 +4,15 @@ import { Observable, forkJoin, map, catchError, of } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { Kind, RunMetadata } from '../api/models';
-import { rel, absTime, short, countByStatus, statusColor, errText } from '../shared/format';
+import {
+  rel,
+  absTime,
+  copyText,
+  short,
+  countByStatus,
+  statusColor,
+  errText,
+} from '../shared/format';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
 
@@ -46,6 +54,9 @@ export class ExecutionComponent {
    *  TestPlan (this page only exists for an execution, which Standalone runs never have), so
    *  unlike the global runs list there's only ever the one lookup shape to make. */
   runNames = signal<Record<string, string>>({});
+  /** The id whose "Copied" feedback is currently showing (Entry or Run cell) - cleared 1.2s
+   *  after a successful copy. */
+  copiedId = signal<string | null>(null);
   constructor() {
     effect(() => {
       // This scope's own name (store.parent) - only sets or plans is needed, by kind.
@@ -73,6 +84,14 @@ export class ExecutionComponent {
       map((d) => [r.id, d.name?.trim() || fallback] as [string, string]),
       catchError(() => of([r.id, fallback] as [string, string])),
     );
+  }
+  async copyId(id: string) {
+    if (await copyText(id)) {
+      this.copiedId.set(id);
+      setTimeout(() => {
+        if (this.copiedId() === id) this.copiedId.set(null);
+      }, 1200);
+    }
   }
   replay() {
     this.busy.set(true);

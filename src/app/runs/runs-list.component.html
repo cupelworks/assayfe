@@ -57,7 +57,11 @@
             }
           </td>
           <td class="muted">{{ originLabel(r.origin) }}</td>
-          <td class="small mono" [title]="r.id">{{ short(r.id) }}</td>
+          <td class="small mono">
+            <button type="button" class="copyable" [title]="r.id" (click)="copyId(r.id)">
+              {{ copiedId() === r.id ? 'Copied' : short(r.id) }}
+            </button>
+          </td>
           <td class="muted" [title]="absTime(r.created_at)">{{ rel(r.created_at) }}</td>
         </tr>
       } @empty {

@@ -4,7 +4,7 @@ import { Observable, forkJoin, map, catchError, of } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
 import { TestsApiService } from '../api/tests-api.service';
 import { AnyRunMetadata, RunOrigin, TestStatus } from '../api/models';
-import { rel, absTime, short, statusColor } from '../shared/format';
+import { rel, absTime, copyText, short, statusColor } from '../shared/format';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
 
@@ -45,6 +45,9 @@ export class RunsListComponent {
    *  (their run details already carry the frozen entry's name directly). '…' while a row's
    *  lookup hasn't resolved yet. */
   names = signal<Record<string, string>>({});
+  /** The id whose "Copied" feedback is currently showing on the Run cell - cleared 1.2s after a
+   *  successful copy. */
+  copiedId = signal<string | null>(null);
   originLabel = (o: string) => ORIGIN_LABEL[o] ?? o;
   title = computed(() => {
     const bits = [this.status() ?? '', this.origin() ? this.originLabel(this.origin()!) : ''];
@@ -110,6 +113,14 @@ export class RunsListComponent {
   }
   toggleSort() {
     this.sortDir.update((d) => (d === 'desc' ? 'asc' : 'desc'));
+  }
+  async copyId(id: string) {
+    if (await copyText(id)) {
+      this.copiedId.set(id);
+      setTimeout(() => {
+        if (this.copiedId() === id) this.copiedId.set(null);
+      }, 1200);
+    }
   }
   /** Toggles the ?origin= query param in place - clicking the active chip clears it back to "every origin". */
   toggleOrigin(o: RunOrigin) {

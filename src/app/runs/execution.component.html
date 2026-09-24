@@ -73,10 +73,18 @@
               >{{ runNames()[r.id] ?? '…' }}</a
             >
           </td>
-          <td class="small mono" [title]="r.test_set_entry_id?.id ?? ''">
-            {{ short(r.test_set_entry_id?.id) }}
+          <td class="small mono">
+            @if (r.test_set_entry_id; as entry) {
+              <button type="button" class="copyable" [title]="entry.id" (click)="copyId(entry.id)">
+                {{ copiedId() === entry.id ? 'Copied' : short(entry.id) }}
+              </button>
+            }
           </td>
-          <td class="small mono" [title]="r.id">{{ short(r.id) }}</td>
+          <td class="small mono">
+            <button type="button" class="copyable" [title]="r.id" (click)="copyId(r.id)">
+              {{ copiedId() === r.id ? 'Copied' : short(r.id) }}
+            </button>
+          </td>
           <td class="muted" [title]="absTime(r.created_at)">{{ rel(r.created_at) }}</td>
         </tr>
       } @empty {
