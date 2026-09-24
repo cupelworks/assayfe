@@ -7,6 +7,11 @@ import { TestCategory, TestType } from './models';
  *  reference (Regex Match/Contains: required config_fields, but kind "multiline" not "reference"). */
 export const needsReference = (t: TestType) =>
   t.config_fields.some((f) => f.kind === 'reference' && f.required);
+/** Whether a type needs ANY required input before it'll score anything - reference or not.
+ *  Catalogue-level, context-free (unlike TestTypePickerComponent's own needsAttention(), which
+ *  also knows whether the current test already has a reference filled in) - use this where
+ *  there's no specific test to check against, e.g. the catalogue page's per-card tag. */
+export const needsSetup = (t: TestType) => t.config_fields.some((f) => f.required);
 /** The fields a type actually needs stored per-assignment - excludes "reference" entries, which
  *  always resolve from the test case's own expected_output and are never written into config. */
 export const assignmentFields = (t: TestType) =>

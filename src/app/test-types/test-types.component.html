@@ -27,8 +27,8 @@
         <span class="tag tag-neutral">fast</span><span class="small">relative cost to compute</span>
       </div>
       <div>
-        <span class="tag tag-outline">needs reference</span
-        ><span class="small">requires an expected output</span>
+        <span class="tag tag-outline">needs setup</span
+        ><span class="small">requires input before it can be scored - see its fields below</span>
       </div>
       <div>
         <span class="tag tag-outline">inactive</span
@@ -79,8 +79,8 @@
               <h3>{{ t.name }}</h3>
               <div class="tags">
                 <span class="tag tag-neutral">{{ t.cost }}</span>
-                @if (needsReference(t)) {
-                  <span class="tag tag-outline">needs reference</span>
+                @if (needsSetup(t)) {
+                  <span class="tag tag-outline">needs setup</span>
                 }
                 @if (!t.is_active) {
                   <span class="tag tag-outline">inactive</span>

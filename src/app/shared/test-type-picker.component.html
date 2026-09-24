@@ -18,17 +18,15 @@
         </button>
       }
     </div>
-    @if (!hasReference()) {
-      <label class="chk-row"
-        ><input
-          type="checkbox"
-          class="chk"
-          [checked]="onlyCompatible()"
-          (change)="onlyCompatible.set(!onlyCompatible())"
-        />
-        Hide types needing a reference</label
-      >
-    }
+    <label class="chk-row"
+      ><input
+        type="checkbox"
+        class="chk"
+        [checked]="onlyCompatible()"
+        (change)="onlyCompatible.set(!onlyCompatible())"
+      />
+      Hide types needing setup</label
+    >
   </div>
 
   @for (g of groups(); track g.key) {
@@ -52,8 +50,8 @@
             @if (t.cost) {
               <span class="tag tag-neutral">{{ t.cost }}</span>
             }
-            @if (needsReference(t) && !hasReference()) {
-              <span class="tag tag-accent">needs reference</span>
+            @if (needsAttention(t)) {
+              <span class="tag tag-accent">needs setup</span>
             }
             @if (!t.is_active) {
               <span class="tag tag-outline">inactive</span>

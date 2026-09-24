@@ -60,12 +60,6 @@
       >Test types
       <span class="hint">- how the output is evaluated; a test with none can't be run</span></label
     >
-    @if (!hasReference()) {
-      <div class="note">
-        No expected output yet - types marked
-        <span class="tag tag-accent">needs reference</span> will fail without one.
-      </div>
-    }
     <assay-test-type-picker
       [selected]="types()"
       [hasReference]="hasReference()"
