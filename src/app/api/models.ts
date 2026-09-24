@@ -156,6 +156,10 @@ export interface AnyRunMetadata {
   test_set_entry_id?: Ref | null;
   test_set_execution_id?: Ref | null;
   test_plan_execution_id?: Ref | null;
+  /** The test set this run belongs to - set only when origin is TestSet. */
+  test_set_id?: Ref | null;
+  /** The test plan this run belongs to - set only when origin is TestPlan. */
+  test_plan_id?: Ref | null;
 }
 export type ExecutionOrigin = 'TestSet' | 'TestPlan';
 /** A row from GET /runs/executions - every test-set/test-plan execution, no standalone runs (they have no execution wrapper). Only the ID field(s) `origin` implies are non-null. */

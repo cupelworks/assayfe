@@ -63,4 +63,34 @@ export class RunsListComponent {
       queryParamsHandling: 'merge',
     });
   }
+  /** The nested run-detail route for this row, or null if the payload doesn't carry enough to
+   *  build one. Now that RunMetadata carries test_set_id/test_plan_id alongside the execution
+   *  id, every origin resolves - kept as a guard rather than an assumption, since a row missing
+   *  its expected id (rather than erroring) would otherwise throw building the routerLink array. */
+  runLink(r: AnyRunMetadata): unknown[] | null {
+    if (r.origin === 'Standalone' && r.test_case_id) {
+      return ['/tests', r.test_case_id.id, 'runs', r.id];
+    }
+    if (r.origin === 'TestSet' && r.test_set_id && r.test_set_execution_id) {
+      return [
+        '/test-sets',
+        r.test_set_id.id,
+        'executions',
+        r.test_set_execution_id.id,
+        'runs',
+        r.id,
+      ];
+    }
+    if (r.origin === 'TestPlan' && r.test_plan_id && r.test_plan_execution_id) {
+      return [
+        '/test-plans',
+        r.test_plan_id.id,
+        'executions',
+        r.test_plan_execution_id.id,
+        'runs',
+        r.id,
+      ];
+    }
+    return null;
+  }
 }
