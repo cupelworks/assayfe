@@ -387,6 +387,7 @@ textarea.input {
   letter-spacing: 0.02em;
   padding: 3px 10px;
   border-radius: calc(var(--radius-md) * 0.75);
+  white-space: nowrap;
 }
 .tag-accent {
   background: var(--color-accent-100);
