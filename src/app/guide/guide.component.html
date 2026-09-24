@@ -289,7 +289,7 @@
   <h2>Run lifecycle &amp; statuses</h2>
   <p class="section-lead">
     Every run moves through the same two lifecycle states, then lands on one of four outcomes - a
-    roll-up of how each assigned test type scored, not just "did it finish."
+    summary of how each assigned test type did, not just "did it finish."
   </p>
   <div class="status-grid" style="margin-bottom: 16px">
     <div class="status">
@@ -308,7 +308,7 @@
       <div class="label">
         <span class="dot" style="background: var(--color-status-green)"></span>Green
       </div>
-      <div class="small">Every assigned test type passed - <code>results</code> populated.</div>
+      <div class="small">Every assigned test type passed.</div>
     </div>
     <div class="status">
       <div class="label">
@@ -318,15 +318,16 @@
     </div>
     <div class="status">
       <div class="label"><span class="dot" style="background: var(--color-accent)"></span>Red</div>
-      <div class="small">Every assigned test type was evaluated - none passed.</div>
+      <div class="small">Every assigned test type was checked, and none passed.</div>
     </div>
     <div class="status">
       <div class="label">
         <span class="dot" style="background: var(--color-neutral-800)"></span>NotRan
       </div>
       <div class="small">
-        Nothing could be attempted at all (model/infra failure) - <code>error</code> populated
-        instead of <code>results</code>.
+        The run couldn't be evaluated at all - something went wrong before any test type could be
+        checked (e.g. the model couldn't be reached, or the test's content couldn't be loaded).
+        Unlike Red, nothing here failed a check - nothing was checked.
       </div>
     </div>
   </div>
