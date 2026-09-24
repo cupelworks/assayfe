@@ -10,13 +10,28 @@
               @if (!f.required) {
                 <span class="hint">- optional</span>
               }
+              @if (f.kind === 'numeric') {
+                <span class="hint">- 0.0 to 1.0</span>
+              }
             </label>
-            <textarea
-              class="input ta"
-              rows="3"
-              [ngModel]="fieldValue(s.name, f.key)"
-              (ngModelChange)="setFieldValue(s.name, f.key, $event)"
-            ></textarea>
+            @if (f.kind === 'numeric') {
+              <input
+                type="number"
+                class="input num"
+                min="0"
+                max="1"
+                step="0.01"
+                [ngModel]="fieldValue(s.name, f.key)"
+                (ngModelChange)="setFieldValue(s.name, f.key, $event)"
+              />
+            } @else {
+              <textarea
+                class="input ta"
+                rows="3"
+                [ngModel]="fieldValue(s.name, f.key)"
+                (ngModelChange)="setFieldValue(s.name, f.key, $event)"
+              ></textarea>
+            }
           </div>
         }
       </div>

@@ -58,6 +58,36 @@ export class DatasetDetailComponent {
   /** Config values for the "Create tests from rows" batch - one shared value per field across
    *  every row created, same shape as TestFormDialogComponent's per-test configs. */
   batchConfig = signal<Record<string, Record<string, string>>>({});
+  /** "<field label> (<type name>) - <problem>" for every batch-picked type's non-reference
+   *  config_fields entry that isn't fit to submit - a required field left empty, or a "numeric"
+   *  entry that isn't a plain number in [0, 1]. No "reference" case here (unlike
+   *  TestFormDialogComponent's equivalent): every row already carries its own expected_output
+   *  via DataSetRowSchema, so a reference field is always satisfied for this batch. Drives the
+   *  submit-disable guard and on-screen hint - the API accepts both problems silently (see
+   *  TestTypeConfigFieldsComponent's own doc comment). */
+  configIssues = computed(() => {
+    const byName = this.testTypesStore.byName();
+    const cfg = this.batchConfig();
+    const out: string[] = [];
+    for (const name of this.typeNames()) {
+      const t = byName.get(name);
+      if (!t) continue;
+      for (const f of assignmentFields(t)) {
+        const raw = cfg[name]?.[f.key]?.trim() ?? '';
+        if (!raw) {
+          if (f.required) out.push(`${f.label} (${name})`);
+          continue;
+        }
+        if (f.kind === 'numeric') {
+          const n = Number(raw);
+          if (!Number.isFinite(n) || n < 0 || n > 1) {
+            out.push(`${f.label} (${name}) - must be a number between 0 and 1`);
+          }
+        }
+      }
+    }
+    return out;
+  });
   editing = signal<DataSetRow | null>(null);
   draft = signal<DataSetRowSchema>({ ...EMPTY });
   name = computed(() => this.meta()?.name ?? short(this.id()));
@@ -211,6 +241,7 @@ export class DatasetDetailComponent {
     );
   }
   toTests() {
+    if (this.configIssues().length) return;
     const byName = this.testTypesStore.byName();
     const cfg = this.batchConfig();
     const assignments: TestTypeAssignment[] = this.typeNames().map((name) => {

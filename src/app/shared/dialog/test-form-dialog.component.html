@@ -70,8 +70,8 @@
       [value]="configs()"
       (valueChange)="configs.set($event)"
     />
-    @if (missingRequired().length) {
-      <div class="note note-warn">Missing required: {{ missingRequired().join(', ') }}</div>
+    @if (configIssues().length) {
+      <div class="note note-warn">Fix before saving: {{ configIssues().join(', ') }}</div>
     }
   </div>
 </assay-dialog>

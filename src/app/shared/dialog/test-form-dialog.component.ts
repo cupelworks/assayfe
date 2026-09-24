@@ -32,13 +32,15 @@ export class TestFormDialogComponent {
   /** Per-type config values, keyed by type name then field key - see TestTypeConfigFieldsComponent. */
   configs = signal<Record<string, Record<string, string>>>({});
   hasReference = computed(() => !!this.expected().trim());
-  /** "<field label> (<type name>)" for every required config_fields entry still empty on a
-   *  selected type - a "reference" entry checks expected_output (shared), everything else
-   *  checks this type's own configs() slot. Drives both the submit-disable guard and the
-   *  on-screen hint, since the API accepts an incomplete "reference" field silently (see
-   *  docs/test_type_config/next_move.md 3.1 - the required-field check explicitly excludes
-   *  kind "reference") and would otherwise let a test save that can never be scored. */
-  missingRequired = computed(() => {
+  /** "<field label> (<type name>) - <problem>" for every selected type's config_fields entry
+   *  that isn't fit to submit yet: a required field left empty (a "reference" entry checks
+   *  expected_output, shared; everything else checks this type's own configs() slot), or a
+   *  "numeric" entry that isn't a plain number in [0, 1]. Drives both the submit-disable guard
+   *  and the on-screen hint - the API accepts both problems silently (see
+   *  docs/test_type_config/next_move.md 3.1 for the required-field gap on "reference", and the
+   *  "numeric" kind's own handover note for the lack of any format/range check at all), so this
+   *  is the only thing standing between the user and a test that can never be scored correctly. */
+  configIssues = computed(() => {
     const byName = this.store.byName();
     const configs = this.configs();
     const out: string[] = [];
@@ -46,15 +48,26 @@ export class TestFormDialogComponent {
       const t = byName.get(name);
       if (!t) continue;
       for (const f of t.config_fields) {
-        if (!f.required) continue;
-        const empty =
-          f.kind === 'reference' ? !this.hasReference() : !configs[name]?.[f.key]?.trim();
-        if (empty) out.push(`${f.label} (${name})`);
+        if (f.kind === 'reference') {
+          if (f.required && !this.hasReference()) out.push(`${f.label} (${name})`);
+          continue;
+        }
+        const raw = configs[name]?.[f.key]?.trim() ?? '';
+        if (!raw) {
+          if (f.required) out.push(`${f.label} (${name})`);
+          continue;
+        }
+        if (f.kind === 'numeric') {
+          const n = Number(raw);
+          if (!Number.isFinite(n) || n < 0 || n > 1) {
+            out.push(`${f.label} (${name}) - must be a number between 0 and 1`);
+          }
+        }
       }
     }
     return out;
   });
-  valid = computed(() => !!this.inp().trim() && !this.missingRequired().length);
+  valid = computed(() => !!this.inp().trim() && !this.configIssues().length);
   ngOnInit() {
     const i = this.initial();
     if (i) {

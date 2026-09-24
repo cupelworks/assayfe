@@ -26,3 +26,6 @@
   resize: vertical;
   font-family: inherit;
 }
+.num {
+  max-width: 140px;
+}

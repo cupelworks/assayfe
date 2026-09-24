@@ -3,11 +3,13 @@ import { FormsModule } from '@angular/forms';
 import { TestTypesStore, assignmentFields } from '../api/test-types.store';
 
 /**
- * Per-assignment config for the currently-selected test types - one labeled textarea per
- * non-reference config_fields entry (kind "multiline" or "rubric"; "reference" always resolves
- * from the test case's own expected_output instead and never appears here, see TestType.config_fields).
- * Grouped by type so it's clear which field belongs to which selected type, since two types can
- * each contribute their own fields to the same test case.
+ * Per-assignment config for the currently-selected test types - one labeled field per
+ * non-reference config_fields entry ("reference" always resolves from the test case's own
+ * expected_output instead and never appears here, see TestType.config_fields): a textarea for
+ * "multiline"/"rubric", a bounded number input for "numeric" (the API stores it as a plain
+ * string and does not validate format or range itself, so the 0-1 clamp here is the only guard
+ * it gets). Grouped by type so it's clear which field belongs to which selected type, since two
+ * types can each contribute their own fields to the same test case.
  */
 @Component({
   selector: 'assay-test-type-config-fields',
@@ -36,11 +38,14 @@ export class TestTypeConfigFieldsComponent {
   fieldValue(typeName: string, key: string) {
     return this.value()[typeName]?.[key] ?? '';
   }
-  setFieldValue(typeName: string, key: string, v: string) {
+  /** v is a number (or null, when cleared) from the numeric input's NumberValueAccessor, a plain
+   *  string from the textarea - normalised to a string either way, since config values are
+   *  always stored as strings. */
+  setFieldValue(typeName: string, key: string, v: string | number | null) {
     const cur = this.value();
     this.valueChange.emit({
       ...cur,
-      [typeName]: { ...cur[typeName], [key]: v },
+      [typeName]: { ...cur[typeName], [key]: v === null ? '' : String(v) },
     });
   }
 }

@@ -155,9 +155,11 @@ export type TestCategory = 'deterministic' | 'nlp_metric' | 'llm_as_judge';
 /** reference: reserved - always resolves from the test case's expected_output, never stored in
  *  an assignment's config. multiline: freeform text, no format validation (e.g. a regex pattern
  *  or a substring - stored as given). rubric: freeform text injected into the LLM-as-judge
- *  prompt at evaluation time. Closed set - extend only when a type needs a shape none of these
- *  cover (e.g. numeric, enum/select). */
-export type ConfigFieldKind = 'reference' | 'multiline' | 'rubric';
+ *  prompt at evaluation time. numeric: a number, stored as a plain string like every other kind -
+ *  the API does NOT validate its format or range (a non-numeric or out-of-range value is accepted
+ *  silently), so the FE owns that check entirely. Closed set - extend only when a type needs a
+ *  shape none of these cover (e.g. enum/select). */
+export type ConfigFieldKind = 'reference' | 'multiline' | 'rubric' | 'numeric';
 export interface ConfigFieldDescriptor {
   key: string;
   label: string;

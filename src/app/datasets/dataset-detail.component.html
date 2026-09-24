@@ -232,7 +232,7 @@
       title="Create tests from rows"
       [wide]="true"
       [primaryLabel]="busy() ? 'Creating…' : 'Create ' + total() + ' tests'"
-      [primaryDisabled]="busy()"
+      [primaryDisabled]="busy() || configIssues().length > 0"
       [error]="err()"
       (primary)="toTests()"
       (close)="dlg.set(null)"
@@ -254,6 +254,9 @@
           [value]="batchConfig()"
           (valueChange)="batchConfig.set($event)"
         />
+        @if (configIssues().length) {
+          <div class="note-warn">Fix before saving: {{ configIssues().join(', ') }}</div>
+        }
       </div>
     </assay-dialog>
   }
