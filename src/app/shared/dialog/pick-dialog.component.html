@@ -32,7 +32,7 @@
             <span class="sub">{{ r.sub }}</span>
           }
         </span>
-        <span class="hint">{{ r.meta }}</span>
+        <span class="hint meta" [title]="r.meta">{{ r.meta }}</span>
       </label>
     } @empty {
       <div class="empty">{{ emptyText() }}</div>
