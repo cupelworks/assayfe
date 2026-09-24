@@ -38,7 +38,7 @@ export class RunsListComponent {
   short = short;
   statusColor = statusColor;
   origins = ORIGINS;
-  /** Resolved "Target" name per run id, keyed by row - fetched one call per visible row (25/page)
+  /** Resolved "Name" column value per run id, keyed by row - fetched one call per visible row (25/page)
    *  since there's no batch lookup: GET /tests/{id} for Standalone (its run details carry no
    *  name), GET /runs/{kind}/{id}/executions/{execId}/test-runs/{runId} for TestSet/TestPlan
    *  (their run details already carry the frozen entry's name directly). '…' while a row's
