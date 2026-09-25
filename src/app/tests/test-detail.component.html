@@ -49,14 +49,19 @@
         now.
       </p>
       @for (r of runs(); track r.id) {
-        <a class="exec plain" [routerLink]="['/tests', id(), 'runs', r.id]">
-          <div class="exec-main">
+        <div class="exec">
+          <a class="exec-main plain" [routerLink]="['/tests', id(), 'runs', r.id]">
             <span class="st"
               ><span class="dot" [style.background]="statusColor(r.status)"></span
-              >{{ r.status }}</span
-            ><span class="muted">{{ short(r.id) }} · {{ rel(r.created_at) }}</span>
-          </div>
-        </a>
+              >{{ statusLabel(r.status) }}</span
+            ><span class="muted" [title]="absTime(r.created_at)">{{ rel(r.created_at) }}</span>
+          </a>
+          <span class="small mono" style="align-self: center">
+            <button type="button" class="copyable" [title]="r.id" (click)="copyId(r.id)">
+              {{ copiedId() === r.id ? 'Copied' : short(r.id) }}
+            </button>
+          </span>
+        </div>
       } @empty {
         @if (!runsPage.loading()) {
           <div class="exec empty">Never run.</div>
