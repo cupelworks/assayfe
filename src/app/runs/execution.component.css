@@ -29,3 +29,13 @@
 .result-bar .seg.fail {
   background: var(--color-accent);
 }
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+.sortable:hover {
+  color: var(--color-text);
+}
+.sort-arrow {
+  color: var(--color-accent);
+}

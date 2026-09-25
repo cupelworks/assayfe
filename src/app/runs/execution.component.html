@@ -48,6 +48,7 @@
       <col style="width: 120px" />
       <col style="width: 120px" />
       <col style="width: 140px" />
+      <col style="width: 140px" />
     </colgroup>
     <thead>
       <tr>
@@ -56,11 +57,22 @@
         <th>Name</th>
         <th>Entry</th>
         <th>Run</th>
-        <th>Created</th>
+        <th class="sortable" (click)="toggleSort('created')">
+          Created
+          @if (sortKey() === 'created') {
+            <span class="sort-arrow">{{ sortDir() === 'desc' ? ' ↓' : ' ↑' }}</span>
+          }
+        </th>
+        <th class="sortable" (click)="toggleSort('executed')">
+          Executed
+          @if (sortKey() === 'executed') {
+            <span class="sort-arrow">{{ sortDir() === 'desc' ? ' ↓' : ' ↑' }}</span>
+          }
+        </th>
       </tr>
     </thead>
     <tbody>
-      @for (r of runs(); track r.id) {
+      @for (r of sortedRuns(); track r.id) {
         <tr>
           <td>
             <span class="st"
@@ -101,11 +113,18 @@
             </button>
           </td>
           <td class="muted" [title]="absTime(r.created_at)">{{ rel(r.created_at) }}</td>
+          <td class="muted">
+            @if (runExecutedAt()[r.id]; as executedAt) {
+              <span [title]="absTime(executedAt)">{{ rel(executedAt) }}</span>
+            } @else {
+              -
+            }
+          </td>
         </tr>
       } @empty {
         @if (!page.loading()) {
           <tr>
-            <td colspan="6" class="empty">No runs.</td>
+            <td colspan="7" class="empty">No runs.</td>
           </tr>
         }
       }

@@ -59,9 +59,38 @@ export class ExecutionComponent {
   /** Per-type pass/fail, from that same per-row RunDetails fetch (already made for the name) -
    *  null while the run has nothing to show yet (Pending/Running/NotRan). */
   runResults = signal<Record<string, Record<string, TestTypeResult> | null>>({});
+  /** executed_at, from that same per-row RunDetails fetch - null while the run hasn't executed
+   *  yet (Pending/Running). RunMetadata (the page's own list response) doesn't carry this at all. */
+  runExecutedAt = signal<Record<string, string | null>>({});
   /** The id whose "Copied" feedback is currently showing (Entry or Run cell) - cleared 1.2s
    *  after a successful copy. */
   copiedId = signal<string | null>(null);
+  /** Created/Executed column sort, client-side over whatever page is currently loaded - same
+   *  reasoning as RunsListComponent's single Created sort, extended to two competing columns:
+   *  clicking a column that isn't active switches to it (newest-first default); clicking the
+   *  active one flips direction. A run with no executed_at yet always sorts last regardless of
+   *  direction - there's no meaningful position for "hasn't happened" in a time ordering. */
+  sortKey = signal<'created' | 'executed'>('created');
+  sortDir = signal<'desc' | 'asc'>('desc');
+  sortedRuns = computed(() => {
+    const key = this.sortKey();
+    const dir = this.sortDir();
+    const executedAt = this.runExecutedAt();
+    const value = (r: RunMetadata): number | null => {
+      if (key === 'created') return new Date(r.created_at).getTime();
+      const e = executedAt[r.id];
+      return e ? new Date(e).getTime() : null;
+    };
+    return [...this.runs()].sort((a, b) => {
+      const av = value(a);
+      const bv = value(b);
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      const diff = av - bv;
+      return dir === 'asc' ? diff : -diff;
+    });
+  });
   constructor() {
     effect(() => {
       // This scope's own name (store.parent) - only sets or plans is needed, by kind.
@@ -77,31 +106,47 @@ export class ExecutionComponent {
       if (!items.length) {
         this.runNames.set({});
         this.runResults.set({});
+        this.runExecutedAt.set({});
         return;
       }
       forkJoin(items.map((r) => this.resolveRow(r))).subscribe((rows) => {
         this.runNames.set(Object.fromEntries(rows.map(([id, name]) => [id, name])));
         this.runResults.set(Object.fromEntries(rows.map(([id, , results]) => [id, results])));
+        this.runExecutedAt.set(
+          Object.fromEntries(rows.map(([id, , , executedAt]) => [id, executedAt])),
+        );
       });
     });
   }
   private resolveRow(
     r: RunMetadata,
-  ): Observable<[string, string, Record<string, TestTypeResult> | null]> {
+  ): Observable<[string, string, Record<string, TestTypeResult> | null, string | null]> {
     const fallback = `Untitled · ${short(r.id)}`;
     return this.api.runDetails(this.kind(), this.id(), this.execId(), r.id).pipe(
       map(
         (d) =>
-          [r.id, d.name?.trim() || fallback, d.results ?? null] as [
+          [r.id, d.name?.trim() || fallback, d.results ?? null, d.executed_at ?? null] as [
             string,
             string,
             Record<string, TestTypeResult> | null,
+            string | null,
           ],
       ),
-      catchError(() =>
-        of([r.id, fallback, null] as [string, string, Record<string, TestTypeResult> | null]),
+      catchError(
+        () =>
+          of([r.id, fallback, null, null]) as Observable<
+            [string, string, Record<string, TestTypeResult> | null, string | null]
+          >,
       ),
     );
+  }
+  toggleSort(key: 'created' | 'executed') {
+    if (this.sortKey() === key) {
+      this.sortDir.update((d) => (d === 'desc' ? 'asc' : 'desc'));
+    } else {
+      this.sortKey.set(key);
+      this.sortDir.set('desc');
+    }
   }
   /** Results-column summary: a fixed-width pass/fail bar plus "x/y" - scales to any number of
    *  test types, unlike a dot per type. Null (rendered as a dash) while the run's had nothing to
