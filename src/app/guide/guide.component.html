@@ -59,7 +59,10 @@
   <p>
     Each type belongs to a category, and some require a reference - an
     <code>expected_output</code> to compare against - and can't score a test that doesn't have one.
-    Inactive types stay visible for history but can no longer be newly assigned.
+    Others take their own configuration instead, or as well: a numeric threshold the score has to
+    clear, or a custom rubric for an LLM-as-judge type to grade against. A test can't be saved until
+    every assigned type's required setup - reference or otherwise - is actually filled in. Inactive
+    types stay visible for history but can no longer be newly assigned.
   </p>
   <div class="callout">
     See the full <a routerLink="/test-types">test types catalogue</a> for the current list of
@@ -343,6 +346,15 @@
         <strong>Why did renaming to the same name just work, instead of failing?</strong>
         Resubmitting a dataset's, test set's, or test plan's own current name is always treated as
         success - the uniqueness check only runs when the name actually changes.
+      </div>
+    </div>
+    <div class="guard">
+      <div class="q">?</div>
+      <div class="a">
+        <strong>Why won't this test save?</strong> Every test type you assign has to have its own
+        required setup actually filled in before you can save - a reference (expected output) for
+        types that compare against one, or that type's own config otherwise (a numeric threshold, a
+        rubric). Assigning a type doesn't waive what it needs to run.
       </div>
     </div>
     <div class="guard">
