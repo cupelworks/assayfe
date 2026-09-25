@@ -1,5 +1,6 @@
 import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { TestSetsApiService } from '../api/test-sets-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
@@ -55,6 +56,15 @@ export class TestSetDetailComponent {
   name = computed(() => this.meta()?.name ?? short(this.id()));
   execs = computed(() => this.store.byParent('test-sets', this.id()));
   hasRuns = computed(() => this.execs().length > 0);
+  /** Entry ids with at least one run against them, i.e. frozen for good - there's no field on
+   *  the entry itself for this (the API has no `frozen`/`has_runs` flag), so it's derived by
+   *  fetching every run of every execution *of this set* (scoped via RunsApiService.executions(),
+   *  not CatalogStore's global cross-system sample - accuracy here matters more than for the
+   *  "Delete" button's hasRuns() guard above, since this drives a per-row claim, not a
+   *  pre-disable ahead of a guard the server enforces anyway) and collecting their
+   *  test_set_entry_id. Recomputed on load and after every mutation that could create a new run
+   *  (Run live, Replay), same trigger points as `loadEntries()`. */
+  frozenEntryIds = signal<Set<string>>(new Set());
   allChecked = computed(
     () => this.entries().length > 0 && this.entries().every((e) => this.selected().includes(e.id)),
   );
@@ -87,12 +97,34 @@ export class TestSetDetailComponent {
     effect(() => {
       this.id();
       // untracked: see scopes-list.component.ts's identical comment.
-      untracked(() => this.page.reset());
+      untracked(() => {
+        this.page.reset();
+        this.loadFrozenEntries();
+      });
     });
   }
   loadEntries() {
     this.selected.set([]);
     this.page.reload();
+  }
+  loadFrozenEntries() {
+    this.runsApi.executions('test-sets', this.id()).subscribe((execs) => {
+      if (!execs.length) {
+        this.frozenEntryIds.set(new Set());
+        return;
+      }
+      forkJoin(
+        execs.map((e) => this.runsApi.executionRuns('test-sets', this.id(), e.id)),
+      ).subscribe((runsPerExec) => {
+        const ids = new Set<string>();
+        for (const runs of runsPerExec) {
+          for (const r of runs) {
+            if (r.test_set_entry_id) ids.add(r.test_set_entry_id.id);
+          }
+        }
+        this.frozenEntryIds.set(ids);
+      });
+    });
   }
   toggle(id: string) {
     this.selected.update((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
@@ -115,6 +147,7 @@ export class TestSetDetailComponent {
         this.dlg.set(null);
         this.msg.set({ ok: true, text: ok(r) });
         this.loadEntries();
+        this.loadFrozenEntries();
         this.version.update((v) => v + 1);
         this.store.load();
         after?.();

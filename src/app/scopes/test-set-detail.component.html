@@ -73,6 +73,11 @@
             </td>
             <td class="strong">
               {{ e.name || 'Untitled · ' + short(e.id) }}
+              @if (frozenEntryIds().has(e.id)) {
+                <span class="tag tag-outline" title="Has a run - content can no longer be edited"
+                  >frozen</span
+                >
+              }
               <div class="small">
                 from
                 <a class="plain" [routerLink]="['/tests', e.test_case_id.id]"
