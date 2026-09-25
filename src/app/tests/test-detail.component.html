@@ -50,17 +50,20 @@
       </p>
       @for (r of runs(); track r.id) {
         <div class="exec">
-          <a class="exec-main plain" [routerLink]="['/tests', id(), 'runs', r.id]">
-            <span class="st"
-              ><span class="dot" [style.background]="statusColor(r.status)"></span
-              >{{ statusLabel(r.status) }}</span
-            ><span class="muted" [title]="absTime(r.created_at)">{{ rel(r.created_at) }}</span>
-          </a>
-          <span class="small mono" style="align-self: center">
-            <button type="button" class="copyable" [title]="r.id" (click)="copyId(r.id)">
-              {{ copiedId() === r.id ? 'Copied' : short(r.id) }}
-            </button>
-          </span>
+          <div class="exec-main">
+            <a class="plain" [routerLink]="['/tests', id(), 'runs', r.id]">
+              <span class="st"
+                ><span class="dot" [style.background]="statusColor(r.status)"></span
+                >{{ statusLabel(r.status) }}</span
+              >
+            </a>
+            <span class="muted small mono">
+              <button type="button" class="copyable" [title]="r.id" (click)="copyId(r.id)">
+                {{ copiedId() === r.id ? 'Copied' : short(r.id) }}
+              </button>
+              · <span [title]="absTime(r.created_at)">{{ rel(r.created_at) }}</span>
+            </span>
+          </div>
         </div>
       } @empty {
         @if (!runsPage.loading()) {
