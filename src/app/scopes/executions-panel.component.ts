@@ -1,16 +1,19 @@
-import { Component, inject, input, output, effect, untracked } from '@angular/core';
+import { Component, inject, input, output, signal, effect, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Observable, forkJoin, map, catchError, of } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
 import { ExecutionMetadata, Kind } from '../api/models';
-import { rel, short, errText } from '../shared/format';
+import { rel, absTime, short, copyText, countByStatus, errText } from '../shared/format';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
+
+type StatusCount = { key: string; label: string; color: string; value: number };
 
 @Component({
   selector: 'assay-executions-panel',
   standalone: true,
   imports: [RouterLink, PagerComponent],
-  styleUrls: ['../shared/page.css'],
+  styleUrls: ['../shared/page.css', './executions-panel.component.css'],
   template: `
     <div class="row-head" style="margin-bottom:8px">
       <h2>Executions</h2>
@@ -29,14 +32,34 @@ import { PagerComponent } from '../shared/pager.component';
               [class.tag-outline]="e.replayed_execution_id"
               [class.tag-accent]="!e.replayed_execution_id"
               >{{ e.replayed_execution_id ? 'Replay' : 'Live' }}</span
-            ><span class="muted">{{ rel(e.created_at) }}</span>
+            ><span class="muted" [title]="absTime(e.created_at)">{{ rel(e.created_at) }}</span>
           </div>
           <a class="plain strong" [routerLink]="['/', kind(), id(), 'executions', e.id]"
-            >{{ e.run_count }} runs · <span class="muted">{{ short(e.id) }}</span> →</a
+            >{{ e.run_count }} run{{ e.run_count === 1 ? '' : 's' }} →</a
           >
-          @if (e.replayed_execution_id) {
-            <div class="small">replayed {{ short(e.replayed_execution_id.id) }}</div>
+          @if (statusByExec()[e.id]; as statuses) {
+            @if (statuses.length) {
+              <div class="status-summary">
+                @for (s of statuses; track s.key) {
+                  <span class="chip"
+                    ><span class="dot" [style.background]="s.color"></span>{{ s.value }}
+                    {{ s.label }}</span
+                  >
+                }
+              </div>
+            }
           }
+          <div class="small mono">
+            <button type="button" class="copyable" [title]="e.id" (click)="copyId(e.id)">
+              {{ copiedId() === e.id ? 'Copied' : short(e.id) }}
+            </button>
+            @if (e.replayed_execution_id; as r) {
+              · replayed
+              <a class="plain" [routerLink]="['/', kind(), id(), 'executions', r.id]">{{
+                short(r.id)
+              }}</a>
+            }
+          </div>
         </div>
         <button
           class="btn btn-ghost btn-sm"
@@ -70,12 +93,19 @@ export class ExecutionsPanelComponent {
   replay = output<string>();
   private api = inject(RunsApiService);
   rel = rel;
+  absTime = absTime;
   short = short;
   page = new Paged<ExecutionMetadata>(
     (o, l) => this.api.executionsPage(this.kind(), this.id(), o, l),
     10,
     errText,
   );
+  /** Status breakdown per visible execution (e.g. "3 Green · 1 Pending") - one extra
+   *  GET .../test-runs call per row (run_count as the limit, so every run's status is counted,
+   *  not just the first page), since ExecutionMetadata carries no aggregate itself. */
+  statusByExec = signal<Record<string, StatusCount[]>>({});
+  /** The execution id whose "Copied" feedback is currently showing - cleared 1.2s after copy. */
+  copiedId = signal<string | null>(null);
   constructor() {
     effect(() => {
       this.kind();
@@ -86,5 +116,31 @@ export class ExecutionsPanelComponent {
       // Next-button revert - but still a real, needless extra request every time.
       untracked(() => this.page.reload());
     });
+    effect(() => {
+      const items = this.page.items();
+      if (!items.length) {
+        this.statusByExec.set({});
+        return;
+      }
+      forkJoin(items.map((e) => this.loadStatusRow(e))).subscribe((rows) =>
+        this.statusByExec.set(Object.fromEntries(rows)),
+      );
+    });
+  }
+  private loadStatusRow(e: ExecutionMetadata): Observable<[string, StatusCount[]]> {
+    return this.api.executionRunsPage(this.kind(), this.id(), e.id, 0, e.run_count || 1).pipe(
+      map(
+        (p) => [e.id, countByStatus(p.items).filter((s) => s.value > 0)] as [string, StatusCount[]],
+      ),
+      catchError(() => of([e.id, []] as [string, StatusCount[]])),
+    );
+  }
+  async copyId(id: string) {
+    if (await copyText(id)) {
+      this.copiedId.set(id);
+      setTimeout(() => {
+        if (this.copiedId() === id) this.copiedId.set(null);
+      }, 1200);
+    }
   }
 }
