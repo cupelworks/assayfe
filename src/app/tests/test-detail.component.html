@@ -57,10 +57,12 @@
                 >{{ statusLabel(r.status) }}</span
               >
             </a>
-            <span class="muted small mono">
-              <button type="button" class="copyable" [title]="r.id" (click)="copyId(r.id)">
-                {{ copiedId() === r.id ? 'Copied' : short(r.id) }}
-              </button>
+            <span class="muted small">
+              <span class="mono">
+                <button type="button" class="copyable" [title]="r.id" (click)="copyId(r.id)">
+                  {{ copiedId() === r.id ? 'Copied' : short(r.id) }}
+                </button>
+              </span>
               · <span [title]="absTime(r.created_at)">{{ rel(r.created_at) }}</span>
             </span>
           </div>
