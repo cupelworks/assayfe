@@ -4,6 +4,7 @@ import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { Kind, RunDetails } from '../api/models';
 import { short, errText } from '../shared/format';
+import { pollWhile } from '../shared/poll';
 import { RunBodyComponent } from './run-body.component';
 
 @Component({
@@ -45,15 +46,43 @@ export class RunDetailComponent {
   short = short;
   run = signal<RunDetails | null>(null);
   err = signal<string | null>(null);
+  refreshing = signal(false);
   kindLabel = computed(() => (this.kind() === 'test-sets' ? 'Test set' : 'Test plan'));
   name = computed(() => this.store.parent(this.kind(), this.id())?.name ?? short(this.id()));
+  /** True while this run hasn't settled yet - drives the poll below. */
+  hasInFlight = computed(() => {
+    const s = this.run()?.status;
+    return s === 'Pending' || s === 'Running';
+  });
+  /** Re-checks hasInFlight() before every tick, stops itself once the run has settled - see
+   *  shared/poll.ts. Skips a tick while the previous fetch is still in flight. */
+  private startPolling = pollWhile(
+    () => this.hasInFlight(),
+    () => {
+      if (!this.refreshing()) this.fetchRun();
+    },
+  );
   constructor() {
     effect(() => {
       // This scope's own name (store.parent) - only sets or plans is needed, by kind.
       this.kind() === 'test-sets' ? this.store.loadSets() : this.store.loadPlans();
-      this.api
-        .runDetails(this.kind(), this.id(), this.execId(), this.runId())
-        .subscribe({ next: (r) => this.run.set(r), error: (e) => this.err.set(errText(e)) });
+      this.fetchRun();
+    });
+    effect(() => {
+      if (this.hasInFlight()) this.startPolling();
+    });
+  }
+  private fetchRun() {
+    this.refreshing.set(true);
+    this.api.runDetails(this.kind(), this.id(), this.execId(), this.runId()).subscribe({
+      next: (r) => {
+        this.refreshing.set(false);
+        this.run.set(r);
+      },
+      error: (e) => {
+        this.refreshing.set(false);
+        this.err.set(errText(e));
+      },
     });
   }
 }

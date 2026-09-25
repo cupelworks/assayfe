@@ -5,6 +5,7 @@ import { RunsApiService } from '../api/runs-api.service';
 import { TestsApiService } from '../api/tests-api.service';
 import { StandaloneRunDetails, TestCase } from '../api/models';
 import { short, errText } from '../shared/format';
+import { pollWhile } from '../shared/poll';
 import { RunBodyComponent } from './run-body.component';
 
 @Component({
@@ -40,9 +41,25 @@ export class StandaloneRunDetailComponent {
   run = signal<StandaloneRunDetails | null>(null);
   test = signal<TestCase | null>(null);
   err = signal<string | null>(null);
+  refreshing = signal(false);
   name = computed(() => this.test()?.name || 'Test ' + short(this.id()));
+  /** True while this run hasn't settled yet - drives the poll below. */
+  hasInFlight = computed(() => {
+    const s = this.run()?.status;
+    return s === 'Pending' || s === 'Running';
+  });
+  /** Re-checks hasInFlight() before every tick, stops itself once the run has settled - see
+   *  shared/poll.ts. Only re-fetches the run itself, not the live test alongside it (the initial
+   *  load's forkJoin) - the test's own content isn't what a poll is watching for. Skips a tick
+   *  while the previous fetch is still in flight. */
+  private startPolling = pollWhile(
+    () => this.hasInFlight(),
+    () => {
+      if (!this.refreshing()) this.fetchRun();
+    },
+  );
   constructor() {
-    effect(() =>
+    effect(() => {
       forkJoin({
         run: this.runsApi.standaloneRun(this.id(), this.runId()),
         test: this.testsApi.test(this.id()),
@@ -52,7 +69,23 @@ export class StandaloneRunDetailComponent {
           this.test.set(r.test);
         },
         error: (e) => this.err.set(errText(e)),
-      }),
-    );
+      });
+    });
+    effect(() => {
+      if (this.hasInFlight()) this.startPolling();
+    });
+  }
+  private fetchRun() {
+    this.refreshing.set(true);
+    this.runsApi.standaloneRun(this.id(), this.runId()).subscribe({
+      next: (r) => {
+        this.refreshing.set(false);
+        this.run.set(r);
+      },
+      error: (e) => {
+        this.refreshing.set(false);
+        this.err.set(errText(e));
+      },
+    });
   }
 }

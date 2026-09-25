@@ -16,6 +16,7 @@ import {
 } from '../shared/format';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
+import { pollWhile } from '../shared/poll';
 
 @Component({
   selector: 'assay-execution',
@@ -51,6 +52,10 @@ export class ExecutionComponent {
   );
   /** Status breakdown of the current page (the API has no aggregate endpoint). */
   statuses = computed(() => countByStatus(this.runs()));
+  /** True while the loaded page still has a Pending/Running row - drives the poll below. */
+  hasInFlight = computed(() =>
+    this.statuses().some((s) => (s.key === 'Pending' || s.key === 'Running') && s.value > 0),
+  );
   /** Resolved frozen-entry name per run id, keyed by row - one GET .../test-runs/{runId} call
    *  per visible row (25/page), same pattern as RunsListComponent. Every row here is TestSet/
    *  TestPlan (this page only exists for an execution, which Standalone runs never have), so
@@ -91,6 +96,15 @@ export class ExecutionComponent {
       return dir === 'asc' ? diff : -diff;
     });
   });
+  /** Re-checks hasInFlight() before every tick, stops itself once nothing's left to wait for -
+   *  see shared/poll.ts. Skips a tick while the previous reload is still in flight, so a slow
+   *  response never overlaps with the next poll. */
+  private startPolling = pollWhile(
+    () => this.hasInFlight(),
+    () => {
+      if (!this.page.loading()) this.page.reload();
+    },
+  );
   constructor() {
     effect(() => {
       // This scope's own name (store.parent) - only sets or plans is needed, by kind.
@@ -101,6 +115,9 @@ export class ExecutionComponent {
       untracked(() => this.page.reset());
     });
     this.store.loadExecutions(); // exec() lookup via store.byParent
+    effect(() => {
+      if (this.hasInFlight()) this.startPolling();
+    });
     effect(() => {
       const items = this.page.items();
       if (!items.length) {
