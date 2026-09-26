@@ -4,11 +4,21 @@ import { TestsApiService } from '../api/tests-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { StandaloneRun, TestCase, TestCaseBody } from '../api/models';
-import { rel, absTime, short, copyText, errText, statusColor, statusLabel } from '../shared/format';
+import {
+  rel,
+  absTime,
+  short,
+  copyText,
+  countByStatus,
+  errText,
+  statusColor,
+  statusLabel,
+} from '../shared/format';
 import { TestFormDialogComponent } from '../shared/dialog/test-form-dialog.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
+import { pollWhile } from '../shared/poll';
 
 @Component({
   selector: 'assay-test-detail',
@@ -53,12 +63,30 @@ export class TestDetailComponent {
       : [];
   });
   canRun = computed(() => !!this.test()?.test_type_assignments?.length);
+  /** True while the loaded page still has a Pending/Running standalone run - drives the poll
+   *  below, same reasoning as execution.component.ts's identical field. */
+  hasInFlight = computed(() =>
+    countByStatus(this.runs()).some(
+      (s) => (s.key === 'Pending' || s.key === 'Running') && s.value > 0,
+    ),
+  );
+  /** Re-checks hasInFlight() before every tick, stops itself once nothing's left to wait for -
+   *  see shared/poll.ts. Skips a tick while the previous reload is still in flight. */
+  private startPolling = pollWhile(
+    () => this.hasInFlight(),
+    () => {
+      if (!this.runsPage.loading()) this.runsPage.reload();
+    },
+  );
   constructor() {
     effect(() => {
       this.id();
       // untracked: load() -> runsPage.reload() reads runsPage's own offset()/limit() signals -
       // see scopes-list.component.ts's identical comment.
       untracked(() => this.load());
+    });
+    effect(() => {
+      if (this.hasInFlight()) this.startPolling();
     });
   }
   load() {
