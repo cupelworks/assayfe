@@ -35,6 +35,9 @@ export class ScopesListComponent {
   isSet = computed(() => this.kind() === 'test-sets');
   title = computed(() => (this.isSet() ? 'Test sets' : 'Test plans'));
   single = computed(() => (this.isSet() ? 'test set' : 'test plan'));
+  /** "Entries" (test sets) vs "Linked sets" (test plans) - the two kinds count a different
+   *  thing, so the column header has to say which. */
+  containedLabel = computed(() => (this.isSet() ? 'Entries' : 'Linked sets'));
   page = new Paged<ScopeMetadata>(
     (o, l) => (this.isSet() ? this.testSetsApi.testSets(o, l) : this.testPlansApi.testPlans(o, l)),
     25,
@@ -52,8 +55,15 @@ export class ScopesListComponent {
   rows = computed(() => {
     const f = this.filter().toLowerCase();
     const counts = this.execCounts();
+    const isSet = this.isSet();
     const filtered = this.page.items().filter((s) => !f || s.name.toLowerCase().includes(f));
-    return this.sort.apply(filtered).map((s) => ({ ...s, execs: counts[s.id] ?? '…' }));
+    return this.sort.apply(filtered).map((s) => ({
+      ...s,
+      execs: counts[s.id] ?? '…',
+      // Already on the list response - entry_count/linked_set_count ride along with data
+      // already fetched, no per-row request needed (unlike execs above).
+      contained: (isSet ? s.entry_count : s.linked_set_count) ?? 0,
+    }));
   });
   constructor() {
     effect(() => {

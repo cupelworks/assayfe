@@ -23,12 +23,14 @@
   <table class="table">
     <colgroup>
       <col />
+      <col style="width: 120px" />
       <col style="width: 140px" />
       <col style="width: 160px" />
     </colgroup>
     <thead>
       <tr>
         <th>{{ isSet() ? 'Test set' : 'Test plan' }}</th>
+        <th>{{ containedLabel() }}</th>
         <th>Executions</th>
         <th class="sortable" (click)="sort.toggle()">
           Created<span class="sort-arrow">{{ sort.dir() === 'desc' ? ' ↓' : ' ↑' }}</span>
@@ -41,13 +43,14 @@
           <td class="strong">
             <a class="plain arrow" [routerLink]="['/', kind(), r.id]">{{ r.name }}</a>
           </td>
+          <td class="num">{{ r.contained }}</td>
           <td class="num">{{ r.execs }}</td>
           <td class="muted"><assay-rel-time [iso]="r.created_at" /></td>
         </tr>
       } @empty {
         @if (!page.loading()) {
           <tr>
-            <td colspan="3" class="empty">No {{ title().toLowerCase() }} yet.</td>
+            <td colspan="4" class="empty">No {{ title().toLowerCase() }} yet.</td>
           </tr>
         }
       }

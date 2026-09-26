@@ -95,6 +95,10 @@ export interface ScopeMetadata {
   id: string;
   name: string;
   created_at: string;
+  /** Test sets only - current entry count. */
+  entry_count?: number;
+  /** Test plans only - current linked-set count. */
+  linked_set_count?: number;
 }
 export interface TestSetEntry extends TestCaseBody {
   id: string;
