@@ -125,8 +125,10 @@
       <div class="badges"><span class="tag tag-neutral">Standalone</span></div>
       <h4>Run a test directly</h4>
       <p>
-        Reads the test exactly as it is right now. No set, no plan, nothing frozen - so there's no
-        "replay" concept for it either.
+        Reads the test as it is right now and keeps its own frozen copy from that moment - editing
+        the test afterward never changes what that run is shown as having graded. Still no "replay"
+        concept though: there's no set or plan membership for that to apply to, so each run stands
+        alone rather than being one of a fanned-out group.
       </p>
     </div>
     <div class="mode">
@@ -167,8 +169,9 @@
       <h3>Quick check on a single test</h3>
       <p>
         You're authoring or tweaking a test and want to see how it scores right now, with no
-        ceremony. Use this while iterating - not for anything you'll want to compare against later,
-        since nothing here is frozen.
+        ceremony. Each run keeps its own frozen copy, so it won't drift if you edit the test
+        afterward - there's just no set or plan here to compare a "live" run against a "replay" of
+        one.
       </p>
     </div>
     <div class="flow flow-center">
@@ -183,9 +186,10 @@
       </div>
     </div>
     <p class="workflow-note">
-      Reads the <strong>live</strong> test at the instant it runs. Edit the test again afterward and
-      the next run reflects the change - there's no snapshot, and no live/replay pair, because
-      nothing here is ever frozen.
+      Reads the test at the instant it runs and keeps its own frozen copy of it from that moment -
+      editing the test again afterward doesn't touch that run's record, though the next run you
+      create will use the updated content. There's no live/replay pair here, though: with no set or
+      plan membership, there's nothing for those terms to distinguish.
     </p>
   </div>
 
