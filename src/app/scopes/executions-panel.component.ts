@@ -1,4 +1,13 @@
-import { Component, inject, input, output, signal, effect, untracked } from '@angular/core';
+import {
+  Component,
+  inject,
+  input,
+  output,
+  signal,
+  computed,
+  effect,
+  untracked,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Observable, forkJoin, map, catchError, of } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
@@ -6,6 +15,7 @@ import { ExecutionMetadata, Kind } from '../api/models';
 import { rel, absTime, short, copyText, countByStatus, errText } from '../shared/format';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
+import { pollWhile } from '../shared/poll';
 
 type StatusCount = { key: string; label: string; color: string; value: number };
 
@@ -106,6 +116,23 @@ export class ExecutionsPanelComponent {
   statusByExec = signal<Record<string, StatusCount[]>>({});
   /** The execution id whose "Copied" feedback is currently showing - cleared 1.2s after copy. */
   copiedId = signal<string | null>(null);
+  /** True while any visible execution's breakdown still has a Pending/Running run - drives the
+   *  poll below, same reasoning as execution.component.ts's identical field. */
+  hasInFlight = computed(() =>
+    Object.values(this.statusByExec()).some((statuses) =>
+      statuses.some((s) => (s.key === 'Pending' || s.key === 'Running') && s.value > 0),
+    ),
+  );
+  /** Re-checks hasInFlight() before every tick, stops itself once nothing's left to wait for -
+   *  see shared/poll.ts. Reloading the execution page also re-triggers the statusByExec effect
+   *  below, so one poll refreshes both the run counts and their breakdowns. Skips a tick while
+   *  the previous reload is still in flight. */
+  private startPolling = pollWhile(
+    () => this.hasInFlight(),
+    () => {
+      if (!this.page.loading()) this.page.reload();
+    },
+  );
   constructor() {
     effect(() => {
       this.kind();
@@ -125,6 +152,9 @@ export class ExecutionsPanelComponent {
       forkJoin(items.map((e) => this.loadStatusRow(e))).subscribe((rows) =>
         this.statusByExec.set(Object.fromEntries(rows)),
       );
+    });
+    effect(() => {
+      if (this.hasInFlight()) this.startPolling();
     });
   }
   private loadStatusRow(e: ExecutionMetadata): Observable<[string, StatusCount[]]> {
