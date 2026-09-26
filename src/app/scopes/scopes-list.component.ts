@@ -11,6 +11,7 @@ import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { Paged } from '../shared/paged';
 import { DateSort } from '../shared/date-sort';
+import { TextFilter } from '../shared/text-filter';
 import { errText } from '../shared/format';
 import { NameDialogComponent } from '../shared/dialog/name-dialog.component';
 
@@ -28,7 +29,6 @@ export class ScopesListComponent {
   testPlansApi = inject(TestPlansApiService);
   runsApi = inject(RunsApiService);
   router = inject(Router);
-  filter = signal('');
   dlg = signal(false);
   busy = signal(false);
   err = signal<string | null>(null);
@@ -50,14 +50,15 @@ export class ScopesListComponent {
    *  (CatalogStore.executions): that's capped and recency-biased, so it can't give an accurate
    *  count for an arbitrary row on an arbitrary page - this always reads the true total. */
   execCounts = signal<Record<string, number>>({});
+  /** Name search - see shared/text-filter.ts. */
+  filter = new TextFilter<ScopeMetadata>((s) => s.name);
   /** Created-column sort - see shared/date-sort.ts. */
   sort = new DateSort<ScopeMetadata>((s) => s.created_at);
   rows = computed(() => {
-    const f = this.filter().toLowerCase();
     const counts = this.execCounts();
     const isSet = this.isSet();
-    const filtered = this.page.items().filter((s) => !f || s.name.toLowerCase().includes(f));
-    return this.sort.apply(filtered).map((s) => ({
+    const filtered = this.sort.apply(this.filter.apply(this.page.items()));
+    return filtered.map((s) => ({
       ...s,
       execs: counts[s.id] ?? '…',
       // Already on the list response - entry_count/linked_set_count ride along with data

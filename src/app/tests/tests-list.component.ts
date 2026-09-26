@@ -6,6 +6,7 @@ import { TestsApiService } from '../api/tests-api.service';
 import { TestCase, TestCaseBody } from '../api/models';
 import { PagerComponent } from '../shared/pager.component';
 import { Paged } from '../shared/paged';
+import { TextFilter } from '../shared/text-filter';
 import { errText } from '../shared/format';
 import { TestFormDialogComponent } from '../shared/dialog/test-form-dialog.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
@@ -26,19 +27,15 @@ import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.componen
 export class TestsListComponent {
   store = inject(CatalogStore);
   api = inject(TestsApiService);
-  filter = signal('');
   selected = signal<string[]>([]);
   dlg = signal<null | 'new' | 'delete'>(null);
   busy = signal(false);
   err = signal<string | null>(null);
   msg = signal<{ ok: boolean; text: string } | null>(null);
   page = new Paged<TestCase>((o, l) => this.api.testsPage(o, l), 25, errText);
-  rows = computed(() => {
-    const f = this.filter().toLowerCase();
-    return this.page
-      .items()
-      .filter((t) => !f || ((t.name ?? '') + ' ' + t.input).toLowerCase().includes(f));
-  });
+  /** Name + input search - see shared/text-filter.ts. */
+  filter = new TextFilter<TestCase>((t) => (t.name ?? '') + ' ' + t.input);
+  rows = computed(() => this.filter.apply(this.page.items()));
   ngOnInit() {
     this.page.reload();
   }

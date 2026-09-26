@@ -9,6 +9,7 @@ import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { Paged } from '../shared/paged';
 import { DateSort } from '../shared/date-sort';
+import { TextFilter } from '../shared/text-filter';
 import { DataSetMetadata } from '../api/models';
 
 @Component({
@@ -22,7 +23,6 @@ export class DatasetsListComponent {
   store = inject(CatalogStore);
   api = inject(DatasetsApiService);
   router = inject(Router);
-  filter = signal('');
   dialog = signal(false);
   busy = signal(false);
   err = signal<string | null>(null);
@@ -30,13 +30,11 @@ export class DatasetsListComponent {
   path = signal('');
   name = signal('');
   page = new Paged<DataSetMetadata>((o, l) => this.api.datasets(o, l), 25, errText);
+  /** Name search - see shared/text-filter.ts. */
+  filter = new TextFilter<DataSetMetadata>((d) => d.name);
   /** Created-column sort - see shared/date-sort.ts. */
   sort = new DateSort<DataSetMetadata>((d) => d.created_at);
-  rows = computed(() => {
-    const f = this.filter().toLowerCase();
-    const filtered = this.page.items().filter((d) => !f || d.name.toLowerCase().includes(f));
-    return this.sort.apply(filtered);
-  });
+  rows = computed(() => this.sort.apply(this.filter.apply(this.page.items())));
   ngOnInit() {
     this.page.reload();
   }

@@ -14,10 +14,10 @@
     <input
       class="input"
       placeholder="Filter…"
-      [ngModel]="filter()"
-      (ngModelChange)="filter.set($event)"
+      [ngModel]="filter.query()"
+      (ngModelChange)="filter.query.set($event)"
     /><span class="small">{{
-      filter() ? rows().length + ' shown on this page' : page.total() + ' total'
+      filter.query() ? rows().length + ' shown on this page' : page.total() + ' total'
     }}</span>
   </div>
   <table class="table">
