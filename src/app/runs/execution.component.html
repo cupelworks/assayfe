@@ -100,18 +100,12 @@
               >{{ runNames()[r.id] ?? '…' }}</a
             >
           </td>
-          <td class="small mono">
+          <td class="small">
             @if (r.test_set_entry_id; as entry) {
-              <button type="button" class="copyable" [title]="entry.id" (click)="copyId(entry.id)">
-                {{ copiedId() === entry.id ? 'Copied' : short(entry.id) }}
-              </button>
+              <assay-copy-button [value]="entry.id" [label]="short(entry.id)" />
             }
           </td>
-          <td class="small mono">
-            <button type="button" class="copyable" [title]="r.id" (click)="copyId(r.id)">
-              {{ copiedId() === r.id ? 'Copied' : short(r.id) }}
-            </button>
-          </td>
+          <td class="small"><assay-copy-button [value]="r.id" [label]="short(r.id)" /></td>
           <td class="muted"><assay-rel-time [iso]="r.created_at" /></td>
           <td class="muted">
             @if (runExecutedAt()[r.id]; as executedAt) {

@@ -205,6 +205,9 @@ button {
 .sort-arrow {
   color: var(--color-accent);
 }
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
 .chk {
   width: 16px;
   height: 16px;

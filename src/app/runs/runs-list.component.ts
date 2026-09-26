@@ -4,10 +4,11 @@ import { Observable, forkJoin, map, catchError, of } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
 import { TestsApiService } from '../api/tests-api.service';
 import { AnyRunMetadata, RunOrigin, TestStatus } from '../api/models';
-import { copyText, short, statusColor, statusLabel } from '../shared/format';
+import { short, statusColor, statusLabel } from '../shared/format';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
+import { CopyButtonComponent } from '../shared/copy-button.component';
 import { DateSort } from '../shared/date-sort';
 
 const ORIGIN_LABEL: Record<string, string> = {
@@ -24,7 +25,7 @@ export const ORIGINS: RunOrigin[] = ['Standalone', 'TestSet', 'TestPlan'];
 @Component({
   selector: 'assay-runs-list',
   standalone: true,
-  imports: [RouterLink, PagerComponent, RelTimeComponent],
+  imports: [RouterLink, PagerComponent, RelTimeComponent, CopyButtonComponent],
   templateUrl: './runs-list.component.html',
   styleUrls: ['../shared/page.css', './runs-list.component.css'],
 })
@@ -46,9 +47,6 @@ export class RunsListComponent {
    *  (their run details already carry the frozen entry's name directly). '…' while a row's
    *  lookup hasn't resolved yet. */
   names = signal<Record<string, string>>({});
-  /** The id whose "Copied" feedback is currently showing on the Run cell - cleared 1.2s after a
-   *  successful copy. */
-  copiedId = signal<string | null>(null);
   originLabel = (o: string) => ORIGIN_LABEL[o] ?? o;
   title = computed(() => {
     const bits = [
@@ -106,14 +104,6 @@ export class RunsListComponent {
       map((n) => [r.id, n?.trim() || fallback] as [string, string]),
       catchError(() => of([r.id, fallback] as [string, string])),
     );
-  }
-  async copyId(id: string) {
-    if (await copyText(id)) {
-      this.copiedId.set(id);
-      setTimeout(() => {
-        if (this.copiedId() === id) this.copiedId.set(null);
-      }, 1200);
-    }
   }
   /** Toggles the ?origin= query param in place - clicking the active chip clears it back to "every origin". */
   toggleOrigin(o: RunOrigin) {

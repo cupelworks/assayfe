@@ -58,11 +58,7 @@
               >
             </a>
             <span class="muted small">
-              <span class="mono">
-                <button type="button" class="copyable" [title]="r.id" (click)="copyId(r.id)">
-                  {{ copiedId() === r.id ? 'Copied' : short(r.id) }}
-                </button>
-              </span>
+              <assay-copy-button [value]="r.id" [label]="short(r.id)" />
               · <assay-rel-time [iso]="r.created_at" />
             </span>
           </div>

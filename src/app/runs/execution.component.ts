@@ -7,7 +7,6 @@ import { Kind, RunMetadata, TestTypeResult } from '../api/models';
 import {
   rel,
   absTime,
-  copyText,
   short,
   countByStatus,
   statusColor,
@@ -17,12 +16,13 @@ import {
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
+import { CopyButtonComponent } from '../shared/copy-button.component';
 import { pollWhile } from '../shared/poll';
 
 @Component({
   selector: 'assay-execution',
   standalone: true,
-  imports: [RouterLink, PagerComponent, RelTimeComponent],
+  imports: [RouterLink, PagerComponent, RelTimeComponent, CopyButtonComponent],
   templateUrl: './execution.component.html',
   styleUrls: ['../shared/page.css', './execution.component.css'],
 })
@@ -68,9 +68,6 @@ export class ExecutionComponent {
   /** executed_at, from that same per-row RunDetails fetch - null while the run hasn't executed
    *  yet (Pending/Running). RunMetadata (the page's own list response) doesn't carry this at all. */
   runExecutedAt = signal<Record<string, string | null>>({});
-  /** The id whose "Copied" feedback is currently showing (Entry or Run cell) - cleared 1.2s
-   *  after a successful copy. */
-  copiedId = signal<string | null>(null);
   /** Created/Executed column sort, client-side over whatever page is currently loaded - same
    *  reasoning as RunsListComponent's single Created sort, extended to two competing columns:
    *  clicking a column that isn't active switches to it (newest-first default); clicking the
@@ -186,14 +183,6 @@ export class ExecutionComponent {
       failPct: (failing.length / total) * 100 + '%',
       title: failing.length ? `Failed: ${failing.join(', ')}` : 'All test types passed',
     };
-  }
-  async copyId(id: string) {
-    if (await copyText(id)) {
-      this.copiedId.set(id);
-      setTimeout(() => {
-        if (this.copiedId() === id) this.copiedId.set(null);
-      }, 1200);
-    }
   }
   replay() {
     this.busy.set(true);

@@ -117,7 +117,7 @@
                   }
                 </dd>
                 <dt>Added</dt>
-                <dd>{{ rel(t.created_at) }}</dd>
+                <dd><assay-rel-time [iso]="t.created_at" /></dd>
               }
             </dl>
             <div class="more small">{{ openId() === t.id ? 'Less ↑' : 'More ↓' }}</div>

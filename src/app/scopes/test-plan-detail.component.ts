@@ -2,16 +2,16 @@ import { Component, inject, input, signal, computed, effect, untracked } from '@
 import { Router, RouterLink } from '@angular/router';
 import { forkJoin, map } from 'rxjs';
 import { TestPlansApiService } from '../api/test-plans-api.service';
-import { TestSetsApiService } from '../api/test-sets-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
-import { TestPlanEntry, TestSetEntry } from '../api/models';
-import { rel, short, errText } from '../shared/format';
+import { TestPlanEntry } from '../api/models';
+import { short, errText } from '../shared/format';
 import { NameDialogComponent } from '../shared/dialog/name-dialog.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
 import { PickDialogComponent, PickRow } from '../shared/dialog/pick-dialog.component';
 import { ExecutionsPanelComponent } from './executions-panel.component';
 import { PagerComponent } from '../shared/pager.component';
+import { RelTimeComponent } from '../shared/rel-time.component';
 import { Paged } from '../shared/paged';
 
 type Dlg = null | 'rename' | 'delete' | 'link' | 'unlink';
@@ -26,6 +26,7 @@ type Dlg = null | 'rename' | 'delete' | 'link' | 'unlink';
     PickDialogComponent,
     ExecutionsPanelComponent,
     PagerComponent,
+    RelTimeComponent,
   ],
   templateUrl: './test-plan-detail.component.html',
   styleUrls: ['../shared/page.css'],
@@ -33,11 +34,9 @@ type Dlg = null | 'rename' | 'delete' | 'link' | 'unlink';
 export class TestPlanDetailComponent {
   id = input.required<string>();
   testPlansApi = inject(TestPlansApiService);
-  testSetsApi = inject(TestSetsApiService);
   runsApi = inject(RunsApiService);
   store = inject(CatalogStore);
   router = inject(Router);
-  rel = rel;
   short = short;
   page = new Paged<TestPlanEntry>(
     (o, l) => this.testPlansApi.testPlanEntries(this.id(), o, l),
@@ -46,7 +45,6 @@ export class TestPlanDetailComponent {
   );
   links = this.page.items;
   version = signal(0);
-  entryCounts = signal<Record<string, number>>({});
   /** True execution count per test set, for pickRows below - loaded fresh each time the "Link
    *  test sets" dialog opens (see open()), not eagerly, since it's only ever shown there.
    *  Deliberately not CatalogStore.executions (capped, recency-biased - see
@@ -63,7 +61,6 @@ export class TestPlanDetailComponent {
   name = computed(() => this.meta()?.name ?? short(this.id()));
   execs = computed(() => this.store.byParent('test-plans', this.id()));
   hasRuns = computed(() => this.execs().length > 0);
-  totalEntries = computed(() => Object.values(this.entryCounts()).reduce((a, b) => a + b, 0));
   linkedTotal = this.page.total;
   pickRows = computed<PickRow[]>(() => {
     const linked = new Set(this.links().map((l) => l.test_set.id));
@@ -93,21 +90,6 @@ export class TestPlanDetailComponent {
       // untracked: load() -> page.reset() reads page's own offset()/limit() signals - see
       // scopes-list.component.ts's identical comment.
       untracked(() => this.load());
-    });
-    // entry counts for the sets on the current page (zero-row fetch per set - only total is used)
-    effect(() => {
-      const links = this.links();
-      if (!links.length) {
-        this.entryCounts.set({});
-        return;
-      }
-      forkJoin(
-        links.map((l) =>
-          this.testSetsApi
-            .testSetEntries(l.test_set.id, 0, 0)
-            .pipe(map((p) => [l.test_set.id, p.total] as [string, number])),
-        ),
-      ).subscribe((pairs) => this.entryCounts.set(Object.fromEntries(pairs)));
     });
   }
   load() {

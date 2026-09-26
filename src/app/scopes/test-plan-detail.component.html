@@ -54,8 +54,8 @@
                 l.test_set.name
               }}</a>
             </td>
-            <td class="num">{{ entryCounts()[l.test_set.id] ?? '…' }}</td>
-            <td class="muted">{{ rel(l.test_set.created_at) }}</td>
+            <td class="num">{{ l.test_set.entry_count ?? '…' }}</td>
+            <td class="muted"><assay-rel-time [iso]="l.test_set.created_at" /></td>
             <td>
               <button class="btn btn-ghost btn-sm" (click)="open('unlink', l)">Remove</button>
             </td>

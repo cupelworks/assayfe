@@ -82,7 +82,7 @@
               >
             </td>
             <td class="num">{{ e.run_count }}</td>
-            <td class="muted">{{ rel(e.created_at) }}</td>
+            <td class="muted"><assay-rel-time [iso]="e.created_at" /></td>
           </tr>
         } @empty {
           @if (!store.executionsLoading()) {

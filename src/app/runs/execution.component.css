@@ -1,15 +1,3 @@
-.mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-.copyable {
-  all: unset;
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
-}
-.copyable:hover {
-  color: var(--color-accent);
-}
 .result-cell {
   display: flex;
   align-items: center;

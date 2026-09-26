@@ -7,20 +7,20 @@ import {
 } from '../api/catalog.store';
 import { TestsApiService } from '../api/tests-api.service';
 import { TestCaseBody } from '../api/models';
-import { rel, countByStatus, errText } from '../shared/format';
+import { countByStatus, errText } from '../shared/format';
 import { TestFormDialogComponent } from '../shared/dialog/test-form-dialog.component';
+import { RelTimeComponent } from '../shared/rel-time.component';
 
 @Component({
   selector: 'assay-overview',
   standalone: true,
-  imports: [RouterLink, TestFormDialogComponent],
+  imports: [RouterLink, TestFormDialogComponent, RelTimeComponent],
   templateUrl: './overview.component.html',
   styleUrls: ['../shared/page.css', './overview.component.css'],
 })
 export class OverviewComponent implements OnInit {
   store = inject(CatalogStore);
   api = inject(TestsApiService);
-  rel = rel;
   newTest = signal(false);
   busy = signal(false);
   err = signal<string | null>(null);

@@ -2,19 +2,18 @@ import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TestTypesStore, CATEGORIES, needsSetup } from '../api/test-types.store';
 import { TestCategory, TestType } from '../api/models';
-import { rel } from '../shared/format';
+import { RelTimeComponent } from '../shared/rel-time.component';
 
 @Component({
   selector: 'assay-test-types',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RelTimeComponent],
   templateUrl: './test-types.component.html',
   styleUrls: ['../shared/page.css', './test-types.component.css'],
 })
 export class TestTypesComponent implements OnInit {
   store = inject(TestTypesStore);
   categories = CATEGORIES;
-  rel = rel;
   needsSetup = needsSetup;
   category = signal<TestCategory | 'all'>('all');
   showInactive = signal(false);

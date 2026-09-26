@@ -4,19 +4,13 @@ import { TestsApiService } from '../api/tests-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { StandaloneRun, TestCase, TestCaseBody } from '../api/models';
-import {
-  short,
-  copyText,
-  countByStatus,
-  errText,
-  statusColor,
-  statusLabel,
-} from '../shared/format';
+import { short, countByStatus, errText, statusColor, statusLabel } from '../shared/format';
 import { TestFormDialogComponent } from '../shared/dialog/test-form-dialog.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
+import { CopyButtonComponent } from '../shared/copy-button.component';
 import { pollWhile } from '../shared/poll';
 
 @Component({
@@ -28,9 +22,10 @@ import { pollWhile } from '../shared/poll';
     ConfirmDialogComponent,
     PagerComponent,
     RelTimeComponent,
+    CopyButtonComponent,
   ],
   templateUrl: './test-detail.component.html',
-  styleUrls: ['../shared/page.css', './test-detail.component.css'],
+  styleUrls: ['../shared/page.css'],
 })
 export class TestDetailComponent {
   id = input.required<string>();
@@ -52,8 +47,6 @@ export class TestDetailComponent {
   busy = signal(false);
   err = signal<string | null>(null);
   msg = signal<{ ok: boolean; text: string } | null>(null);
-  /** The run id whose "Copied" feedback is currently showing - cleared 1.2s after copy. */
-  copiedId = signal<string | null>(null);
   name = computed(() => this.test()?.name || 'Untitled · ' + short(this.id()));
   fields = computed(() => {
     const t = this.test();
@@ -130,14 +123,6 @@ export class TestDetailComponent {
         this.err.set(errText(e));
       },
     });
-  }
-  async copyId(id: string) {
-    if (await copyText(id)) {
-      this.copiedId.set(id);
-      setTimeout(() => {
-        if (this.copiedId() === id) this.copiedId.set(null);
-      }, 1200);
-    }
   }
   run() {
     this.busy.set(true);

@@ -12,10 +12,11 @@ import { RouterLink } from '@angular/router';
 import { Observable, forkJoin, map, catchError, of } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
 import { ExecutionMetadata, Kind } from '../api/models';
-import { short, copyText, countByStatus, errText } from '../shared/format';
+import { short, countByStatus, errText } from '../shared/format';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
+import { CopyButtonComponent } from '../shared/copy-button.component';
 import { pollWhile } from '../shared/poll';
 
 type StatusCount = { key: string; label: string; color: string; value: number };
@@ -23,7 +24,7 @@ type StatusCount = { key: string; label: string; color: string; value: number };
 @Component({
   selector: 'assay-executions-panel',
   standalone: true,
-  imports: [RouterLink, PagerComponent, RelTimeComponent],
+  imports: [RouterLink, PagerComponent, RelTimeComponent, CopyButtonComponent],
   styleUrls: ['../shared/page.css', './executions-panel.component.css'],
   template: `
     <div class="row-head" style="margin-bottom:8px">
@@ -60,10 +61,8 @@ type StatusCount = { key: string; label: string; color: string; value: number };
               </div>
             }
           }
-          <div class="small mono">
-            <button type="button" class="copyable" [title]="e.id" (click)="copyId(e.id)">
-              {{ copiedId() === e.id ? 'Copied' : short(e.id) }}
-            </button>
+          <div class="small">
+            <assay-copy-button [value]="e.id" [label]="short(e.id)" />
             @if (e.replayed_execution_id; as r) {
               · replayed
               <a class="plain" [routerLink]="['/', kind(), id(), 'executions', r.id]">{{
@@ -113,8 +112,6 @@ export class ExecutionsPanelComponent {
    *  GET .../test-runs call per row (run_count as the limit, so every run's status is counted,
    *  not just the first page), since ExecutionMetadata carries no aggregate itself. */
   statusByExec = signal<Record<string, StatusCount[]>>({});
-  /** The execution id whose "Copied" feedback is currently showing - cleared 1.2s after copy. */
-  copiedId = signal<string | null>(null);
   /** True while any visible execution's breakdown still has a Pending/Running run - drives the
    *  poll below, same reasoning as execution.component.ts's identical field. */
   hasInFlight = computed(() =>
@@ -163,13 +160,5 @@ export class ExecutionsPanelComponent {
       ),
       catchError(() => of([e.id, []] as [string, StatusCount[]])),
     );
-  }
-  async copyId(id: string) {
-    if (await copyText(id)) {
-      this.copiedId.set(id);
-      setTimeout(() => {
-        if (this.copiedId() === id) this.copiedId.set(null);
-      }, 1200);
-    }
   }
 }

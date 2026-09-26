@@ -38,7 +38,7 @@
           <td class="strong">
             <a class="plain arrow" [routerLink]="['/datasets', d.id]">{{ d.name }}</a>
           </td>
-          <td class="muted">{{ rel(d.created_at) }}</td>
+          <td class="muted"><assay-rel-time [iso]="d.created_at" /></td>
         </tr>
       } @empty {
         @if (!page.loading()) {
