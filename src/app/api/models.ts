@@ -143,13 +143,18 @@ export interface StandaloneRun {
   status: TestStatus;
   test_case_id: Ref;
 }
-export interface StandaloneRunDetails extends StandaloneRun {
+/** Since 0.9.5: carries a frozen copy of the test as it was when the run was created (taken at
+ *  creation time - test_case_snapshot_at equals created_at - and never touched by later edits to
+ *  the live test), same shape as RunDetails. Always present, no pre-existing-run null case - the
+ *  backend backfilled/recreated its data rather than leaving old rows without one. */
+export interface StandaloneRunDetails extends StandaloneRun, TestCaseBody {
   executed_at: string | null;
   /** Set only when status is NotRan - a run-level failure, mutually exclusive with results. */
   error: string | null;
   /** Per-assigned-type outcomes, keyed by type name. Populated once status is Green/Amber/Red;
    *  null while Pending/Running, and for NotRan (see error instead). */
   results: Record<string, TestTypeResult> | null;
+  test_case_snapshot_at: { snapshot_at: string };
 }
 export type RunOrigin = 'Standalone' | 'TestSet' | 'TestPlan';
 /** A row from GET /runs - every run in the system, regardless of origin. Only the ID field(s) `origin` implies are non-null. */
