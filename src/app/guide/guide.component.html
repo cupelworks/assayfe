@@ -125,10 +125,9 @@
       <div class="badges"><span class="tag tag-neutral">Standalone</span></div>
       <h4>Run a test directly</h4>
       <p>
-        Reads the test as it is right now and keeps its own frozen copy from that moment - editing
-        the test afterward never changes what that run is shown as having graded. Still no "replay"
-        concept though: there's no set or plan membership for that to apply to, so each run stands
-        alone rather than being one of a fanned-out group.
+        Runs the test as it is right now. The run keeps a record of exactly what it checked, so if
+        you edit the test later, this run's history stays as it was. A direct run always stands on
+        its own; it isn't part of a test set or plan.
       </p>
     </div>
     <div class="mode">
@@ -169,9 +168,9 @@
       <h3>Quick check on a single test</h3>
       <p>
         You're authoring or tweaking a test and want to see how it scores right now, with no
-        ceremony. Each run keeps its own frozen copy, so it won't drift if you edit the test
-        afterward - there's just no set or plan here to compare a "live" run against a "replay" of
-        one.
+        ceremony. Each run keeps its own record of what it checked, so it won't drift if you edit
+        the test afterward - there's just no set or plan here to compare a "live" run against a
+        "replay" of one.
       </p>
     </div>
     <div class="flow flow-center">
@@ -186,8 +185,8 @@
       </div>
     </div>
     <p class="workflow-note">
-      Reads the test at the instant it runs and keeps its own frozen copy of it from that moment -
-      editing the test again afterward doesn't touch that run's record, though the next run you
+      Reads the test at the instant it runs and keeps its own record of it from that moment -
+      editing the test again afterward doesn't touch that run's history, though the next run you
       create will use the updated content. There's no live/replay pair here, though: with no set or
       plan membership, there's nothing for those terms to distinguish.
     </p>

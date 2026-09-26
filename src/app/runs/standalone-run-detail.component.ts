@@ -28,7 +28,7 @@ import { RunBodyComponent } from './run-body.component';
     <assay-run-body
       [run]="run()"
       [content]="run()"
-      heading="Frozen entry"
+      heading="Recorded test"
       [snapshotAt]="run()?.test_case_snapshot_at?.snapshot_at ?? null"
       [sourceLink]="run() ? ['/tests', run()!.test_case_id.id] : null"
     />`,
