@@ -4,9 +4,11 @@ import { Observable, forkJoin, map, catchError, of } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
 import { TestsApiService } from '../api/tests-api.service';
 import { AnyRunMetadata, RunOrigin, TestStatus } from '../api/models';
-import { rel, absTime, copyText, short, statusColor, statusLabel } from '../shared/format';
+import { copyText, short, statusColor, statusLabel } from '../shared/format';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
+import { RelTimeComponent } from '../shared/rel-time.component';
+import { DateSort } from '../shared/date-sort';
 
 const ORIGIN_LABEL: Record<string, string> = {
   Standalone: 'Standalone',
@@ -22,7 +24,7 @@ export const ORIGINS: RunOrigin[] = ['Standalone', 'TestSet', 'TestPlan'];
 @Component({
   selector: 'assay-runs-list',
   standalone: true,
-  imports: [RouterLink, PagerComponent],
+  imports: [RouterLink, PagerComponent, RelTimeComponent],
   templateUrl: './runs-list.component.html',
   styleUrls: ['../shared/page.css', './runs-list.component.css'],
 })
@@ -34,8 +36,6 @@ export class RunsListComponent {
   private testsApi = inject(TestsApiService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  rel = rel;
-  absTime = absTime;
   short = short;
   statusColor = statusColor;
   statusLabel = statusLabel;
@@ -63,18 +63,10 @@ export class RunsListComponent {
     25,
   );
   runs = this.page.items;
-  /** Created-column sort, client-side over whatever page is currently loaded - the API always
-   *  returns newest-first with no sort param of its own, so this only reorders the visible page,
-   *  not the underlying dataset across pages. Persists across pagination/filter changes rather
-   *  than resetting, same as any other sort toggle. */
-  sortDir = signal<'desc' | 'asc'>('desc');
-  sortedRuns = computed(() => {
-    const dir = this.sortDir();
-    return [...this.runs()].sort((a, b) => {
-      const diff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      return dir === 'asc' ? diff : -diff;
-    });
-  });
+  /** Created-column sort - see shared/date-sort.ts. Persists across pagination/filter changes
+   *  rather than resetting, same as any other sort toggle. */
+  sort = new DateSort<AnyRunMetadata>((r) => r.created_at);
+  sortedRuns = computed(() => this.sort.apply(this.runs()));
   constructor() {
     effect(() => {
       this.status();
@@ -114,9 +106,6 @@ export class RunsListComponent {
       map((n) => [r.id, n?.trim() || fallback] as [string, string]),
       catchError(() => of([r.id, fallback] as [string, string])),
     );
-  }
-  toggleSort() {
-    this.sortDir.update((d) => (d === 'desc' ? 'asc' : 'desc'));
   }
   async copyId(id: string) {
     if (await copyText(id)) {

@@ -112,10 +112,10 @@
               {{ copiedId() === r.id ? 'Copied' : short(r.id) }}
             </button>
           </td>
-          <td class="muted" [title]="absTime(r.created_at)">{{ rel(r.created_at) }}</td>
+          <td class="muted"><assay-rel-time [iso]="r.created_at" /></td>
           <td class="muted">
             @if (runExecutedAt()[r.id]; as executedAt) {
-              <span [title]="absTime(executedAt)">{{ rel(executedAt) }}</span>
+              <assay-rel-time [iso]="executedAt" />
             } @else {
               -
             }

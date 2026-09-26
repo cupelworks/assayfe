@@ -195,6 +195,16 @@ button {
 .table td {
   overflow-wrap: anywhere;
 }
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+.sortable:hover {
+  color: var(--color-text);
+}
+.sort-arrow {
+  color: var(--color-accent);
+}
 .chk {
   width: 16px;
   height: 16px;

@@ -2,13 +2,14 @@ import { Component, inject, input, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { RunDetails, StandaloneRunDetails, TestTypeAssignment } from '../api/models';
 import { rel, absTime, statusColor, statusLabel } from '../shared/format';
+import { RelTimeComponent } from '../shared/rel-time.component';
 import { TestTypesStore, assignmentFields } from '../api/test-types.store';
 
 /** Status / error / per-type results (left) + frozen or live test content (right). */
 @Component({
   selector: 'assay-run-body',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, RelTimeComponent],
   styleUrls: ['../shared/page.css', './run-body.component.css'],
   template: ` @if (run(); as r) {
     <section class="half">
@@ -88,9 +89,7 @@ import { TestTypesStore, assignmentFields } from '../api/test-types.store';
         <div class="row-head">
           <h2>{{ heading() }}</h2>
           @if (snapshotAt()) {
-            <span class="small" [title]="absTime(snapshotAt())"
-              >snapshot {{ rel(snapshotAt()) }}</span
-            >
+            <span class="small">snapshot <assay-rel-time [iso]="snapshotAt()" /></span>
           }
         </div>
         <div class="tags">

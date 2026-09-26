@@ -16,12 +16,13 @@ import {
 } from '../shared/format';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
+import { RelTimeComponent } from '../shared/rel-time.component';
 import { pollWhile } from '../shared/poll';
 
 @Component({
   selector: 'assay-execution',
   standalone: true,
-  imports: [RouterLink, PagerComponent],
+  imports: [RouterLink, PagerComponent, RelTimeComponent],
   templateUrl: './execution.component.html',
   styleUrls: ['../shared/page.css', './execution.component.css'],
 })

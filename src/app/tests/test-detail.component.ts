@@ -5,8 +5,6 @@ import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { StandaloneRun, TestCase, TestCaseBody } from '../api/models';
 import {
-  rel,
-  absTime,
   short,
   copyText,
   countByStatus,
@@ -18,12 +16,19 @@ import { TestFormDialogComponent } from '../shared/dialog/test-form-dialog.compo
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
+import { RelTimeComponent } from '../shared/rel-time.component';
 import { pollWhile } from '../shared/poll';
 
 @Component({
   selector: 'assay-test-detail',
   standalone: true,
-  imports: [RouterLink, TestFormDialogComponent, ConfirmDialogComponent, PagerComponent],
+  imports: [
+    RouterLink,
+    TestFormDialogComponent,
+    ConfirmDialogComponent,
+    PagerComponent,
+    RelTimeComponent,
+  ],
   templateUrl: './test-detail.component.html',
   styleUrls: ['../shared/page.css', './test-detail.component.css'],
 })
@@ -33,8 +38,6 @@ export class TestDetailComponent {
   runsApi = inject(RunsApiService);
   store = inject(CatalogStore);
   router = inject(Router);
-  rel = rel;
-  absTime = absTime;
   short = short;
   statusColor = statusColor;
   statusLabel = statusLabel;

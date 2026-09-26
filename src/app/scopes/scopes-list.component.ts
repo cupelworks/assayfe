@@ -8,14 +8,16 @@ import { TestPlansApiService } from '../api/test-plans-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { Kind, ScopeMetadata } from '../api/models';
 import { PagerComponent } from '../shared/pager.component';
+import { RelTimeComponent } from '../shared/rel-time.component';
 import { Paged } from '../shared/paged';
-import { rel, errText } from '../shared/format';
+import { DateSort } from '../shared/date-sort';
+import { errText } from '../shared/format';
 import { NameDialogComponent } from '../shared/dialog/name-dialog.component';
 
 @Component({
   selector: 'assay-scopes-list',
   standalone: true,
-  imports: [RouterLink, FormsModule, NameDialogComponent, PagerComponent],
+  imports: [RouterLink, FormsModule, NameDialogComponent, PagerComponent, RelTimeComponent],
   templateUrl: './scopes-list.component.html',
   styleUrls: ['../shared/page.css'],
 })
@@ -26,7 +28,6 @@ export class ScopesListComponent {
   testPlansApi = inject(TestPlansApiService);
   runsApi = inject(RunsApiService);
   router = inject(Router);
-  rel = rel;
   filter = signal('');
   dlg = signal(false);
   busy = signal(false);
@@ -46,13 +47,13 @@ export class ScopesListComponent {
    *  (CatalogStore.executions): that's capped and recency-biased, so it can't give an accurate
    *  count for an arbitrary row on an arbitrary page - this always reads the true total. */
   execCounts = signal<Record<string, number>>({});
+  /** Created-column sort - see shared/date-sort.ts. */
+  sort = new DateSort<ScopeMetadata>((s) => s.created_at);
   rows = computed(() => {
     const f = this.filter().toLowerCase();
     const counts = this.execCounts();
-    return this.page
-      .items()
-      .filter((s) => !f || s.name.toLowerCase().includes(f))
-      .map((s) => ({ ...s, execs: counts[s.id] ?? '…' }));
+    const filtered = this.page.items().filter((s) => !f || s.name.toLowerCase().includes(f));
+    return this.sort.apply(filtered).map((s) => ({ ...s, execs: counts[s.id] ?? '…' }));
   });
   constructor() {
     effect(() => {

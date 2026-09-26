@@ -12,9 +12,10 @@ import { RouterLink } from '@angular/router';
 import { Observable, forkJoin, map, catchError, of } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
 import { ExecutionMetadata, Kind } from '../api/models';
-import { rel, absTime, short, copyText, countByStatus, errText } from '../shared/format';
+import { short, copyText, countByStatus, errText } from '../shared/format';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
+import { RelTimeComponent } from '../shared/rel-time.component';
 import { pollWhile } from '../shared/poll';
 
 type StatusCount = { key: string; label: string; color: string; value: number };
@@ -22,7 +23,7 @@ type StatusCount = { key: string; label: string; color: string; value: number };
 @Component({
   selector: 'assay-executions-panel',
   standalone: true,
-  imports: [RouterLink, PagerComponent],
+  imports: [RouterLink, PagerComponent, RelTimeComponent],
   styleUrls: ['../shared/page.css', './executions-panel.component.css'],
   template: `
     <div class="row-head" style="margin-bottom:8px">
@@ -42,7 +43,7 @@ type StatusCount = { key: string; label: string; color: string; value: number };
               [class.tag-outline]="e.replayed_execution_id"
               [class.tag-accent]="!e.replayed_execution_id"
               >{{ e.replayed_execution_id ? 'Replay' : 'Live' }}</span
-            ><span class="muted" [title]="absTime(e.created_at)">{{ rel(e.created_at) }}</span>
+            ><span class="muted"><assay-rel-time [iso]="e.created_at" /></span>
           </div>
           <a class="plain strong" [routerLink]="['/', kind(), id(), 'executions', e.id]"
             >{{ e.run_count }} run{{ e.run_count === 1 ? '' : 's' }} →</a
@@ -102,8 +103,6 @@ export class ExecutionsPanelComponent {
   version = input(0);
   replay = output<string>();
   private api = inject(RunsApiService);
-  rel = rel;
-  absTime = absTime;
   short = short;
   page = new Paged<ExecutionMetadata>(
     (o, l) => this.api.executionsPage(this.kind(), this.id(), o, l),

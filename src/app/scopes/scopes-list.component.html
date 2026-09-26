@@ -30,7 +30,9 @@
       <tr>
         <th>{{ isSet() ? 'Test set' : 'Test plan' }}</th>
         <th>Executions</th>
-        <th>Created</th>
+        <th class="sortable" (click)="sort.toggle()">
+          Created<span class="sort-arrow">{{ sort.dir() === 'desc' ? ' ↓' : ' ↑' }}</span>
+        </th>
       </tr>
     </thead>
     <tbody>
@@ -40,7 +42,7 @@
             <a class="plain arrow" [routerLink]="['/', kind(), r.id]">{{ r.name }}</a>
           </td>
           <td class="num">{{ r.execs }}</td>
-          <td class="muted">{{ rel(r.created_at) }}</td>
+          <td class="muted"><assay-rel-time [iso]="r.created_at" /></td>
         </tr>
       } @empty {
         @if (!page.loading()) {

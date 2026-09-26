@@ -63,7 +63,7 @@
                   {{ copiedId() === r.id ? 'Copied' : short(r.id) }}
                 </button>
               </span>
-              · <span [title]="absTime(r.created_at)">{{ rel(r.created_at) }}</span>
+              · <assay-rel-time [iso]="r.created_at" />
             </span>
           </div>
         </div>

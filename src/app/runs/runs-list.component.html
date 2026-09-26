@@ -35,8 +35,8 @@
         <th>Name</th>
         <th>Origin</th>
         <th>Run</th>
-        <th class="sortable" (click)="toggleSort()">
-          Created<span class="sort-arrow">{{ sortDir() === 'desc' ? ' ↓' : ' ↑' }}</span>
+        <th class="sortable" (click)="sort.toggle()">
+          Created<span class="sort-arrow">{{ sort.dir() === 'desc' ? ' ↓' : ' ↑' }}</span>
         </th>
       </tr>
     </thead>
@@ -62,7 +62,7 @@
               {{ copiedId() === r.id ? 'Copied' : short(r.id) }}
             </button>
           </td>
-          <td class="muted" [title]="absTime(r.created_at)">{{ rel(r.created_at) }}</td>
+          <td class="muted"><assay-rel-time [iso]="r.created_at" /></td>
         </tr>
       } @empty {
         @if (!page.loading()) {
