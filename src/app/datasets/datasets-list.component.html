@@ -29,7 +29,9 @@
     <thead>
       <tr>
         <th>Dataset</th>
-        <th>Created</th>
+        <th class="sortable" (click)="sort.toggle()">
+          Created<span class="sort-arrow">{{ sort.dir() === 'desc' ? ' ↓' : ' ↑' }}</span>
+        </th>
       </tr>
     </thead>
     <tbody>

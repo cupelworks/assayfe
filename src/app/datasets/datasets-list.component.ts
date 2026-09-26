@@ -8,6 +8,7 @@ import { DialogComponent } from '../shared/dialog/dialog.component';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { Paged } from '../shared/paged';
+import { DateSort } from '../shared/date-sort';
 import { DataSetMetadata } from '../api/models';
 
 @Component({
@@ -29,9 +30,12 @@ export class DatasetsListComponent {
   path = signal('');
   name = signal('');
   page = new Paged<DataSetMetadata>((o, l) => this.api.datasets(o, l), 25, errText);
+  /** Created-column sort - see shared/date-sort.ts. */
+  sort = new DateSort<DataSetMetadata>((d) => d.created_at);
   rows = computed(() => {
     const f = this.filter().toLowerCase();
-    return this.page.items().filter((d) => !f || d.name.toLowerCase().includes(f));
+    const filtered = this.page.items().filter((d) => !f || d.name.toLowerCase().includes(f));
+    return this.sort.apply(filtered);
   });
   ngOnInit() {
     this.page.reload();
