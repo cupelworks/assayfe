@@ -1,6 +1,13 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TestTypesStore, CATEGORIES, needsSetup } from '../api/test-types.store';
+import {
+  TestTypesStore,
+  CATEGORIES,
+  needsSetup,
+  engineLabel,
+  numericFieldHint,
+  defaultRubric,
+} from '../api/test-types.store';
 import { TestCategory, TestType } from '../api/models';
 import { RelTimeComponent } from '../shared/rel-time.component';
 
@@ -15,6 +22,9 @@ export class TestTypesComponent implements OnInit {
   store = inject(TestTypesStore);
   categories = CATEGORIES;
   needsSetup = needsSetup;
+  engineLabel = engineLabel;
+  numericFieldHint = numericFieldHint;
+  defaultRubric = defaultRubric;
   category = signal<TestCategory | 'all'>('all');
   showInactive = signal(false);
   filter = signal('');
@@ -42,7 +52,10 @@ export class TestTypesComponent implements OnInit {
         .filter(
           (t) =>
             (inactive || t.is_active) &&
-            (!f || (t.name + ' ' + t.description + ' ' + t.best_for).toLowerCase().includes(f)),
+            (!f ||
+              (t.name + ' ' + t.description + ' ' + t.best_for + ' ' + t.engine)
+                .toLowerCase()
+                .includes(f)),
         ),
     }));
   });

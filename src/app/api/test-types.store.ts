@@ -30,6 +30,43 @@ export const numericFieldIssue = (f: ConfigFieldDescriptor, raw: string): string
   if (f.max != null) return n > f.max ? `must be at most ${f.max}` : null;
   return null;
 };
+/** "0 to 100, passes when score ≥ threshold" - a numeric field's native range plus the type's
+ *  pass direction, when it has one (`comparison` is null for a type with no threshold, so the
+ *  clause is simply omitted). Shared by the config input's hint and the catalogue card's field
+ *  list, so the two can't drift apart. */
+export const numericFieldHint = (
+  f: ConfigFieldDescriptor,
+  comparison: TestType['comparison'],
+): string => {
+  const rule = comparison
+    ? `, passes when score ${comparison === 'gte' ? '≥' : '≤'} threshold`
+    : '';
+  return `${f.min} to ${f.max}${rule}`;
+};
+/** Engine settings that are prose rather than knobs (a judge's fallback rubric is a paragraph) -
+ *  never inlined into `engineLabel`, surfaced on their own via `defaultRubric` instead. */
+const PROSE_SETTINGS = new Set(['default_rubric']);
+/** "regex · mode=search, timeout_seconds=1" - an engine plus its settings as one line, or just the
+ *  engine name when it takes none. Shared by the catalogue card (the type's current engine) and
+ *  the run detail's per-result line (the engine stamped on that result at execution time - the
+ *  two can legitimately differ if the catalogue changed since). */
+export const engineLabel = (
+  engine: string,
+  settings: Record<string, unknown> | null | undefined,
+): string => {
+  const parts = Object.entries(settings ?? {})
+    .filter(([k]) => !PROSE_SETTINGS.has(k))
+    .map(([k, v]) => `${k}=${v}`);
+  return parts.length ? `${engine} · ${parts.join(', ')}` : engine;
+};
+/** The rubric an LLM-judge engine grades with when the assignment leaves its own rubric empty -
+ *  null for any engine that doesn't carry one. */
+export const defaultRubric = (
+  settings: Record<string, unknown> | null | undefined,
+): string | null => {
+  const r = settings?.['default_rubric'];
+  return typeof r === 'string' && r ? r : null;
+};
 
 export const CATEGORIES: { key: TestCategory; label: string; blurb: string }[] = [
   {

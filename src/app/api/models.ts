@@ -238,6 +238,13 @@ export interface TestType {
   cost: string;
   limitations: string;
   config_fields: ConfigFieldDescriptor[];
+  /** Read-only. Which evaluator engine scores this type in the worker (e.g. `exact_match`,
+   *  `rouge`, `llm_judge`) - several types can share one engine and differ only in
+   *  `engine_settings`. */
+  engine: string;
+  /** Read-only. That engine's parameters for this type - shape depends on the engine (e.g.
+   *  `{variant: "rougeL"}` for ROUGE). `{}` for an engine that takes nothing. */
+  engine_settings: Record<string, unknown>;
   /** Which way a threshold-scored type passes - `gte` (score >= threshold, higher is better) or
    *  `lte` (score <= threshold, lower is better). Null for a type with no threshold field at all
    *  (deterministic checks, LLM judges) - every metric type is `gte` today, `lte` exists for a

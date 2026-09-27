@@ -8,7 +8,12 @@ import {
 } from '../api/models';
 import { rel, absTime, statusColor, statusLabel } from '../shared/format';
 import { RelTimeComponent } from '../shared/rel-time.component';
-import { TestTypesStore, assignmentFields } from '../api/test-types.store';
+import {
+  TestTypesStore,
+  assignmentFields,
+  engineLabel,
+  defaultRubric,
+} from '../api/test-types.store';
 
 /** Status / error / per-type results (left) + frozen or live test content (right). */
 @Component({
@@ -168,21 +173,31 @@ export class RunBodyComponent {
    *  a failed score like BERTScore 0.56 is unexplained, since the pass/fail line alone doesn't say
    *  what it needed to clear. One entry per field, labeled via the matching TestType's
    *  config_fields (assignmentFields excludes "reference", which never appears here); a non-numeric
-   *  value over 140 chars (a rubric, typically) is flagged `long` for the template to clamp. */
+   *  value over 140 chars (a rubric, typically) is flagged `long` for the template to clamp.
+   *  A judge whose rubric was left empty graded with its engine's default rubric, so that's shown
+   *  as "Default rubric" - taken from the result's own engine_settings (what actually ran) and
+   *  only falling back to the catalogue's current settings for a result the backend didn't stamp. */
   private configFields(
     name: string,
+    result: TestTypeResult,
   ): { key: string; label: string; value: string; long: boolean }[] {
     const config = this.content()?.test_type_assignments?.find((a) => a.name === name)?.config;
     const type = this.testTypes.byName().get(name);
-    if (!config || !type) return [];
-    return assignmentFields(type)
-      .filter((f) => config[f.key] != null && config[f.key] !== '')
-      .map((f) => ({
-        key: `${name}:${f.key}`,
-        label: f.label,
-        value: config[f.key],
-        long: f.kind !== 'numeric' && config[f.key].length > 140,
-      }));
+    if (!type) return [];
+    const fallbackRubric = defaultRubric(result.engine_settings ?? type.engine_settings);
+    return assignmentFields(type).flatMap((f) => {
+      const own = config?.[f.key];
+      const value = own != null && own !== '' ? own : f.kind === 'rubric' ? fallbackRubric : null;
+      if (value == null) return [];
+      return [
+        {
+          key: `${name}:${f.key}`,
+          label: value === own ? f.label : 'Default rubric',
+          value,
+          long: f.kind !== 'numeric' && value.length > 140,
+        },
+      ];
+    });
   }
   results = computed(() =>
     Object.entries(this.run()?.results ?? {}).map(([name, r]) => ({
@@ -191,7 +206,7 @@ export class RunBodyComponent {
       valueText: r.score != null ? r.score.toFixed(3) : null,
       pct: this.resultPct(name, r.score),
       detail: r.detail,
-      config: this.configFields(name),
+      config: this.configFields(name, r),
       engineText: this.engineText(r),
     })),
   );
@@ -199,9 +214,7 @@ export class RunBodyComponent {
    *  shown when the backend actually stamped an engine on it (null on legacy results, and on a
    *  type no longer in the catalogue at execution time). */
   private engineText(r: TestTypeResult): string | null {
-    if (!r.engine) return null;
-    const settings = Object.entries(r.engine_settings ?? {}).map(([k, v]) => `${k}=${v}`);
-    return settings.length ? `engine: ${r.engine} · ${settings.join(', ')}` : `engine: ${r.engine}`;
+    return r.engine ? `engine: ${engineLabel(r.engine, r.engine_settings)}` : null;
   }
   /** Bar width for a result's score - null (no bar) when there's nothing to show yet (LLM judges
    *  can return no score at all). A threshold-scored type (`comparison` non-null) reports its

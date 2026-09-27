@@ -11,7 +11,7 @@
                 <span class="hint">- optional</span>
               }
               @if (f.kind === 'numeric' && f.min != null && f.max != null) {
-                <span class="hint">{{ numericHint(f, s.comparison) }}</span>
+                <span class="hint">- {{ numericFieldHint(f, s.comparison) }}</span>
               }
             </label>
             @if (f.kind === 'numeric') {

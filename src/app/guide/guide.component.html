@@ -27,8 +27,9 @@
       <span class="dot" style="background: var(--color-accent)"></span>
       <h3>Test</h3>
       <p>
-        A live, always-editable input with an optional expected/actual output and a set of assigned
-        test types. Can be run on its own at any time.
+        A live, always-editable input, an optional expected output, an optional recorded model
+        output, and a set of assigned test types. Leave the model output empty and a run asks the
+        application under test for its answer instead. Can be run on its own at any time.
       </p>
     </div>
     <div class="block">
@@ -64,9 +65,18 @@
     every assigned type's required setup - reference or otherwise - is actually filled in. Inactive
     types stay visible for history but can no longer be newly assigned.
   </p>
+  <p>
+    What a result looks like depends on the category. <strong>Deterministic</strong> checks are
+    simply pass/fail - the answer either matched or it didn't. <strong>NLP metrics</strong> produce
+    a score on the metric's own scale (0 to 1 for most, 0 to 100 for BLEU, -1 to 1 for cosine
+    similarity) and pass when it clears the threshold you set - every metric today passes on "score
+    ≥ threshold". <strong>LLM judges</strong> return a verdict with a written rationale. Each type's
+    card in the catalogue shows which engine scores it, its settings, and - for a threshold-scored
+    type - its range and pass rule.
+  </p>
   <div class="callout">
     See the full <a routerLink="/test-types">test types catalogue</a> for the current list of
-    categories, costs, limitations and what each one is best for.
+    categories, costs, limitations, scoring engines and what each one is best for.
   </div>
 </section>
 
@@ -332,11 +342,25 @@
       </div>
       <div class="small">
         The run couldn't be evaluated at all - something went wrong before any test type could be
-        checked (e.g. the model couldn't be reached, or the test's content couldn't be loaded).
-        Unlike Red, nothing here failed a check - nothing was checked.
+        checked (e.g. the model couldn't be reached, the application under test kept failing, or the
+        test's content couldn't be loaded). Unlike Red, nothing here failed a check - nothing was
+        checked.
       </div>
     </div>
   </div>
+  <p>
+    <strong>What was actually scored.</strong> Every finished run records the exact answer its
+    checks judged - the <em>evaluated output</em>. If the test had a recorded model output, that's
+    what was scored. If it had none, the run asked the application under test and scored its live
+    reply - which is why two runs of the same test can legitimately differ. The run's detail page
+    shows the evaluated output and labels which of the two it was.
+  </p>
+  <p>
+    <strong>One check failing isn't the run failing.</strong> If a single check can't evaluate - a
+    regex pattern that won't compile, say - only that check fails, with the reason as its detail,
+    and the rest still run. The run then usually lands on Amber, not Not Ran. Not Ran is reserved
+    for nothing being checkable at all.
+  </p>
 </section>
 
 <section class="cell">
@@ -358,6 +382,25 @@
         required setup actually filled in before you can save - a reference (expected output) for
         types that compare against one, or that type's own config otherwise (a numeric threshold, a
         rubric). Assigning a type doesn't waive what it needs to run.
+      </div>
+    </div>
+    <div class="guard">
+      <div class="q">?</div>
+      <div class="a">
+        <strong>Why did two runs of the same test get different answers?</strong> The test has no
+        recorded model output, so each run asks the application under test live and scores whatever
+        it answers that time. Record a model output on the test if you want every run to judge the
+        same fixed answer.
+      </div>
+    </div>
+    <div class="guard">
+      <div class="q">?</div>
+      <div class="a">
+        <strong>One check shows an error message, but the run isn't Not Ran - why?</strong> A check
+        that can't evaluate - a regex that won't compile, a bad threshold - fails on its own, with
+        the reason as its detail, and the other checks still run. Not Ran only means nothing could
+        be checked at all: the model or the application under test was unreachable, or the content
+        couldn't be loaded.
       </div>
     </div>
     <div class="guard">

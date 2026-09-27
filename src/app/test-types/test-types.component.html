@@ -96,6 +96,12 @@
               @if (openId() === t.id) {
                 <dt>Category</dt>
                 <dd>{{ g.label }}</dd>
+                <dt>Scored by</dt>
+                <dd class="mono">{{ engineLabel(t.engine, t.engine_settings) }}</dd>
+                @if (defaultRubric(t.engine_settings); as rubric) {
+                  <dt>Default rubric</dt>
+                  <dd>{{ rubric }}</dd>
+                }
                 <dt>Configuration</dt>
                 <dd>
                   @if (t.config_fields.length) {
@@ -107,6 +113,9 @@
                             ({{ f.required ? 'required' : 'optional'
                             }}{{ f.kind === 'reference' ? ' - uses expected output' : '' }})
                           </span>
+                          @if (f.kind === 'numeric' && f.min != null && f.max != null) {
+                            <div class="small">{{ numericFieldHint(f, t.comparison) }}</div>
+                          }
                         </li>
                       }
                     </ul>
