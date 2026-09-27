@@ -17,9 +17,11 @@ export interface Page<T> {
  *  the user as the raw key. */
 export type TestStatus = 'Pending' | 'Running' | 'Green' | 'Amber' | 'Red' | 'NotRan';
 /** One assigned test type's outcome within a run's `results`. `passed` is always present.
- *  `score` is populated for deterministic/nlp_metric types, sometimes for llm_as_judge. `detail`
- *  carries a judge's rationale, or this specific type's own error message if only it failed to
- *  evaluate while the rest of the run's other types proceeded normally. */
+ *  `score` is populated for nlp_metric types (on the type's own native scale - see its
+ *  config_fields threshold min/max), sometimes for llm_as_judge, and by contract null for
+ *  deterministic types, which are pass/fail only. `detail` carries a judge's rationale, or this
+ *  specific type's own error message if only it failed to evaluate while the rest of the run's
+ *  other types proceeded normally. */
 export interface TestTypeResult {
   passed: boolean;
   score: number | null;

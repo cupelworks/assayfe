@@ -42,7 +42,7 @@
   <div class="toolbar">
     <input
       class="input"
-      placeholder="Filter by name, description, best for…"
+      placeholder="Filter by name, description, best for, engine…"
       [ngModel]="filter()"
       (ngModelChange)="filter.set($event)"
     />
@@ -113,8 +113,8 @@
                             ({{ f.required ? 'required' : 'optional'
                             }}{{ f.kind === 'reference' ? ' - uses expected output' : '' }})
                           </span>
-                          @if (f.kind === 'numeric' && f.min != null && f.max != null) {
-                            <div class="small">{{ numericFieldHint(f, t.comparison) }}</div>
+                          @if (f.kind === 'numeric' && numericFieldHint(f, t.comparison); as hint) {
+                            <div class="small">{{ hint }}</div>
                           }
                         </li>
                       }

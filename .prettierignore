@@ -1,0 +1,4 @@
+# Markdown is hand-wrapped prose; Prettier's re-wrap once turned mid-sentence
+# " - " at a new line start into list items (see docs/dev_notes.md, 2026-09-27).
+# The format:check script only covers src/**/*.{ts,html,css} on purpose.
+*.md

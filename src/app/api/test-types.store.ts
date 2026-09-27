@@ -30,18 +30,28 @@ export const numericFieldIssue = (f: ConfigFieldDescriptor, raw: string): string
   if (f.max != null) return n > f.max ? `must be at most ${f.max}` : null;
   return null;
 };
-/** "0 to 100, passes when score ≥ threshold" - a numeric field's native range plus the type's
- *  pass direction, when it has one (`comparison` is null for a type with no threshold, so the
- *  clause is simply omitted). Shared by the config input's hint and the catalogue card's field
- *  list, so the two can't drift apart. */
+/** "0 to 100, passes when score ≥ threshold" - a numeric field's bounds plus the type's pass
+ *  direction, each part only when known: a one-sided bound reads "at least 0" / "at most 100"
+ *  (the same shapes `numericFieldIssue` validates), `comparison` is null for a type with no
+ *  threshold, and with neither there's nothing to say - null, so callers skip the hint entirely.
+ *  Shared by the config input's hint and the catalogue card's field list, so the two can't drift
+ *  apart. */
 export const numericFieldHint = (
   f: ConfigFieldDescriptor,
   comparison: TestType['comparison'],
-): string => {
+): string | null => {
+  const range =
+    f.min != null && f.max != null
+      ? `${f.min} to ${f.max}`
+      : f.min != null
+        ? `at least ${f.min}`
+        : f.max != null
+          ? `at most ${f.max}`
+          : null;
   const rule = comparison
-    ? `, passes when score ${comparison === 'gte' ? '≥' : '≤'} threshold`
-    : '';
-  return `${f.min} to ${f.max}${rule}`;
+    ? `passes when score ${comparison === 'gte' ? '≥' : '≤'} threshold`
+    : null;
+  return range && rule ? `${range}, ${rule}` : (range ?? rule);
 };
 /** Engine settings that are prose rather than knobs (a judge's fallback rubric is a paragraph) -
  *  never inlined into `engineLabel`, surfaced on their own via `defaultRubric` instead. */
