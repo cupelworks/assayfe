@@ -67,7 +67,11 @@ export const APPLICATION_FIELDS: SettingField[] = [
     label: 'Request body',
     kind: 'json',
     default: '{"input": "{{input}}"}',
-    hint: "JSON sent to the application. Any string value may contain {{input}}, replaced by the test's input.",
+    hint:
+      'The JSON body Assay sends to the application under test on every call. ' +
+      "Write {{input}} wherever the test's input should go - Assay swaps it for the actual " +
+      'input before sending. Example: with the default body and a test whose input is ' +
+      '"What is your refund policy?", Assay sends {"input": "What is your refund policy?"}',
     mono: true,
   },
   {
