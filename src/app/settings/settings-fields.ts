@@ -40,7 +40,7 @@ export const APPLICATION_FIELDS: SettingField[] = [
     kind: 'url',
     default: '',
     placeholder: 'Not configured',
-    hint: 'Unset today. A run that needs the application ends Not Ran with "no application configured".',
+    hint: 'A run that needs the application ends Not Ran when Target URL is empty.',
   },
   {
     key: 'target_method',
