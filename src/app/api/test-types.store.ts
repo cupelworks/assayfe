@@ -56,20 +56,21 @@ export const numericFieldHint = (
   return range && rule ? `${range}, ${rule}` : (range ?? rule);
 };
 /** Engine settings that are prose rather than knobs (a judge's fallback rubric is a paragraph) -
- *  never inlined into `engineLabel`, surfaced on their own via `defaultRubric` instead. */
+ *  never listed by `engineSettingsLabel`, surfaced on their own via `defaultRubric` instead. */
 const PROSE_SETTINGS = new Set(['default_rubric']);
-/** "regex (mode: search, timeout_seconds: 1)" - an engine plus its settings as one line, or just
- *  the engine name when it takes none. Shared by the catalogue card (the type's current engine) and
- *  the run detail's per-result line (the engine stamped on that result at execution time - the
- *  two can legitimately differ if the catalogue changed since). */
-export const engineLabel = (
-  engine: string,
+/** "mode: search, timeout_seconds: 1" - an engine's settings as one line, or null when it has
+ *  none worth listing, so callers skip the row. The engine name itself is shown on its own row
+ *  next to this one, mirroring the API's separate `engine` / `engine_settings` fields. Shared by
+ *  the catalogue card (the type's current settings) and the run detail's per-result lines (the
+ *  settings stamped on that result at execution time - the two can legitimately differ if the
+ *  catalogue changed since). */
+export const engineSettingsLabel = (
   settings: Record<string, unknown> | null | undefined,
-): string => {
+): string | null => {
   const parts = Object.entries(settings ?? {})
     .filter(([k]) => !PROSE_SETTINGS.has(k))
     .map(([k, v]) => `${k}: ${typeof v === 'object' && v !== null ? JSON.stringify(v) : v}`);
-  return parts.length ? `${engine} (${parts.join(', ')})` : engine;
+  return parts.length ? parts.join(', ') : null;
 };
 /** The rubric an LLM-judge engine grades with when the assignment leaves its own rubric empty -
  *  null for any engine that doesn't carry one. */

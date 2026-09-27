@@ -4,7 +4,7 @@ import {
   TestTypesStore,
   CATEGORIES,
   needsSetup,
-  engineLabel,
+  engineSettingsLabel,
   numericFieldHint,
   defaultRubric,
 } from '../api/test-types.store';
@@ -22,7 +22,7 @@ export class TestTypesComponent implements OnInit {
   store = inject(TestTypesStore);
   categories = CATEGORIES;
   needsSetup = needsSetup;
-  engineLabel = engineLabel;
+  engineSettingsLabel = engineSettingsLabel;
   numericFieldHint = numericFieldHint;
   defaultRubric = defaultRubric;
   category = signal<TestCategory | 'all'>('all');

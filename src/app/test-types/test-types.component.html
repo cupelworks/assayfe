@@ -96,8 +96,12 @@
               @if (openId() === t.id) {
                 <dt>Category</dt>
                 <dd>{{ g.label }}</dd>
-                <dt>Scored by</dt>
-                <dd class="mono">{{ engineLabel(t.engine, t.engine_settings) }}</dd>
+                <dt>Engine</dt>
+                <dd class="mono">{{ t.engine }}</dd>
+                @if (engineSettingsLabel(t.engine_settings); as settings) {
+                  <dt>Engine settings</dt>
+                  <dd class="mono">{{ settings }}</dd>
+                }
                 @if (defaultRubric(t.engine_settings); as rubric) {
                   <dt>Default rubric</dt>
                   <dd>{{ rubric }}</dd>

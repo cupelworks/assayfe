@@ -11,7 +11,7 @@ import { RelTimeComponent } from '../shared/rel-time.component';
 import {
   TestTypesStore,
   assignmentFields,
-  engineLabel,
+  engineSettingsLabel,
   defaultRubric,
 } from '../api/test-types.store';
 
@@ -83,8 +83,15 @@ import {
               @if (s.detail) {
                 <div class="detail muted">{{ s.detail }}</div>
               }
-              @if (s.engineText) {
-                <div class="detail small muted">{{ s.engineText }}</div>
+              @if (s.engine) {
+                <div class="detail small muted">
+                  <span class="strong">Engine:</span> {{ s.engine }}
+                </div>
+              }
+              @if (s.engineSettings) {
+                <div class="detail small muted">
+                  <span class="strong">Engine settings:</span> {{ s.engineSettings }}
+                </div>
               }
             </div>
           } @empty {
@@ -218,15 +225,12 @@ export class RunBodyComponent {
       pct: this.resultPct(name, r),
       detail: r.detail,
       config: this.configFields(name, r),
-      engineText: this.engineText(r),
+      // What scored it, as stamped on the result at execution time - null on legacy results and
+      // on a type that wasn't in the catalogue when the run executed, so both rows then hide.
+      engine: r.engine ?? null,
+      engineSettings: r.engine ? engineSettingsLabel(r.engine_settings) : null,
     })),
   );
-  /** "engine: regex (mode: search, timeout_seconds: 1)" - secondary/technical info per result, only
-   *  shown when the backend actually stamped an engine on it (null on legacy results, and on a
-   *  type no longer in the catalogue at execution time). */
-  private engineText(r: TestTypeResult): string | null {
-    return r.engine ? `engine: ${engineLabel(r.engine, r.engine_settings)}` : null;
-  }
   /** Bar width for a result's score - null (no bar) when there's no score: LLM judges and the
    *  deterministic types (Exact Match/Contains/Regex Match) return `score: null` by contract, so
    *  they get the pass/fail dot only. A threshold-scored type (`comparison` non-null) reports its
