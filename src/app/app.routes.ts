@@ -14,6 +14,7 @@ import { RunDetailComponent } from './runs/run-detail.component';
 import { StandaloneRunDetailComponent } from './runs/standalone-run-detail.component';
 import { TestTypesComponent } from './test-types/test-types.component';
 import { GuideComponent } from './guide/guide.component';
+import { SettingsComponent } from './settings/settings.component';
 
 // Route data keys map onto component inputs via withComponentInputBinding().
 export const routes: Routes = [
@@ -36,6 +37,7 @@ export const routes: Routes = [
       { path: ':kind/:id/executions/:execId/runs/:runId', component: RunDetailComponent },
       { path: 'test-types', component: TestTypesComponent },
       { path: 'guide', component: GuideComponent },
+      { path: 'settings', component: SettingsComponent },
       { path: '**', redirectTo: '' },
     ],
   },

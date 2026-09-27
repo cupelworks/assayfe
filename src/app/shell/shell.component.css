@@ -57,6 +57,19 @@
   font-size: 12px;
   padding: 6px 12px;
 }
+/* Settings entry point: ink at rest so the utility cluster reads as one accent action (the theme
+   toggle) plus a quiet icon, not two red items competing with the active nav tab; accent on hover
+   and - with the ghost tint - while on /settings, which has no nav tab of its own to light up. */
+.gear {
+  color: inherit;
+}
+.gear:hover,
+.gear.active {
+  color: var(--color-accent);
+}
+.gear.active {
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
 .foot {
   padding: 20px 40px;
   border-top: 2px solid var(--color-divider);

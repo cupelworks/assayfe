@@ -1,0 +1,153 @@
+<div class="hero">
+  <div>
+    <div class="kicker">Configuration</div>
+    <h1>Settings</h1>
+  </div>
+  <p class="hero-note text-muted">
+    How this Assay instance is deployed and what it tests. Every value is read from the server's
+    environment when a process starts; until the settings API lands, changing one means a restart.
+  </p>
+</div>
+
+<section class="cell cell-b col">
+  <div class="row-head">
+    <h2>Application under test</h2>
+    <span class="tag tag-outline">Editable soon · read from environment</span>
+  </div>
+  <p class="muted intro">
+    The endpoint Assay calls for an answer when a test has no recorded model output. One Assay
+    deployment tests one application. A change applies to future runs only - every run keeps the
+    answer it actually scored, and a replay of an application-sourced run calls the application
+    again with the current values.
+  </p>
+  <p class="small intro">{{ defaultsNote }}</p>
+  <div class="fields">
+    @for (f of fields; track f.key) {
+      <label class="label field-label" [attr.for]="f.kind === 'headers' ? null : controlId(f.key)">
+        {{ f.label }}
+        <span class="mono env">{{ envVar(f) }}</span>
+      </label>
+      <div class="control">
+        @switch (f.kind) {
+          @case ('select') {
+            <select class="input sel" [id]="controlId(f.key)" disabled>
+              @for (o of f.options ?? []; track o) {
+                <option [selected]="o === f.default">{{ o }}</option>
+              }
+            </select>
+          }
+          @case ('json') {
+            <textarea
+              class="input ta mono"
+              [id]="controlId(f.key)"
+              rows="3"
+              readonly
+              [value]="f.default"
+            ></textarea>
+          }
+          @case ('headers') {
+            <div class="hrow">
+              <input
+                class="input key"
+                aria-label="Header name"
+                placeholder="Authorization"
+                readonly
+              />
+              <input
+                class="input"
+                aria-label="Header value"
+                placeholder="Bearer ${ASSAY_TARGET_API_KEY}"
+                readonly
+              />
+              <button type="button" class="btn btn-ghost btn-sm" disabled>Remove</button>
+            </div>
+            <div>
+              <button type="button" class="btn btn-ghost btn-sm" disabled>+ Add header</button>
+            </div>
+          }
+          @case ('number') {
+            <div class="inline">
+              <input
+                type="number"
+                class="input num"
+                [id]="controlId(f.key)"
+                [value]="f.default"
+                [attr.min]="f.min"
+                readonly
+              />
+              <span class="muted">{{ f.unit }}</span>
+            </div>
+          }
+          @default {
+            <input
+              class="input"
+              [class.mono]="f.mono"
+              [class.short]="f.mono"
+              [type]="f.kind === 'url' ? 'url' : 'text'"
+              [id]="controlId(f.key)"
+              [value]="f.default"
+              [placeholder]="f.placeholder ?? ''"
+              readonly
+            />
+          }
+        }
+        <div class="small">{{ f.hint }}</div>
+      </div>
+    }
+  </div>
+  <div class="actions">
+    <button type="button" class="btn btn-primary" disabled>Save changes</button>
+    <span class="small"
+      >Saving arrives with the settings API. API keys never live on this page - reference them from
+      the environment, as in the header example.</span
+    >
+  </div>
+</section>
+
+<section class="cell cell-b col">
+  <div class="row-head">
+    <h2>LLM judge</h2>
+    <span class="tag tag-neutral">Not available yet</span>
+  </div>
+  <p class="muted intro">
+    Provider, model and API key for the LLM-as-judge test types - Toxicity, Relevance,
+    Hallucination, Correctness, Bias. Arrives with the evaluators' phase 7; nothing is configurable
+    yet. The judge is Assay's own examiner, separate from the application under test above.
+  </p>
+  <div class="placeholders">
+    @for (p of judge; track p.label) {
+      <div class="placeholder">
+        <div class="label">{{ p.label }}</div>
+        <div class="dash">—</div>
+        <div class="small">{{ p.note }}</div>
+      </div>
+    }
+  </div>
+</section>
+
+<section class="cell col">
+  <div class="row-head">
+    <h2>Operations</h2>
+    <span class="tag tag-neutral">Read-only</span>
+  </div>
+  <p class="muted intro">
+    Deployment-level values, read once when a process starts. Changing any of them means restarting
+    the API and/or the worker - they are shown so an operator can confirm what is running, never
+    edited here. Connection strings are never displayed: they can embed credentials.
+  </p>
+  <p class="small intro">{{ defaultsNote }}</p>
+  <div class="ops">
+    @for (o of operations; track o.label) {
+      <div class="field-ro">
+        <div class="label">{{ o.label }}</div>
+        <div class="body" [class.mono]="o.mono">{{ o.value }}</div>
+        <div class="small">{{ o.hint }}</div>
+      </div>
+    }
+  </div>
+  <p class="small intro">
+    Worker concurrency is a command-line flag of the worker process, not a setting, and is not
+    shown. Per-type engine settings (models, variants, default rubrics) live on each test type - see
+    the <a routerLink="/test-types" class="plain">Test types catalogue</a>.
+  </p>
+</section>
