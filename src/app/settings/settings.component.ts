@@ -20,7 +20,5 @@ export class SettingsComponent {
   judge = JUDGE_PLACEHOLDERS;
   operations = OPERATIONS;
   envVar = envVar;
-  /** The one caveat both value-showing groups carry, worded once. */
-  defaultsNote = "Showing the backend's defaults - the API doesn't expose the live values yet.";
   controlId = (key: string) => `setting-${key}`;
 }
