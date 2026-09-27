@@ -221,7 +221,7 @@ export class RunBodyComponent {
       engineText: this.engineText(r),
     })),
   );
-  /** "engine: regex · mode=search, timeout_seconds=1" - secondary/technical info per result, only
+  /** "engine: regex (mode: search, timeout_seconds: 1)" - secondary/technical info per result, only
    *  shown when the backend actually stamped an engine on it (null on legacy results, and on a
    *  type no longer in the catalogue at execution time). */
   private engineText(r: TestTypeResult): string | null {
