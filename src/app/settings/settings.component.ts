@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { APPLICATION_FIELDS, JUDGE_PLACEHOLDERS, OPERATIONS, envVar } from './settings-fields';
 
 /** /settings - how this Assay instance is deployed and what it tests. Read-only for now: the
@@ -11,7 +10,7 @@ import { APPLICATION_FIELDS, JUDGE_PLACEHOLDERS, OPERATIONS, envVar } from './se
 @Component({
   selector: 'assay-settings',
   standalone: true,
-  imports: [RouterLink],
+  imports: [],
   templateUrl: './settings.component.html',
   styleUrls: ['../shared/page.css', './settings.component.css'],
 })
