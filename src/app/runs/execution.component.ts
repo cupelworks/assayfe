@@ -1,4 +1,5 @@
 import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
+import { ActionRunner } from '../shared/action-runner';
 import { Router, RouterLink } from '@angular/router';
 import { Observable, forkJoin, map, catchError, of } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
@@ -47,8 +48,8 @@ export class ExecutionComponent {
     errText,
   );
   runs = this.page.items;
-  busy = signal(false);
-  msg = signal<{ ok: boolean; text: string } | null>(null);
+  /** Busy flag, dialog error and page banner for this page's API actions - see shared/action-runner.ts. */
+  act = new ActionRunner();
   kindLabel = computed(() => (this.kind() === 'test-sets' ? 'Test set' : 'Test plan'));
   name = computed(() => this.store.parent(this.kind(), this.id())?.name ?? short(this.id()));
   exec = computed(() =>
@@ -183,17 +184,10 @@ export class ExecutionComponent {
     };
   }
   replay() {
-    this.busy.set(true);
-    this.msg.set(null);
-    this.api.replay(this.kind(), this.id(), this.execId()).subscribe({
-      next: (r) => {
-        this.busy.set(false);
+    this.act.run(this.api.replay(this.kind(), this.id(), this.execId()), {
+      then: (r) => {
         this.store.load();
         this.router.navigate(['/', this.kind(), this.id(), 'executions', r.id]);
-      },
-      error: (e) => {
-        this.busy.set(false);
-        this.msg.set({ ok: false, text: errText(e) });
       },
     });
   }

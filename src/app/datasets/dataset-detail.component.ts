@@ -1,4 +1,5 @@
 import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
+import { ActionRunner } from '../shared/action-runner';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DatasetsApiService } from '../api/datasets-api.service';
@@ -58,9 +59,15 @@ export class DatasetDetailComponent {
   /** Checkbox bulk selection over the visible rows - see shared/selection.ts. */
   selection = new Selection(() => this.rows());
   dlg = signal<Dlg>(null);
-  busy = signal(false);
-  err = signal<string | null>(null);
-  msg = signal<{ ok: boolean; text: string } | null>(null);
+  /** Busy flag, dialog error and page banner for this page's API actions - see shared/action-runner.ts. */
+  act = new ActionRunner({
+    inDialog: () => !!this.dlg(),
+    done: () => {
+      this.dlg.set(null);
+      this.load();
+      this.store.load();
+    },
+  });
   jsonl = signal('');
   typeNames = signal<string[]>([]);
   /** Config values for the "Create tests from rows" batch - one shared value per field across
@@ -161,7 +168,7 @@ export class DatasetDetailComponent {
   load() {
     this.datasetsApi.dataset(this.id()).subscribe({
       next: (m) => this.meta.set(m),
-      error: (e) => this.msg.set({ ok: false, text: errText(e) }),
+      error: (e) => this.act.msg.set({ ok: false, text: errText(e) }),
     });
     this.datasetsApi.datasetRows(this.id(), this.offset(), this.limit()).subscribe({
       next: (p) => {
@@ -169,7 +176,7 @@ export class DatasetDetailComponent {
         this.total.set(p.total);
         this.selection.clear();
       },
-      error: (e) => this.msg.set({ ok: false, text: errText(e) }),
+      error: (e) => this.act.msg.set({ ok: false, text: errText(e) }),
     });
   }
   go(offset: number) {
@@ -182,7 +189,7 @@ export class DatasetDetailComponent {
     this.load();
   }
   open(d: Dlg, row?: DataSetRow) {
-    this.err.set(null);
+    this.act.err.set(null);
     this.jsonl.set('');
     this.typeNames.set([]);
     this.batchConfig.set({});
@@ -196,60 +203,39 @@ export class DatasetDetailComponent {
     this.draft.update((d) => ({ ...d, [k]: v }));
   }
 
-  private run<T>(req: { subscribe: Function }, ok: (r: T) => string, after?: () => void) {
-    this.busy.set(true);
-    this.err.set(null);
-    req.subscribe({
-      next: (r: T) => {
-        this.busy.set(false);
-        this.dlg.set(null);
-        this.msg.set({ ok: true, text: ok(r) });
-        this.load();
-        this.store.load();
-        after?.();
-      },
-      error: (e: unknown) => {
-        this.busy.set(false);
-        this.err.set(errText(e));
-      },
-    });
-  }
   rename(n: string) {
-    this.run(this.datasetsApi.renameDataset(this.id(), n), () => `Renamed to “${n}”.`);
+    this.act.run(this.datasetsApi.renameDataset(this.id(), n), { ok: () => `Renamed to “${n}”.` });
   }
   remove() {
-    this.run(
-      this.datasetsApi.deleteDataset(this.id()),
-      (r) => `Deleted dataset (${(r as any).deleted?.n ?? 0} rows).`,
-      () => this.router.navigate(['/datasets']),
-    );
+    this.act.run(this.datasetsApi.deleteDataset(this.id()), {
+      ok: (r) => `Deleted dataset (${r.deleted.n} rows).`,
+      then: () => this.router.navigate(['/datasets']),
+    });
   }
   addRows() {
-    this.run(
+    this.act.run(
       this.datasetsApi.addDatasetRows(this.id(), this.parsedRows() as DataSetRowSchema[]),
-      (r) => `Added ${(r as any).loaded.n} rows.`,
+      { ok: (r) => `Added ${r.loaded.n} rows.` },
     );
   }
   replaceRows() {
-    this.run(
+    this.act.run(
       this.datasetsApi.replaceDatasetRows(this.id(), this.parsedRows() as DataSetRowSchema[]),
-      (r) => `Replaced all rows - ${(r as any).loaded.n} loaded.`,
+      { ok: (r) => `Replaced all rows - ${r.loaded.n} loaded.` },
     );
   }
   deleteRows() {
     const ids = this.selection.ids();
-    this.run(
-      this.datasetsApi.deleteDatasetRows(ids),
-      () =>
+    this.act.run(this.datasetsApi.deleteDatasetRows(ids), {
+      ok: () =>
         `Deleted ${ids.length} row${ids.length === 1 ? '' : 's'}. Tests referencing them are unlinked, not deleted.`,
-    );
+    });
   }
   saveRow() {
     const r = this.editing()!;
-    this.run(
-      this.datasetsApi.updateDatasetRows([{ id: r.id, row_info: this.draft() }]),
-      () => 'Row updated.',
-    );
+    this.act.run(this.datasetsApi.updateDatasetRows([{ id: r.id, row_info: this.draft() }]), {
+      ok: () => 'Row updated.',
+    });
   }
   toTests() {
     if (this.configIssues().length) return;
@@ -263,10 +249,9 @@ export class DatasetDetailComponent {
         if (cfg[name]?.[f.key]?.trim()) config[f.key] = cfg[name][f.key].trim();
       return { name, config: Object.keys(config).length ? config : null };
     });
-    this.run(
-      this.testsApi.createTestsFromDataset(this.id(), assignments),
-      (r) => `Created ${(r as any).test_cases.length} tests from this dataset.`,
-      () => this.router.navigate(['/tests']),
-    );
+    this.act.run(this.testsApi.createTestsFromDataset(this.id(), assignments), {
+      ok: (r) => `Created ${r.test_cases.length} tests from this dataset.`,
+      then: () => this.router.navigate(['/tests']),
+    });
   }
 }

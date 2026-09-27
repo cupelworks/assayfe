@@ -4,7 +4,7 @@
     <h1>{{ title() }}</h1>
   </div>
   <div class="hero-actions">
-    <button class="btn btn-primary" (click)="err.set(null); dlg.set(true)">
+    <button class="btn btn-primary" (click)="act.err.set(null); dlg.set(true)">
       New {{ single() }}
     </button>
   </div>
@@ -70,8 +70,8 @@
     [title]="'New ' + single()"
     [submitLabel]="'Create ' + single()"
     [placeholder]="isSet() ? 'Regression Suite' : 'Release 2.5 gate'"
-    [busy]="busy()"
-    [error]="err()"
+    [busy]="act.busy()"
+    [error]="act.err()"
     (confirm)="create($event)"
     (closed)="dlg.set(false)"
   />

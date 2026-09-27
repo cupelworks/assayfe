@@ -1,4 +1,5 @@
 import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
+import { ActionRunner } from '../shared/action-runner';
 import { Router, RouterLink } from '@angular/router';
 import { forkJoin, map } from 'rxjs';
 import { TestPlansApiService } from '../api/test-plans-api.service';
@@ -54,9 +55,16 @@ export class TestPlanDetailComponent {
   pickExecCounts = signal<Record<string, number>>({});
   unlinkTarget = signal<TestPlanEntry | null>(null);
   dlg = signal<Dlg>(null);
-  busy = signal(false);
-  err = signal<string | null>(null);
-  msg = signal<{ ok: boolean; text: string } | null>(null);
+  /** Busy flag, dialog error and page banner for this page's API actions - see shared/action-runner.ts. */
+  act = new ActionRunner({
+    inDialog: () => !!this.dlg(),
+    done: () => {
+      this.dlg.set(null);
+      this.page.reload();
+      this.version.update((v) => v + 1);
+      this.store.load();
+    },
+  });
   meta = computed(() => this.store.parent('test-plans', this.id()));
   name = computed(() => this.meta()?.name ?? short(this.id()));
   execs = computed(() => this.store.byParent('test-plans', this.id()));
@@ -96,7 +104,7 @@ export class TestPlanDetailComponent {
     this.page.reset();
   }
   open(d: Dlg, l?: TestPlanEntry) {
-    this.err.set(null);
+    this.act.err.set(null);
     if (l) this.unlinkTarget.set(l);
     if (d === 'link') this.loadPickExecCounts();
     this.dlg.set(d);
@@ -115,59 +123,36 @@ export class TestPlanDetailComponent {
       ),
     ).subscribe((pairs) => this.pickExecCounts.set(Object.fromEntries(pairs)));
   }
-  private run(req: { subscribe: Function }, ok: (r: any) => string, after?: () => void) {
-    this.busy.set(true);
-    this.err.set(null);
-    req.subscribe({
-      next: (r: any) => {
-        this.busy.set(false);
-        this.dlg.set(null);
-        this.msg.set({ ok: true, text: ok(r) });
-        this.page.reload();
-        this.version.update((v) => v + 1);
-        this.store.load();
-        after?.();
-      },
-      error: (e: unknown) => {
-        this.busy.set(false);
-        const t = errText(e);
-        this.dlg() ? this.err.set(t) : this.msg.set({ ok: false, text: t });
-      },
+  rename(n: string) {
+    this.act.run(this.testPlansApi.renameTestPlan(this.id(), n), {
+      ok: () => `Renamed to “${n}”.`,
     });
   }
-  rename(n: string) {
-    this.run(this.testPlansApi.renameTestPlan(this.id(), n), () => `Renamed to “${n}”.`);
-  }
   remove() {
-    this.run(
-      this.testPlansApi.deleteTestPlan(this.id()),
-      () => 'Test plan deleted.',
-      () => this.router.navigate(['/test-plans']),
-    );
+    this.act.run(this.testPlansApi.deleteTestPlan(this.id()), {
+      ok: () => 'Test plan deleted.',
+      then: () => this.router.navigate(['/test-plans']),
+    });
   }
   link(ids: string[]) {
-    this.run(
-      this.testPlansApi.linkSetsToPlan(this.id(), ids),
-      () => `Linked ${ids.length} test set${ids.length === 1 ? '' : 's'}.`,
-    );
+    this.act.run(this.testPlansApi.linkSetsToPlan(this.id(), ids), {
+      ok: () => `Linked ${ids.length} test set${ids.length === 1 ? '' : 's'}.`,
+    });
   }
   unlink() {
     const s = this.unlinkTarget()!.test_set;
-    this.run(
-      this.testPlansApi.unlinkSetsFromPlan(this.id(), [s.id]),
-      () => `Removed “${s.name}” from this plan.`,
-    );
+    this.act.run(this.testPlansApi.unlinkSetsFromPlan(this.id(), [s.id]), {
+      ok: () => `Removed “${s.name}” from this plan.`,
+    });
   }
   runLive() {
-    this.run(
-      this.runsApi.runLive('test-plans', this.id()),
-      (r) => `Enqueued ${r.run_count} pending runs.`,
-    );
+    this.act.run(this.runsApi.runLive('test-plans', this.id()), {
+      ok: (r) => `Enqueued ${r.run_count} pending runs.`,
+    });
   }
   replay(execId: string) {
-    this.run(
-      this.runsApi.replay('test-plans', this.id(), execId),
-      (r) => `Enqueued ${r.run_count} pending runs (replay of ${short(execId)}).`,
-    );
+    this.act.run(this.runsApi.replay('test-plans', this.id(), execId), {
+      ok: (r) => `Enqueued ${r.run_count} pending runs (replay of ${short(execId)}).`,
+    });
   }
 }

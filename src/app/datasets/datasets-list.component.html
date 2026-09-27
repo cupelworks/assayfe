@@ -7,8 +7,8 @@
     <button class="btn btn-primary" (click)="dialog.set(true)">Import from JSONL</button>
   </div>
 </div>
-@if (msg(); as m) {
-  <div class="msg">{{ m }}</div>
+@if (act.msg(); as m) {
+  <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
 }
 <section class="cell">
   <div class="toolbar">
@@ -65,9 +65,9 @@
   <assay-dialog
     kicker="Datasets"
     title="Import dataset"
-    [primaryLabel]="busy() ? 'Importing…' : 'Import'"
-    [primaryDisabled]="!path().trim() || !name().trim() || busy()"
-    [error]="err()"
+    [primaryLabel]="act.busy() ? 'Importing…' : 'Import'"
+    [primaryDisabled]="!path().trim() || !name().trim() || act.busy()"
+    [error]="act.err()"
     (primary)="import()"
     (close)="dialog.set(false)"
   >

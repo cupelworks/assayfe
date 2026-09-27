@@ -1,4 +1,5 @@
 import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
+import { ActionRunner } from '../shared/action-runner';
 import { Router, RouterLink } from '@angular/router';
 import { TestsApiService } from '../api/tests-api.service';
 import { RunsApiService } from '../api/runs-api.service';
@@ -51,9 +52,11 @@ export class TestDetailComponent {
   );
   runs = this.runsPage.items;
   dlg = signal<null | 'edit' | 'delete'>(null);
-  busy = signal(false);
-  err = signal<string | null>(null);
-  msg = signal<{ ok: boolean; text: string } | null>(null);
+  /** Busy flag, dialog error and page banner for this page's API actions - see shared/action-runner.ts. */
+  act = new ActionRunner({
+    inDialog: () => !!this.dlg(),
+    done: () => this.dlg.set(null),
+  });
   name = computed(() => displayName(this.test()?.name, this.id()));
   fields = computed(() => {
     const t = this.test();
@@ -88,55 +91,31 @@ export class TestDetailComponent {
   load() {
     this.testsApi.test(this.id()).subscribe({
       next: (t) => this.test.set(t),
-      error: (e) => this.msg.set({ ok: false, text: errText(e) }),
+      error: (e) => this.act.msg.set({ ok: false, text: errText(e) }),
     });
     this.runsPage.reload();
   }
   save(b: TestCaseBody) {
-    this.busy.set(true);
-    this.err.set(null);
-    this.testsApi.updateTest(this.id(), b).subscribe({
-      next: () => {
-        this.busy.set(false);
-        this.dlg.set(null);
-        this.msg.set({ ok: true, text: 'Test updated. Existing frozen entries are unaffected.' });
+    this.act.run(this.testsApi.updateTest(this.id(), b), {
+      ok: () => 'Test updated. Existing frozen entries are unaffected.',
+      then: () => {
         this.load();
         this.store.load();
-      },
-      error: (e) => {
-        this.busy.set(false);
-        this.err.set(errText(e));
       },
     });
   }
   remove() {
-    this.busy.set(true);
-    this.err.set(null);
-    this.testsApi.deleteTests([this.id()]).subscribe({
-      next: () => {
-        this.busy.set(false);
+    this.act.run(this.testsApi.deleteTests([this.id()]), {
+      then: () => {
         this.store.load();
         this.router.navigate(['/tests']);
-      },
-      error: (e) => {
-        this.busy.set(false);
-        this.err.set(errText(e));
       },
     });
   }
   run() {
-    this.busy.set(true);
-    this.msg.set(null);
-    this.runsApi.runStandalone(this.id()).subscribe({
-      next: (r) => {
-        this.busy.set(false);
-        this.msg.set({ ok: true, text: `Enqueued standalone run ${short(r.id)} - pending.` });
-        this.load();
-      },
-      error: (e) => {
-        this.busy.set(false);
-        this.msg.set({ ok: false, text: errText(e) });
-      },
+    this.act.run(this.runsApi.runStandalone(this.id()), {
+      ok: (r) => `Enqueued standalone run ${short(r.id)} - pending.`,
+      then: () => this.load(),
     });
   }
 }

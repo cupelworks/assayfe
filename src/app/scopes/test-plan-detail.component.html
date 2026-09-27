@@ -17,12 +17,12 @@
       Delete
     </button>
     <button class="btn btn-secondary" (click)="open('link')">Link test sets</button>
-    <button class="btn btn-primary" (click)="runLive()" [disabled]="busy() || !page.total()">
-      {{ busy() ? 'Working…' : 'Run live' }}
+    <button class="btn btn-primary" (click)="runLive()" [disabled]="act.busy() || !page.total()">
+      {{ act.busy() ? 'Working…' : 'Run live' }}
     </button>
   </div>
 </div>
-@if (msg(); as m) {
+@if (act.msg(); as m) {
   <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
 }
 <section class="split">
@@ -84,7 +84,7 @@
       kind="test-plans"
       [id]="id()"
       [version]="version()"
-      [busy]="busy()"
+      [busy]="act.busy()"
       (replay)="replay($event)"
     />
   </div>
@@ -97,8 +97,8 @@
       title="Rename test plan"
       submitLabel="Rename"
       [initial]="name()"
-      [busy]="busy()"
-      [error]="err()"
+      [busy]="act.busy()"
+      [error]="act.err()"
       (confirm)="rename($event)"
       (closed)="dlg.set(null)"
     />
@@ -109,8 +109,8 @@
       title="Delete this test plan?"
       body="Removes the plan and its links; linked test sets are untouched. Blocked (409) once the plan has been executed."
       confirmLabel="Delete test plan"
-      [busy]="busy()"
-      [error]="err()"
+      [busy]="act.busy()"
+      [error]="act.err()"
       (confirm)="remove()"
       (closed)="dlg.set(null)"
     />
@@ -122,8 +122,8 @@
       [rows]="pickRows()"
       [submitLabel]="pickLabel"
       emptyText="No test sets exist yet."
-      [busy]="busy()"
-      [error]="err()"
+      [busy]="act.busy()"
+      [error]="act.err()"
       (confirm)="link($event)"
       (closed)="dlg.set(null)"
     />
@@ -135,8 +135,8 @@
       body="Only the link is removed. The set, its entries, and any past executions of this plan are unaffected."
       confirmLabel="Remove link"
       [danger]="false"
-      [busy]="busy()"
-      [error]="err()"
+      [busy]="act.busy()"
+      [error]="act.err()"
       (confirm)="unlink()"
       (closed)="dlg.set(null)"
     />

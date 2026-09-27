@@ -67,6 +67,10 @@ export interface DataSetImportResult {
   loaded: DataRowInfo;
   path?: string;
 }
+export interface DataSetDeletedData {
+  dataset: DataSetInfo;
+  deleted: DataRowInfo;
+}
 export interface DataSetMutationResult {
   dataset: DataSetInfo;
   deleted?: DataRowInfo;

@@ -23,7 +23,7 @@
 
   @if (draft(); as d) {
     <!-- Locked while a save or reset is in flight: its response replaces the whole form. -->
-    <fieldset class="lock" [disabled]="saving() || resetting()">
+    <fieldset class="lock" [disabled]="act.busy()">
       <div class="fields">
         @for (f of fields; track f.key) {
           <label
@@ -189,28 +189,28 @@
       <button
         type="button"
         class="btn btn-primary"
-        [disabled]="!dirty() || saving()"
+        [disabled]="!dirty() || act.busy()"
         (click)="save()"
       >
-        {{ saving() ? 'Saving…' : 'Save changes' }}
+        {{ act.busy() && !confirmReset() ? 'Saving…' : 'Save changes' }}
       </button>
       <button
         type="button"
         class="btn btn-secondary"
-        [disabled]="!dirty() || saving()"
+        [disabled]="!dirty() || act.busy()"
         (click)="discard()"
       >
         Discard changes
       </button>
-      @if (msg(); as m) {
+      @if (act.msg(); as m) {
         <span [class.ok]="m.ok" [class.err]="!m.ok">{{ m.text }}</span>
       }
       @if (saved()?.source === 'database') {
         <button
           type="button"
           class="btn btn-ghost btn-sm reset"
-          [disabled]="saving()"
-          (click)="resetError.set(null); confirmReset.set(true)"
+          [disabled]="act.busy()"
+          (click)="act.err.set(null); confirmReset.set(true)"
         >
           Reset to environment values
         </button>
@@ -225,8 +225,8 @@
     title="Reset to environment values?"
     [body]="resetBody()"
     confirmLabel="Reset"
-    [busy]="resetting()"
-    [error]="resetError()"
+    [busy]="act.busy()"
+    [error]="act.err()"
     (confirm)="reset()"
     (closed)="confirmReset.set(false)"
   />

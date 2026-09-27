@@ -5,6 +5,7 @@ import { TargetCheck, TargetSettingsRead } from '../api/models';
 import { errText, fieldErrors } from '../shared/format';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
+import { ActionRunner } from '../shared/action-runner';
 import { NumberInputDirective } from '../shared/number';
 import { FieldErrorStore } from '../shared/field-errors';
 import { APPLICATION_FIELDS, envVar } from './settings-fields';
@@ -46,11 +47,10 @@ export class TargetSettingsComponent {
   loadError = signal<string | null>(null);
   /** Problems found before sending (unparseable JSON, a nameless header) or returned as a 422. */
   errors = new FieldErrorStore();
-  saving = signal(false);
-  msg = signal<{ ok: boolean; text: string } | null>(null);
   confirmReset = signal(false);
-  resetting = signal(false);
-  resetError = signal<string | null>(null);
+  /** Busy flag, the reset dialog's error and the banner by Save - see shared/action-runner.ts. A
+   *  failed reset shows inside its confirm dialog; a failed save shows next to Save (and per field). */
+  act = new ActionRunner({ inDialog: () => this.confirmReset() });
 
   checkInput = signal('');
   runner = new TargetCheckRunner();
@@ -91,7 +91,7 @@ export class TargetSettingsComponent {
   private clearError(key: string) {
     this.errors.clear(key);
     this.runner.fieldErrors.clear(key);
-    this.msg.set(null);
+    this.act.msg.set(null);
   }
 
   value(key: ScalarDraftField): string {
@@ -130,40 +130,27 @@ export class TargetSettingsComponent {
   save() {
     const changes = this.pendingChanges();
     if (!changes || !Object.keys(changes).length) return;
-    this.saving.set(true);
-    this.msg.set(null);
-    this.api.updateTarget(changes).subscribe({
-      next: (s) => {
-        this.saving.set(false);
-        this.load(s);
-        this.msg.set({ ok: true, text: 'Saved. Applies from the next run.' });
-      },
-      error: (e) => {
-        this.saving.set(false);
+    this.act.run(this.api.updateTarget(changes), {
+      ok: () => 'Saved. Applies from the next run.',
+      then: (s) => this.load(s),
+      onError: (e) => {
         const { byField, other } = fieldErrors(e, TARGET_FIELDS);
         this.errors.set(byField);
-        if (other) this.msg.set({ ok: false, text: other });
+        return other;
       },
     });
   }
   discard() {
     const s = this.saved();
     if (s) this.load(s);
-    this.msg.set(null);
+    this.act.msg.set(null);
   }
   reset() {
-    this.resetting.set(true);
-    this.resetError.set(null);
-    this.api.resetTarget().subscribe({
-      next: (s) => {
-        this.resetting.set(false);
+    this.act.run(this.api.resetTarget(), {
+      ok: () => "Reset to the server's environment values.",
+      then: (s) => {
         this.confirmReset.set(false);
         this.load(s);
-        this.msg.set({ ok: true, text: "Reset to the server's environment values." });
-      },
-      error: (e) => {
-        this.resetting.set(false);
-        this.resetError.set(errText(e));
       },
     });
   }

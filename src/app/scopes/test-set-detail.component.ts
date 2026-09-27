@@ -1,4 +1,5 @@
 import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
+import { ActionRunner } from '../shared/action-runner';
 import { Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { TestSetsApiService } from '../api/test-sets-api.service';
@@ -53,9 +54,17 @@ export class TestSetDetailComponent {
   selection = new Selection(() => this.entries());
   editing = signal<TestSetEntry | null>(null);
   dlg = signal<Dlg>(null);
-  busy = signal(false);
-  err = signal<string | null>(null);
-  msg = signal<{ ok: boolean; text: string } | null>(null);
+  /** Busy flag, dialog error and page banner for this page's API actions - see shared/action-runner.ts. */
+  act = new ActionRunner({
+    inDialog: () => !!this.dlg(),
+    done: () => {
+      this.dlg.set(null);
+      this.loadEntries();
+      this.loadFrozenEntries();
+      this.version.update((v) => v + 1);
+      this.store.load();
+    },
+  });
   meta = computed(() => this.store.parent('test-sets', this.id()));
   name = computed(() => this.meta()?.name ?? short(this.id()));
   execs = computed(() => this.store.byParent('test-sets', this.id()));
@@ -128,79 +137,51 @@ export class TestSetDetailComponent {
     });
   }
   open(d: Dlg, entry?: TestSetEntry) {
-    this.err.set(null);
+    this.act.err.set(null);
     if (entry) this.editing.set(entry);
     this.dlg.set(d);
   }
 
-  private run(req: { subscribe: Function }, ok: (r: any) => string, after?: () => void) {
-    this.busy.set(true);
-    this.err.set(null);
-    req.subscribe({
-      next: (r: any) => {
-        this.busy.set(false);
-        this.dlg.set(null);
-        this.msg.set({ ok: true, text: ok(r) });
-        this.loadEntries();
-        this.loadFrozenEntries();
-        this.version.update((v) => v + 1);
-        this.store.load();
-        after?.();
-      },
-      error: (e: unknown) => {
-        this.busy.set(false);
-        const t = errText(e);
-        this.dlg() ? this.err.set(t) : this.msg.set({ ok: false, text: t });
-      },
-    });
-  }
   rename(n: string) {
-    this.run(this.testSetsApi.renameTestSet(this.id(), n), () => `Renamed to “${n}”.`);
+    this.act.run(this.testSetsApi.renameTestSet(this.id(), n), { ok: () => `Renamed to “${n}”.` });
   }
   remove() {
-    this.run(
-      this.testSetsApi.deleteTestSet(this.id()),
-      () => 'Test set deleted.',
-      () => this.router.navigate(['/test-sets']),
-    );
+    this.act.run(this.testSetsApi.deleteTestSet(this.id()), {
+      ok: () => 'Test set deleted.',
+      then: () => this.router.navigate(['/test-sets']),
+    });
   }
   add(ids: string[]) {
-    this.run(
-      this.testSetsApi.addTestsToSet(this.id(), ids),
-      () => `Added ${ids.length} test${ids.length === 1 ? '' : 's'} as frozen entries.`,
-    );
+    this.act.run(this.testSetsApi.addTestsToSet(this.id(), ids), {
+      ok: () => `Added ${ids.length} test${ids.length === 1 ? '' : 's'} as frozen entries.`,
+    });
   }
   unlink() {
     const ids = this.selection.ids();
-    this.run(
-      this.testSetsApi.unlinkEntries(this.id(), ids),
-      () =>
+    this.act.run(this.testSetsApi.unlinkEntries(this.id(), ids), {
+      ok: () =>
         `Unlinked ${ids.length} entr${ids.length === 1 ? 'y' : 'ies'} - content and runs preserved.`,
-    );
+    });
   }
   deleteEntries() {
     const ids = this.selection.ids();
-    this.run(
-      this.testSetsApi.deleteEntries(this.id(), ids),
-      () => `Deleted ${ids.length} entr${ids.length === 1 ? 'y' : 'ies'}.`,
-    );
+    this.act.run(this.testSetsApi.deleteEntries(this.id(), ids), {
+      ok: () => `Deleted ${ids.length} entr${ids.length === 1 ? 'y' : 'ies'}.`,
+    });
   }
   saveEntry(b: TestCaseBody) {
-    this.run(
-      this.testSetsApi.updateTestSetEntry(this.id(), this.editing()!.id, b),
-      () => 'Entry updated.',
-    );
+    this.act.run(this.testSetsApi.updateTestSetEntry(this.id(), this.editing()!.id, b), {
+      ok: () => 'Entry updated.',
+    });
   }
   runLive() {
-    this.run(
-      this.runsApi.runLive('test-sets', this.id()),
-      (r) => `Enqueued ${r.run_count} pending runs.`,
-    );
+    this.act.run(this.runsApi.runLive('test-sets', this.id()), {
+      ok: (r) => `Enqueued ${r.run_count} pending runs.`,
+    });
   }
   replay(execId: string) {
-    this.run(
-      this.runsApi.replay('test-sets', this.id(), execId),
-      (r) => `Enqueued ${r.run_count} pending runs (replay of ${short(execId)}).`,
-    );
+    this.act.run(this.runsApi.replay('test-sets', this.id(), execId), {
+      ok: (r) => `Enqueued ${r.run_count} pending runs (replay of ${short(execId)}).`,
+    });
   }
 }

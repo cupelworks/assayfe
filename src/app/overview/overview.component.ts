@@ -1,4 +1,5 @@
 import { Component, inject, computed, signal, OnInit } from '@angular/core';
+import { ActionRunner } from '../shared/action-runner';
 import { RouterLink } from '@angular/router';
 import {
   CatalogStore,
@@ -7,7 +8,7 @@ import {
 } from '../api/catalog.store';
 import { TestsApiService } from '../api/tests-api.service';
 import { TestCaseBody } from '../api/models';
-import { countByStatus, errText } from '../shared/format';
+import { countByStatus } from '../shared/format';
 import { TestFormDialogComponent } from '../shared/dialog/test-form-dialog.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 
@@ -22,9 +23,11 @@ export class OverviewComponent implements OnInit {
   store = inject(CatalogStore);
   api = inject(TestsApiService);
   newTest = signal(false);
-  busy = signal(false);
-  err = signal<string | null>(null);
-  msg = signal<string | null>(null);
+  /** Busy flag, dialog error and page banner for this page's API actions - see shared/action-runner.ts. */
+  act = new ActionRunner({
+    inDialog: () => this.newTest(),
+    done: () => this.newTest.set(false),
+  });
   statuses = computed(() => countByStatus(this.store.recentRuns()));
   bars = computed(() => {
     const t = this.store.recentRuns().length || 1;
@@ -42,19 +45,9 @@ export class OverviewComponent implements OnInit {
     this.store.load();
   }
   create(b: TestCaseBody) {
-    this.busy.set(true);
-    this.err.set(null);
-    this.api.createTest(b).subscribe({
-      next: (t) => {
-        this.busy.set(false);
-        this.newTest.set(false);
-        this.msg.set(`Created test “${t.name ?? t.id}”.`);
-        this.store.load();
-      },
-      error: (e) => {
-        this.busy.set(false);
-        this.err.set(errText(e));
-      },
+    this.act.run(this.api.createTest(b), {
+      ok: (t) => `Created test “${t.name ?? t.id}”.`,
+      then: () => this.store.load(),
     });
   }
 }

@@ -16,7 +16,7 @@
     </button>
   </div>
 </div>
-@if (msg(); as m) {
+@if (act.msg(); as m) {
   <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
 }
 <section class="cell">
@@ -103,8 +103,8 @@
       title="Rename dataset"
       submitLabel="Rename"
       [initial]="name()"
-      [busy]="busy()"
-      [error]="err()"
+      [busy]="act.busy()"
+      [error]="act.err()"
       (confirm)="rename($event)"
       (closed)="dlg.set(null)"
     />
@@ -119,8 +119,8 @@
         ' rows. Tests created from it keep their content but lose the row link.'
       "
       confirmLabel="Delete dataset"
-      [busy]="busy()"
-      [error]="err()"
+      [busy]="act.busy()"
+      [error]="act.err()"
       (confirm)="remove()"
       (closed)="dlg.set(null)"
     />
@@ -137,8 +137,8 @@
       "
       body="Tests referencing these rows are unlinked (dataset_row_id set to null), not deleted."
       confirmLabel="Delete rows"
-      [busy]="busy()"
-      [error]="err()"
+      [busy]="act.busy()"
+      [error]="act.err()"
       (confirm)="deleteRows()"
       (closed)="dlg.set(null)"
     />
@@ -148,9 +148,9 @@
       [kicker]="name()"
       title="Add rows"
       [wide]="true"
-      [primaryLabel]="busy() ? 'Adding…' : 'Add ' + (parsedCount() || '') + ' rows'"
-      [primaryDisabled]="!parsedCount() || !!parseError() || busy()"
-      [error]="err() ?? parseError()"
+      [primaryLabel]="act.busy() ? 'Adding…' : 'Add ' + (parsedCount() || '') + ' rows'"
+      [primaryDisabled]="!parsedCount() || !!parseError() || act.busy()"
+      [error]="act.err() ?? parseError()"
       (primary)="addRows()"
       (close)="dlg.set(null)"
     >
@@ -173,10 +173,10 @@
       [kicker]="name()"
       title="Replace all rows"
       [wide]="true"
-      [primaryLabel]="busy() ? 'Replacing…' : 'Replace with ' + (parsedCount() || '') + ' rows'"
-      [primaryDisabled]="!parsedCount() || !!parseError() || busy()"
+      [primaryLabel]="act.busy() ? 'Replacing…' : 'Replace with ' + (parsedCount() || '') + ' rows'"
+      [primaryDisabled]="!parsedCount() || !!parseError() || act.busy()"
       [danger]="true"
-      [error]="err() ?? parseError()"
+      [error]="act.err() ?? parseError()"
       (primary)="replaceRows()"
       (close)="dlg.set(null)"
     >
@@ -199,9 +199,9 @@
       [kicker]="name()"
       [title]="'Edit row ' + short(editing()?.id)"
       [wide]="true"
-      [primaryLabel]="busy() ? 'Saving…' : 'Save row'"
-      [primaryDisabled]="busy()"
-      [error]="err()"
+      [primaryLabel]="act.busy() ? 'Saving…' : 'Save row'"
+      [primaryDisabled]="act.busy()"
+      [error]="act.err()"
       (primary)="saveRow()"
       (close)="dlg.set(null)"
     >
@@ -242,9 +242,9 @@
       [kicker]="name()"
       title="Create tests from rows"
       [wide]="true"
-      [primaryLabel]="busy() ? 'Creating…' : 'Create ' + total() + ' tests'"
-      [primaryDisabled]="busy() || configIssues().length > 0"
-      [error]="err()"
+      [primaryLabel]="act.busy() ? 'Creating…' : 'Create ' + total() + ' tests'"
+      [primaryDisabled]="act.busy() || configIssues().length > 0"
+      [error]="act.err()"
       (primary)="toTests()"
       (close)="dlg.set(null)"
     >

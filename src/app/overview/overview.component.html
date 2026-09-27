@@ -7,8 +7,8 @@
     <button class="btn btn-secondary" (click)="newTest.set(true)">New test</button>
   </div>
 </div>
-@if (msg(); as m) {
-  <div class="msg">{{ m }}</div>
+@if (act.msg(); as m) {
+  <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
 }
 <section class="stats">
   <a routerLink="/datasets" class="stat plain tile"
@@ -122,8 +122,8 @@
 @if (newTest()) {
   <assay-test-form-dialog
     kicker="Tests"
-    [busy]="busy()"
-    [error]="err()"
+    [busy]="act.busy()"
+    [error]="act.err()"
     (confirm)="create($event)"
     (closed)="newTest.set(false)"
   />

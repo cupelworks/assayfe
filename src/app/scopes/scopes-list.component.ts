@@ -1,4 +1,5 @@
 import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
+import { ActionRunner } from '../shared/action-runner';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { forkJoin, map } from 'rxjs';
@@ -30,8 +31,11 @@ export class ScopesListComponent {
   runsApi = inject(RunsApiService);
   router = inject(Router);
   dlg = signal(false);
-  busy = signal(false);
-  err = signal<string | null>(null);
+  /** Busy flag, dialog error and page banner for this page's API actions - see shared/action-runner.ts. */
+  act = new ActionRunner({
+    inDialog: () => this.dlg(),
+    done: () => this.dlg.set(false),
+  });
   isSet = computed(() => this.kind() === 'test-sets');
   title = computed(() => (this.isSet() ? 'Test sets' : 'Test plans'));
   single = computed(() => (this.isSet() ? 'test set' : 'test plan'));
@@ -91,22 +95,14 @@ export class ScopesListComponent {
     });
   }
   create(name: string) {
-    this.busy.set(true);
-    this.err.set(null);
-    (this.isSet()
-      ? this.testSetsApi.createTestSet(name)
-      : this.testPlansApi.createTestPlan(name)
-    ).subscribe({
-      next: (x) => {
-        this.busy.set(false);
-        this.dlg.set(false);
-        this.store.load();
-        this.router.navigate(['/', this.kind(), x.id]);
+    this.act.run(
+      this.isSet() ? this.testSetsApi.createTestSet(name) : this.testPlansApi.createTestPlan(name),
+      {
+        then: (x) => {
+          this.store.load();
+          this.router.navigate(['/', this.kind(), x.id]);
+        },
       },
-      error: (e) => {
-        this.busy.set(false);
-        this.err.set(errText(e));
-      },
-    });
+    );
   }
 }

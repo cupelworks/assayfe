@@ -4,10 +4,10 @@
     <h1>Tests</h1>
   </div>
   <div class="hero-actions">
-    <button class="btn btn-primary" (click)="err.set(null); dlg.set('new')">New test</button>
+    <button class="btn btn-primary" (click)="act.err.set(null); dlg.set('new')">New test</button>
   </div>
 </div>
-@if (msg(); as m) {
+@if (act.msg(); as m) {
   <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
 }
 <section class="cell">
@@ -19,7 +19,7 @@
       (ngModelChange)="filter.query.set($event)"
     />
     @if (selection.ids().length) {
-      <button class="btn btn-ghost btn-sm" (click)="err.set(null); dlg.set('delete')">
+      <button class="btn btn-ghost btn-sm" (click)="act.err.set(null); dlg.set('delete')">
         Delete {{ selection.ids().length }} selected
       </button>
     }
@@ -102,8 +102,8 @@
 @if (dlg() === 'new') {
   <assay-test-form-dialog
     kicker="Tests"
-    [busy]="busy()"
-    [error]="err()"
+    [busy]="act.busy()"
+    [error]="act.err()"
     (confirm)="create($event)"
     (closed)="dlg.set(null)"
   />
@@ -116,8 +116,8 @@
     "
     body="Blocked (409) if any test is still in a test set or has runs - unlink or clean those up first."
     confirmLabel="Delete tests"
-    [busy]="busy()"
-    [error]="err()"
+    [busy]="act.busy()"
+    [error]="act.err()"
     (confirm)="remove()"
     (closed)="dlg.set(null)"
   />

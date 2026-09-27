@@ -38,6 +38,6 @@ export class DatasetsApiService extends ApiBase {
     return this.http.patch<M.DataSetInfo>(this.u('/datasets/name'), { id, name });
   }
   deleteDataset(id: string) {
-    return this.http.delete<unknown>(this.u('/datasets'), { body: { id } });
+    return this.http.delete<M.DataSetDeletedData>(this.u('/datasets'), { body: { id } });
   }
 }

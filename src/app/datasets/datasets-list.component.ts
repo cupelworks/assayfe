@@ -1,4 +1,5 @@
 import { Component, inject, signal, computed } from '@angular/core';
+import { ActionRunner } from '../shared/action-runner';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CatalogStore } from '../api/catalog.store';
@@ -24,9 +25,11 @@ export class DatasetsListComponent {
   api = inject(DatasetsApiService);
   router = inject(Router);
   dialog = signal(false);
-  busy = signal(false);
-  err = signal<string | null>(null);
-  msg = signal<string | null>(null);
+  /** Busy flag, dialog error and page banner for this page's API actions - see shared/action-runner.ts. */
+  act = new ActionRunner({
+    inDialog: () => this.dialog(),
+    done: () => this.dialog.set(false),
+  });
   path = signal('');
   name = signal('');
   page = new Paged<DataSetMetadata>((o, l) => this.api.datasets(o, l), 25, errText);
@@ -39,20 +42,12 @@ export class DatasetsListComponent {
     this.page.reload();
   }
   import() {
-    this.busy.set(true);
-    this.err.set(null);
-    this.api.createDatasetFromPath(this.path().trim(), this.name().trim()).subscribe({
-      next: (r) => {
-        this.busy.set(false);
-        this.dialog.set(false);
-        this.msg.set(`Imported ${r.loaded.n} rows into “${r.dataset.name}”.`);
+    this.act.run(this.api.createDatasetFromPath(this.path().trim(), this.name().trim()), {
+      ok: (r) => `Imported ${r.loaded.n} rows into “${r.dataset.name}”.`,
+      then: (r) => {
         this.store.load();
         this.page.reload();
         this.router.navigate(['/datasets', r.dataset.id]);
-      },
-      error: (e) => {
-        this.busy.set(false);
-        this.err.set(errText(e));
       },
     });
   }

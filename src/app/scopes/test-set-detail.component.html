@@ -17,12 +17,12 @@
       Delete
     </button>
     <button class="btn btn-secondary" (click)="open('add')">Add tests</button>
-    <button class="btn btn-primary" (click)="runLive()" [disabled]="busy() || !page.total()">
-      {{ busy() ? 'Working…' : 'Run live' }}
+    <button class="btn btn-primary" (click)="runLive()" [disabled]="act.busy() || !page.total()">
+      {{ act.busy() ? 'Working…' : 'Run live' }}
     </button>
   </div>
 </div>
-@if (msg(); as m) {
+@if (act.msg(); as m) {
   <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
 }
 <section class="split">
@@ -128,7 +128,7 @@
       kind="test-sets"
       [id]="id()"
       [version]="version()"
-      [busy]="busy()"
+      [busy]="act.busy()"
       (replay)="replay($event)"
     />
   </div>
@@ -141,8 +141,8 @@
       title="Rename test set"
       submitLabel="Rename"
       [initial]="name()"
-      [busy]="busy()"
-      [error]="err()"
+      [busy]="act.busy()"
+      [error]="act.err()"
       (confirm)="rename($event)"
       (closed)="dlg.set(null)"
     />
@@ -153,8 +153,8 @@
       title="Delete this test set?"
       body="Removes the set and its entries. Blocked (409) if any entry has ever been run."
       confirmLabel="Delete test set"
-      [busy]="busy()"
-      [error]="err()"
+      [busy]="act.busy()"
+      [error]="act.err()"
       (confirm)="remove()"
       (closed)="dlg.set(null)"
     />
@@ -166,8 +166,8 @@
       [rows]="pickRows()"
       [submitLabel]="pickLabel"
       emptyText="No tests to add - create one first."
-      [busy]="busy()"
-      [error]="err()"
+      [busy]="act.busy()"
+      [error]="act.err()"
       (confirm)="add($event)"
       (closed)="dlg.set(null)"
     />
@@ -185,8 +185,8 @@
       body="Non-destructive: clears membership in this set. Frozen content and any runs stay reachable through past executions."
       confirmLabel="Unlink"
       [danger]="false"
-      [busy]="busy()"
-      [error]="err()"
+      [busy]="act.busy()"
+      [error]="act.err()"
       (confirm)="unlink()"
       (closed)="dlg.set(null)"
     />
@@ -203,8 +203,8 @@
       "
       body="Permanently removes the frozen snapshots. Blocked (409) if any has been run - unlink instead. The originating live tests are not affected."
       confirmLabel="Delete entries"
-      [busy]="busy()"
-      [error]="err()"
+      [busy]="act.busy()"
+      [error]="act.err()"
       (confirm)="deleteEntries()"
       (closed)="dlg.set(null)"
     />
@@ -215,8 +215,8 @@
       title="Edit frozen entry"
       submitLabel="Save entry"
       [initial]="editing()"
-      [busy]="busy()"
-      [error]="err()"
+      [busy]="act.busy()"
+      [error]="act.err()"
       (confirm)="saveEntry($event)"
       (closed)="dlg.set(null)"
     />

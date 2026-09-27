@@ -1,4 +1,5 @@
 import { Component, inject, signal, computed } from '@angular/core';
+import { ActionRunner } from '../shared/action-runner';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CatalogStore } from '../api/catalog.store';
@@ -33,9 +34,15 @@ export class TestsListComponent {
   /** Checkbox bulk selection over the visible rows - see shared/selection.ts. */
   selection = new Selection(() => this.rows());
   dlg = signal<null | 'new' | 'delete'>(null);
-  busy = signal(false);
-  err = signal<string | null>(null);
-  msg = signal<{ ok: boolean; text: string } | null>(null);
+  /** Busy flag, dialog error and page banner for this page's API actions - see shared/action-runner.ts. */
+  act = new ActionRunner({
+    inDialog: () => !!this.dlg(),
+    done: () => {
+      this.dlg.set(null);
+      this.store.load();
+      this.page.reload();
+    },
+  });
   page = new Paged<TestCase>((o, l) => this.api.testsPage(o, l), 25, errText);
   /** Name + input search - see shared/text-filter.ts. */
   filter = new TextFilter<TestCase>((t) => (t.name ?? '') + ' ' + t.input);
@@ -44,42 +51,13 @@ export class TestsListComponent {
     this.page.reload();
   }
   create(b: TestCaseBody) {
-    this.busy.set(true);
-    this.err.set(null);
-    this.api.createTest(b).subscribe({
-      next: (t) => {
-        this.busy.set(false);
-        this.dlg.set(null);
-        this.msg.set({ ok: true, text: `Created test “${t.name ?? t.id}”.` });
-        this.store.load();
-        this.page.reload();
-      },
-      error: (e) => {
-        this.busy.set(false);
-        this.err.set(errText(e));
-      },
-    });
+    this.act.run(this.api.createTest(b), { ok: (t) => `Created test “${t.name ?? t.id}”.` });
   }
   remove() {
     const ids = this.selection.ids();
-    this.busy.set(true);
-    this.err.set(null);
-    this.api.deleteTests(ids).subscribe({
-      next: () => {
-        this.busy.set(false);
-        this.dlg.set(null);
-        this.selection.clear();
-        this.msg.set({
-          ok: true,
-          text: `Deleted ${ids.length} test${ids.length === 1 ? '' : 's'}.`,
-        });
-        this.store.load();
-        this.page.reload();
-      },
-      error: (e) => {
-        this.busy.set(false);
-        this.err.set(errText(e));
-      },
+    this.act.run(this.api.deleteTests(ids), {
+      ok: () => `Deleted ${ids.length} test${ids.length === 1 ? '' : 's'}.`,
+      then: () => this.selection.clear(),
     });
   }
 }

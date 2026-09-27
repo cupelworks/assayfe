@@ -22,12 +22,12 @@
     }
   </div>
   <div class="hero-actions">
-    <button class="btn btn-primary" (click)="replay()" [disabled]="busy()">
-      {{ busy() ? 'Enqueuing…' : 'Replay this execution' }}
+    <button class="btn btn-primary" (click)="replay()" [disabled]="act.busy()">
+      {{ act.busy() ? 'Enqueuing…' : 'Replay this execution' }}
     </button>
   </div>
 </div>
-@if (msg(); as m) {
+@if (act.msg(); as m) {
   <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
 }
 <section class="stats stats-6">
