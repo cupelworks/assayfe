@@ -67,12 +67,12 @@
   </p>
   <p>
     What a result looks like depends on the category. <strong>Deterministic</strong> checks are
-    simply pass/fail - the answer either matched or it didn't. <strong>NLP metrics</strong> produce
-    a score on the metric's own scale (0 to 1 for most, 0 to 100 for BLEU, -1 to 1 for cosine
-    similarity) and pass when it clears the threshold you set - every metric today passes on "score
-    ≥ threshold". <strong>LLM judges</strong> return a verdict with a written rationale. Each type's
-    card in the catalogue shows which engine scores it, its settings, and - for a threshold-scored
-    type - its range and pass rule.
+    pass/fail - there's no score, only whether the answer matched.
+    <strong>NLP metrics</strong> produce a score on the metric's own scale (0 to 1 for most, 0 to
+    100 for BLEU, -1 to 1 for cosine similarity) and pass when it clears the threshold you set -
+    every metric today passes on "score ≥ threshold". <strong>LLM judges</strong> return a verdict
+    with a written rationale. Each type's card in the catalogue shows which engine scores it, its
+    settings, and - for a threshold-scored type - its range and pass rule.
   </p>
   <div class="callout">
     See the full <a routerLink="/test-types">test types catalogue</a> for the current list of

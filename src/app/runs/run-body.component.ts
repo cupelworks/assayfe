@@ -221,18 +221,15 @@ export class RunBodyComponent {
    *  they get the pass/fail dot only. A threshold-scored type (`comparison` non-null) reports its
    *  score on that type's own native scale, matching its config_fields threshold min/max - not
    *  0-1 (BLEU is 0-100, Cosine Similarity is -1 to 1) - so the bar scales by where the score
-   *  falls in that range, not by clamping the raw score itself. The raw-score fallback covers a
-   *  type with no threshold that nonetheless carries a score: runs stored before the backend
-   *  nulled deterministic scores (or executed by a worker still on that older code) have a
-   *  plain 0/1 there, which is already a 0-1 fraction. */
+   *  falls in that range, not by clamping the raw score itself. No range known (the type has left
+   *  the catalogue, or carries a score the contract says it shouldn't) - the value still shows,
+   *  the bar doesn't, rather than guessing a scale. */
   private resultPct(name: string, score: number | null): string | null {
     if (score == null) return null;
     const type = this.testTypes.byName().get(name);
     const threshold = type ? assignmentFields(type).find((f) => f.kind === 'numeric') : null;
-    const ratio =
-      type?.comparison && threshold?.min != null && threshold?.max != null
-        ? (score - threshold.min) / (threshold.max - threshold.min)
-        : score;
+    if (!type?.comparison || threshold?.min == null || threshold?.max == null) return null;
+    const ratio = (score - threshold.min) / (threshold.max - threshold.min);
     return Math.min(1, Math.max(0, ratio)) * 100 + '%';
   }
   /** "2 of 3 test types passed" - a headline the per-type dots+labels otherwise make the reader
