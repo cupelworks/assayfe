@@ -55,7 +55,12 @@ export const APPLICATION_FIELDS: SettingField[] = [
     label: 'Headers',
     kind: 'headers',
     default: '',
-    hint: 'None today. A value may name an environment variable as ${NAME} - the secret stays in the environment, only its name is stored here.',
+    hint:
+      'Headers Assay adds to every call to your application, for example to authenticate. ' +
+      "Don't type a secret here. Write ${NAME} instead, where NAME is an environment variable " +
+      'set on the Assay server that holds the secret. Assay keeps only the name and reads the ' +
+      "actual value from the server's environment on every call. " +
+      'Example: Authorization → Bearer ${ASSAY_TARGET_API_KEY}',
   },
   {
     key: 'target_body',
