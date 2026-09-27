@@ -3,7 +3,7 @@
     <h2>Application under test</h2>
     @if (saved(); as s) {
       @if (s.source === 'database') {
-        <span class="tag tag-accent"
+        <span class="tag tag-accent with-time"
           >Saved in Assay · updated <assay-rel-time [iso]="s.updated_at"
         /></span>
       } @else {

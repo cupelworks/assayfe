@@ -58,6 +58,10 @@
 .invalid {
   border-color: var(--color-accent);
 }
+/* .tag is inline-flex, which drops the space between the text and the time element - put it back. */
+.tag.with-time {
+  gap: 0.3em;
+}
 .err {
   font-size: 12px;
   color: var(--color-accent-700);
