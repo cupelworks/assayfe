@@ -2,7 +2,7 @@ import { Component, inject, input, signal, computed, effect } from '@angular/cor
 import { RouterLink } from '@angular/router';
 import { RunsApiService } from '../api/runs-api.service';
 import { StandaloneRunDetails } from '../api/models';
-import { short, errText } from '../shared/format';
+import { short, errText, isInFlight } from '../shared/format';
 import { pollWhile } from '../shared/poll';
 import { RunBodyComponent } from './run-body.component';
 
@@ -43,23 +43,17 @@ export class StandaloneRunDetailComponent {
   refreshing = signal(false);
   name = computed(() => this.run()?.name || 'Untitled · ' + short(this.id()));
   /** True while this run hasn't settled yet - drives the poll below. */
-  hasInFlight = computed(() => {
-    const s = this.run()?.status;
-    return s === 'Pending' || s === 'Running';
-  });
-  /** Re-checks hasInFlight() before every tick, stops itself once the run has settled - see
-   *  shared/poll.ts. Skips a tick while the previous fetch is still in flight. */
-  private startPolling = pollWhile(
-    () => this.hasInFlight(),
-    () => {
-      if (!this.refreshing()) this.fetchRun();
-    },
-  );
+  hasInFlight = computed(() => isInFlight(this.run()?.status));
   constructor() {
     effect(() => this.fetchRun());
-    effect(() => {
-      if (this.hasInFlight()) this.startPolling();
-    });
+    // Polls while the run is in flight, stops once it settles - see shared/poll.ts. Skips a tick
+    // while the previous fetch is still in flight.
+    pollWhile(
+      () => this.hasInFlight(),
+      () => {
+        if (!this.refreshing()) this.fetchRun();
+      },
+    );
   }
   private fetchRun() {
     this.refreshing.set(true);

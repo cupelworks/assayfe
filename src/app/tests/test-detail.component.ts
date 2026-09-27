@@ -4,7 +4,7 @@ import { TestsApiService } from '../api/tests-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { StandaloneRun, TestCase, TestCaseBody } from '../api/models';
-import { short, countByStatus, errText, statusColor, statusLabel } from '../shared/format';
+import { short, isInFlight, errText, statusColor, statusLabel } from '../shared/format';
 import { TestFormDialogComponent } from '../shared/dialog/test-form-dialog.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
 import { Paged } from '../shared/paged';
@@ -60,20 +60,8 @@ export class TestDetailComponent {
   });
   canRun = computed(() => !!this.test()?.test_type_assignments?.length);
   /** True while the loaded page still has a Pending/Running standalone run - drives the poll
-   *  below, same reasoning as execution.component.ts's identical field. */
-  hasInFlight = computed(() =>
-    countByStatus(this.runs()).some(
-      (s) => (s.key === 'Pending' || s.key === 'Running') && s.value > 0,
-    ),
-  );
-  /** Re-checks hasInFlight() before every tick, stops itself once nothing's left to wait for -
-   *  see shared/poll.ts. Skips a tick while the previous reload is still in flight. */
-  private startPolling = pollWhile(
-    () => this.hasInFlight(),
-    () => {
-      if (!this.runsPage.loading()) this.runsPage.reload();
-    },
-  );
+   *  below. */
+  hasInFlight = computed(() => this.runs().some((r) => isInFlight(r.status)));
   constructor() {
     effect(() => {
       this.id();
@@ -81,9 +69,14 @@ export class TestDetailComponent {
       // see scopes-list.component.ts's identical comment.
       untracked(() => this.load());
     });
-    effect(() => {
-      if (this.hasInFlight()) this.startPolling();
-    });
+    // Polls while a run is in flight, stops once nothing's left to wait for - see shared/poll.ts.
+    // Skips a tick while the previous reload is still in flight.
+    pollWhile(
+      () => this.hasInFlight(),
+      () => {
+        if (!this.runsPage.loading()) this.runsPage.reload();
+      },
+    );
   }
   load() {
     this.testsApi.test(this.id()).subscribe({

@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { Kind, RunDetails } from '../api/models';
-import { short, errText } from '../shared/format';
+import { short, errText, isInFlight } from '../shared/format';
 import { pollWhile } from '../shared/poll';
 import { RunBodyComponent } from './run-body.component';
 
@@ -50,27 +50,21 @@ export class RunDetailComponent {
   kindLabel = computed(() => (this.kind() === 'test-sets' ? 'Test set' : 'Test plan'));
   name = computed(() => this.store.parent(this.kind(), this.id())?.name ?? short(this.id()));
   /** True while this run hasn't settled yet - drives the poll below. */
-  hasInFlight = computed(() => {
-    const s = this.run()?.status;
-    return s === 'Pending' || s === 'Running';
-  });
-  /** Re-checks hasInFlight() before every tick, stops itself once the run has settled - see
-   *  shared/poll.ts. Skips a tick while the previous fetch is still in flight. */
-  private startPolling = pollWhile(
-    () => this.hasInFlight(),
-    () => {
-      if (!this.refreshing()) this.fetchRun();
-    },
-  );
+  hasInFlight = computed(() => isInFlight(this.run()?.status));
   constructor() {
     effect(() => {
       // This scope's own name (store.parent) - only sets or plans is needed, by kind.
       this.kind() === 'test-sets' ? this.store.loadSets() : this.store.loadPlans();
       this.fetchRun();
     });
-    effect(() => {
-      if (this.hasInFlight()) this.startPolling();
-    });
+    // Polls while the run is in flight, stops once it settles - see shared/poll.ts. Skips a tick
+    // while the previous fetch is still in flight.
+    pollWhile(
+      () => this.hasInFlight(),
+      () => {
+        if (!this.refreshing()) this.fetchRun();
+      },
+    );
   }
   private fetchRun() {
     this.refreshing.set(true);

@@ -12,7 +12,7 @@ import { RouterLink } from '@angular/router';
 import { Observable, forkJoin, map, catchError, of } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
 import { ExecutionMetadata, Kind } from '../api/models';
-import { short, countByStatus, errText } from '../shared/format';
+import { short, countByStatus, errText, isInFlight } from '../shared/format';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
@@ -113,23 +113,23 @@ export class ExecutionsPanelComponent {
    *  not just the first page), since ExecutionMetadata carries no aggregate itself. */
   statusByExec = signal<Record<string, StatusCount[]>>({});
   /** True while any visible execution's breakdown still has a Pending/Running run - drives the
-   *  poll below, same reasoning as execution.component.ts's identical field. */
+   *  poll below. */
   hasInFlight = computed(() =>
     Object.values(this.statusByExec()).some((statuses) =>
-      statuses.some((s) => (s.key === 'Pending' || s.key === 'Running') && s.value > 0),
+      statuses.some((s) => isInFlight(s.key) && s.value > 0),
     ),
   );
-  /** Re-checks hasInFlight() before every tick, stops itself once nothing's left to wait for -
-   *  see shared/poll.ts. Reloading the execution page also re-triggers the statusByExec effect
-   *  below, so one poll refreshes both the run counts and their breakdowns. Skips a tick while
-   *  the previous reload is still in flight. */
-  private startPolling = pollWhile(
-    () => this.hasInFlight(),
-    () => {
-      if (!this.page.loading()) this.page.reload();
-    },
-  );
   constructor() {
+    // Polls while a run is in flight, stops once nothing's left to wait for - see shared/poll.ts.
+    // Reloading the execution page also re-triggers the statusByExec effect below, so one poll
+    // refreshes both the run counts and their breakdowns. Skips a tick while the previous reload
+    // is still in flight.
+    pollWhile(
+      () => this.hasInFlight(),
+      () => {
+        if (!this.page.loading()) this.page.reload();
+      },
+    );
     effect(() => {
       this.kind();
       this.id();
@@ -148,9 +148,6 @@ export class ExecutionsPanelComponent {
       forkJoin(items.map((e) => this.loadStatusRow(e))).subscribe((rows) =>
         this.statusByExec.set(Object.fromEntries(rows)),
       );
-    });
-    effect(() => {
-      if (this.hasInFlight()) this.startPolling();
     });
   }
   private loadStatusRow(e: ExecutionMetadata): Observable<[string, StatusCount[]]> {

@@ -41,6 +41,9 @@ export const STATUS: { key: TestStatus; label: string; color: string }[] = [
 export const statusColor = (s?: string) =>
   STATUS.find((x) => x.key === s)?.color ?? STATUS[0].color;
 export const statusLabel = (s?: string) => STATUS.find((x) => x.key === s)?.label ?? s ?? '';
+/** Pending or Running - a run that hasn't settled yet, i.e. one a page still has to wait (poll)
+ *  for. The one place this pair of statuses is spelled out. */
+export const isInFlight = (s?: string | null) => s === 'Pending' || s === 'Running';
 export function countByStatus(runs: { status: TestStatus }[]) {
   return STATUS.map((s) => ({ ...s, value: runs.filter((r) => r.status === s.key).length }));
 }
