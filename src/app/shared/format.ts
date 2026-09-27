@@ -54,33 +54,48 @@ export const isInFlight = (s?: string | null) => s === 'Pending' || s === 'Runni
 export function countByStatus(runs: { status: TestStatus }[]) {
   return STATUS.map((s) => ({ ...s, value: runs.filter((r) => r.status === s.key).length }));
 }
+/** A 422 entry's `loc` after FastAPI's own location segment ("body"/"query") - the part that
+ *  names the field (["body","settings","url"] → ["settings","url"]). */
+const locPath = (x: any): string[] => (x?.loc ?? []).slice(1).map(String);
+/** One 422 entry as a readable line: "settings.url: must be …", or just the message when it's
+ *  about the whole request. Shared by errText and fieldErrors so the two can't drift. */
+const locMsg = (x: any): string => {
+  const path = locPath(x);
+  return path.length ? `${path.join('.')}: ${x.msg}` : x.msg;
+};
+/** A 422 list minus any entry without a message - nothing to show for those. */
+const detailList = (e: any): any[] | null => {
+  const d = e?.error?.detail;
+  return Array.isArray(d) ? d.filter((x) => typeof x?.msg === 'string' && x.msg) : null;
+};
 /** FastAPI puts human messages in `detail` (string, {message}, or a 422 list). */
 export function errText(e: any): string {
   const d = e?.error?.detail;
   if (typeof d === 'string') return d;
-  if (Array.isArray(d))
-    return d.map((x: any) => `${(x.loc ?? []).slice(1).join('.')}: ${x.msg}`).join('; ');
+  const list = detailList(e);
+  if (list) return list.map(locMsg).join('; ');
   return d?.message ?? d?.detail ?? (d ? JSON.stringify(d) : (e?.message ?? 'Request failed'));
 }
 /** An API error split for a form: `byField` holds each 422 problem under the form field it names -
- *  the deepest segment of its `loc`, after FastAPI's own location segment ("body"/"query"), that
- *  is one of `fields`; so ["body","url"], ["body","settings","url"] and ["body","headers","X-Key"]
- *  all land on their field. Everything else - a whole-request problem (loc ["body"]), a segment
- *  the form doesn't have, any non-422 error - goes to `other`, as one readable line, so nothing
- *  the API says is ever dropped. Several problems on one field are joined with "; ". */
+ *  the FIRST segment of its path (after FastAPI's location) that is one of `fields`, so
+ *  ["body","url"], ["body","settings","url"] and ["body","headers","X-Key"] all land on their
+ *  field, and a user-chosen key deeper down (a header called "url", a body key called "input")
+ *  can't pull the message onto the wrong field. Everything else - a whole-request problem (loc
+ *  ["body"]), a path the form doesn't have, any non-422 error - goes to `other`, as one readable
+ *  line, so nothing the API says is ever dropped. Several problems on one field are joined with
+ *  "; ". */
 export function fieldErrors(
   e: any,
   fields: readonly string[],
 ): { byField: Record<string, string>; other: string | null } {
-  const d = e?.error?.detail;
-  if (e?.status !== 422 || !Array.isArray(d)) return { byField: {}, other: errText(e) };
+  const list = e?.status === 422 ? detailList(e) : null;
+  if (!list) return { byField: {}, other: errText(e) };
   const byField: Record<string, string> = {};
   const other: string[] = [];
-  for (const x of d) {
-    const path: string[] = (x?.loc ?? []).slice(1).map(String);
-    const key = [...path].reverse().find((p) => fields.includes(p));
+  for (const x of list) {
+    const key = locPath(x).find((p) => fields.includes(p));
     if (key) byField[key] = byField[key] ? `${byField[key]}; ${x.msg}` : x.msg;
-    else other.push(path.length ? `${path.join('.')}: ${x.msg}` : x.msg);
+    else other.push(locMsg(x));
   }
   return { byField, other: other.length ? other.join('; ') : null };
 }

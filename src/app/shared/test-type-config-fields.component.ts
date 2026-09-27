@@ -1,5 +1,6 @@
 import { Component, inject, input, output, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NumberInputDirective } from './number';
 import { TestTypesStore, assignmentFields, numericFieldHint } from '../api/test-types.store';
 
 /**
@@ -15,7 +16,7 @@ import { TestTypesStore, assignmentFields, numericFieldHint } from '../api/test-
 @Component({
   selector: 'assay-test-type-config-fields',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, NumberInputDirective],
   templateUrl: './test-type-config-fields.component.html',
   styleUrl: './test-type-config-fields.component.css',
 })

@@ -5,6 +5,8 @@ import { TargetCheck, TargetSettingsRead } from '../api/models';
 import { errText, fieldErrors } from '../shared/format';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
+import { NumberInputDirective } from '../shared/number';
+import { FieldErrorStore } from '../shared/field-errors';
 import { APPLICATION_FIELDS, envVar } from './settings-fields';
 import {
   FieldErrors,
@@ -30,7 +32,7 @@ import { TargetCheckRunner } from './target-check';
 @Component({
   selector: 'assay-target-settings',
   standalone: true,
-  imports: [FormsModule, RelTimeComponent, ConfirmDialogComponent],
+  imports: [FormsModule, RelTimeComponent, ConfirmDialogComponent, NumberInputDirective],
   templateUrl: './target-settings.component.html',
   styleUrls: ['../shared/page.css', './settings-section.css', './target-settings.component.css'],
 })
@@ -43,7 +45,7 @@ export class TargetSettingsComponent {
   draft = signal<TargetDraft | null>(null);
   loadError = signal<string | null>(null);
   /** Problems found before sending (unparseable JSON, a nameless header) or returned as a 422. */
-  errors = signal<FieldErrors>({});
+  errors = new FieldErrorStore();
   saving = signal(false);
   msg = signal<{ ok: boolean; text: string } | null>(null);
   confirmReset = signal(false);
@@ -66,7 +68,10 @@ export class TargetSettingsComponent {
       (this.dirty() ? ' Your unsaved changes on this form will be lost too.' : ''),
   );
   /** What's shown under each field: this form's own errors first, then a check's 422s. */
-  shownErrors = computed<FieldErrors>(() => ({ ...this.runner.fieldErrors(), ...this.errors() }));
+  shownErrors = computed<FieldErrors>(() => ({
+    ...this.runner.fieldErrors.all(),
+    ...this.errors.all(),
+  }));
 
   constructor() {
     this.api.target().subscribe({
@@ -78,13 +83,14 @@ export class TargetSettingsComponent {
   private load(s: TargetSettingsRead) {
     this.saved.set(s);
     this.draft.set(toDraft(s));
-    this.errors.set({});
-    // The values under any check error were just replaced - its messages no longer apply.
-    this.runner.fieldErrors.set({});
+    this.errors.reset();
+    // The settings fields under any check error were just replaced, so those messages no longer
+    // apply - but the test input wasn't touched, so its message stays.
+    this.runner.fieldErrors.clearKeys(TARGET_FIELDS);
   }
   private clearError(key: string) {
-    this.errors.update(({ [key]: _, ...rest }) => rest);
-    this.runner.clearFieldError(key);
+    this.errors.clear(key);
+    this.runner.fieldErrors.clear(key);
     this.msg.set(null);
   }
 

@@ -1,4 +1,5 @@
 import { TargetField, TargetMethod, TargetSettings, TargetSettingsUpdate } from '../api/models';
+import { parseDecimal } from '../shared/number';
 
 /** Every editable field, in form order. */
 export const TARGET_FIELDS: TargetField[] = [
@@ -29,7 +30,7 @@ export interface TargetDraft {
   max_retries: string;
 }
 export type ScalarDraftField = Exclude<keyof TargetDraft, 'headers'>;
-export type FieldErrors = Partial<Record<string, string>>;
+export type FieldErrors = Record<string, string>;
 
 const emptyRow = (): HeaderRow => ({ name: '', value: '' });
 
@@ -89,11 +90,10 @@ export function parseDraft(d: TargetDraft): { value: TargetSettings | null; erro
   }
 
   const num = (key: ScalarDraftField, whole: boolean): number => {
-    const raw = d[key].trim();
-    const n = Number(raw);
-    if (!raw || !Number.isFinite(n)) errors[key] = 'must be a number';
+    const n = parseDecimal(d[key]);
+    if (n == null) errors[key] = 'must be a number';
     else if (whole && !Number.isInteger(n)) errors[key] = 'must be a whole number';
-    return n;
+    return n ?? 0;
   };
   const timeout_seconds = num('timeout_seconds', false);
   const max_retries = num('max_retries', true);

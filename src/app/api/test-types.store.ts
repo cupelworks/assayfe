@@ -1,6 +1,7 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { TestsApiService } from './tests-api.service';
 import { ConfigFieldDescriptor, TestCategory, TestType } from './models';
+import { parseDecimal } from '../shared/number';
 
 /** Whether a type needs an expected_output to work at all - derived from config_fields instead
  *  of the removed required_reference bool, since a type can now need config without needing a
@@ -22,8 +23,8 @@ export const assignmentFields = (t: TestType) =>
  *  min/max as advisory metadata and does not itself validate a submitted value against them (or
  *  that it's numeric at all), so this is the only check it gets. */
 export const numericFieldIssue = (f: ConfigFieldDescriptor, raw: string): string | null => {
-  const n = Number(raw);
-  if (!Number.isFinite(n)) return 'must be a number';
+  const n = parseDecimal(raw);
+  if (n == null) return 'must be a number';
   if (f.min != null && f.max != null)
     return n < f.min || n > f.max ? `must be between ${f.min} and ${f.max}` : null;
   if (f.min != null) return n < f.min ? `must be at least ${f.min}` : null;

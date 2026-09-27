@@ -95,11 +95,10 @@
               @case ('number') {
                 <div class="inline">
                   <input
-                    type="text"
                     class="input num"
+                    [assayNumber]="f.inputMode ?? ''"
                     [class.invalid]="shownErrors()[f.key]"
                     [id]="controlId(f.key)"
-                    [attr.inputmode]="f.inputMode"
                     [ngModel]="value($any(f.key))"
                     (ngModelChange)="set($any(f.key), $event)"
                   />
@@ -138,11 +137,11 @@
       <div class="inline">
         <input
           class="input"
-          [class.invalid]="runner.fieldErrors()['input']"
+          [class.invalid]="runner.fieldErrors.all()['input']"
           aria-label="Test input"
           placeholder="An input to send, e.g. What is your refund policy?"
           [ngModel]="checkInput()"
-          (ngModelChange)="checkInput.set($event); runner.clearFieldError('input')"
+          (ngModelChange)="checkInput.set($event); runner.fieldErrors.clear('input')"
           (keydown.enter)="checkInput().trim() && !runner.busy() && runCheck()"
         />
         <button
@@ -154,7 +153,7 @@
           {{ runner.busy() ? 'Testing…' : 'Test' }}
         </button>
       </div>
-      @if (runner.fieldErrors()['input']; as e) {
+      @if (runner.fieldErrors.all()['input']; as e) {
         <div class="err">{{ cap(e) }}</div>
       }
       @if (runner.error(); as e) {
@@ -178,6 +177,9 @@
                   : 'Waiting for a worker to pick it up…'
               }}
             </div>
+            @if (runner.pollError(); as pe) {
+              <div class="err">Couldn't get the latest status ({{ pe }}) - still trying.</div>
+            }
           }
         </div>
       }

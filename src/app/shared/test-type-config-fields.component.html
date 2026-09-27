@@ -16,11 +16,8 @@
             </label>
             @if (f.kind === 'numeric') {
               <input
-                type="number"
                 class="input num"
-                [attr.min]="f.min"
-                [attr.max]="f.max"
-                step="0.01"
+                assayNumber
                 [ngModel]="fieldValue(s.name, f.key)"
                 (ngModelChange)="setFieldValue(s.name, f.key, $event)"
               />

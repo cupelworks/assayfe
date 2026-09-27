@@ -3,6 +3,7 @@ import { SettingsApiService } from '../api/settings-api.service';
 import { TargetCheck, TargetSettingsUpdate } from '../api/models';
 import { errText, fieldErrors } from '../shared/format';
 import { pollWhile } from '../shared/poll';
+import { FieldErrorStore } from '../shared/field-errors';
 import { TARGET_FIELDS } from './target-draft';
 
 /** Extra wait on top of the checked settings' own timeout before giving up. */
@@ -20,8 +21,9 @@ const CHECK_FIELDS: readonly string[] = [...TARGET_FIELDS, 'input'];
  *
  * Robustness: a poll response for a check that's no longer current is ignored (a slow request for
  * an old check can't overwrite a new one), and a failed poll doesn't end the check - it keeps
- * polling until the deadline, since one network blip says nothing about the check itself. Only a
- * 404 (the check is gone) stops it early.
+ * polling until the deadline, since one network blip says nothing about the check itself, while
+ * `pollError` shows the latest failure right away rather than hiding it behind "Waiting…". Only
+ * a 404 (the check is gone) stops it early.
  */
 export class TargetCheckRunner {
   private api = inject(SettingsApiService);
@@ -32,9 +34,9 @@ export class TargetCheckRunner {
   /** The check can't go on: starting it failed, or it no longer exists. */
   error = signal<string | null>(null);
   /** 422 problems from starting a check, keyed by field (`input`, or a settings field). */
-  fieldErrors = signal<Record<string, string>>({});
-  /** The most recent poll failure, kept only to explain a give-up. */
-  private lastPollError = signal<string | null>(null);
+  fieldErrors = new FieldErrorStore();
+  /** The latest poll failure while still polling - cleared by the next successful poll. */
+  pollError = signal<string | null>(null);
   inFlight = computed(() => {
     const c = this.check();
     return !!c && c.status !== 'completed' && !this.gaveUp() && !this.error();
@@ -44,7 +46,7 @@ export class TargetCheckRunner {
    *  ("running") timed out on the application under test; one nobody picked up means no worker. */
   gaveUpMessage = computed(() => {
     if (!this.gaveUp()) return null;
-    const pollError = this.lastPollError();
+    const pollError = this.pollError();
     if (pollError) return `Couldn't get the result: ${pollError}`;
     return this.check()?.status === 'running'
       ? "The application under test didn't answer in time."
@@ -66,8 +68,8 @@ export class TargetCheckRunner {
     this.check.set(null);
     this.gaveUp.set(false);
     this.error.set(null);
-    this.fieldErrors.set({});
-    this.lastPollError.set(null);
+    this.fieldErrors.reset();
+    this.pollError.set(null);
     this.starting.set(true);
     this.api.startTargetCheck(input, settings).subscribe({
       next: (c) => {
@@ -82,12 +84,6 @@ export class TargetCheckRunner {
         this.error.set(other);
       },
     });
-  }
-
-  /** Drops a field's 422 message once the user edits that field. */
-  clearFieldError(key: string) {
-    if (!(key in this.fieldErrors())) return;
-    this.fieldErrors.update(({ [key]: _, ...rest }) => rest);
   }
 
   private tick() {
@@ -107,13 +103,13 @@ export class TargetCheckRunner {
     this.api.targetCheck(id).subscribe({
       next: (next) => {
         if (!settle()) return;
-        this.lastPollError.set(null);
+        this.pollError.set(null);
         this.check.set(next);
       },
       error: (e) => {
         if (!settle()) return;
         if (e?.status === 404) this.error.set(errText(e));
-        else this.lastPollError.set(errText(e));
+        else this.pollError.set(errText(e));
       },
     });
   }

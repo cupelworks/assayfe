@@ -19,9 +19,9 @@ export interface SettingField {
   options?: string[];
   /** `number` only - shown after the input ("seconds per call"). */
   unit?: string;
-  /** `number` only - the on-screen keyboard to offer. Numbers are typed into a plain text input
-   *  (a type="number" input rewrites the value mid-typing - "1.0" became "1"); the API enforces
-   *  the ranges the hint states. */
+  /** `number` only - the on-screen keyboard the shared `assayNumber` input offers (see
+   *  shared/number.ts for why numbers are typed as text); the API enforces the ranges the hint
+   *  states. */
   inputMode?: 'decimal' | 'numeric';
   /** Render the value in monospace (a path, a JSON template). */
   mono?: boolean;
