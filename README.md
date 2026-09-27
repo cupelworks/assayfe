@@ -25,7 +25,7 @@ Backend must allow CORS from `http://localhost:4200`. API base is set in `src/ap
 
 ## Structure
 
-`api/` models + one-method-per-endpoint service + root `CatalogStore` + `TestTypesStore` (with the pure display helpers `numericFieldHint` / `engineLabel` / `defaultRubric` shared by the catalogue, the config inputs and run detail) · `shared/` formatters, page.css, `Paged`/`PagerComponent`, `DateSort`, `TextFilter`, `pollWhile`, `<assay-rel-time>`, `<assay-copy-button>`, dialogs (generic, name, confirm, pick, test form), test-type-picker · one folder per area (`datasets`, `tests`, `scopes`, `runs`, `test-types`, `guide`) · `shell/` header/footer/theme.
+`api/` models + one-method-per-endpoint service + root `CatalogStore` + `TestTypesStore` (with the pure display helpers `numericFieldHint` / `engineLabel` / `defaultRubric` shared by the catalogue, the config inputs and run detail) · `shared/` formatters, page.css, `Paged`/`PagerComponent`, `DateSort`, `TextFilter`, `Selection`, `pollWhile`, `<assay-rel-time>`, `<assay-copy-button>`, dialogs (generic, name, confirm, pick, test form), test-type-picker · one folder per area (`datasets`, `tests`, `scopes`, `runs`, `test-types`, `guide`) · `shell/` header/footer/theme.
 
 ## Notes
 
