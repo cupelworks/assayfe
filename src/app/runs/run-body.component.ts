@@ -1,6 +1,11 @@
 import { Component, inject, input, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { RunDetails, StandaloneRunDetails, TestTypeAssignment } from '../api/models';
+import {
+  RunDetails,
+  StandaloneRunDetails,
+  TestTypeAssignment,
+  TestTypeResult,
+} from '../api/models';
 import { rel, absTime, statusColor, statusLabel } from '../shared/format';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { TestTypesStore, assignmentFields } from '../api/test-types.store';
@@ -73,6 +78,9 @@ import { TestTypesStore, assignmentFields } from '../api/test-types.store';
               @if (s.detail) {
                 <div class="detail muted">{{ s.detail }}</div>
               }
+              @if (s.engineText) {
+                <div class="detail small muted">{{ s.engineText }}</div>
+              }
             </div>
           } @empty {
             <div class="score muted">
@@ -97,6 +105,20 @@ import { TestTypesStore, assignmentFields } from '../api/test-types.store';
             <span class="tag tag-outline">{{ t.name }}</span>
           }
         </div>
+        @if (r.evaluated_output != null) {
+          <div class="field-ro">
+            <div class="label">
+              Evaluated output
+              <span
+                class="tag"
+                [class.tag-accent]="r.output_source === 'application'"
+                [class.tag-outline]="r.output_source !== 'application'"
+                >{{ r.output_source === 'application' ? 'From application' : 'Recorded' }}</span
+              >
+            </div>
+            <div class="body">{{ r.evaluated_output }}</div>
+          </div>
+        }
         @for (f of fields(); track f[0]) {
           <div class="field-ro">
             <div class="label">{{ f[0] }}</div>
@@ -170,8 +192,17 @@ export class RunBodyComponent {
       pct: this.resultPct(name, r.score),
       detail: r.detail,
       config: this.configFields(name),
+      engineText: this.engineText(r),
     })),
   );
+  /** "engine: regex · mode=search, timeout_seconds=1" - secondary/technical info per result, only
+   *  shown when the backend actually stamped an engine on it (null on legacy results, and on a
+   *  type no longer in the catalogue at execution time). */
+  private engineText(r: TestTypeResult): string | null {
+    if (!r.engine) return null;
+    const settings = Object.entries(r.engine_settings ?? {}).map(([k, v]) => `${k}=${v}`);
+    return settings.length ? `engine: ${r.engine} · ${settings.join(', ')}` : `engine: ${r.engine}`;
+  }
   /** Bar width for a result's score - null (no bar) when there's nothing to show yet (LLM judges
    *  can return no score at all). A threshold-scored type (`comparison` non-null) reports its
    *  score on that type's own native scale, matching its config_fields threshold min/max - not

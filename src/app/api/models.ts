@@ -24,6 +24,14 @@ export interface TestTypeResult {
   passed: boolean;
   score: number | null;
   detail: string | null;
+  /** Which evaluator engine produced this result, as the type's catalogue row named it at
+   *  execution time - recorded on the run so a later catalogue change can't reinterpret an old
+   *  result. Null only when the type wasn't in the catalogue at all when the run executed (then
+   *  `detail` says so), and on results written before this field existed (legacy runs). */
+  engine?: string | null;
+  /** That engine's settings for this type, exactly as the catalogue row held them at execution
+   *  time. Null in the same two cases as `engine`. */
+  engine_settings?: Record<string, unknown> | null;
 }
 
 // Datasets
@@ -125,13 +133,32 @@ export interface RunMetadata {
   test_set_entry_id?: Ref;
   test_case_id?: Ref;
 }
-export interface RunDetails extends RunMetadata, TestCaseBody {
+/** The lifecycle/outcome fields every run-detail response carries regardless of origin - factored
+ *  out once RunDetails and StandaloneRunDetails were about to duplicate a fifth field
+ *  (evaluated_output/output_source, on top of the existing executed_at/error/results). */
+export interface RunOutcome {
   executed_at: string | null;
-  /** Set only when status is NotRan - a run-level failure, mutually exclusive with results. */
+  /** Set only when status is NotRan - a run-level failure, mutually exclusive with results.
+   *  Since 0.9.5 also covers the application-under-test being unreachable (e.g. "application
+   *  answered HTTP 503 after 3 attempt(s)"), not just a model-call failure. */
   error: string | null;
   /** Per-assigned-type outcomes, keyed by type name. Populated once status is Green/Amber/Red;
-   *  null while Pending/Running, and for NotRan (see error instead). */
+   *  null while Pending/Running, and for NotRan (see error instead). A single type can still fail
+   *  on its own (e.g. an invalid regex config) without failing the run - that shows up here as
+   *  `passed: false, score: null` with the reason in `detail`, same shape as any other result. */
   results: Record<string, TestTypeResult> | null;
+  /** The exact text every assigned type was actually scored against - not necessarily the
+   *  content's own model_output (see output_source). Null while Pending/Running, on NotRan, and
+   *  on runs executed before this field existed (legacy). */
+  evaluated_output: string | null;
+  /** Where evaluated_output came from: 'recorded' - the content already had a model_output and
+   *  the run scored that as-is; 'application' - the content had none, so the worker called the
+   *  application under test and scored its live reply (in which case the content's own
+   *  model_output is null - evaluated_output is the only place the answer appears). Null
+   *  whenever evaluated_output is. */
+  output_source: 'recorded' | 'application' | null;
+}
+export interface RunDetails extends RunMetadata, TestCaseBody, RunOutcome {
   test_case_id: Ref;
   test_set_id?: Ref | null;
   test_plan_id?: Ref;
@@ -147,13 +174,7 @@ export interface StandaloneRun {
  *  creation time - test_case_snapshot_at equals created_at - and never touched by later edits to
  *  the live test), same shape as RunDetails. Always present, no pre-existing-run null case - the
  *  backend backfilled/recreated its data rather than leaving old rows without one. */
-export interface StandaloneRunDetails extends StandaloneRun, TestCaseBody {
-  executed_at: string | null;
-  /** Set only when status is NotRan - a run-level failure, mutually exclusive with results. */
-  error: string | null;
-  /** Per-assigned-type outcomes, keyed by type name. Populated once status is Green/Amber/Red;
-   *  null while Pending/Running, and for NotRan (see error instead). */
-  results: Record<string, TestTypeResult> | null;
+export interface StandaloneRunDetails extends StandaloneRun, TestCaseBody, RunOutcome {
   test_case_snapshot_at: { snapshot_at: string };
 }
 export type RunOrigin = 'Standalone' | 'TestSet' | 'TestPlan';
