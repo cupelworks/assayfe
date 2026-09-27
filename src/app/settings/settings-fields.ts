@@ -48,7 +48,7 @@ export const APPLICATION_FIELDS: SettingField[] = [
     kind: 'select',
     default: 'POST',
     options: ['POST', 'GET', 'PUT', 'PATCH'],
-    hint: 'Stored upper-cased. Default POST.',
+    hint: 'Default POST.',
   },
   {
     key: 'target_headers',
