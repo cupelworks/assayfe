@@ -30,9 +30,9 @@ export interface SettingField {
  *  so the name is derived, never typed out next to the key it repeats. */
 export const envVar = (f: SettingField) => `ASSAY_${f.key.toUpperCase()}`;
 
-/** Group A - the application under test. Planned to become editable; env-only today. Global:
- *  one Assay deployment tests one application. A change applies to future runs only - every run
- *  keeps the answer it actually scored (`evaluated_output`). */
+/** Group A - the application under test. Planned to become editable; env-only today. Pointing
+ *  it at a different application changes what future runs call - every past run keeps the
+ *  answer it actually scored (`evaluated_output`). */
 export const APPLICATION_FIELDS: SettingField[] = [
   {
     key: 'target_url',
