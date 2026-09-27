@@ -22,106 +22,112 @@
   }
 
   @if (draft(); as d) {
-    <div class="fields">
-      @for (f of fields; track f.key) {
-        <label
-          class="label field-label"
-          [attr.for]="f.kind === 'headers' ? null : controlId(f.key)"
-        >
-          {{ f.label }}
-          <span class="mono env">{{ envVar(f) }}</span>
-        </label>
-        <div class="control">
-          @switch (f.kind) {
-            @case ('select') {
-              <select
-                class="input sel"
-                [id]="controlId(f.key)"
-                [ngModel]="d.method"
-                (ngModelChange)="set('method', $event)"
-              >
-                @for (o of f.options ?? []; track o) {
-                  <option [value]="o">{{ o }}</option>
+    <!-- Locked while a save or reset is in flight: its response replaces the whole form. -->
+    <fieldset class="lock" [disabled]="saving() || resetting()">
+      <div class="fields">
+        @for (f of fields; track f.key) {
+          <label
+            class="label field-label"
+            [attr.for]="f.kind === 'headers' ? null : controlId(f.key)"
+          >
+            {{ f.label }}
+            <span class="mono env">{{ envVar(f) }}</span>
+          </label>
+          <div class="control">
+            @switch (f.kind) {
+              @case ('select') {
+                <select
+                  class="input sel"
+                  [id]="controlId(f.key)"
+                  [ngModel]="d.method"
+                  (ngModelChange)="set('method', $event)"
+                >
+                  @for (o of f.options ?? []; track o) {
+                    <option [value]="o">{{ o }}</option>
+                  }
+                </select>
+              }
+              @case ('json') {
+                <textarea
+                  class="input ta mono"
+                  [class.invalid]="shownErrors()[f.key]"
+                  [id]="controlId(f.key)"
+                  rows="4"
+                  spellcheck="false"
+                  [ngModel]="d.body"
+                  (ngModelChange)="set('body', $event)"
+                ></textarea>
+              }
+              @case ('headers') {
+                @for (h of d.headers; track $index) {
+                  <div class="hrow">
+                    <input
+                      class="input key"
+                      [class.invalid]="shownErrors()['headers']"
+                      aria-label="Header name"
+                      placeholder="Authorization"
+                      [ngModel]="h.name"
+                      (ngModelChange)="setHeader($index, 'name', $event)"
+                    />
+                    <input
+                      class="input mono"
+                      [class.invalid]="shownErrors()['headers']"
+                      aria-label="Header value"
+                      placeholder="Bearer ${ASSAY_TARGET_API_KEY}"
+                      [ngModel]="h.value"
+                      (ngModelChange)="setHeader($index, 'value', $event)"
+                    />
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-sm"
+                      (click)="removeHeader($index)"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 }
-              </select>
-            }
-            @case ('json') {
-              <textarea
-                class="input ta mono"
-                [class.invalid]="shownErrors()[f.key]"
-                [id]="controlId(f.key)"
-                rows="4"
-                spellcheck="false"
-                [ngModel]="d.body"
-                (ngModelChange)="set('body', $event)"
-              ></textarea>
-            }
-            @case ('headers') {
-              @for (h of d.headers; track $index) {
-                <div class="hrow">
-                  <input
-                    class="input key"
-                    [class.invalid]="shownErrors()['headers']"
-                    aria-label="Header name"
-                    placeholder="Authorization"
-                    [ngModel]="h.name"
-                    (ngModelChange)="setHeader($index, 'name', $event)"
-                  />
-                  <input
-                    class="input mono"
-                    [class.invalid]="shownErrors()['headers']"
-                    aria-label="Header value"
-                    placeholder="Bearer ${ASSAY_TARGET_API_KEY}"
-                    [ngModel]="h.value"
-                    (ngModelChange)="setHeader($index, 'value', $event)"
-                  />
-                  <button type="button" class="btn btn-ghost btn-sm" (click)="removeHeader($index)">
-                    Remove
+                <div>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="addHeader()">
+                    + Add header
                   </button>
                 </div>
               }
-              <div>
-                <button type="button" class="btn btn-ghost btn-sm" (click)="addHeader()">
-                  + Add header
-                </button>
-              </div>
-            }
-            @case ('number') {
-              <div class="inline">
+              @case ('number') {
+                <div class="inline">
+                  <input
+                    type="text"
+                    class="input num"
+                    [class.invalid]="shownErrors()[f.key]"
+                    [id]="controlId(f.key)"
+                    [attr.inputmode]="f.inputMode"
+                    [ngModel]="value($any(f.key))"
+                    (ngModelChange)="set($any(f.key), $event)"
+                  />
+                  <span class="muted">{{ f.unit }}</span>
+                </div>
+              }
+              @default {
                 <input
-                  type="number"
-                  class="input num"
+                  class="input"
+                  [class.mono]="f.mono"
+                  [class.short]="f.mono"
                   [class.invalid]="shownErrors()[f.key]"
+                  [type]="f.kind === 'url' ? 'url' : 'text'"
                   [id]="controlId(f.key)"
-                  [attr.min]="f.min"
-                  [attr.max]="f.max"
+                  [placeholder]="f.placeholder ?? ''"
                   [ngModel]="value($any(f.key))"
                   (ngModelChange)="set($any(f.key), $event)"
                 />
-                <span class="muted">{{ f.unit }}</span>
-              </div>
+              }
             }
-            @default {
-              <input
-                class="input"
-                [class.mono]="f.mono"
-                [class.short]="f.mono"
-                [class.invalid]="shownErrors()[f.key]"
-                [type]="f.kind === 'url' ? 'url' : 'text'"
-                [id]="controlId(f.key)"
-                [placeholder]="f.placeholder ?? ''"
-                [ngModel]="value($any(f.key))"
-                (ngModelChange)="set($any(f.key), $event)"
-              />
+            @if (shownErrors()[f.key]; as e) {
+              <div class="err">{{ cap(e) }}</div>
             }
-          }
-          @if (shownErrors()[f.key]; as e) {
-            <div class="err">{{ cap(e) }}</div>
-          }
-          <div class="small">{{ f.hint }}</div>
-        </div>
-      }
-    </div>
+            <div class="small">{{ f.hint }}</div>
+          </div>
+        }
+      </div>
+    </fieldset>
 
     <div class="check">
       <div class="label">Test connection</div>
@@ -162,8 +168,8 @@
             } @else if (c.error) {
               <div class="answer">{{ c.error }}</div>
             }
-          } @else if (runner.gaveUp()) {
-            <div class="err">No worker answered - is the worker running?</div>
+          } @else if (runner.gaveUpMessage(); as m) {
+            <div class="err">{{ m }}</div>
           } @else {
             <div class="small">
               {{
@@ -215,7 +221,7 @@
   <assay-confirm-dialog
     kicker="Application under test"
     title="Reset to environment values?"
-    body="Removes the settings saved in Assay. Future runs use the values from the server's environment again. Past runs are not affected."
+    [body]="resetBody()"
     confirmLabel="Reset"
     [busy]="resetting()"
     [error]="resetError()"

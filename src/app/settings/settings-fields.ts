@@ -19,8 +19,10 @@ export interface SettingField {
   options?: string[];
   /** `number` only - shown after the input ("seconds per call"). */
   unit?: string;
-  min?: number;
-  max?: number;
+  /** `number` only - the on-screen keyboard to offer. Numbers are typed into a plain text input
+   *  (a type="number" input rewrites the value mid-typing - "1.0" became "1"); the API enforces
+   *  the ranges the hint states. */
+  inputMode?: 'decimal' | 'numeric';
   /** Render the value in monospace (a path, a JSON template). */
   mono?: boolean;
 }
@@ -80,8 +82,7 @@ export const APPLICATION_FIELDS: SettingField[] = [
     key: 'timeout_seconds',
     label: 'Timeout',
     kind: 'number',
-    min: 0,
-    max: 600,
+    inputMode: 'decimal',
     unit: 'seconds per call',
     hint: 'More than 0, up to 600.',
   },
@@ -89,8 +90,7 @@ export const APPLICATION_FIELDS: SettingField[] = [
     key: 'max_retries',
     label: 'Retries',
     kind: 'number',
-    min: 0,
-    max: 10,
+    inputMode: 'numeric',
     unit: 'after the first call',
     hint: '0 to 10. Only on connection errors, timeouts, 5xx and 429; 0 means a single call. Exhausting them is the "application under test answered HTTP 503 after 3 attempt(s)" a Not Ran run reports.',
   },

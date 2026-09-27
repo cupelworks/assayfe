@@ -62,20 +62,27 @@ export function errText(e: any): string {
     return d.map((x: any) => `${(x.loc ?? []).slice(1).join('.')}: ${x.msg}`).join('; ');
   return d?.message ?? d?.detail ?? (d ? JSON.stringify(d) : (e?.message ?? 'Request failed'));
 }
-/** A FastAPI 422's problems as `{ field: message }`, keyed by each entry's last `loc` segment - for
- *  showing a message under the matching input rather than one joined line. Several problems on
- *  one field are joined with "; ". Empty for anything that isn't a 422 field list; pair it with
- *  errText() for everything else. */
-export function fieldErrors(e: any): Record<string, string> {
+/** An API error split for a form: `byField` holds each 422 problem under the form field it names -
+ *  the deepest segment of its `loc`, after FastAPI's own location segment ("body"/"query"), that
+ *  is one of `fields`; so ["body","url"], ["body","settings","url"] and ["body","headers","X-Key"]
+ *  all land on their field. Everything else - a whole-request problem (loc ["body"]), a segment
+ *  the form doesn't have, any non-422 error - goes to `other`, as one readable line, so nothing
+ *  the API says is ever dropped. Several problems on one field are joined with "; ". */
+export function fieldErrors(
+  e: any,
+  fields: readonly string[],
+): { byField: Record<string, string>; other: string | null } {
   const d = e?.error?.detail;
-  if (e?.status !== 422 || !Array.isArray(d)) return {};
-  const out: Record<string, string> = {};
+  if (e?.status !== 422 || !Array.isArray(d)) return { byField: {}, other: errText(e) };
+  const byField: Record<string, string> = {};
+  const other: string[] = [];
   for (const x of d) {
-    const key = String((x?.loc ?? []).at(-1) ?? '');
-    if (!key || !x?.msg) continue;
-    out[key] = out[key] ? `${out[key]}; ${x.msg}` : x.msg;
+    const path: string[] = (x?.loc ?? []).slice(1).map(String);
+    const key = [...path].reverse().find((p) => fields.includes(p));
+    if (key) byField[key] = byField[key] ? `${byField[key]}; ${x.msg}` : x.msg;
+    else other.push(path.length ? `${path.join('.')}: ${x.msg}` : x.msg);
   }
-  return out;
+  return { byField, other: other.length ? other.join('; ') : null };
 }
 export const COST_ORDER = ['fast', 'medium', 'slow', 'expensive'];
 export const categoryLabel = (c: string) =>

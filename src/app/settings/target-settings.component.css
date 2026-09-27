@@ -1,5 +1,11 @@
 /* Label column | control column - the label carries the environment variable the field falls
    back to while nothing is saved from the UI. */
+.lock {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
 .fields {
   display: grid;
   grid-template-columns: 260px minmax(0, 640px);

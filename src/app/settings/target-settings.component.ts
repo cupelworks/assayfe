@@ -10,6 +10,7 @@ import {
   FieldErrors,
   HeaderRow,
   ScalarDraftField,
+  TARGET_FIELDS,
   TargetDraft,
   addHeaderRow,
   changedFields,
@@ -57,6 +58,13 @@ export class TargetSettingsComponent {
     const s = this.saved();
     return !!d && !!s && isDirty(d, s);
   });
+  /** The reset dialog says what else goes, when there's something unsaved to lose. */
+  resetBody = computed(
+    () =>
+      "Removes the settings saved in Assay. Future runs use the values from the server's " +
+      'environment again. Past runs are not affected.' +
+      (this.dirty() ? ' Your unsaved changes on this form will be lost too.' : ''),
+  );
   /** What's shown under each field: this form's own errors first, then a check's 422s. */
   shownErrors = computed<FieldErrors>(() => ({ ...this.runner.fieldErrors(), ...this.errors() }));
 
@@ -71,6 +79,8 @@ export class TargetSettingsComponent {
     this.saved.set(s);
     this.draft.set(toDraft(s));
     this.errors.set({});
+    // The values under any check error were just replaced - its messages no longer apply.
+    this.runner.fieldErrors.set({});
   }
   private clearError(key: string) {
     this.errors.update(({ [key]: _, ...rest }) => rest);
@@ -113,11 +123,7 @@ export class TargetSettingsComponent {
 
   save() {
     const changes = this.pendingChanges();
-    if (!changes) return;
-    if (!Object.keys(changes).length) {
-      this.load(this.saved()!);
-      return;
-    }
+    if (!changes || !Object.keys(changes).length) return;
     this.saving.set(true);
     this.msg.set(null);
     this.api.updateTarget(changes).subscribe({
@@ -128,16 +134,15 @@ export class TargetSettingsComponent {
       },
       error: (e) => {
         this.saving.set(false);
-        const byField = fieldErrors(e);
-        if (Object.keys(byField).length) this.errors.set(byField);
-        else this.msg.set({ ok: false, text: errText(e) });
+        const { byField, other } = fieldErrors(e, TARGET_FIELDS);
+        this.errors.set(byField);
+        if (other) this.msg.set({ ok: false, text: other });
       },
     });
   }
   discard() {
     const s = this.saved();
     if (s) this.load(s);
-    this.runner.fieldErrors.set({});
     this.msg.set(null);
   }
   reset() {
