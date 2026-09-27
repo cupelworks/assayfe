@@ -216,12 +216,15 @@ export class RunBodyComponent {
   private engineText(r: TestTypeResult): string | null {
     return r.engine ? `engine: ${engineLabel(r.engine, r.engine_settings)}` : null;
   }
-  /** Bar width for a result's score - null (no bar) when there's nothing to show yet (LLM judges
-   *  can return no score at all). A threshold-scored type (`comparison` non-null) reports its
+  /** Bar width for a result's score - null (no bar) when there's no score: LLM judges and the
+   *  deterministic types (Exact Match/Contains/Regex Match) return `score: null` by contract, so
+   *  they get the pass/fail dot only. A threshold-scored type (`comparison` non-null) reports its
    *  score on that type's own native scale, matching its config_fields threshold min/max - not
    *  0-1 (BLEU is 0-100, Cosine Similarity is -1 to 1) - so the bar scales by where the score
-   *  falls in that range, not by clamping the raw score itself. A type with no threshold
-   *  (Exact Match/Contains/Regex Match) scores a plain 0/1, which is already a 0-1 fraction. */
+   *  falls in that range, not by clamping the raw score itself. The raw-score fallback covers a
+   *  type with no threshold that nonetheless carries a score: runs stored before the backend
+   *  nulled deterministic scores (or executed by a worker still on that older code) have a
+   *  plain 0/1 there, which is already a 0-1 fraction. */
   private resultPct(name: string, score: number | null): string | null {
     if (score == null) return null;
     const type = this.testTypes.byName().get(name);
