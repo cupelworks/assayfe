@@ -98,7 +98,7 @@ export const APPLICATION_FIELDS: SettingField[] = [
     default: '2',
     min: 0,
     unit: 'after the first call',
-    hint: 'Only on connection errors, timeouts, 5xx and 429; 0 means a single call. Exhausting them is the "application answered HTTP 503 after 3 attempt(s)" a Not Ran run reports.',
+    hint: 'Only on connection errors, timeouts, 5xx and 429; 0 means a single call. Exhausting them is the "application under test answered HTTP 503 after 3 attempt(s)" a Not Ran run reports.',
   },
 ];
 
