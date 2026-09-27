@@ -10,6 +10,8 @@ import {
   short,
   countByStatus,
   isInFlight,
+  untitled,
+  displayName,
   statusColor,
   statusLabel,
   errText,
@@ -132,11 +134,11 @@ export class ExecutionComponent {
   private resolveRow(
     r: RunMetadata,
   ): Observable<[string, string, Record<string, TestTypeResult> | null, string | null]> {
-    const fallback = `Untitled · ${short(r.id)}`;
+    const fallback = untitled(r.id);
     return this.api.runDetails(this.kind(), this.id(), this.execId(), r.id).pipe(
       map(
         (d) =>
-          [r.id, d.name?.trim() || fallback, d.results ?? null, d.executed_at ?? null] as [
+          [r.id, displayName(d.name, r.id), d.results ?? null, d.executed_at ?? null] as [
             string,
             string,
             Record<string, TestTypeResult> | null,

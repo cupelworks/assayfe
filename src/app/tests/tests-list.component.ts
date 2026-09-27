@@ -7,7 +7,7 @@ import { TestCase, TestCaseBody } from '../api/models';
 import { PagerComponent } from '../shared/pager.component';
 import { Paged } from '../shared/paged';
 import { TextFilter } from '../shared/text-filter';
-import { errText } from '../shared/format';
+import { errText, displayName } from '../shared/format';
 import { TestFormDialogComponent } from '../shared/dialog/test-form-dialog.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
 
@@ -29,6 +29,7 @@ import { Selection } from '../shared/selection';
 export class TestsListComponent {
   store = inject(CatalogStore);
   api = inject(TestsApiService);
+  displayName = displayName;
   /** Checkbox bulk selection over the visible rows - see shared/selection.ts. */
   selection = new Selection(() => this.rows());
   dlg = signal<null | 'new' | 'delete'>(null);

@@ -62,7 +62,7 @@
           </td>
           <td class="strong">
             <a class="plain arrow" [routerLink]="['/tests', t.id]">{{
-              t.name || 'Untitled · ' + t.id.slice(0, 8)
+              displayName(t.name, t.id)
             }}</a>
           </td>
           <td class="muted ellip" style="width: auto">{{ t.input }}</td>

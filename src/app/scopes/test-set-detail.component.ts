@@ -5,7 +5,7 @@ import { TestSetsApiService } from '../api/test-sets-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { TestCaseBody, TestSetEntry } from '../api/models';
-import { rel, short, errText } from '../shared/format';
+import { rel, short, errText, displayName } from '../shared/format';
 import { NameDialogComponent } from '../shared/dialog/name-dialog.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
 import { PickDialogComponent, PickRow } from '../shared/dialog/pick-dialog.component';
@@ -41,6 +41,7 @@ export class TestSetDetailComponent {
   router = inject(Router);
   rel = rel;
   short = short;
+  displayName = displayName;
   page = new Paged<TestSetEntry>(
     (o, l) => this.testSetsApi.testSetEntries(this.id(), o, l),
     25,
@@ -75,7 +76,7 @@ export class TestSetDetailComponent {
         noTypes = !t.test_type_assignments?.length;
       return {
         id: t.id,
-        name: t.name || 'Untitled · ' + short(t.id),
+        name: displayName(t.name, t.id),
         sub: t.input,
         meta: dup
           ? 'already in set'

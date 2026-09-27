@@ -4,7 +4,7 @@ import { Observable, forkJoin, map, catchError, of } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
 import { TestsApiService } from '../api/tests-api.service';
 import { AnyRunMetadata, RunOrigin, TestStatus } from '../api/models';
-import { short, statusColor, statusLabel } from '../shared/format';
+import { short, untitled, displayName, statusColor, statusLabel } from '../shared/format';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
@@ -85,7 +85,7 @@ export class RunsListComponent {
     });
   }
   private resolveName(r: AnyRunMetadata): Observable<[string, string]> {
-    const fallback = `Untitled · ${short(r.id)}`;
+    const fallback = untitled(r.id);
     let name$: Observable<string | null | undefined>;
     if (r.origin === 'Standalone' && r.test_case_id) {
       name$ = this.testsApi.test(r.test_case_id.id).pipe(map((t) => t.name));
@@ -101,7 +101,7 @@ export class RunsListComponent {
       name$ = of(null);
     }
     return name$.pipe(
-      map((n) => [r.id, n?.trim() || fallback] as [string, string]),
+      map((n) => [r.id, displayName(n, r.id)] as [string, string]),
       catchError(() => of([r.id, fallback] as [string, string])),
     );
   }

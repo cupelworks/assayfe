@@ -10,6 +10,13 @@ export function rel(iso?: string | null) {
   return `${Math.round(h / 24)} d ago`;
 }
 export const short = (id?: string | null) => String(id ?? '').slice(0, 8);
+/** "Untitled · 1a2b3c4d" - the label for anything nameable that has no name. */
+export const untitled = (id?: string | null) => `Untitled · ${short(id)}`;
+/** A test's (or frozen entry's, or run's) display name: its own name, or `untitled(id)` when the
+ *  name is missing or blank. The one spelling of that fallback - it used to be written out in
+ *  seven places, one of them with a bare `.slice(0, 8)` instead of `short()`. */
+export const displayName = (name: string | null | undefined, id?: string | null) =>
+  name?.trim() || untitled(id);
 /** Absolute timestamp for a title/tooltip alongside rel()'s relative one - "4 d ago" alone loses
  *  precision the moment it matters. */
 export function absTime(iso?: string | null) {

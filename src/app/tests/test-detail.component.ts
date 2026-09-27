@@ -4,7 +4,14 @@ import { TestsApiService } from '../api/tests-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { StandaloneRun, TestCase, TestCaseBody } from '../api/models';
-import { short, isInFlight, errText, statusColor, statusLabel } from '../shared/format';
+import {
+  short,
+  isInFlight,
+  errText,
+  statusColor,
+  statusLabel,
+  displayName,
+} from '../shared/format';
 import { TestFormDialogComponent } from '../shared/dialog/test-form-dialog.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
 import { Paged } from '../shared/paged';
@@ -47,7 +54,7 @@ export class TestDetailComponent {
   busy = signal(false);
   err = signal<string | null>(null);
   msg = signal<{ ok: boolean; text: string } | null>(null);
-  name = computed(() => this.test()?.name || 'Untitled · ' + short(this.id()));
+  name = computed(() => displayName(this.test()?.name, this.id()));
   fields = computed(() => {
     const t = this.test();
     return t

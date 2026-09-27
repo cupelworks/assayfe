@@ -2,7 +2,7 @@ import { Component, inject, input, signal, computed, effect } from '@angular/cor
 import { RouterLink } from '@angular/router';
 import { RunsApiService } from '../api/runs-api.service';
 import { StandaloneRunDetails } from '../api/models';
-import { short, errText, isInFlight } from '../shared/format';
+import { short, errText, isInFlight, displayName } from '../shared/format';
 import { pollWhile } from '../shared/poll';
 import { RunBodyComponent } from './run-body.component';
 
@@ -41,7 +41,7 @@ export class StandaloneRunDetailComponent {
   run = signal<StandaloneRunDetails | null>(null);
   err = signal<string | null>(null);
   refreshing = signal(false);
-  name = computed(() => this.run()?.name || 'Untitled · ' + short(this.id()));
+  name = computed(() => displayName(this.run()?.name, this.id()));
   /** True while this run hasn't settled yet - drives the poll below. */
   hasInFlight = computed(() => isInFlight(this.run()?.status));
   constructor() {
