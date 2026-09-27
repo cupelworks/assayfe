@@ -26,7 +26,7 @@ Backend must allow CORS from `http://localhost:4200`. API base is set in `src/ap
 
 ## Structure
 
-`api/` models + one-method-per-endpoint service (incl. `SettingsApiService`) + root `CatalogStore` + `TestTypesStore` (with the pure display helpers `numericFieldHint` / `engineSettingsLabel` / `defaultRubric` shared by the catalogue, the config inputs and run detail) · `shared/` formatters (incl. `errText`, and `fieldErrors` to split an API error into per-field messages and the rest), page.css, `Paged`/`PagerComponent`, `DateSort`, `TextFilter`, `Selection`, `pollWhile`, `<assay-rel-time>`, `<assay-copy-button>`, dialogs (generic, name, confirm, pick, test form), test-type-picker · one folder per area (`datasets`, `tests`, `scopes`, `runs`, `test-types`, `guide`, `settings`) · `shell/` header/footer/theme.
+`api/` models + one-method-per-endpoint service (incl. `SettingsApiService`) + root `CatalogStore` + `TestTypesStore` (with the pure display helpers `numericFieldHint` / `engineSettingsLabel` / `defaultRubric` shared by the catalogue, the config inputs and run detail) · `shared/` formatters (incl. `errText`, and `fieldErrors` to split an API error into per-field messages and the rest), page.css, `Paged`/`PagerComponent`, `DateSort`, `TextFilter`, `Selection`, `FieldErrorStore`, `assayNumber` + `parseDecimal`, `pollWhile`, `<assay-rel-time>`, `<assay-copy-button>`, dialogs (generic, name, confirm, pick, test form), test-type-picker · one folder per area (`datasets`, `tests`, `scopes`, `runs`, `test-types`, `guide`, `settings`) · `shell/` header/footer/theme.
 
 ## Notes
 
