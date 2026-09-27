@@ -40,7 +40,7 @@ export const APPLICATION_FIELDS: SettingField[] = [
     kind: 'url',
     default: '',
     placeholder: 'Not configured',
-    hint: 'A run that needs the application ends Not Ran when Target URL is empty.',
+    hint: 'A run that needs the application under test ends Not Ran when Target URL is empty.',
   },
   {
     key: 'target_method',
@@ -79,7 +79,7 @@ export const APPLICATION_FIELDS: SettingField[] = [
     label: 'Answer path',
     kind: 'text',
     default: '$.output',
-    hint: "JSONPath to the answer inside the application's reply.",
+    hint: 'JSONPath to the answer inside the reply from the application under test.',
     mono: true,
   },
   {
