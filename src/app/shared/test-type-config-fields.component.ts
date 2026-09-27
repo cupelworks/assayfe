@@ -31,13 +31,23 @@ export class TestTypeConfigFieldsComponent {
       .map((name) => {
         const t = byName.get(name);
         const fields = t ? assignmentFields(t) : [];
-        return { name, fields };
+        return { name, fields, comparison: t?.comparison ?? null };
       })
       .filter((s) => s.fields.length);
   });
 
   fieldValue(typeName: string, key: string) {
     return this.value()[typeName]?.[key] ?? '';
+  }
+  /** "- 0 to 100, passes when score ≥ threshold" - built as one string rather than concatenated
+   *  in the template, since an `@if` split across the range and the pass-rule clause left stray
+   *  whitespace between them. `comparison` is null for a numeric field with no pass direction
+   *  (there's no such field today, but nothing here assumes one exists). */
+  numericHint(f: { min?: number | null; max?: number | null }, comparison: 'gte' | 'lte' | null) {
+    const rule = comparison
+      ? `, passes when score ${comparison === 'gte' ? '≥' : '≤'} threshold`
+      : '';
+    return `- ${f.min} to ${f.max}${rule}`;
   }
   /** v is a number (or null, when cleared) from the numeric input's NumberValueAccessor, a plain
    *  string from the textarea - normalised to a string either way, since config values are

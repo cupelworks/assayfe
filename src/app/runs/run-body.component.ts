@@ -167,11 +167,27 @@ export class RunBodyComponent {
       name,
       passed: r.passed,
       valueText: r.score != null ? r.score.toFixed(3) : null,
-      pct: r.score != null ? Math.min(1, Math.max(0, r.score)) * 100 + '%' : null,
+      pct: this.resultPct(name, r.score),
       detail: r.detail,
       config: this.configFields(name),
     })),
   );
+  /** Bar width for a result's score - null (no bar) when there's nothing to show yet (LLM judges
+   *  can return no score at all). A threshold-scored type (`comparison` non-null) reports its
+   *  score on that type's own native scale, matching its config_fields threshold min/max - not
+   *  0-1 (BLEU is 0-100, Cosine Similarity is -1 to 1) - so the bar scales by where the score
+   *  falls in that range, not by clamping the raw score itself. A type with no threshold
+   *  (Exact Match/Contains/Regex Match) scores a plain 0/1, which is already a 0-1 fraction. */
+  private resultPct(name: string, score: number | null): string | null {
+    if (score == null) return null;
+    const type = this.testTypes.byName().get(name);
+    const threshold = type ? assignmentFields(type).find((f) => f.kind === 'numeric') : null;
+    const ratio =
+      type?.comparison && threshold?.min != null && threshold?.max != null
+        ? (score - threshold.min) / (threshold.max - threshold.min)
+        : score;
+    return Math.min(1, Math.max(0, ratio)) * 100 + '%';
+  }
   /** "2 of 3 test types passed" - a headline the per-type dots+labels otherwise make the reader
    *  count out themselves. Null (hidden) while there's nothing to summarize yet. */
   resultsSummary = computed(() => {

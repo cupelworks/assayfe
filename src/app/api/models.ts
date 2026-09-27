@@ -217,6 +217,11 @@ export interface TestType {
   cost: string;
   limitations: string;
   config_fields: ConfigFieldDescriptor[];
+  /** Which way a threshold-scored type passes - `gte` (score >= threshold, higher is better) or
+   *  `lte` (score <= threshold, lower is better). Null for a type with no threshold field at all
+   *  (deterministic checks, LLM judges) - every metric type is `gte` today, `lte` exists for a
+   *  future lower-is-better metric. Read-only, set by the backend, never user-editable. */
+  comparison: 'gte' | 'lte' | null;
 }
 
 export type Kind = 'test-sets' | 'test-plans';
