@@ -1,0 +1,14 @@
+/* Shared by every section of the Settings page - the page itself and the sections that are their
+   own components (the application-under-test form). */
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.col .row-head {
+  margin-bottom: 0;
+}
+.intro {
+  max-width: 760px;
+  margin: 0;
+}

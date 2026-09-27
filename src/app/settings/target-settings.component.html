@@ -1,0 +1,225 @@
+<section class="cell cell-b col">
+  <div class="row-head">
+    <h2>Application under test</h2>
+    @if (saved(); as s) {
+      @if (s.source === 'database') {
+        <span class="tag tag-accent"
+          >Saved in Assay · updated <assay-rel-time [iso]="s.updated_at"
+        /></span>
+      } @else {
+        <span class="tag tag-neutral">From the server's environment</span>
+      }
+    }
+  </div>
+  <p class="muted intro">
+    The endpoint Assay calls for an answer when a test has no recorded model output. A change
+    applies to future runs only - every run keeps the answer it actually scored, and a replay of an
+    application-sourced run calls the application under test again with the current values.
+  </p>
+
+  @if (loadError(); as e) {
+    <div class="err">Couldn't load the settings: {{ e }}</div>
+  }
+
+  @if (draft(); as d) {
+    <div class="fields">
+      @for (f of fields; track f.key) {
+        <label
+          class="label field-label"
+          [attr.for]="f.kind === 'headers' ? null : controlId(f.key)"
+        >
+          {{ f.label }}
+          <span class="mono env">{{ envVar(f) }}</span>
+        </label>
+        <div class="control">
+          @switch (f.kind) {
+            @case ('select') {
+              <select
+                class="input sel"
+                [id]="controlId(f.key)"
+                [ngModel]="d.method"
+                (ngModelChange)="set('method', $event)"
+              >
+                @for (o of f.options ?? []; track o) {
+                  <option [value]="o">{{ o }}</option>
+                }
+              </select>
+            }
+            @case ('json') {
+              <textarea
+                class="input ta mono"
+                [class.invalid]="shownErrors()[f.key]"
+                [id]="controlId(f.key)"
+                rows="4"
+                spellcheck="false"
+                [ngModel]="d.body"
+                (ngModelChange)="set('body', $event)"
+              ></textarea>
+            }
+            @case ('headers') {
+              @for (h of d.headers; track $index) {
+                <div class="hrow">
+                  <input
+                    class="input key"
+                    [class.invalid]="shownErrors()['headers']"
+                    aria-label="Header name"
+                    placeholder="Authorization"
+                    [ngModel]="h.name"
+                    (ngModelChange)="setHeader($index, 'name', $event)"
+                  />
+                  <input
+                    class="input mono"
+                    [class.invalid]="shownErrors()['headers']"
+                    aria-label="Header value"
+                    placeholder="Bearer ${ASSAY_TARGET_API_KEY}"
+                    [ngModel]="h.value"
+                    (ngModelChange)="setHeader($index, 'value', $event)"
+                  />
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="removeHeader($index)">
+                    Remove
+                  </button>
+                </div>
+              }
+              <div>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="addHeader()">
+                  + Add header
+                </button>
+              </div>
+            }
+            @case ('number') {
+              <div class="inline">
+                <input
+                  type="number"
+                  class="input num"
+                  [class.invalid]="shownErrors()[f.key]"
+                  [id]="controlId(f.key)"
+                  [attr.min]="f.min"
+                  [attr.max]="f.max"
+                  [ngModel]="value($any(f.key))"
+                  (ngModelChange)="set($any(f.key), $event)"
+                />
+                <span class="muted">{{ f.unit }}</span>
+              </div>
+            }
+            @default {
+              <input
+                class="input"
+                [class.mono]="f.mono"
+                [class.short]="f.mono"
+                [class.invalid]="shownErrors()[f.key]"
+                [type]="f.kind === 'url' ? 'url' : 'text'"
+                [id]="controlId(f.key)"
+                [placeholder]="f.placeholder ?? ''"
+                [ngModel]="value($any(f.key))"
+                (ngModelChange)="set($any(f.key), $event)"
+              />
+            }
+          }
+          @if (shownErrors()[f.key]; as e) {
+            <div class="err">{{ cap(e) }}</div>
+          }
+          <div class="small">{{ f.hint }}</div>
+        </div>
+      }
+    </div>
+
+    <div class="check">
+      <div class="label">Test connection</div>
+      <p class="small intro">
+        Sends one request to the application under test with the settings above - including changes
+        you haven't saved, which testing never saves - and shows what comes back.
+      </p>
+      <div class="inline">
+        <input
+          class="input"
+          [class.invalid]="runner.fieldErrors()['input']"
+          aria-label="Test input"
+          placeholder="An input to send, e.g. What is your refund policy?"
+          [ngModel]="checkInput()"
+          (ngModelChange)="checkInput.set($event); runner.clearFieldError('input')"
+          (keydown.enter)="checkInput().trim() && !runner.busy() && runCheck()"
+        />
+        <button
+          type="button"
+          class="btn btn-secondary"
+          [disabled]="!checkInput().trim() || runner.busy()"
+          (click)="runCheck()"
+        >
+          {{ runner.busy() ? 'Testing…' : 'Test' }}
+        </button>
+      </div>
+      @if (runner.fieldErrors()['input']; as e) {
+        <div class="err">{{ cap(e) }}</div>
+      }
+      @if (runner.error(); as e) {
+        <div class="err">{{ e }}</div>
+      } @else if (runner.check(); as c) {
+        <div class="result">
+          @if (c.status === 'completed') {
+            <div [class.ok]="c.ok" [class.err]="!c.ok">{{ checkSummary(c) }}</div>
+            @if (c.ok) {
+              <div class="answer">{{ c.answer }}</div>
+            } @else if (c.error) {
+              <div class="answer">{{ c.error }}</div>
+            }
+          } @else if (runner.gaveUp()) {
+            <div class="err">No worker answered - is the worker running?</div>
+          } @else {
+            <div class="small">
+              {{
+                c.status === 'running'
+                  ? 'Calling the application under test…'
+                  : 'Waiting for a worker to pick it up…'
+              }}
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="actions">
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="!dirty() || saving()"
+        (click)="save()"
+      >
+        {{ saving() ? 'Saving…' : 'Save changes' }}
+      </button>
+      <button
+        type="button"
+        class="btn btn-secondary"
+        [disabled]="!dirty() || saving()"
+        (click)="discard()"
+      >
+        Discard changes
+      </button>
+      @if (msg(); as m) {
+        <span [class.ok]="m.ok" [class.err]="!m.ok">{{ m.text }}</span>
+      }
+      @if (saved()?.source === 'database') {
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm reset"
+          [disabled]="saving()"
+          (click)="resetError.set(null); confirmReset.set(true)"
+        >
+          Reset to environment values
+        </button>
+      }
+    </div>
+  }
+</section>
+
+@if (confirmReset()) {
+  <assay-confirm-dialog
+    kicker="Application under test"
+    title="Reset to environment values?"
+    body="Removes the settings saved in Assay. Future runs use the values from the server's environment again. Past runs are not affected."
+    confirmLabel="Reset"
+    [busy]="resetting()"
+    [error]="resetError()"
+    (confirm)="reset()"
+    (closed)="confirmReset.set(false)"
+  />
+}

@@ -1,19 +1,17 @@
-/** The Settings page's content, as data: what the backend's config exposes today (per its
- *  config.py, relayed by the BE), grouped the way the BE grouped it. Nothing here is fetched -
- *  there is no settings endpoint yet, every value is an `ASSAY_*` environment variable read once
- *  at process start - so these are the documented DEFAULTS, shown as such, until the API exposes
- *  live values. When it does, `SettingField.default` is the only thing the page should stop
- *  trusting; the descriptors themselves (kind, hint, unit, options) stay. */
+import { TargetField } from '../api/models';
+
+/** The Settings page's content, as data, grouped the way the backend groups it. The application
+ *  under test's VALUES come from GET /settings/target; what lives here is how each field is
+ *  presented (label, kind, hint, unit, options). The judge placeholders and the operations tiles
+ *  are still static - no endpoint exposes those groups yet. */
 
 export type SettingKind = 'url' | 'text' | 'select' | 'number' | 'json' | 'headers';
 
 export interface SettingField {
-  /** The backend's own name (`target_url`) - also what the env var is derived from. */
-  key: string;
+  /** The API's field name (`output_path`) - also what the env var is derived from. */
+  key: TargetField;
   label: string;
   kind: SettingKind;
-  /** The backend's default, as text - '' when unset. */
-  default: string;
   /** One line, in user terms: what it means and what happens when it's missing or exhausted. */
   hint: string;
   placeholder?: string;
@@ -22,39 +20,37 @@ export interface SettingField {
   /** `number` only - shown after the input ("seconds per call"). */
   unit?: string;
   min?: number;
+  max?: number;
   /** Render the value in monospace (a path, a JSON template). */
   mono?: boolean;
 }
 
-/** "ASSAY_TARGET_URL" - every setting is read from an environment variable named after its key,
- *  so the name is derived, never typed out next to the key it repeats. */
-export const envVar = (f: SettingField) => `ASSAY_${f.key.toUpperCase()}`;
+/** "ASSAY_TARGET_OUTPUT_PATH" - the environment variable a field falls back to while nothing is
+ *  saved from the UI. Derived from the API field name, never typed out next to the key. */
+export const envVar = (f: SettingField) => `ASSAY_TARGET_${f.key.toUpperCase()}`;
 
-/** Group A - the application under test. Planned to become editable; env-only today. Pointing
- *  it at a different application changes what future runs call - every past run keeps the
- *  answer it actually scored (`evaluated_output`). */
+/** Group A - the application under test, editable (since API 0.9.6). Pointing it at a different
+ *  application changes what future runs call - every past run keeps the answer it actually
+ *  scored (`evaluated_output`). */
 export const APPLICATION_FIELDS: SettingField[] = [
   {
-    key: 'target_url',
+    key: 'url',
     label: 'Target URL',
     kind: 'url',
-    default: '',
-    placeholder: 'Not configured',
+    placeholder: 'https://your-app.example.com/answer',
     hint: 'A run that needs the application under test ends Not Ran when Target URL is empty.',
   },
   {
-    key: 'target_method',
+    key: 'method',
     label: 'Method',
     kind: 'select',
-    default: 'POST',
-    options: ['POST', 'GET', 'PUT', 'PATCH'],
+    options: ['POST', 'PUT', 'PATCH'],
     hint: 'Default POST.',
   },
   {
-    key: 'target_headers',
+    key: 'headers',
     label: 'Headers',
     kind: 'headers',
-    default: '',
     hint:
       'Headers Assay adds to every call to the application under test, for example to authenticate. ' +
       "Don't type a secret here. Write ${NAME} instead, where NAME is an environment variable " +
@@ -63,10 +59,9 @@ export const APPLICATION_FIELDS: SettingField[] = [
       'Example: Authorization → Bearer ${ASSAY_TARGET_API_KEY}',
   },
   {
-    key: 'target_body',
+    key: 'body',
     label: 'Request body',
     kind: 'json',
-    default: '{"input": "{{input}}"}',
     hint:
       'The JSON body Assay sends to the application under test on every call. ' +
       "Write {{input}} wherever the test's input should go - Assay swaps it for the actual " +
@@ -75,30 +70,29 @@ export const APPLICATION_FIELDS: SettingField[] = [
     mono: true,
   },
   {
-    key: 'target_output_path',
+    key: 'output_path',
     label: 'Answer path',
     kind: 'text',
-    default: '$.output',
     hint: 'JSONPath to the answer inside the reply from the application under test.',
     mono: true,
   },
   {
-    key: 'target_timeout_seconds',
+    key: 'timeout_seconds',
     label: 'Timeout',
     kind: 'number',
-    default: '60',
-    min: 1,
+    min: 0,
+    max: 600,
     unit: 'seconds per call',
-    hint: 'Must be greater than 0.',
+    hint: 'More than 0, up to 600.',
   },
   {
-    key: 'target_max_retries',
+    key: 'max_retries',
     label: 'Retries',
     kind: 'number',
-    default: '2',
     min: 0,
+    max: 10,
     unit: 'after the first call',
-    hint: 'Only on connection errors, timeouts, 5xx and 429; 0 means a single call. Exhausting them is the "application under test answered HTTP 503 after 3 attempt(s)" a Not Ran run reports.',
+    hint: '0 to 10. Only on connection errors, timeouts, 5xx and 429; 0 means a single call. Exhausting them is the "application under test answered HTTP 503 after 3 attempt(s)" a Not Ran run reports.',
   },
 ];
 

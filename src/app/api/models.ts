@@ -1,4 +1,4 @@
-// Mirrors components.schemas in Assay's OpenAPI (v0.9.5).
+// Mirrors components.schemas in Assay's OpenAPI (v0.9.6).
 export interface Ref {
   id: string;
 }
@@ -255,3 +255,44 @@ export interface TestType {
 }
 
 export type Kind = 'test-sets' | 'test-plans';
+
+// Settings - the application under test (since 0.9.6)
+
+export type TargetMethod = 'POST' | 'PUT' | 'PATCH';
+/** The seven fields that say how Assay calls the application under test. Header values come back
+ *  exactly as stored - a `${NAME}` reference is never expanded, so no secret is ever returned. */
+export interface TargetSettings {
+  url: string | null;
+  method: TargetMethod;
+  headers: Record<string, string>;
+  /** A JSON object with `{{input}}` in at least one string value. */
+  body: Record<string, unknown>;
+  output_path: string;
+  timeout_seconds: number;
+  max_retries: number;
+}
+export type TargetField = keyof TargetSettings;
+/** `source` "environment": nothing saved from the UI, values come from `ASSAY_TARGET_*` / defaults
+ *  (`updated_at` null). "database": saved from the UI - the saved group wins as a whole until reset. */
+export interface TargetSettingsRead extends TargetSettings {
+  source: 'database' | 'environment';
+  updated_at: string | null;
+}
+/** Any subset of the seven fields. `url: null` unsets it; `headers` and `body` replace whole. */
+export type TargetSettingsUpdate = Partial<TargetSettings>;
+/** One test call to the application under test, run on a worker: one attempt, no retries, never
+ *  saved. `ok`/`status_code`/`latency_ms`/`answer`/`error` are null until `completed` (and
+ *  `status_code`/`latency_ms` stay null when nothing came back). */
+export interface TargetCheck {
+  id: string;
+  status: 'pending' | 'running' | 'completed';
+  created_at: string;
+  completed_at: string | null;
+  /** The settings actually checked - the saved ones with the proposed changes applied. */
+  settings: TargetSettings;
+  ok: boolean | null;
+  status_code: number | null;
+  latency_ms: number | null;
+  answer: string | null;
+  error: string | null;
+}

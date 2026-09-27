@@ -62,6 +62,21 @@ export function errText(e: any): string {
     return d.map((x: any) => `${(x.loc ?? []).slice(1).join('.')}: ${x.msg}`).join('; ');
   return d?.message ?? d?.detail ?? (d ? JSON.stringify(d) : (e?.message ?? 'Request failed'));
 }
+/** A FastAPI 422's problems as `{ field: message }`, keyed by each entry's last `loc` segment - for
+ *  showing a message under the matching input rather than one joined line. Several problems on
+ *  one field are joined with "; ". Empty for anything that isn't a 422 field list; pair it with
+ *  errText() for everything else. */
+export function fieldErrors(e: any): Record<string, string> {
+  const d = e?.error?.detail;
+  if (e?.status !== 422 || !Array.isArray(d)) return {};
+  const out: Record<string, string> = {};
+  for (const x of d) {
+    const key = String((x?.loc ?? []).at(-1) ?? '');
+    if (!key || !x?.msg) continue;
+    out[key] = out[key] ? `${out[key]}; ${x.msg}` : x.msg;
+  }
+  return out;
+}
 export const COST_ORDER = ['fast', 'medium', 'slow', 'expensive'];
 export const categoryLabel = (c: string) =>
   (
