@@ -174,37 +174,48 @@ export class RunBodyComponent {
    *  what it needed to clear. One entry per field, labeled via the matching TestType's
    *  config_fields (assignmentFields excludes "reference", which never appears here); a non-numeric
    *  value over 140 chars (a rubric, typically) is flagged `long` for the template to clamp.
-   *  A judge whose rubric was left empty graded with its engine's default rubric, so that's shown
-   *  as "Default rubric" - taken from the result's own engine_settings (what actually ran) and
-   *  only falling back to the catalogue's current settings for a result the backend didn't stamp. */
+   *  A judge that ran without a custom rubric graded with its engine's default one, so that's
+   *  appended as "Default rubric" - read from the result's own stamped `engine_settings`, the
+   *  record of what actually ran, never from the catalogue's current settings (which may have
+   *  changed since). Not gated on the catalogue knowing the type: the stamp alone is enough. */
   private configFields(
     name: string,
     result: TestTypeResult,
   ): { key: string; label: string; value: string; long: boolean }[] {
     const config = this.content()?.test_type_assignments?.find((a) => a.name === name)?.config;
     const type = this.testTypes.byName().get(name);
-    if (!type) return [];
-    const fallbackRubric = defaultRubric(result.engine_settings ?? type.engine_settings);
-    return assignmentFields(type).flatMap((f) => {
-      const own = config?.[f.key];
-      const value = own != null && own !== '' ? own : f.kind === 'rubric' ? fallbackRubric : null;
-      if (value == null) return [];
-      return [
-        {
-          key: `${name}:${f.key}`,
-          label: value === own ? f.label : 'Default rubric',
-          value,
-          long: f.kind !== 'numeric' && value.length > 140,
-        },
-      ];
+    const fields = type ? assignmentFields(type) : [];
+    const valueOf = (key: string) => config?.[key]?.trim() || null;
+    const rows = fields.flatMap((f) => {
+      const value = valueOf(f.key);
+      return value
+        ? [
+            {
+              key: `${name}:${f.key}`,
+              label: f.label,
+              value,
+              long: f.kind !== 'numeric' && value.length > 140,
+            },
+          ]
+        : [];
     });
+    const fallback = defaultRubric(result.engine_settings);
+    if (fallback && !fields.some((f) => f.kind === 'rubric' && valueOf(f.key))) {
+      rows.push({
+        key: `${name}:default_rubric`,
+        label: 'Default rubric',
+        value: fallback,
+        long: fallback.length > 140,
+      });
+    }
+    return rows;
   }
   results = computed(() =>
     Object.entries(this.run()?.results ?? {}).map(([name, r]) => ({
       name,
       passed: r.passed,
       valueText: r.score != null ? r.score.toFixed(3) : null,
-      pct: this.resultPct(name, r.score),
+      pct: this.resultPct(name, r),
       detail: r.detail,
       config: this.configFields(name, r),
       engineText: this.engineText(r),
@@ -221,15 +232,20 @@ export class RunBodyComponent {
    *  they get the pass/fail dot only. A threshold-scored type (`comparison` non-null) reports its
    *  score on that type's own native scale, matching its config_fields threshold min/max - not
    *  0-1 (BLEU is 0-100, Cosine Similarity is -1 to 1) - so the bar scales by where the score
-   *  falls in that range, not by clamping the raw score itself. No range known (the type has left
-   *  the catalogue, or carries a score the contract says it shouldn't) - the value still shows,
+   *  falls in that range, not by clamping the raw score itself. The range is the catalogue's,
+   *  but the score is the stamped engine's - so when the result names an engine that isn't the
+   *  type's current one (the catalogue changed since the run), the range can't be trusted and
+   *  there's no bar. Same when no range is known at all (type gone from the catalogue, a score
+   *  the contract says the type shouldn't have, a degenerate min = max): the value still shows,
    *  the bar doesn't, rather than guessing a scale. */
-  private resultPct(name: string, score: number | null): string | null {
-    if (score == null) return null;
+  private resultPct(name: string, r: TestTypeResult): string | null {
+    if (r.score == null) return null;
     const type = this.testTypes.byName().get(name);
-    const threshold = type ? assignmentFields(type).find((f) => f.kind === 'numeric') : null;
-    if (!type?.comparison || threshold?.min == null || threshold?.max == null) return null;
-    const ratio = (score - threshold.min) / (threshold.max - threshold.min);
+    if (!type?.comparison || (r.engine && r.engine !== type.engine)) return null;
+    const threshold = assignmentFields(type).find((f) => f.kind === 'numeric');
+    if (threshold?.min == null || threshold?.max == null || threshold.max <= threshold.min)
+      return null;
+    const ratio = (r.score - threshold.min) / (threshold.max - threshold.min);
     return Math.min(1, Math.max(0, ratio)) * 100 + '%';
   }
   /** "2 of 3 test types passed" - a headline the per-type dots+labels otherwise make the reader

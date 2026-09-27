@@ -113,7 +113,7 @@
                             ({{ f.required ? 'required' : 'optional'
                             }}{{ f.kind === 'reference' ? ' - uses expected output' : '' }})
                           </span>
-                          @if (f.kind === 'numeric' && numericFieldHint(f, t.comparison); as hint) {
+                          @if (numericFieldHint(f, t.comparison); as hint) {
                             <div class="small">{{ hint }}</div>
                           }
                         </li>

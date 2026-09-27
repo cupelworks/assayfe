@@ -34,12 +34,14 @@ export const numericFieldIssue = (f: ConfigFieldDescriptor, raw: string): string
  *  direction, each part only when known: a one-sided bound reads "at least 0" / "at most 100"
  *  (the same shapes `numericFieldIssue` validates), `comparison` is null for a type with no
  *  threshold, and with neither there's nothing to say - null, so callers skip the hint entirely.
+ *  Null for any non-numeric field too, so a caller iterating mixed fields needn't check the kind.
  *  Shared by the config input's hint and the catalogue card's field list, so the two can't drift
  *  apart. */
 export const numericFieldHint = (
   f: ConfigFieldDescriptor,
   comparison: TestType['comparison'],
 ): string | null => {
+  if (f.kind !== 'numeric') return null;
   const range =
     f.min != null && f.max != null
       ? `${f.min} to ${f.max}`
@@ -66,7 +68,7 @@ export const engineLabel = (
 ): string => {
   const parts = Object.entries(settings ?? {})
     .filter(([k]) => !PROSE_SETTINGS.has(k))
-    .map(([k, v]) => `${k}=${v}`);
+    .map(([k, v]) => `${k}=${typeof v === 'object' && v !== null ? JSON.stringify(v) : v}`);
   return parts.length ? `${engine} · ${parts.join(', ')}` : engine;
 };
 /** The rubric an LLM-judge engine grades with when the assignment leaves its own rubric empty -

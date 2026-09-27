@@ -10,7 +10,7 @@
               @if (!f.required) {
                 <span class="hint">- optional</span>
               }
-              @if (f.kind === 'numeric' && numericFieldHint(f, s.comparison); as hint) {
+              @if (numericFieldHint(f, s.comparison); as hint) {
                 <span class="hint">- {{ hint }}</span>
               }
             </label>
