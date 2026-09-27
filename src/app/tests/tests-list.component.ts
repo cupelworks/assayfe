@@ -11,6 +11,8 @@ import { errText } from '../shared/format';
 import { TestFormDialogComponent } from '../shared/dialog/test-form-dialog.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
 
+import { Selection } from '../shared/selection';
+
 @Component({
   selector: 'assay-tests-list',
   standalone: true,
@@ -27,7 +29,8 @@ import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.componen
 export class TestsListComponent {
   store = inject(CatalogStore);
   api = inject(TestsApiService);
-  selected = signal<string[]>([]);
+  /** Checkbox bulk selection over the visible rows - see shared/selection.ts. */
+  selection = new Selection(() => this.rows());
   dlg = signal<null | 'new' | 'delete'>(null);
   busy = signal(false);
   err = signal<string | null>(null);
@@ -38,15 +41,6 @@ export class TestsListComponent {
   rows = computed(() => this.filter.apply(this.page.items()));
   ngOnInit() {
     this.page.reload();
-  }
-  allChecked = computed(
-    () => this.rows().length > 0 && this.rows().every((r) => this.selected().includes(r.id)),
-  );
-  toggle(id: string) {
-    this.selected.update((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
-  }
-  toggleAll() {
-    this.selected.set(this.allChecked() ? [] : this.rows().map((r) => r.id));
   }
   create(b: TestCaseBody) {
     this.busy.set(true);
@@ -66,14 +60,14 @@ export class TestsListComponent {
     });
   }
   remove() {
-    const ids = this.selected();
+    const ids = this.selection.ids();
     this.busy.set(true);
     this.err.set(null);
     this.api.deleteTests(ids).subscribe({
       next: () => {
         this.busy.set(false);
         this.dlg.set(null);
-        this.selected.set([]);
+        this.selection.clear();
         this.msg.set({
           ok: true,
           text: `Deleted ${ids.length} test${ids.length === 1 ? '' : 's'}.`,

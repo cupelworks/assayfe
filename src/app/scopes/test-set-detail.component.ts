@@ -16,6 +16,8 @@ import { Paged } from '../shared/paged';
 
 type Dlg = null | 'rename' | 'delete' | 'add' | 'unlink' | 'deleteEntries' | 'editEntry';
 
+import { Selection } from '../shared/selection';
+
 @Component({
   selector: 'assay-test-set-detail',
   standalone: true,
@@ -46,7 +48,8 @@ export class TestSetDetailComponent {
   );
   entries = this.page.items;
   version = signal(0);
-  selected = signal<string[]>([]);
+  /** Checkbox bulk selection over the visible rows - see shared/selection.ts. */
+  selection = new Selection(() => this.entries());
   editing = signal<TestSetEntry | null>(null);
   dlg = signal<Dlg>(null);
   busy = signal(false);
@@ -65,9 +68,6 @@ export class TestSetDetailComponent {
    *  test_set_entry_id. Recomputed on load and after every mutation that could create a new run
    *  (Run live, Replay), same trigger points as `loadEntries()`. */
   frozenEntryIds = signal<Set<string>>(new Set());
-  allChecked = computed(
-    () => this.entries().length > 0 && this.entries().every((e) => this.selected().includes(e.id)),
-  );
   pickRows = computed<PickRow[]>(() => {
     const inSet = new Set(this.entries().map((e) => e.test_case_id.id));
     return this.store.tests().map((t) => {
@@ -104,7 +104,7 @@ export class TestSetDetailComponent {
     });
   }
   loadEntries() {
-    this.selected.set([]);
+    this.selection.clear();
     this.page.reload();
   }
   loadFrozenEntries() {
@@ -125,12 +125,6 @@ export class TestSetDetailComponent {
         this.frozenEntryIds.set(ids);
       });
     });
-  }
-  toggle(id: string) {
-    this.selected.update((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
-  }
-  toggleAll() {
-    this.selected.set(this.allChecked() ? [] : this.entries().map((e) => e.id));
   }
   open(d: Dlg, entry?: TestSetEntry) {
     this.err.set(null);
@@ -176,7 +170,7 @@ export class TestSetDetailComponent {
     );
   }
   unlink() {
-    const ids = this.selected();
+    const ids = this.selection.ids();
     this.run(
       this.testSetsApi.unlinkEntries(this.id(), ids),
       () =>
@@ -184,7 +178,7 @@ export class TestSetDetailComponent {
     );
   }
   deleteEntries() {
-    const ids = this.selected();
+    const ids = this.selection.ids();
     this.run(
       this.testSetsApi.deleteEntries(this.id(), ids),
       () => `Deleted ${ids.length} entr${ids.length === 1 ? 'y' : 'ies'}.`,

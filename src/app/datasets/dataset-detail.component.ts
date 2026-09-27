@@ -23,6 +23,8 @@ type Dlg =
   null | 'rename' | 'delete' | 'addRows' | 'replace' | 'deleteRows' | 'toTests' | 'editRow';
 const EMPTY: DataSetRowSchema = { prompt: '', expected_output: '', model_output: '' };
 
+import { Selection } from '../shared/selection';
+
 @Component({
   selector: 'assay-dataset-detail',
   standalone: true,
@@ -53,7 +55,8 @@ export class DatasetDetailComponent {
   total = signal(0);
   offset = signal(0);
   limit = signal(25);
-  selected = signal<string[]>([]);
+  /** Checkbox bulk selection over the visible rows - see shared/selection.ts. */
+  selection = new Selection(() => this.rows());
   dlg = signal<Dlg>(null);
   busy = signal(false);
   err = signal<string | null>(null);
@@ -109,9 +112,6 @@ export class DatasetDetailComponent {
   draft = signal<DataSetRowSchema>({ ...EMPTY });
   name = computed(() => this.meta()?.name ?? short(this.id()));
   pageLabel = computed(() => (this.total() ? `${this.total()} rows` : '0 rows'));
-  allChecked = computed(
-    () => this.rows().length > 0 && this.rows().every((r) => this.selected().includes(r.id)),
-  );
   parsedRows = computed<DataSetRowSchema[] | string>(() => {
     const lines = this.jsonl()
       .split(/\r?\n/)
@@ -167,7 +167,7 @@ export class DatasetDetailComponent {
       next: (p) => {
         this.rows.set(p.items);
         this.total.set(p.total);
-        this.selected.set([]);
+        this.selection.clear();
       },
       error: (e) => this.msg.set({ ok: false, text: errText(e) }),
     });
@@ -180,12 +180,6 @@ export class DatasetDetailComponent {
     this.limit.set(limit);
     this.offset.set(0);
     this.load();
-  }
-  toggle(id: string) {
-    this.selected.update((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
-  }
-  toggleAll() {
-    this.selected.set(this.allChecked() ? [] : this.rows().map((r) => r.id));
   }
   open(d: Dlg, row?: DataSetRow) {
     this.err.set(null);
@@ -243,7 +237,7 @@ export class DatasetDetailComponent {
     );
   }
   deleteRows() {
-    const ids = this.selected();
+    const ids = this.selection.ids();
     this.run(
       this.datasetsApi.deleteDatasetRows(ids),
       () =>

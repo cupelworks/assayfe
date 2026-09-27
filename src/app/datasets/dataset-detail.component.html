@@ -23,9 +23,9 @@
   <div class="row-head">
     <h2>Rows</h2>
     <div class="tools">
-      @if (selected().length) {
+      @if (selection.ids().length) {
         <button class="btn btn-ghost btn-sm" (click)="open('deleteRows')">
-          Delete {{ selected().length }} selected
+          Delete {{ selection.ids().length }} selected
         </button>
       }
       <span class="small">{{ pageLabel() }}</span>
@@ -43,7 +43,12 @@
     <thead>
       <tr>
         <th>
-          <input type="checkbox" class="chk" [checked]="allChecked()" (change)="toggleAll()" />
+          <input
+            type="checkbox"
+            class="chk"
+            [checked]="selection.allChecked()"
+            (change)="selection.toggleAll()"
+          />
         </th>
         <th>Row</th>
         <th>Prompt</th>
@@ -59,8 +64,8 @@
             <input
               type="checkbox"
               class="chk"
-              [checked]="selected().includes(r.id)"
-              (change)="toggle(r.id)"
+              [checked]="selection.ids().includes(r.id)"
+              (change)="selection.toggle(r.id)"
             />
           </td>
           <td class="muted num">{{ short(r.id) }}</td>
@@ -123,7 +128,13 @@
   @case ('deleteRows') {
     <assay-confirm-dialog
       [kicker]="name()"
-      [title]="'Delete ' + selected().length + ' row' + (selected().length === 1 ? '' : 's') + '?'"
+      [title]="
+        'Delete ' +
+        selection.ids().length +
+        ' row' +
+        (selection.ids().length === 1 ? '' : 's') +
+        '?'
+      "
       body="Tests referencing these rows are unlinked (dataset_row_id set to null), not deleted."
       confirmLabel="Delete rows"
       [busy]="busy()"

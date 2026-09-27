@@ -18,9 +18,9 @@
       [ngModel]="filter.query()"
       (ngModelChange)="filter.query.set($event)"
     />
-    @if (selected().length) {
+    @if (selection.ids().length) {
       <button class="btn btn-ghost btn-sm" (click)="err.set(null); dlg.set('delete')">
-        Delete {{ selected().length }} selected
+        Delete {{ selection.ids().length }} selected
       </button>
     }
     <span class="small">{{
@@ -37,7 +37,12 @@
     <thead>
       <tr>
         <th>
-          <input type="checkbox" class="chk" [checked]="allChecked()" (change)="toggleAll()" />
+          <input
+            type="checkbox"
+            class="chk"
+            [checked]="selection.allChecked()"
+            (change)="selection.toggleAll()"
+          />
         </th>
         <th>Test</th>
         <th>Input</th>
@@ -51,8 +56,8 @@
             <input
               type="checkbox"
               class="chk"
-              [checked]="selected().includes(t.id)"
-              (change)="toggle(t.id)"
+              [checked]="selection.ids().includes(t.id)"
+              (change)="selection.toggle(t.id)"
             />
           </td>
           <td class="strong">
@@ -106,7 +111,9 @@
 @if (dlg() === 'delete') {
   <assay-confirm-dialog
     kicker="Tests"
-    [title]="'Delete ' + selected().length + ' test' + (selected().length === 1 ? '' : 's') + '?'"
+    [title]="
+      'Delete ' + selection.ids().length + ' test' + (selection.ids().length === 1 ? '' : 's') + '?'
+    "
     body="Blocked (409) if any test is still in a test set or has runs - unlink or clean those up first."
     confirmLabel="Delete tests"
     [busy]="busy()"

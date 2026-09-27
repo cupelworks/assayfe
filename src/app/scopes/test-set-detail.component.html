@@ -30,12 +30,12 @@
     <div class="row-head">
       <h2>Entries</h2>
       <div class="tools">
-        @if (selected().length) {
+        @if (selection.ids().length) {
           <button class="btn btn-ghost btn-sm" (click)="open('unlink')">
-            Unlink {{ selected().length }}
+            Unlink {{ selection.ids().length }}
           </button>
           <button class="btn btn-ghost btn-sm" (click)="open('deleteEntries')">
-            Delete {{ selected().length }}
+            Delete {{ selection.ids().length }}
           </button>
         }
         <span class="small">{{ page.total() }} entries</span>
@@ -52,7 +52,12 @@
       <thead>
         <tr>
           <th>
-            <input type="checkbox" class="chk" [checked]="allChecked()" (change)="toggleAll()" />
+            <input
+              type="checkbox"
+              class="chk"
+              [checked]="selection.allChecked()"
+              (change)="selection.toggleAll()"
+            />
           </th>
           <th>Entry</th>
           <th>Input</th>
@@ -67,8 +72,8 @@
               <input
                 type="checkbox"
                 class="chk"
-                [checked]="selected().includes(e.id)"
-                (change)="toggle(e.id)"
+                [checked]="selection.ids().includes(e.id)"
+                (change)="selection.toggle(e.id)"
               />
             </td>
             <td class="strong">
@@ -114,8 +119,8 @@
       [total]="page.total()"
       [offset]="page.offset()"
       [limit]="page.limit()"
-      (offsetChange)="selected.set([]); page.go($event)"
-      (limitChange)="selected.set([]); page.size($event)"
+      (offsetChange)="selection.clear(); page.go($event)"
+      (limitChange)="selection.clear(); page.size($event)"
     />
   </div>
   <div class="cell">
@@ -171,7 +176,11 @@
     <assay-confirm-dialog
       [kicker]="name()"
       [title]="
-        'Unlink ' + selected().length + ' entr' + (selected().length === 1 ? 'y' : 'ies') + '?'
+        'Unlink ' +
+        selection.ids().length +
+        ' entr' +
+        (selection.ids().length === 1 ? 'y' : 'ies') +
+        '?'
       "
       body="Non-destructive: clears membership in this set. Frozen content and any runs stay reachable through past executions."
       confirmLabel="Unlink"
@@ -186,7 +195,11 @@
     <assay-confirm-dialog
       [kicker]="name()"
       [title]="
-        'Delete ' + selected().length + ' entr' + (selected().length === 1 ? 'y' : 'ies') + '?'
+        'Delete ' +
+        selection.ids().length +
+        ' entr' +
+        (selection.ids().length === 1 ? 'y' : 'ies') +
+        '?'
       "
       body="Permanently removes the frozen snapshots. Blocked (409) if any has been run - unlink instead. The originating live tests are not affected."
       confirmLabel="Delete entries"
