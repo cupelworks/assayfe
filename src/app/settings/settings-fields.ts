@@ -56,7 +56,7 @@ export const APPLICATION_FIELDS: SettingField[] = [
     kind: 'headers',
     default: '',
     hint:
-      'Headers Assay adds to every call to your application, for example to authenticate. ' +
+      'Headers Assay adds to every call to the application under test, for example to authenticate. ' +
       "Don't type a secret here. Write ${NAME} instead, where NAME is an environment variable " +
       'set on the Assay server that holds the secret. Assay keeps only the name and reads the ' +
       "actual value from the server's environment on every call. " +
