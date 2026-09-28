@@ -51,22 +51,24 @@ export class TestDetailComponent {
     errText,
   );
   runs = this.runsPage.items;
-  dlg = signal<null | 'edit' | 'delete'>(null);
+  dlg = signal<null | 'edit' | 'delete' | 'clear-output'>(null);
   /** Busy flag, dialog error and page banner for this page's API actions - see shared/action-runner.ts. */
   act = new ActionRunner({
     inDialog: () => !!this.dlg(),
     done: () => this.dlg.set(null),
   });
   name = computed(() => displayName(this.test()?.name, this.id()));
+  /** The test's text fields, empty ones left out. The recorded model output is `clearable`: once
+   *  cleared, runs ask the application under test for an answer instead. */
   fields = computed(() => {
     const t = this.test();
-    return t
-      ? ([
-          ['Input', t.input],
-          ['Expected output', t.expected_output],
-          ['Model output', t.model_output],
-        ].filter((f) => f[1]) as [string, string][])
-      : [];
+    if (!t) return [];
+    const all: { label: string; value: string | null | undefined; clearable?: boolean }[] = [
+      { label: 'Input', value: t.input },
+      { label: 'Expected output', value: t.expected_output },
+      { label: 'Model output', value: t.model_output, clearable: true },
+    ];
+    return all.filter((f): f is typeof f & { value: string } => !!f.value);
   });
   canRun = computed(() => !!this.test()?.test_type_assignments?.length);
   /** True while the loaded page still has a Pending/Running standalone run - drives the poll
@@ -110,6 +112,13 @@ export class TestDetailComponent {
         this.store.load();
         this.router.navigate(['/tests']);
       },
+    });
+  }
+  /** Removes the recorded answer - only `model_output: null` is sent, so nothing else changes. */
+  clearModelOutput() {
+    this.act.run(this.testsApi.updateTest(this.id(), { model_output: null }), {
+      ok: () => 'Recorded answer cleared. Runs now ask the application under test.',
+      then: () => this.load(),
     });
   }
   run() {

@@ -32,10 +32,22 @@
           <span class="small">No test types - this test can't be run until one is assigned.</span>
         }
       </div>
-      @for (f of fields(); track f[0]) {
+      @for (f of fields(); track f.label) {
         <div class="field-ro">
-          <div class="label">{{ f[0] }}</div>
-          <div class="body">{{ f[1] }}</div>
+          <div class="label">
+            {{ f.label }}
+            @if (f.clearable) {
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                [disabled]="act.busy()"
+                (click)="act.err.set(null); dlg.set('clear-output')"
+              >
+                Clear
+              </button>
+            }
+          </div>
+          <div class="body">{{ f.value }}</div>
         </div>
       }
     </div>
@@ -87,6 +99,18 @@
     [busy]="act.busy()"
     [error]="act.err()"
     (confirm)="save($event)"
+    (closed)="dlg.set(null)"
+  />
+}
+@if (dlg() === 'clear-output') {
+  <assay-confirm-dialog
+    [kicker]="name()"
+    title="Clear the recorded answer?"
+    body="Removes this test's model output. From then on, its runs ask the application under test for an answer instead. Past runs keep the answer they scored."
+    confirmLabel="Clear"
+    [busy]="act.busy()"
+    [error]="act.err()"
+    (confirm)="clearModelOutput()"
     (closed)="dlg.set(null)"
   />
 }
