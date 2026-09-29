@@ -99,6 +99,17 @@ export function fieldErrors(
   }
   return { byField, other: other.length ? other.join('; ') : null };
 }
+/** A JSON object or array, re-indented for reading - or null for anything else (plain text,
+ *  invalid JSON, or a single JSON value like 42 / "x", which gain nothing from indenting). */
+export function prettyJson(text: string): string | null {
+  const t = text.trim();
+  if (!t.startsWith('{') && !t.startsWith('[')) return null;
+  try {
+    return JSON.stringify(JSON.parse(t), null, 2);
+  } catch {
+    return null;
+  }
+}
 export const COST_ORDER = ['fast', 'medium', 'slow', 'expensive'];
 export const categoryLabel = (c: string) =>
   (

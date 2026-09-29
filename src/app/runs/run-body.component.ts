@@ -6,7 +6,7 @@ import {
   TestTypeAssignment,
   TestTypeResult,
 } from '../api/models';
-import { rel, absTime, statusColor, statusLabel } from '../shared/format';
+import { rel, absTime, statusColor, statusLabel, prettyJson } from '../shared/format';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import {
   TestTypesStore,
@@ -129,7 +129,13 @@ import {
                 >{{ r.output_source === 'application' ? 'From application' : 'Recorded' }}</span
               >
             </div>
-            <div class="body">{{ r.evaluated_output }}</div>
+            @if (evaluated(); as ev) {
+              @if (ev.empty) {
+                <div class="body muted">(empty answer)</div>
+              } @else {
+                <div class="body" [class.mono]="ev.json">{{ ev.text }}</div>
+              }
+            }
           </div>
         }
         @for (f of fields(); track f[0]) {
@@ -259,6 +265,18 @@ export class RunBodyComponent {
   }
   /** "2 of 3 test types passed" - a headline the per-type dots+labels otherwise make the reader
    *  count out themselves. Null (hidden) while there's nothing to summarize yet. */
+  /** How to show the answer the checks judged. `""` is a real, scored answer (an application that
+   *  refused or was cut off) - shown as "(empty answer)", since it's why most checks failed,
+   *  rather than as a blank that looks like a rendering bug; null (not evaluated) hides the block
+   *  in the template. A JSON object/array - a structured reply, or the whole reply read at "$" -
+   *  is pretty-printed in monospace; anything else is shown as-is. */
+  evaluated = computed(() => {
+    const v = this.run()?.evaluated_output;
+    if (v == null) return null;
+    if (v === '') return { empty: true, text: '', json: false };
+    const pretty = prettyJson(v);
+    return { empty: false, text: pretty ?? v, json: pretty != null };
+  });
   resultsSummary = computed(() => {
     const r = this.results();
     if (!r.length) return null;
