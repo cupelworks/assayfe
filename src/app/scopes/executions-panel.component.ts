@@ -139,15 +139,18 @@ export class ExecutionsPanelComponent {
       // Next-button revert - but still a real, needless extra request every time.
       untracked(() => this.page.reload());
     });
-    effect(() => {
+    // Re-fetches each execution's status breakdown whenever the list changes (each poll tick
+    // too); onCleanup drops the previous batch so a slow one can't overwrite a newer one.
+    effect((onCleanup) => {
       const items = this.page.items();
       if (!items.length) {
         this.statusByExec.set({});
         return;
       }
-      forkJoin(items.map((e) => this.loadStatusRow(e))).subscribe((rows) =>
+      const sub = forkJoin(items.map((e) => this.loadStatusRow(e))).subscribe((rows) =>
         this.statusByExec.set(Object.fromEntries(rows)),
       );
+      onCleanup(() => sub.unsubscribe());
     });
   }
   private loadStatusRow(e: ExecutionMetadata): Observable<[string, StatusCount[]]> {

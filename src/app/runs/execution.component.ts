@@ -115,7 +115,10 @@ export class ExecutionComponent {
       untracked(() => this.page.reset());
     });
     this.store.loadExecutions(); // exec() lookup via store.byParent
-    effect(() => {
+    // Re-fetches every row's details whenever the page's runs change - each poll tick included.
+    // onCleanup drops the previous batch first, so a slow one can't land after a newer one and
+    // put older statuses back on screen.
+    effect((onCleanup) => {
       const items = this.page.items();
       if (!items.length) {
         this.runNames.set({});
@@ -123,13 +126,14 @@ export class ExecutionComponent {
         this.runExecutedAt.set({});
         return;
       }
-      forkJoin(items.map((r) => this.resolveRow(r))).subscribe((rows) => {
+      const sub = forkJoin(items.map((r) => this.resolveRow(r))).subscribe((rows) => {
         this.runNames.set(Object.fromEntries(rows.map(([id, name]) => [id, name])));
         this.runResults.set(Object.fromEntries(rows.map(([id, , results]) => [id, results])));
         this.runExecutedAt.set(
           Object.fromEntries(rows.map(([id, , , executedAt]) => [id, executedAt])),
         );
       });
+      onCleanup(() => sub.unsubscribe());
     });
   }
   private resolveRow(

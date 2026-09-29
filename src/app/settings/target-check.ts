@@ -14,7 +14,7 @@ const CHECK_FIELDS: readonly string[] = [...TARGET_FIELDS, 'input'];
 /**
  * One "test connection" at a time against the application under test: starts a check
  * (POST /settings/target/checks → 202, "pending"), then polls it every second (the shared
- * `pollWhile`, same helper the run pages use at 15 s) until it's "completed" - or gives up once
+ * shared `pollWhile`, the same helper the run pages use, here at 1 s) until it's "completed" - or gives up once
  * the checked timeout plus 30 s has passed. Construct it in a field initializer (injection
  * context: `inject` and `pollWhile`'s effect/DestroyRef need one); polling stops by itself when
  * the page goes away.

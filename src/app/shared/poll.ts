@@ -1,8 +1,9 @@
 import { DestroyRef, effect, inject } from '@angular/core';
 
 /**
- * Polls at a fixed interval for as long as `active()` reads true. Registers its own `effect()`
- * on `active` - whenever it turns true the interval starts (idempotently), and every tick
+ * Polls at a fixed interval (every 2 seconds by default) for as long as `active()` reads true.
+ * Registers its own `effect()` on `active` - whenever it turns true the interval starts
+ * (idempotently), and every tick
  * re-checks it, clearing the interval the moment it reads false. No backoff, no tick limit:
  * nothing in this app has an SLA to tune against, so "poll until there's nothing left to wait
  * for, then stop" is the whole policy. `tick()` is responsible for skipping itself while a
@@ -15,7 +16,7 @@ import { DestroyRef, effect, inject } from '@angular/core';
  * stop itself on navigation. One call replaces what used to be three copy-pasted parts per page
  * (a `startPolling` field, the effect that called it, and the stop check) - see `dev_notes.md`.
  */
-export function pollWhile(active: () => boolean, tick: () => void, intervalMs = 15000): void {
+export function pollWhile(active: () => boolean, tick: () => void, intervalMs = 2000): void {
   let timer: ReturnType<typeof setInterval> | undefined;
   inject(DestroyRef).onDestroy(() => clearInterval(timer));
   const start = () => {
