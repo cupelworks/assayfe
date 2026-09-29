@@ -264,6 +264,8 @@
           [selected]="typeNames()"
           [value]="batchConfig()"
           (valueChange)="batchConfig.set($event)"
+          [answerPaths]="batchAnswerPaths()"
+          (answerPathsChange)="batchAnswerPaths.set($event)"
         />
         @if (configIssues().length) {
           <div class="note-warn">Fix before saving: {{ configIssues().join(', ') }}</div>

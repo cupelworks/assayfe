@@ -2,7 +2,14 @@
   <div class="ttc">
     @for (s of sections(); track s.name) {
       <div class="ttc-section">
-        <div class="ttc-head">{{ s.name }}</div>
+        <div class="ttc-head">
+          {{ s.name }}
+          @if (pathOf(s.name).trim(); as p) {
+            <span class="reads"
+              >reads <span class="mono">{{ p }}</span></span
+            >
+          }
+        </div>
         @for (f of s.fields; track f.key) {
           <div class="field">
             <label>
@@ -48,6 +55,31 @@
             @if (f.hint) {
               <div class="field-hint">{{ f.hint }}</div>
             }
+          </div>
+        }
+        <button
+          type="button"
+          class="adv-toggle"
+          [attr.aria-expanded]="isOpen(s.name)"
+          (click)="toggleAdvanced(s.name)"
+        >
+          Advanced {{ isOpen(s.name) ? '▾' : '▸' }}
+        </button>
+        @if (isOpen(s.name)) {
+          <div class="field">
+            <label [for]="'ttc-ap-' + $index"
+              >{{ answerPath.label }} <span class="hint">- optional</span></label
+            >
+            <input
+              class="input mono"
+              [id]="'ttc-ap-' + $index"
+              spellcheck="false"
+              [placeholder]="answerPath.placeholder"
+              [ngModel]="pathOf(s.name)"
+              (ngModelChange)="setPath(s.name, $event)"
+            />
+            <div class="field-hint">{{ answerPath.hint }}</div>
+            <div class="field-hint">{{ answerPath.tip }}</div>
           </div>
         }
       </div>

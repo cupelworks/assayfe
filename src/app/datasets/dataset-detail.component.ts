@@ -5,12 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { DatasetsApiService } from '../api/datasets-api.service';
 import { TestsApiService } from '../api/tests-api.service';
 import { CatalogStore } from '../api/catalog.store';
-import { DataSetMetadata, DataSetRow, DataSetRowSchema, TestTypeAssignment } from '../api/models';
+import { DataSetMetadata, DataSetRow, DataSetRowSchema } from '../api/models';
 import {
   TestTypesStore,
-  assignmentFields,
   needsReference,
   configIssuesFor,
+  buildAssignments,
 } from '../api/test-types.store';
 import { rel, short, errText } from '../shared/format';
 import { TestTypePickerComponent } from '../shared/test-type-picker.component';
@@ -73,6 +73,8 @@ export class DatasetDetailComponent {
   /** Config values for the "Create tests from rows" batch - one shared value per field across
    *  every row created, same shape as TestFormDialogComponent's per-test configs. */
   batchConfig = signal<Record<string, Record<string, string>>>({});
+  /** Per-type answer_path for the batch - one value per type across every row created. */
+  batchAnswerPaths = signal<Record<string, string>>({});
   /** What blocks "Create tests from rows": configIssuesFor (test-types.store.ts, shared with the
    *  test form) over the batch-picked types, with reference fields skipped - every row already
    *  carries its own expected_output via DataSetRowSchema, so a reference is always satisfied. */
@@ -83,6 +85,7 @@ export class DatasetDetailComponent {
       this.testTypesStore.byName(),
       (type, key) => cfg[type]?.[key] ?? '',
       null,
+      (type) => this.batchAnswerPaths()[type] ?? '',
     );
   });
   /** Batch-picked type names that need a non-empty expected_output per row - informational only,
@@ -177,6 +180,7 @@ export class DatasetDetailComponent {
     this.jsonl.set('');
     this.typeNames.set([]);
     this.batchConfig.set({});
+    this.batchAnswerPaths.set({});
     if (row) {
       this.editing.set(row);
       this.draft.set({ ...row.row_info });
@@ -223,16 +227,12 @@ export class DatasetDetailComponent {
   }
   toTests() {
     if (this.configIssues().length) return;
-    const byName = this.testTypesStore.byName();
-    const cfg = this.batchConfig();
-    const assignments: TestTypeAssignment[] = this.typeNames().map((name) => {
-      const t = byName.get(name);
-      const fields = t ? assignmentFields(t) : [];
-      const config: Record<string, string> = {};
-      for (const f of fields)
-        if (cfg[name]?.[f.key]?.trim()) config[f.key] = cfg[name][f.key].trim();
-      return { name, config: Object.keys(config).length ? config : null };
-    });
+    const assignments = buildAssignments(
+      this.typeNames(),
+      this.testTypesStore.byName(),
+      this.batchConfig(),
+      this.batchAnswerPaths(),
+    );
     this.act.run(this.testsApi.createTestsFromDataset(this.id(), assignments), {
       ok: (r) => `Created ${r.test_cases.length} tests from this dataset.`,
       then: () => this.router.navigate(['/tests']),

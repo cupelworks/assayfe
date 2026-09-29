@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { TestsApiService } from './tests-api.service';
-import { ConfigFieldDescriptor, TestCategory, TestType } from './models';
+import { ConfigFieldDescriptor, TestCategory, TestType, TestTypeAssignment } from './models';
 import { parseDecimal } from '../shared/number';
 
 /** Whether a type needs an expected_output to work at all - derived from config_fields instead
@@ -31,6 +31,23 @@ export const numericFieldIssue = (f: ConfigFieldDescriptor, raw: string): string
   if (f.max != null) return n > f.max ? `must be at most ${f.max}` : null;
   return null;
 };
+/** A light check for a JSONPath the user typed (a "jsonpath" config field, or a check's
+ *  answer_path): it must start with "$". There's no standard JS JSONPath parser, so the API's own
+ *  on-save check (a 422) is the full one. */
+export const jsonPathIssue = (raw: string): string | null =>
+  raw.startsWith('$') ? null : 'must start with $, e.g. $.status';
+/** The label and help for a check's optional answer_path, shared by every form that edits one. */
+export const ANSWER_PATH = {
+  label: 'Read from (JSONPath)',
+  placeholder: '$.stop_reason',
+  hint:
+    "Leave empty to check the answer. Set a path to check another part of the application's " +
+    'reply, e.g. $.stop_reason or $.usage.output_tokens.',
+  tip:
+    'JSON checks need JSON: to check one field with JSON Field Equals, point this at an object ' +
+    "(e.g. $) and use the check's own path for the field. To check a single text value like " +
+    'stop_reason, use Contains or Exact Match with $.stop_reason.',
+};
 /** For a non-empty config value: a short problem phrase to append to the field's label, or null
  *  when it's fit to send - by the field's kind. "numeric": `numericFieldIssue`. "json": must
  *  parse. "jsonpath": must start with "$" - there's no standard JS JSONPath parser, so this is a
@@ -48,12 +65,13 @@ export const configFieldIssue = (f: ConfigFieldDescriptor, raw: string): string 
         return 'is not valid JSON';
       }
     case 'jsonpath':
-      return raw.startsWith('$') ? null : 'must start with $, e.g. $.status';
+      return jsonPathIssue(raw);
     default:
       return null;
   }
 };
 /** "<field label> (<type name>)" for every selected type's required config field left empty, and
+ *  (via `answerPathOf`) its answer_path when that isn't a plausible JSONPath; and
  *  "<field label> (<type name>) - <problem>" for a filled one that isn't fit to send
  *  (`configFieldIssue`) - what every form with type config blocks saving on and lists as "Fix
  *  before saving". `hasReference` says whether the item being edited has an expected output, for
@@ -64,9 +82,13 @@ export function configIssuesFor(
   byName: Map<string, TestType>,
   valueOf: (type: string, key: string) => string,
   hasReference: boolean | null,
+  answerPathOf: (type: string) => string = () => '',
 ): string[] {
   const out: string[] = [];
   for (const name of types) {
+    const path = answerPathOf(name).trim();
+    const pathIssue = path ? jsonPathIssue(path) : null;
+    if (pathIssue) out.push(`${ANSWER_PATH.label} (${name}) - ${pathIssue}`);
     const t = byName.get(name);
     if (!t) continue;
     for (const f of t.config_fields) {
@@ -84,6 +106,31 @@ export function configIssuesFor(
     }
   }
   return out;
+}
+/** The assignments a form sends for the ticked types: each type's non-empty config values (only
+ *  its own non-reference fields), and ALWAYS its answer_path (null when empty). Always, because
+ *  the API replaces the whole list on save and reads a missing answer_path as null - leaving it
+ *  out would silently reset a path the user set earlier. Shared by the test form and the dataset
+ *  "Create tests from rows" batch. */
+export function buildAssignments(
+  types: readonly string[],
+  byName: Map<string, TestType>,
+  configs: Record<string, Record<string, string>>,
+  answerPaths: Record<string, string>,
+): TestTypeAssignment[] {
+  return types.map((name) => {
+    const t = byName.get(name);
+    const config: Record<string, string> = {};
+    for (const f of t ? assignmentFields(t) : []) {
+      const v = configs[name]?.[f.key]?.trim();
+      if (v) config[f.key] = v;
+    }
+    return {
+      name,
+      config: Object.keys(config).length ? config : null,
+      answer_path: answerPaths[name]?.trim() || null,
+    };
+  });
 }
 /** "0 to 100, passes when score ≥ threshold" - a numeric field's bounds plus the type's pass
  *  direction, each part only when known: a one-sided bound reads "at least 0" / "at most 100"

@@ -1,12 +1,12 @@
 import { Component, inject, input, output, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DialogComponent } from './dialog.component';
-import { TestCaseBody, TestTypeAssignment } from '../../api/models';
+import { TestCaseBody } from '../../api/models';
 import {
   TestTypesStore,
-  assignmentFields,
   needsReference,
   configIssuesFor,
+  buildAssignments,
 } from '../../api/test-types.store';
 import { TestTypePickerComponent } from '../test-type-picker.component';
 import { TestTypeConfigFieldsComponent } from '../test-type-config-fields.component';
@@ -36,6 +36,8 @@ export class TestFormDialogComponent {
   types = signal<string[]>([]);
   /** Per-type config values, keyed by type name then field key - see TestTypeConfigFieldsComponent. */
   configs = signal<Record<string, Record<string, string>>>({});
+  /** Per-type answer_path text ('' = the default answer) - see TestTypeConfigFieldsComponent. */
+  answerPaths = signal<Record<string, string>>({});
   hasReference = computed(() => !!this.expected().trim());
   /** The Expected output label's hint, live as types are ticked: "required by BLEU, ROUGE" when
    *  any selected type needs a reference (per its config_fields - `needsReference`, the same rule
@@ -60,6 +62,7 @@ export class TestFormDialogComponent {
       this.store.byName(),
       (type, key) => this.configs()[type]?.[key] ?? '',
       this.hasReference(),
+      (type) => this.answerPaths()[type] ?? '',
     ),
   );
   valid = computed(() => !!this.inp().trim() && !this.configIssues().length);
@@ -73,26 +76,24 @@ export class TestFormDialogComponent {
       const assignments = i.test_type_assignments ?? [];
       this.types.set(assignments.map((a) => a.name));
       this.configs.set(Object.fromEntries(assignments.map((a) => [a.name, a.config ?? {}])));
+      this.answerPaths.set(
+        Object.fromEntries(assignments.map((a) => [a.name, a.answer_path ?? ''])),
+      );
     }
   }
   go() {
     if (!this.valid() || this.busy()) return;
-    const byName = this.store.byName();
-    const configs = this.configs();
-    const assignments: TestTypeAssignment[] = this.types().map((name) => {
-      const t = byName.get(name);
-      const fields = t ? assignmentFields(t) : [];
-      const cfg = configs[name] ?? {};
-      const config: Record<string, string> = {};
-      for (const f of fields) if (cfg[f.key]?.trim()) config[f.key] = cfg[f.key].trim();
-      return { name, config: Object.keys(config).length ? config : null };
-    });
     this.confirm.emit({
       name: this.name().trim() || undefined,
       input: this.inp(),
       expected_output: this.expected().trim() || null,
       model_output: this.modelOut().trim() || null,
-      test_type_assignments: assignments,
+      test_type_assignments: buildAssignments(
+        this.types(),
+        this.store.byName(),
+        this.configs(),
+        this.answerPaths(),
+      ),
     });
   }
 }

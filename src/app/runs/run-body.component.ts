@@ -64,6 +64,11 @@ import {
                 ></span>
                 {{ s.name }}
               </div>
+              @if (s.answerPath) {
+                <div class="detail small muted">
+                  read from <span class="mono">{{ s.answerPath }}</span>
+                </div>
+              }
               @if (s.valueText) {
                 <div class="val">{{ s.valueText }}</div>
               }
@@ -137,6 +142,12 @@ import {
               }
             }
           </div>
+        }
+        @if (replyText(); as reply) {
+          <details class="field-ro reply">
+            <summary class="label">Full application reply</summary>
+            <div class="body mono">{{ reply }}</div>
+          </details>
         }
         @for (f of fields(); track f[0]) {
           <div class="field-ro">
@@ -238,6 +249,7 @@ export class RunBodyComponent {
       config: this.configFields(name, r),
       // What scored it, as stamped on the result at execution time - null on legacy results and
       // on a type that wasn't in the catalogue when the run executed, so both rows then hide.
+      answerPath: r.answer_path ?? null,
       engine: r.engine ?? null,
       engineSettings: r.engine ? engineSettingsLabel(r.engine_settings) : null,
     })),
@@ -276,6 +288,14 @@ export class RunBodyComponent {
     if (v === '') return { empty: true, text: '', json: false };
     const pretty = prettyJson(v);
     return { empty: false, text: pretty ?? v, json: pretty != null };
+  });
+  /** The application's whole reply, indented, for the collapsed "Full application reply" -
+   *  secondary to Evaluated output (the answer the checks judged), so it starts closed; null when
+   *  the run kept none (a recorded answer, NotRan, older runs). */
+  replyText = computed(() => {
+    const reply = this.run()?.application_reply;
+    if (reply == null) return null;
+    return typeof reply === 'string' ? reply : JSON.stringify(reply, null, 2);
   });
   resultsSummary = computed(() => {
     const r = this.results();

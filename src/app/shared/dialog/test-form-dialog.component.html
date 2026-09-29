@@ -70,6 +70,8 @@
       [selected]="types()"
       [value]="configs()"
       (valueChange)="configs.set($event)"
+      [answerPaths]="answerPaths()"
+      (answerPathsChange)="answerPaths.set($event)"
     />
     @if (configIssues().length) {
       <div class="note note-warn">Fix before saving: {{ configIssues().join(', ') }}</div>

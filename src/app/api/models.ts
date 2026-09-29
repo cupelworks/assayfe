@@ -26,6 +26,8 @@ export interface TestTypeResult {
   passed: boolean;
   score: number | null;
   detail: string | null;
+  /** The part of the reply this check read; null = the default answer. */
+  answer_path?: string | null;
   /** Which evaluator engine produced this result, as the type's catalogue row named it at
    *  execution time - recorded on the run so a later catalogue change can't reinterpret an old
    *  result. Null only when the type wasn't in the catalogue at all when the run executed (then
@@ -85,6 +87,11 @@ export interface DataSetMutationResult {
 export interface TestTypeAssignment {
   name: string;
   config?: Record<string, string> | null;
+  /** Which part of the application's reply this check reads, as a JSONPath (e.g. "$.stop_reason",
+   *  or "$" for the whole reply); null = the default answer (`evaluated_output`). The API replaces
+   *  the assignment list whole on PATCH and reads a missing key as null, so a form must always
+   *  send it back - see `buildAssignments`. */
+  answer_path?: string | null;
 }
 export interface TestCaseBody {
   name?: string;
@@ -144,6 +151,9 @@ export interface RunMetadata {
  *  (evaluated_output/output_source, on top of the existing executed_at/error/results). */
 export interface RunOutcome {
   executed_at: string | null;
+  /** The application's whole parsed reply - null for a recorded answer, for NotRan, and on runs
+   *  from before it was kept. Any JSON value. */
+  application_reply?: unknown;
   /** Set only when status is NotRan - a run-level failure, mutually exclusive with results.
    *  Since 0.9.5 also covers the application-under-test being unreachable (e.g. "application
    *  answered HTTP 503 after 3 attempt(s)"), not just a model-call failure. */
