@@ -37,10 +37,10 @@ export class TestFormDialogComponent {
   /** Per-type config values, keyed by type name then field key - see TestTypeConfigFieldsComponent. */
   configs = signal<Record<string, Record<string, string>>>({});
   hasReference = computed(() => !!this.expected().trim());
-  /** The Expected output label's hint, live as types are ticked: "required by BLEU, Exact Match
-   *  (strict)" when any selected type needs a reference (per its config_fields - `needsReference`,
-   *  the same rule as the catalogue's tag), "optional" when none does. It says up front what
-   *  configIssues would otherwise only report when saving is blocked. */
+  /** The Expected output label's hint, live as types are ticked: "required by BLEU, ROUGE" when
+   *  any selected type needs a reference (per its config_fields - `needsReference`, the same rule
+   *  as the catalogue's tag), "optional" when none does. It says up front what configIssues would
+   *  otherwise only report when saving is blocked. */
   expectedHint = computed(() => {
     const byName = this.store.byName();
     const needing = this.types().filter((n) => {
