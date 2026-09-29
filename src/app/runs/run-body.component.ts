@@ -224,7 +224,9 @@ export class RunBodyComponent {
     Object.entries(this.run()?.results ?? {}).map(([name, r]) => ({
       name,
       passed: r.passed,
-      valueText: r.score != null ? r.score.toFixed(3) : null,
+      // 4 decimals - the precision the backend keeps and quotes in a miss's detail ("0.3704 is
+      // below the threshold 0.5"), so the number beside the bar matches it.
+      valueText: r.score != null ? r.score.toFixed(4) : null,
       pct: this.resultPct(name, r),
       detail: r.detail,
       config: this.configFields(name, r),
