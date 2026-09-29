@@ -31,6 +31,60 @@ export const numericFieldIssue = (f: ConfigFieldDescriptor, raw: string): string
   if (f.max != null) return n > f.max ? `must be at most ${f.max}` : null;
   return null;
 };
+/** For a non-empty config value: a short problem phrase to append to the field's label, or null
+ *  when it's fit to send - by the field's kind. "numeric": `numericFieldIssue`. "json": must
+ *  parse. "jsonpath": must start with "$" - there's no standard JS JSONPath parser, so this is a
+ *  light check and the API's own on-save check (a 422 naming the field) is the full one. Other
+ *  kinds (multiline, rubric) take any text. */
+export const configFieldIssue = (f: ConfigFieldDescriptor, raw: string): string | null => {
+  switch (f.kind) {
+    case 'numeric':
+      return numericFieldIssue(f, raw);
+    case 'json':
+      try {
+        JSON.parse(raw);
+        return null;
+      } catch {
+        return 'is not valid JSON';
+      }
+    case 'jsonpath':
+      return raw.startsWith('$') ? null : 'must start with $, e.g. $.status';
+    default:
+      return null;
+  }
+};
+/** "<field label> (<type name>)" for every selected type's required config field left empty, and
+ *  "<field label> (<type name>) - <problem>" for a filled one that isn't fit to send
+ *  (`configFieldIssue`) - what every form with type config blocks saving on and lists as "Fix
+ *  before saving". `hasReference` says whether the item being edited has an expected output, for
+ *  "reference" fields; pass null where every item always brings its own (the dataset batch, whose
+ *  rows each carry one), so reference fields are skipped. */
+export function configIssuesFor(
+  types: readonly string[],
+  byName: Map<string, TestType>,
+  valueOf: (type: string, key: string) => string,
+  hasReference: boolean | null,
+): string[] {
+  const out: string[] = [];
+  for (const name of types) {
+    const t = byName.get(name);
+    if (!t) continue;
+    for (const f of t.config_fields) {
+      if (f.kind === 'reference') {
+        if (hasReference === false && f.required) out.push(`${f.label} (${name})`);
+        continue;
+      }
+      const raw = valueOf(name, f.key).trim();
+      if (!raw) {
+        if (f.required) out.push(`${f.label} (${name})`);
+        continue;
+      }
+      const issue = configFieldIssue(f, raw);
+      if (issue) out.push(`${f.label} (${name}) - ${issue}`);
+    }
+  }
+  return out;
+}
 /** "0 to 100, passes when score ≥ threshold" - a numeric field's bounds plus the type's pass
  *  direction, each part only when known: a one-sided bound reads "at least 0" / "at most 100"
  *  (the same shapes `numericFieldIssue` validates), `comparison` is null for a type with no

@@ -10,7 +10,7 @@ import {
   TestTypesStore,
   assignmentFields,
   needsReference,
-  numericFieldIssue,
+  configIssuesFor,
 } from '../api/test-types.store';
 import { rel, short, errText } from '../shared/format';
 import { TestTypePickerComponent } from '../shared/test-type-picker.component';
@@ -73,33 +73,17 @@ export class DatasetDetailComponent {
   /** Config values for the "Create tests from rows" batch - one shared value per field across
    *  every row created, same shape as TestFormDialogComponent's per-test configs. */
   batchConfig = signal<Record<string, Record<string, string>>>({});
-  /** "<field label> (<type name>) - <problem>" for every batch-picked type's non-reference
-   *  config_fields entry that isn't fit to submit - a required field left empty, or a "numeric"
-   *  entry outside its own min/max (see numericFieldIssue). No "reference" case here (unlike
-   *  TestFormDialogComponent's equivalent): every row already carries its own expected_output
-   *  via DataSetRowSchema, so a reference field is always satisfied for this batch. Drives the
-   *  submit-disable guard and on-screen hint - the API accepts both problems silently (see
-   *  TestTypeConfigFieldsComponent's own doc comment). */
+  /** What blocks "Create tests from rows": configIssuesFor (test-types.store.ts, shared with the
+   *  test form) over the batch-picked types, with reference fields skipped - every row already
+   *  carries its own expected_output via DataSetRowSchema, so a reference is always satisfied. */
   configIssues = computed(() => {
-    const byName = this.testTypesStore.byName();
     const cfg = this.batchConfig();
-    const out: string[] = [];
-    for (const name of this.typeNames()) {
-      const t = byName.get(name);
-      if (!t) continue;
-      for (const f of assignmentFields(t)) {
-        const raw = cfg[name]?.[f.key]?.trim() ?? '';
-        if (!raw) {
-          if (f.required) out.push(`${f.label} (${name})`);
-          continue;
-        }
-        if (f.kind === 'numeric') {
-          const issue = numericFieldIssue(f, raw);
-          if (issue) out.push(`${f.label} (${name}) - ${issue}`);
-        }
-      }
-    }
-    return out;
+    return configIssuesFor(
+      this.typeNames(),
+      this.testTypesStore.byName(),
+      (type, key) => cfg[type]?.[key] ?? '',
+      null,
+    );
   });
   /** Batch-picked type names that need a non-empty expected_output per row - informational only,
    *  not part of configIssues() (which only blocks on things provably wrong from what's loaded

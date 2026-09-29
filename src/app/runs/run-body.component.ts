@@ -72,7 +72,8 @@ import {
               }
               @for (c of s.config; track c.key) {
                 <div class="detail muted cfg" [class.clamp]="c.long && !isConfigOpen(c.key)">
-                  <span class="strong">{{ c.label }}:</span> {{ c.value }}
+                  <span class="strong">{{ c.label }}:</span>
+                  <span [class.mono]="c.mono">{{ c.value }}</span>
                 </div>
                 @if (c.long) {
                   <button type="button" class="more small" (click)="toggleConfig(c.key)">
@@ -188,7 +189,7 @@ export class RunBodyComponent {
   private configFields(
     name: string,
     result: TestTypeResult,
-  ): { key: string; label: string; value: string; long: boolean }[] {
+  ): { key: string; label: string; value: string; long: boolean; mono: boolean }[] {
     const config = this.content()?.test_type_assignments?.find((a) => a.name === name)?.config;
     const type = this.testTypes.byName().get(name);
     const fields = type ? assignmentFields(type) : [];
@@ -202,6 +203,7 @@ export class RunBodyComponent {
               label: f.label,
               value,
               long: f.kind !== 'numeric' && value.length > 140,
+              mono: f.kind === 'json' || f.kind === 'jsonpath',
             },
           ]
         : [];
@@ -213,6 +215,7 @@ export class RunBodyComponent {
         label: 'Default rubric',
         value: fallback,
         long: fallback.length > 140,
+        mono: false,
       });
     }
     return rows;

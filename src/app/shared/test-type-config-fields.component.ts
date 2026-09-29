@@ -7,10 +7,11 @@ import { TestTypesStore, assignmentFields, numericFieldHint } from '../api/test-
  * Per-assignment config for the currently-selected test types - one labeled field per
  * non-reference config_fields entry ("reference" always resolves from the test case's own
  * expected_output instead and never appears here, see TestType.config_fields): a textarea for
- * "multiline"/"rubric", a bounded number input for "numeric" clamped to that field's own
- * min/max (the API stores it as a plain string and does not validate format or range itself, so
- * these client-side bounds - read from the descriptor, not assumed - are the only guard it
- * gets). Grouped by type so it's clear which field belongs to which selected type, since two
+ * "multiline"/"rubric", a monospace textarea for "json", a single-line monospace input for
+ * "jsonpath", and the shared `assayNumber` input for "numeric". Each shows the API's own
+ * `placeholder` (an example value) and `hint` (a one-line note) when the descriptor has them -
+ * nothing here is per type name. Validation lives in configIssuesFor (test-types.store.ts).
+ * Grouped by type so it's clear which field belongs to which selected type, since two
  * types can each contribute their own fields to the same test case.
  */
 @Component({

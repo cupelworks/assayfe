@@ -72,3 +72,8 @@
   font-size: 12px;
   width: fit-content;
 }
+/* "Label: value" - label and value are separate spans (the value can be monospace), and Angular
+   drops the whitespace-only text between two elements, so the gap comes from here. */
+.cfg > .strong {
+  margin-right: 0.3em;
+}

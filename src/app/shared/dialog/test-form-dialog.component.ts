@@ -6,7 +6,7 @@ import {
   TestTypesStore,
   assignmentFields,
   needsReference,
-  numericFieldIssue,
+  configIssuesFor,
 } from '../../api/test-types.store';
 import { TestTypePickerComponent } from '../test-type-picker.component';
 import { TestTypeConfigFieldsComponent } from '../test-type-config-fields.component';
@@ -49,39 +49,19 @@ export class TestFormDialogComponent {
     });
     return needing.length ? `required by ${needing.join(', ')}` : 'optional';
   });
-  /** "<field label> (<type name>) - <problem>" for every selected type's config_fields entry
-   *  that isn't fit to submit yet: a required field left empty (a "reference" entry checks
-   *  expected_output, shared; everything else checks this type's own configs() slot), or a
-   *  "numeric" entry outside its own min/max (see numericFieldIssue). Drives both the
-   *  submit-disable guard and the on-screen hint - the API accepts both problems silently (see
-   *  docs/test_type_config/next_move.md 3.1 for the required-field gap on "reference", and the
-   *  "numeric" kind's own handover notes for the lack of any format/range check at all), so this
-   *  is the only thing standing between the user and a test that can never be scored correctly. */
-  configIssues = computed(() => {
-    const byName = this.store.byName();
-    const configs = this.configs();
-    const out: string[] = [];
-    for (const name of this.types()) {
-      const t = byName.get(name);
-      if (!t) continue;
-      for (const f of t.config_fields) {
-        if (f.kind === 'reference') {
-          if (f.required && !this.hasReference()) out.push(`${f.label} (${name})`);
-          continue;
-        }
-        const raw = configs[name]?.[f.key]?.trim() ?? '';
-        if (!raw) {
-          if (f.required) out.push(`${f.label} (${name})`);
-          continue;
-        }
-        if (f.kind === 'numeric') {
-          const issue = numericFieldIssue(f, raw);
-          if (issue) out.push(`${f.label} (${name}) - ${issue}`);
-        }
-      }
-    }
-    return out;
-  });
+  /** What blocks saving and is listed as "Fix before saving": every selected type's required
+   *  field left empty (a "reference" field checks this test's own expected output) and every
+   *  filled one that isn't fit to send (a number out of range, JSON that doesn't parse, …) - see
+   *  configIssuesFor in test-types.store.ts, shared with the dataset batch. The API repeats the
+   *  JSON/JSONPath checks on save; the rest this is the only guard for. */
+  configIssues = computed(() =>
+    configIssuesFor(
+      this.types(),
+      this.store.byName(),
+      (type, key) => this.configs()[type]?.[key] ?? '',
+      this.hasReference(),
+    ),
+  );
   valid = computed(() => !!this.inp().trim() && !this.configIssues().length);
   ngOnInit() {
     const i = this.initial();

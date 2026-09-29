@@ -14,20 +14,39 @@
                 <span class="hint">- {{ hint }}</span>
               }
             </label>
-            @if (f.kind === 'numeric') {
-              <input
-                class="input num"
-                assayNumber
-                [ngModel]="fieldValue(s.name, f.key)"
-                (ngModelChange)="setFieldValue(s.name, f.key, $event)"
-              />
-            } @else {
-              <textarea
-                class="input ta"
-                rows="3"
-                [ngModel]="fieldValue(s.name, f.key)"
-                (ngModelChange)="setFieldValue(s.name, f.key, $event)"
-              ></textarea>
+            @switch (f.kind) {
+              @case ('numeric') {
+                <input
+                  class="input num"
+                  assayNumber
+                  [placeholder]="f.placeholder ?? ''"
+                  [ngModel]="fieldValue(s.name, f.key)"
+                  (ngModelChange)="setFieldValue(s.name, f.key, $event)"
+                />
+              }
+              @case ('jsonpath') {
+                <input
+                  class="input mono"
+                  spellcheck="false"
+                  [placeholder]="f.placeholder ?? ''"
+                  [ngModel]="fieldValue(s.name, f.key)"
+                  (ngModelChange)="setFieldValue(s.name, f.key, $event)"
+                />
+              }
+              @default {
+                <textarea
+                  class="input ta"
+                  [class.mono]="f.kind === 'json'"
+                  rows="3"
+                  [attr.spellcheck]="f.kind === 'json' ? 'false' : null"
+                  [placeholder]="f.placeholder ?? ''"
+                  [ngModel]="fieldValue(s.name, f.key)"
+                  (ngModelChange)="setFieldValue(s.name, f.key, $event)"
+                ></textarea>
+              }
+            }
+            @if (f.hint) {
+              <div class="field-hint">{{ f.hint }}</div>
             }
           </div>
         }

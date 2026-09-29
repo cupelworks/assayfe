@@ -29,3 +29,19 @@
 .num {
   max-width: 140px;
 }
+/* JSON documents/values and JSONPath expressions read as code. */
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+}
+/* The API's one-line note for the field ("A JSON value: strings in double quotes, …"). */
+.field-hint {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--color-neutral-500);
+}
+/* Two hints in one label ("- optional" then "- at least 0") are separate elements with no text
+   between them, so the space has to come from here. */
+.hint + .hint {
+  margin-left: 0.3em;
+}

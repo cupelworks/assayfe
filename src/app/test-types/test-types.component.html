@@ -120,6 +120,9 @@
                           @if (numericFieldHint(f, t.comparison); as hint) {
                             <div class="small">{{ hint }}</div>
                           }
+                          @if (f.hint) {
+                            <div class="small">{{ f.hint }}</div>
+                          }
                         </li>
                       }
                     </ul>

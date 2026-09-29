@@ -221,7 +221,10 @@ export type TestCategory = 'deterministic' | 'nlp_metric' | 'llm_as_judge';
  *  the API does NOT validate its format or range (a non-numeric or out-of-range value is accepted
  *  silently), so the FE owns that check entirely. Closed set - extend only when a type needs a
  *  shape none of these cover (e.g. enum/select). */
-export type ConfigFieldKind = 'reference' | 'multiline' | 'rubric' | 'numeric';
+/** "json": JSON text (a document or a single value - strings in double quotes). "jsonpath": a
+ *  JSONPath expression like $.status. Both are checked on save by the API (422) and in the form. */
+export type ConfigFieldKind =
+  'reference' | 'multiline' | 'rubric' | 'numeric' | 'json' | 'jsonpath';
 export interface ConfigFieldDescriptor {
   key: string;
   label: string;
@@ -232,6 +235,10 @@ export interface ConfigFieldDescriptor {
    *  the FE's own input constraints and validation. */
   min?: number | null;
   max?: number | null;
+  /** An example value for the empty input, or null. */
+  placeholder?: string | null;
+  /** A one-line note shown under the field, or null. */
+  hint?: string | null;
 }
 export interface TestType {
   id: string;
