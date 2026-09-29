@@ -2,7 +2,12 @@ import { Component, inject, input, output, signal, computed } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { DialogComponent } from './dialog.component';
 import { TestCaseBody, TestTypeAssignment } from '../../api/models';
-import { TestTypesStore, assignmentFields, numericFieldIssue } from '../../api/test-types.store';
+import {
+  TestTypesStore,
+  assignmentFields,
+  needsReference,
+  numericFieldIssue,
+} from '../../api/test-types.store';
 import { TestTypePickerComponent } from '../test-type-picker.component';
 import { TestTypeConfigFieldsComponent } from '../test-type-config-fields.component';
 
@@ -32,6 +37,18 @@ export class TestFormDialogComponent {
   /** Per-type config values, keyed by type name then field key - see TestTypeConfigFieldsComponent. */
   configs = signal<Record<string, Record<string, string>>>({});
   hasReference = computed(() => !!this.expected().trim());
+  /** The Expected output label's hint, live as types are ticked: "required by BLEU, Exact Match
+   *  (strict)" when any selected type needs a reference (per its config_fields - `needsReference`,
+   *  the same rule as the catalogue's tag), "optional" when none does. It says up front what
+   *  configIssues would otherwise only report when saving is blocked. */
+  expectedHint = computed(() => {
+    const byName = this.store.byName();
+    const needing = this.types().filter((n) => {
+      const t = byName.get(n);
+      return !!t && needsReference(t);
+    });
+    return needing.length ? `required by ${needing.join(', ')}` : 'optional';
+  });
   /** "<field label> (<type name>) - <problem>" for every selected type's config_fields entry
    *  that isn't fit to submit yet: a required field left empty (a "reference" entry checks
    *  expected_output, shared; everything else checks this type's own configs() slot), or a
