@@ -232,7 +232,7 @@ export class RunBodyComponent {
     })),
   );
   /** Bar width for a result's score - null (no bar) when there's no score: LLM judges and the
-   *  deterministic types (Exact Match/Contains/Regex Match) return `score: null` by contract, so
+   *  deterministic types (every type on the exact_match / contains / regex engines, negated variants included) return `score: null` by contract, so
    *  they get the pass/fail dot only. A threshold-scored type (`comparison` non-null) reports its
    *  score on that type's own native scale, matching its config_fields threshold min/max - not
    *  0-1 (BLEU is 0-100, Cosine Similarity is -1 to 1) - so the bar scales by where the score
