@@ -142,6 +142,12 @@ import {
                 <div class="body" [class.mono]="ev.json">{{ ev.text }}</div>
               }
             }
+            @if (r.output_source === 'application') {
+              <div class="small source-note">
+                Read from the application's reply at the Answer path in
+                <a routerLink="/settings" class="plain">Settings</a>.
+              </div>
+            }
           </div>
         }
         @if (replyText(); as reply) {
@@ -278,13 +284,13 @@ export class RunBodyComponent {
     const ratio = (r.score - threshold.min) / (threshold.max - threshold.min);
     return Math.min(1, Math.max(0, ratio)) * 100 + '%';
   }
-  /** "2 of 3 test types passed" - a headline the per-type dots+labels otherwise make the reader
-   *  count out themselves. Null (hidden) while there's nothing to summarize yet. */
   /** How to show the answer the checks judged. `""` is a real, scored answer (an application that
    *  refused or was cut off) - shown as "(empty answer)", since it's why most checks failed,
    *  rather than as a blank that looks like a rendering bug; null (not evaluated) hides the block
    *  in the template. A JSON object/array - a structured reply, or the whole reply read at "$" -
-   *  is pretty-printed in monospace; anything else is shown as-is. */
+   *  is pretty-printed in monospace; anything else is shown as-is. An answer from the application
+   *  also gets a one-line note that it was read at Settings' Answer path - without the path itself,
+   *  since the run doesn't record which one was in effect and Settings may have changed since. */
   evaluated = computed(() => {
     const v = this.run()?.evaluated_output;
     if (v == null) return null;
@@ -302,6 +308,8 @@ export class RunBodyComponent {
     if (reply == null) return null;
     return typeof reply === 'string' ? reply : JSON.stringify(reply, null, 2);
   });
+  /** "2 of 3 test types passed" - a headline the per-type dots+labels otherwise make the reader
+   *  count out themselves. Null (hidden) while there's nothing to summarize yet. */
   resultsSummary = computed(() => {
     const r = this.results();
     if (!r.length) return null;

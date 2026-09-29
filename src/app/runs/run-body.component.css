@@ -98,3 +98,8 @@
 .reply .body {
   margin-top: 8px;
 }
+/* "Read from the application's reply at the Answer path in Settings." under an application
+   answer - quiet, secondary to the answer itself. */
+.source-note {
+  margin-top: 6px;
+}
