@@ -8,6 +8,7 @@ import {
 } from '../api/models';
 import { rel, absTime, statusColor, statusLabel, prettyJson } from '../shared/format';
 import { RelTimeComponent } from '../shared/rel-time.component';
+import { ChevronComponent } from '../shared/chevron.component';
 import {
   TestTypesStore,
   assignmentFields,
@@ -19,7 +20,7 @@ import {
 @Component({
   selector: 'assay-run-body',
   standalone: true,
-  imports: [RouterLink, RelTimeComponent],
+  imports: [RouterLink, RelTimeComponent, ChevronComponent],
   styleUrls: ['../shared/page.css', './run-body.component.css'],
   template: ` @if (run(); as r) {
     <section class="half">
@@ -144,8 +145,10 @@ import {
           </div>
         }
         @if (replyText(); as reply) {
-          <details class="field-ro reply">
-            <summary class="label">Full application reply</summary>
+          <details class="field-ro reply" (toggle)="replyOpen.set($any($event.target).open)">
+            <summary class="label">
+              Full application reply <assay-chevron [open]="replyOpen()" />
+            </summary>
             <div class="body mono">{{ reply }}</div>
           </details>
         }
@@ -292,6 +295,8 @@ export class RunBodyComponent {
   /** The application's whole reply, indented, for the collapsed "Full application reply" -
    *  secondary to Evaluated output (the answer the checks judged), so it starts closed; null when
    *  the run kept none (a recorded answer, NotRan, older runs). */
+  /** Mirrors the reply <details>' own open state, for its chevron. */
+  replyOpen = signal(false);
   replyText = computed(() => {
     const reply = this.run()?.application_reply;
     if (reply == null) return null;

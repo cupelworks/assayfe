@@ -1,6 +1,7 @@
 import { Component, inject, input, output, computed, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NumberInputDirective } from './number';
+import { ChevronComponent } from './chevron.component';
 import {
   TestTypesStore,
   assignmentFields,
@@ -28,7 +29,7 @@ import {
 @Component({
   selector: 'assay-test-type-config-fields',
   standalone: true,
-  imports: [FormsModule, NumberInputDirective],
+  imports: [FormsModule, NumberInputDirective, ChevronComponent],
   templateUrl: './test-type-config-fields.component.html',
   styleUrl: './test-type-config-fields.component.css',
 })

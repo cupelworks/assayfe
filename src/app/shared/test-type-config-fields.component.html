@@ -63,7 +63,7 @@
           [attr.aria-expanded]="isOpen(s.name)"
           (click)="toggleAdvanced(s.name)"
         >
-          Advanced {{ isOpen(s.name) ? '▾' : '▸' }}
+          Advanced <assay-chevron [open]="isOpen(s.name)" />
         </button>
         @if (isOpen(s.name)) {
           <div class="field">

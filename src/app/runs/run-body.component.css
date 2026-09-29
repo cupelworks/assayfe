@@ -82,8 +82,15 @@
    fields; the summary reads like their labels. */
 .reply summary {
   cursor: pointer;
-  /* .label is display:flex, which hides the disclosure marker - without it nothing says this opens. */
-  display: list-item;
+  width: fit-content;
+  /* The chevron after the label replaces the browser's own marker. */
+  list-style: none;
+}
+.reply summary::-webkit-details-marker {
+  display: none;
+}
+.reply[open] summary {
+  color: var(--color-accent);
 }
 .reply summary:hover {
   color: var(--color-accent);
