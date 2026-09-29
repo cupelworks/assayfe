@@ -36,17 +36,13 @@ export const numericFieldIssue = (f: ConfigFieldDescriptor, raw: string): string
  *  on-save check (a 422) is the full one. */
 export const jsonPathIssue = (raw: string): string | null =>
   raw.startsWith('$') ? null : 'must start with $, e.g. $.status';
-/** The label and help for a check's optional answer_path, shared by every form that edits one. */
+/** The label and help for a check's optional answer_path, shared by every form that edits one.
+ *  The API sends no hint for this field; this one line is ours, kept short on purpose - it only
+ *  says what an empty field does. */
 export const ANSWER_PATH = {
   label: 'Read from (JSONPath)',
   placeholder: '$.stop_reason',
-  hint:
-    "Leave empty to check the answer. Set a path to check another part of the application's " +
-    'reply, e.g. $.stop_reason or $.usage.output_tokens.',
-  tip:
-    'JSON checks need JSON: to check one field with JSON Field Equals, point this at an object ' +
-    "(e.g. $) and use the check's own path for the field. To check a single text value like " +
-    'stop_reason, use Contains or Exact Match with $.stop_reason.',
+  hint: 'Leave empty to use the Answer path set in Settings.',
 };
 /** For a non-empty config value: a short problem phrase to append to the field's label, or null
  *  when it's fit to send - by the field's kind. "numeric": `numericFieldIssue`. "json": must
