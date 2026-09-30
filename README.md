@@ -1,6 +1,6 @@
 # Assay FE
 
-Angular 22 front-end for the Assay evaluation API (v0.9.6). Modernist design system (Archivo, red/ink on light ground, zero radius, 2px rules); dark mode via `[data-theme="dark"]`.
+Angular 22 front-end for the Assay evaluation API (v0.10.0). Modernist design system (Archivo, red/ink on light ground, zero radius, 2px rules); dark mode via `[data-theme="dark"]`.
 
 ## Run
 

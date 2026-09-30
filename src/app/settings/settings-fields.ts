@@ -65,7 +65,7 @@ export const TARGET_SETTING_FIELDS: SettingField[] = [
       'Headers Assay adds to every call to the application under test, for example to authenticate. ' +
       "Don't type a secret here. Write ${NAME} instead, where NAME is an environment variable " +
       'set on the Assay server that holds the secret. Assay keeps only the name and reads the ' +
-      "actual value from the server's environment on every call. " +
+      "actual value from the server's environment (or its .env file) on every call. " +
       'Example: Authorization → Bearer ${ASSAY_TARGET_API_KEY}',
   },
   {
