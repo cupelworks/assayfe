@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import {
   RunDetails,
   StandaloneRunDetails,
+  ConfigFieldDescriptor,
   TestTypeAssignment,
   TestTypeResult,
 } from '../api/models';
@@ -208,10 +209,12 @@ export class RunBodyComponent {
    *  what it needed to clear. One entry per field, labeled via the matching TestType's
    *  config_fields (assignmentFields excludes "reference", which never appears here); a non-numeric
    *  value over 140 chars (a rubric, typically) is flagged `long` for the template to clamp.
-   *  A judge that ran without a custom rubric graded with its engine's default one, so that's
-   *  appended as "Default rubric" - read from the result's own stamped `engine_settings`, the
-   *  record of what actually ran, never from the catalogue's current settings (which may have
-   *  changed since). Not gated on the catalogue knowing the type: the stamp alone is enough. */
+   *  A judge's rubric comes from the result's own `rubric` stamp - what it actually graded with -
+   *  as "Rubric" (its own, which replaced the default) or "Default rubric", in place of the
+   *  config's rubric field. A result without the stamp (written before it existed, or a judge
+   *  that couldn't be asked) falls back to working it out: the config's rubric if it isn't
+   *  blank, else the default from the result's stamped `engine_settings` - never the catalogue's
+   *  current settings, which may have changed since. */
   private configFields(
     name: string,
     result: TestTypeResult,
@@ -220,8 +223,9 @@ export class RunBodyComponent {
     const type = this.testTypes.byName().get(name);
     const fields = type ? assignmentFields(type) : [];
     const valueOf = (key: string) => config?.[key]?.trim() || null;
+    const used = result.rubric;
     const rows = fields.flatMap((f) => {
-      const value = valueOf(f.key);
+      const value = used && f.kind === 'rubric' ? null : valueOf(f.key);
       return value
         ? [
             {
@@ -234,17 +238,31 @@ export class RunBodyComponent {
           ]
         : [];
     });
-    const fallback = defaultRubric(result.engine_settings);
-    if (fallback && !fields.some((f) => f.kind === 'rubric' && valueOf(f.key))) {
+    const rubric = used
+      ? { label: used.source === 'custom' ? 'Rubric' : 'Default rubric', text: used.text }
+      : this.legacyDefaultRubric(result, fields, valueOf);
+    if (rubric) {
       rows.push({
-        key: `${name}:default_rubric`,
-        label: 'Default rubric',
-        value: fallback,
-        long: fallback.length > 140,
+        key: `${name}:rubric`,
+        label: rubric.label,
+        value: rubric.text,
+        long: rubric.text.length > 140,
         mono: false,
       });
     }
     return rows;
+  }
+  /** For a result without a `rubric` stamp: "Default rubric" when the config's own rubric is
+   *  blank (the custom one is already a config row then). */
+  private legacyDefaultRubric(
+    result: TestTypeResult,
+    fields: ConfigFieldDescriptor[],
+    valueOf: (key: string) => string | null,
+  ) {
+    const text = defaultRubric(result.engine_settings);
+    return text && !fields.some((f) => f.kind === 'rubric' && valueOf(f.key))
+      ? { label: 'Default rubric', text }
+      : null;
   }
   results = computed(() =>
     Object.entries(this.run()?.results ?? {}).map(([name, r]) => ({

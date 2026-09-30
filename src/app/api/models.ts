@@ -36,6 +36,15 @@ export interface TestTypeResult {
   /** That engine's settings for this type, exactly as the catalogue row held them at execution
    *  time. Null in the same two cases as `engine`. */
   engine_settings?: Record<string, unknown> | null;
+  /** A judge's rubric as it graded with it - its own (`custom`, which replaced the default) or
+   *  the type's `default`. Null for other types, for a judge that couldn't be asked (`detail`
+   *  says why) and on results written before this field existed. */
+  rubric?: JudgeRubric | null;
+}
+export interface JudgeRubric {
+  /** Trimmed, exactly as the judge received it. */
+  text: string;
+  source: 'custom' | 'default';
 }
 
 // Datasets
