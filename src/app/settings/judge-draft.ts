@@ -6,17 +6,17 @@ import { FieldErrors, SettingsDraftSpec, blankToNull, parseNumberField } from '.
 export const JUDGE_FIELDS = [
   'provider',
   'model',
-  'base_url',
   'api_key_env',
   'timeout_seconds',
   'max_retries',
+  'url',
 ] as const;
 
 /** The form's copy of the judge settings: everything as text; '' is "not set" (null). */
 export interface JudgeDraft {
   provider: string;
   model: string;
-  base_url: string;
+  url: string;
   api_key_env: string;
   timeout_seconds: string;
   max_retries: string;
@@ -30,7 +30,7 @@ export const JUDGE_DRAFT: SettingsDraftSpec<JudgeSettings, JudgeDraft> = {
   toDraft: (s) => ({
     provider: s.provider ?? '',
     model: s.model ?? '',
-    base_url: s.base_url ?? '',
+    url: s.url ?? '',
     api_key_env: s.api_key_env ?? '',
     timeout_seconds: String(s.timeout_seconds),
     max_retries: String(s.max_retries),
@@ -44,7 +44,7 @@ export const JUDGE_DRAFT: SettingsDraftSpec<JudgeSettings, JudgeDraft> = {
       value: {
         provider: (blankToNull(d.provider) as JudgeProvider | null) ?? null,
         model: blankToNull(d.model),
-        base_url: blankToNull(d.base_url),
+        url: blankToNull(d.url),
         api_key_env: blankToNull(d.api_key_env),
         timeout_seconds,
         max_retries,

@@ -1,9 +1,11 @@
 import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SettingsApiService } from '../api/settings-api.service';
 import { SettingsSource } from '../api/models';
 import { errText, fieldErrors, statusColor } from '../shared/format';
 import { RelTimeComponent } from '../shared/rel-time.component';
+import { ChevronComponent } from '../shared/chevron.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
 import { ActionRunner } from '../shared/action-runner';
 import { NumberInputDirective } from '../shared/number';
@@ -31,7 +33,14 @@ type Draft = Record<string, any>;
 @Component({
   selector: 'assay-settings-group',
   standalone: true,
-  imports: [FormsModule, RelTimeComponent, ConfirmDialogComponent, NumberInputDirective],
+  imports: [
+    FormsModule,
+    NgTemplateOutlet,
+    RelTimeComponent,
+    ChevronComponent,
+    ConfirmDialogComponent,
+    NumberInputDirective,
+  ],
   templateUrl: './settings-group.component.html',
   styleUrls: ['../shared/page.css', './settings-group.component.css'],
 })
@@ -57,6 +66,21 @@ export class SettingsGroupComponent implements OnInit {
     fields: this.config().draft.fields,
     subject: this.config().check.subject,
   }));
+
+  mainFields = computed(() => this.config().fields.filter((f) => !f.advanced));
+  advancedFields = computed(() => this.config().fields.filter((f) => f.advanced));
+  /** Whether the user opened Advanced - also set when loaded settings hold a value there. */
+  advancedOpen = signal(false);
+  /** Advanced is shown when opened, and always while one of its fields has an error - a problem
+   *  is never hidden behind the toggle. */
+  showAdvanced = computed(
+    () => this.advancedOpen() || this.advancedFields().some((f) => this.shownErrors()[f.key]),
+  );
+  /** "Calls: <url>" - the endpoint the saved settings call, when the group reports one. */
+  calls = computed(() => {
+    const s = this.saved();
+    return s ? (this.config().calls?.(s) ?? null) : null;
+  });
 
   dirty = computed(() => {
     const d = this.draft();
@@ -104,6 +128,8 @@ export class SettingsGroupComponent implements OnInit {
     this.loaded.emit(s);
     this.draft.set(this.config().draft.toDraft(s));
     this.errors.reset();
+    // A value under Advanced (a custom endpoint) is never hidden: opens it, never closes it.
+    if (this.advancedFields().some((f) => this.value(f.key))) this.advancedOpen.set(true);
     // The settings fields under any check error were just replaced, so those messages no longer
     // apply - but the test input wasn't touched, so its message stays.
     this.runner.fieldErrors.clearKeys(this.config().draft.fields);

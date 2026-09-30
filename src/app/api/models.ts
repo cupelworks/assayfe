@@ -340,8 +340,9 @@ export interface JudgeSettings {
   provider: JudgeProvider | null;
   /** Required (non-blank) when a provider is set. */
   model: string | null;
-  /** null = the provider's own API; otherwise an http(s) URL (any OpenAI-compatible server). */
-  base_url: string | null;
+  /** The whole endpoint, called exactly as written - nothing appended; null = the provider's
+   *  own endpoint. */
+  url: string | null;
   /** The name of the env var holding the key on the worker; null = the provider's standard one. */
   api_key_env: string | null;
   timeout_seconds: number;
@@ -353,6 +354,9 @@ export interface JudgeSettingsRead extends JudgeSettings, SettingsSource {
    *  null when no provider is set. Whether it's set can only be known on the worker - see the
    *  check. */
   api_key_variable: string | null;
+  /** Read-only: the URL the worker will actually call - `url` as written, else the provider's
+   *  own endpoint; null when no provider is set. */
+  endpoint: string | null;
 }
 export type JudgeSettingsUpdate = Partial<JudgeSettings>;
 export type JudgeCheck = SettingsCheck<JudgeSettings>;

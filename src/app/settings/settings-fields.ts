@@ -28,6 +28,9 @@ export interface SettingField {
   /** Spans both columns of the form's grid (a URL, the headers, a JSON body); other fields pair
    *  up two per row, so a group's field order is also its layout. */
   wide?: boolean;
+  /** Shown under the group's collapsed "Advanced" toggle - something most users never set (the
+   *  judge's endpoint). Opens by itself when it holds a value or an error, so it's never hidden. */
+  advanced?: boolean;
 }
 
 /** Group A - the application under test, editable (since API 0.9.6). Pointing it at a different
@@ -127,21 +130,10 @@ export const JUDGE_SETTING_FIELDS: SettingField[] = [
       'cheaper judge. Temperature is always 0.',
   },
   {
-    key: 'base_url',
-    label: 'Base URL',
-    kind: 'url',
-    placeholder: {
-      from: 'provider',
-      values: { anthropic: 'https://api.anthropic.com', openai: 'https://api.openai.com/v1' },
-    },
-    hint:
-      "Leave empty for the provider's own API. With OpenAI, any OpenAI-compatible server " +
-      '(vLLM, Ollama, LM Studio, OpenRouter).',
-  },
-  {
     key: 'api_key_env',
     label: 'API key variable',
     kind: 'text',
+    wide: true,
     mono: true,
     placeholder: {
       from: 'provider',
@@ -164,6 +156,24 @@ export const JUDGE_SETTING_FIELDS: SettingField[] = [
     inputMode: 'numeric',
     unit: 'after the first call',
     hint: '0 to 10. 0 means a single call.',
+  },
+  {
+    key: 'url',
+    label: 'URL (endpoint)',
+    kind: 'url',
+    wide: true,
+    advanced: true,
+    placeholder: {
+      from: 'provider',
+      values: {
+        anthropic: 'https://api.anthropic.com/v1/messages',
+        openai: 'https://api.openai.com/v1/chat/completions',
+      },
+    },
+    hint:
+      "Leave empty for the provider's own API. Otherwise the full endpoint, used exactly as " +
+      'written - e.g. http://localhost:11434/v1/chat/completions for Ollama (provider OpenAI), ' +
+      "https://openrouter.ai/api/v1/chat/completions for OpenRouter. Not your application's URL.",
   },
 ];
 

@@ -135,3 +135,17 @@
   font-size: 13px;
   margin: 0;
 }
+/* The endpoint the saved settings call, under the fields; then the Advanced toggle. */
+.calls {
+  margin: 20px 0 4px;
+}
+.calls .mono {
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+.adv-toggle {
+  margin-top: 12px;
+}
+.adv-toggle + .fields {
+  margin-top: 16px;
+}

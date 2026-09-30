@@ -51,105 +51,32 @@
         <!-- Locked while a save or reset is in flight: its response replaces the whole form. -->
         <fieldset class="lock" [disabled]="act.busy()">
           <div class="fields">
-            @for (f of config().fields; track f.key) {
-              <div class="field" [class.wide]="f.wide">
-                <label class="label" [attr.for]="f.kind === 'headers' ? null : controlId(f.key)">
-                  {{ f.label }}
-                  <span class="mono env">{{ envVar(f) }}</span>
-                </label>
-                @switch (f.kind) {
-                  @case ('select') {
-                    <select
-                      class="input sel"
-                      [id]="controlId(f.key)"
-                      [class.invalid]="shownErrors()[f.key]"
-                      [ngModel]="value(f.key)"
-                      (ngModelChange)="set(f.key, $event)"
-                    >
-                      @for (o of f.options ?? []; track o.value) {
-                        <option [value]="o.value">{{ o.label }}</option>
-                      }
-                    </select>
-                  }
-                  @case ('json') {
-                    <textarea
-                      class="input ta mono"
-                      [class.invalid]="shownErrors()[f.key]"
-                      [id]="controlId(f.key)"
-                      rows="4"
-                      spellcheck="false"
-                      [placeholder]="placeholderOf(f)"
-                      [ngModel]="value(f.key)"
-                      (ngModelChange)="set(f.key, $event)"
-                    ></textarea>
-                  }
-                  @case ('headers') {
-                    @for (h of rows(f.key); track $index) {
-                      <div class="hrow">
-                        <input
-                          class="input key"
-                          [class.invalid]="shownErrors()[f.key]"
-                          aria-label="Header name"
-                          placeholder="Authorization"
-                          [ngModel]="h.name"
-                          (ngModelChange)="setHeader(f.key, $index, 'name', $event)"
-                        />
-                        <input
-                          class="input mono"
-                          [class.invalid]="shownErrors()[f.key]"
-                          aria-label="Header value"
-                          placeholder="Bearer ${ASSAY_TARGET_API_KEY}"
-                          [ngModel]="h.value"
-                          (ngModelChange)="setHeader(f.key, $index, 'value', $event)"
-                        />
-                        <button
-                          type="button"
-                          class="btn btn-ghost btn-sm"
-                          (click)="removeHeader(f.key, $index)"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    }
-                    <div>
-                      <button type="button" class="btn btn-ghost btn-sm" (click)="addHeader(f.key)">
-                        + Add header
-                      </button>
-                    </div>
-                  }
-                  @case ('number') {
-                    <div class="inline">
-                      <input
-                        class="input num"
-                        [assayNumber]="f.inputMode ?? ''"
-                        [class.invalid]="shownErrors()[f.key]"
-                        [id]="controlId(f.key)"
-                        [ngModel]="value(f.key)"
-                        (ngModelChange)="set(f.key, $event)"
-                      />
-                      <span class="muted">{{ f.unit }}</span>
-                    </div>
-                  }
-                  @default {
-                    <input
-                      class="input"
-                      [class.mono]="f.mono"
-                      [class.invalid]="shownErrors()[f.key]"
-                      [type]="f.kind === 'url' ? 'url' : 'text'"
-                      [id]="controlId(f.key)"
-                      [placeholder]="placeholderOf(f)"
-                      [ngModel]="value(f.key)"
-                      (ngModelChange)="set(f.key, $event)"
-                    />
-                  }
-                }
-                @if (shownErrors()[f.key]; as e) {
-                  <div class="err">{{ cap(e) }}</div>
-                }
-                <div class="small">{{ f.hint }}</div>
-              </div>
+            @for (f of mainFields(); track f.key) {
+              <ng-container *ngTemplateOutlet="field; context: { $implicit: f }" />
             }
           </div>
+          @if (calls(); as c) {
+            <p class="small calls">
+              Calls: <span class="mono">{{ c }}</span>
+            </p>
+          }
+          @if (advancedFields().length) {
+            <button
+              type="button"
+              class="adv-toggle"
+              [attr.aria-expanded]="showAdvanced()"
+              (click)="advancedOpen.set(!showAdvanced())"
+            >
+              Advanced <assay-chevron [open]="showAdvanced()" />
+            </button>
+            @if (showAdvanced()) {
+              <div class="fields">
+                @for (f of advancedFields(); track f.key) {
+                  <ng-container *ngTemplateOutlet="field; context: { $implicit: f }" />
+                }
+              </div>
+            }
+          }
         </fieldset>
 
         @if (saved()?.source === 'database') {
@@ -275,3 +202,104 @@
     (closed)="confirmReset.set(false)"
   />
 }
+
+<!-- One field block - label with its env var, the control for its kind, error, hint. Shared by
+     the main fields and the ones under Advanced. -->
+<ng-template #field let-f>
+  <div class="field" [class.wide]="f.wide">
+    <label class="label" [attr.for]="f.kind === 'headers' ? null : controlId(f.key)">
+      {{ f.label }}
+      <span class="mono env">{{ envVar(f) }}</span>
+    </label>
+    @switch (f.kind) {
+      @case ('select') {
+        <select
+          class="input sel"
+          [id]="controlId(f.key)"
+          [class.invalid]="shownErrors()[f.key]"
+          [ngModel]="value(f.key)"
+          (ngModelChange)="set(f.key, $event)"
+        >
+          @for (o of f.options ?? []; track o.value) {
+            <option [value]="o.value">{{ o.label }}</option>
+          }
+        </select>
+      }
+      @case ('json') {
+        <textarea
+          class="input ta mono"
+          [class.invalid]="shownErrors()[f.key]"
+          [id]="controlId(f.key)"
+          rows="4"
+          spellcheck="false"
+          [placeholder]="placeholderOf(f)"
+          [ngModel]="value(f.key)"
+          (ngModelChange)="set(f.key, $event)"
+        ></textarea>
+      }
+      @case ('headers') {
+        @for (h of rows(f.key); track $index) {
+          <div class="hrow">
+            <input
+              class="input key"
+              [class.invalid]="shownErrors()[f.key]"
+              aria-label="Header name"
+              placeholder="Authorization"
+              [ngModel]="h.name"
+              (ngModelChange)="setHeader(f.key, $index, 'name', $event)"
+            />
+            <input
+              class="input mono"
+              [class.invalid]="shownErrors()[f.key]"
+              aria-label="Header value"
+              placeholder="Bearer ${ASSAY_TARGET_API_KEY}"
+              [ngModel]="h.value"
+              (ngModelChange)="setHeader(f.key, $index, 'value', $event)"
+            />
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              (click)="removeHeader(f.key, $index)"
+            >
+              Remove
+            </button>
+          </div>
+        }
+        <div>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="addHeader(f.key)">
+            + Add header
+          </button>
+        </div>
+      }
+      @case ('number') {
+        <div class="inline">
+          <input
+            class="input num"
+            [assayNumber]="f.inputMode ?? ''"
+            [class.invalid]="shownErrors()[f.key]"
+            [id]="controlId(f.key)"
+            [ngModel]="value(f.key)"
+            (ngModelChange)="set(f.key, $event)"
+          />
+          <span class="muted">{{ f.unit }}</span>
+        </div>
+      }
+      @default {
+        <input
+          class="input"
+          [class.mono]="f.mono"
+          [class.invalid]="shownErrors()[f.key]"
+          [type]="f.kind === 'url' ? 'url' : 'text'"
+          [id]="controlId(f.key)"
+          [placeholder]="placeholderOf(f)"
+          [ngModel]="value(f.key)"
+          (ngModelChange)="set(f.key, $event)"
+        />
+      }
+    }
+    @if (shownErrors()[f.key]; as e) {
+      <div class="err">{{ cap(e) }}</div>
+    }
+    <div class="small">{{ f.hint }}</div>
+  </div>
+</ng-template>
