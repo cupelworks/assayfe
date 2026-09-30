@@ -1,19 +1,22 @@
 import { Component } from '@angular/core';
-import { JUDGE_PLACEHOLDERS, OPERATIONS } from './settings-fields';
-import { TargetSettingsComponent } from './target-settings.component';
+import { OPERATIONS } from './settings-fields';
+import { SettingsGroupComponent } from './settings-group.component';
+import { JUDGE_GROUP, TARGET_GROUP } from './settings-groups';
 
-/** /settings - what Assay tests and how it's set up. The application-under-test section is its
- *  own component (it loads, saves, resets and tests against /settings/target); the LLM-judge
- *  placeholders and the read-only operations tiles are static content from `settings-fields.ts`,
- *  since no endpoint exposes those groups yet. Operations never show a connection string. */
+/** /settings - what Assay tests and how it's set up. The editable groups - the application under
+ *  test and the LLM judge - are the same SettingsGroupComponent, each with its own config
+ *  (settings-groups.ts), since every group has the same endpoints (/settings/<group>) and
+ *  lifecycle. The read-only operations tiles are static content from `settings-fields.ts` - no
+ *  endpoint exposes that group - and never show a connection string. */
 @Component({
   selector: 'assay-settings',
   standalone: true,
-  imports: [TargetSettingsComponent],
+  imports: [SettingsGroupComponent],
   templateUrl: './settings.component.html',
   styleUrls: ['../shared/page.css', './settings-section.css', './settings.component.css'],
 })
 export class SettingsComponent {
-  judge = JUDGE_PLACEHOLDERS;
+  target = TARGET_GROUP;
+  judge = JUDGE_GROUP;
   operations = OPERATIONS;
 }

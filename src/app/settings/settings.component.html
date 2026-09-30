@@ -6,28 +6,8 @@
   <p class="hero-note text-muted">What Assay tests and how it's set up.</p>
 </div>
 
-<assay-target-settings />
-
-<section class="cell cell-b col">
-  <div class="row-head">
-    <h2>LLM judge</h2>
-    <span class="tag tag-neutral">Not available yet</span>
-  </div>
-  <p class="muted intro">
-    Provider, model and API key for the LLM-as-judge test types - Toxicity, Relevance,
-    Hallucination, Correctness, Bias. Arrives with the evaluators' phase 7; nothing is configurable
-    yet. The judge is Assay's own examiner, separate from the application under test above.
-  </p>
-  <div class="placeholders">
-    @for (p of judge; track p.label) {
-      <div class="placeholder">
-        <div class="label">{{ p.label }}</div>
-        <div class="dash">—</div>
-        <div class="small">{{ p.note }}</div>
-      </div>
-    }
-  </div>
-</section>
+<assay-settings-group [config]="target" />
+<assay-settings-group [config]="judge" />
 
 <section class="cell col">
   <div class="row-head">

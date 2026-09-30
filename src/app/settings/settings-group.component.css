@@ -111,3 +111,7 @@
   padding: 10px 12px;
   background: var(--color-surface);
 }
+/* A line about the saved settings under the intro (the judge's API-key note). */
+.note {
+  color: var(--color-text);
+}

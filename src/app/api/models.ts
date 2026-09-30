@@ -277,7 +277,32 @@ export interface TestType {
 
 export type Kind = 'test-sets' | 'test-plans';
 
-// Settings - the application under test (since 0.9.6)
+// Settings - one shape per group (/settings/<group>): the application under test (since 0.9.6)
+// and the LLM judge (phase 7). Every group reads, saves, resets and checks the same way.
+
+/** Where a group's values come from. "environment": nothing saved from the UI, values come from
+ *  the group's ASSAY_<GROUP>_* variables / defaults (`updated_at` null). "database": saved from
+ *  the UI - the saved group wins as a whole until reset. */
+export interface SettingsSource {
+  source: 'database' | 'environment';
+  updated_at: string | null;
+}
+/** One test call with a group's settings, run on a worker: one attempt, no retries, never saved.
+ *  `ok`/`status_code`/`latency_ms`/`answer`/`error` are null until `completed` (and
+ *  `status_code`/`latency_ms` stay null when nothing came back). Same shape for every group. */
+export interface SettingsCheck<S> {
+  id: string;
+  status: 'pending' | 'running' | 'completed';
+  created_at: string;
+  completed_at: string | null;
+  /** The settings actually checked - the saved ones with the proposed changes applied. */
+  settings: S;
+  ok: boolean | null;
+  status_code: number | null;
+  latency_ms: number | null;
+  answer: string | null;
+  error: string | null;
+}
 
 export type TargetMethod = 'POST' | 'PUT' | 'PATCH';
 /** The seven fields that say how Assay calls the application under test. Header values come back
@@ -293,27 +318,32 @@ export interface TargetSettings {
   max_retries: number;
 }
 export type TargetField = keyof TargetSettings;
-/** `source` "environment": nothing saved from the UI, values come from `ASSAY_TARGET_*` / defaults
- *  (`updated_at` null). "database": saved from the UI - the saved group wins as a whole until reset. */
-export interface TargetSettingsRead extends TargetSettings {
-  source: 'database' | 'environment';
-  updated_at: string | null;
-}
+export interface TargetSettingsRead extends TargetSettings, SettingsSource {}
 /** Any subset of the seven fields. `url: null` unsets it; `headers` and `body` replace whole. */
 export type TargetSettingsUpdate = Partial<TargetSettings>;
-/** One test call to the application under test, run on a worker: one attempt, no retries, never
- *  saved. `ok`/`status_code`/`latency_ms`/`answer`/`error` are null until `completed` (and
- *  `status_code`/`latency_ms` stay null when nothing came back). */
-export interface TargetCheck {
-  id: string;
-  status: 'pending' | 'running' | 'completed';
-  created_at: string;
-  completed_at: string | null;
-  /** The settings actually checked - the saved ones with the proposed changes applied. */
-  settings: TargetSettings;
-  ok: boolean | null;
-  status_code: number | null;
-  latency_ms: number | null;
-  answer: string | null;
-  error: string | null;
+export type TargetCheck = SettingsCheck<TargetSettings>;
+
+export type JudgeProvider = 'anthropic' | 'openai';
+/** The model Assay asks to grade answers for the LLM-as-judge types. The API key itself is never
+ *  stored, sent or returned: the worker reads it from an environment variable. */
+export interface JudgeSettings {
+  /** null = no judge configured - judge checks in runs then fail with that reason. */
+  provider: JudgeProvider | null;
+  /** Required (non-blank) when a provider is set. */
+  model: string | null;
+  /** null = the provider's own API; otherwise an http(s) URL (any OpenAI-compatible server). */
+  base_url: string | null;
+  /** The name of the env var holding the key on the worker; null = the provider's standard one. */
+  api_key_env: string | null;
+  timeout_seconds: number;
+  max_retries: number;
 }
+export type JudgeField = keyof JudgeSettings;
+export interface JudgeSettingsRead extends JudgeSettings, SettingsSource {
+  /** Read-only: the variable the worker actually reads the key from (e.g. ANTHROPIC_API_KEY);
+   *  null when no provider is set. Whether it's set can only be known on the worker - see the
+   *  check. */
+  api_key_variable: string | null;
+}
+export type JudgeSettingsUpdate = Partial<JudgeSettings>;
+export type JudgeCheck = SettingsCheck<JudgeSettings>;

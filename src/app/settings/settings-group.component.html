@@ -1,6 +1,6 @@
 <section class="cell cell-b col">
   <div class="row-head">
-    <h2>Application under test</h2>
+    <h2>{{ config().title }}</h2>
     @if (saved(); as s) {
       @if (s.source === 'database') {
         <span class="tag tag-accent with-time"
@@ -11,11 +11,10 @@
       }
     }
   </div>
-  <p class="muted intro">
-    The endpoint Assay calls for an answer when a test has no recorded model output. A change
-    applies to future runs only - every run keeps the answer it actually scored, and a replay of an
-    application-sourced run calls the application under test again with the current values.
-  </p>
+  <p class="muted intro">{{ config().intro }}</p>
+  @if (note(); as n) {
+    <p class="small intro note">{{ n }}</p>
+  }
 
   @if (loadError(); as e) {
     <div class="err">Couldn't load the settings: {{ e }}</div>
@@ -25,7 +24,7 @@
     <!-- Locked while a save or reset is in flight: its response replaces the whole form. -->
     <fieldset class="lock" [disabled]="act.busy()">
       <div class="fields">
-        @for (f of fields; track f.key) {
+        @for (f of config().fields; track f.key) {
           <label
             class="label field-label"
             [attr.for]="f.kind === 'headers' ? null : controlId(f.key)"
@@ -39,11 +38,12 @@
                 <select
                   class="input sel"
                   [id]="controlId(f.key)"
-                  [ngModel]="d.method"
-                  (ngModelChange)="set('method', $event)"
+                  [class.invalid]="shownErrors()[f.key]"
+                  [ngModel]="value(f.key)"
+                  (ngModelChange)="set(f.key, $event)"
                 >
-                  @for (o of f.options ?? []; track o) {
-                    <option [value]="o">{{ o }}</option>
+                  @for (o of f.options ?? []; track o.value) {
+                    <option [value]="o.value">{{ o.label }}</option>
                   }
                 </select>
               }
@@ -54,40 +54,41 @@
                   [id]="controlId(f.key)"
                   rows="4"
                   spellcheck="false"
-                  [ngModel]="d.body"
-                  (ngModelChange)="set('body', $event)"
+                  [placeholder]="placeholderOf(f)"
+                  [ngModel]="value(f.key)"
+                  (ngModelChange)="set(f.key, $event)"
                 ></textarea>
               }
               @case ('headers') {
-                @for (h of d.headers; track $index) {
+                @for (h of rows(f.key); track $index) {
                   <div class="hrow">
                     <input
                       class="input key"
-                      [class.invalid]="shownErrors()['headers']"
+                      [class.invalid]="shownErrors()[f.key]"
                       aria-label="Header name"
                       placeholder="Authorization"
                       [ngModel]="h.name"
-                      (ngModelChange)="setHeader($index, 'name', $event)"
+                      (ngModelChange)="setHeader(f.key, $index, 'name', $event)"
                     />
                     <input
                       class="input mono"
-                      [class.invalid]="shownErrors()['headers']"
+                      [class.invalid]="shownErrors()[f.key]"
                       aria-label="Header value"
                       placeholder="Bearer ${ASSAY_TARGET_API_KEY}"
                       [ngModel]="h.value"
-                      (ngModelChange)="setHeader($index, 'value', $event)"
+                      (ngModelChange)="setHeader(f.key, $index, 'value', $event)"
                     />
                     <button
                       type="button"
                       class="btn btn-ghost btn-sm"
-                      (click)="removeHeader($index)"
+                      (click)="removeHeader(f.key, $index)"
                     >
                       Remove
                     </button>
                   </div>
                 }
                 <div>
-                  <button type="button" class="btn btn-ghost btn-sm" (click)="addHeader()">
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="addHeader(f.key)">
                     + Add header
                   </button>
                 </div>
@@ -99,8 +100,8 @@
                     [assayNumber]="f.inputMode ?? ''"
                     [class.invalid]="shownErrors()[f.key]"
                     [id]="controlId(f.key)"
-                    [ngModel]="value($any(f.key))"
-                    (ngModelChange)="set($any(f.key), $event)"
+                    [ngModel]="value(f.key)"
+                    (ngModelChange)="set(f.key, $event)"
                   />
                   <span class="muted">{{ f.unit }}</span>
                 </div>
@@ -113,9 +114,9 @@
                   [class.invalid]="shownErrors()[f.key]"
                   [type]="f.kind === 'url' ? 'url' : 'text'"
                   [id]="controlId(f.key)"
-                  [placeholder]="f.placeholder ?? ''"
-                  [ngModel]="value($any(f.key))"
-                  (ngModelChange)="set($any(f.key), $event)"
+                  [placeholder]="placeholderOf(f)"
+                  [ngModel]="value(f.key)"
+                  (ngModelChange)="set(f.key, $event)"
                 />
               }
             }
@@ -130,27 +131,26 @@
 
     <div class="check">
       <div class="label">Test connection</div>
-      <p class="small intro">
-        Sends one request to the application under test with the settings above - including changes
-        you haven't saved, which testing never saves - and shows what comes back.
-      </p>
+      <p class="small intro">{{ config().check.intro }}</p>
       <div class="inline">
-        <input
-          class="input"
-          [class.invalid]="runner.fieldErrors.all()['input']"
-          aria-label="Test input"
-          placeholder="An input to send, e.g. What is your refund policy?"
-          [ngModel]="checkInput()"
-          (ngModelChange)="checkInput.set($event); runner.fieldErrors.clear('input')"
-          (keydown.enter)="checkInput().trim() && !runner.busy() && runCheck()"
-        />
+        @if (config().check.needsInput) {
+          <input
+            class="input"
+            [class.invalid]="runner.fieldErrors.all()['input']"
+            aria-label="Test input"
+            placeholder="An input to send, e.g. What is your refund policy?"
+            [ngModel]="checkInput()"
+            (ngModelChange)="checkInput.set($event); runner.fieldErrors.clear('input')"
+            (keydown.enter)="canCheck() && runCheck()"
+          />
+        }
         <button
           type="button"
           class="btn btn-secondary"
-          [disabled]="!checkInput().trim() || runner.busy()"
+          [disabled]="!canCheck()"
           (click)="runCheck()"
         >
-          {{ runner.busy() ? 'Testing…' : 'Test' }}
+          {{ runner.busy() ? 'Testing…' : config().check.needsInput ? 'Test' : 'Test connection' }}
         </button>
       </div>
       @if (runner.fieldErrors.all()['input']; as e) {
@@ -173,7 +173,7 @@
             <div class="small">
               {{
                 c.status === 'running'
-                  ? 'Calling the application under test…'
+                  ? 'Calling ' + config().check.subject + '…'
                   : 'Waiting for a worker to pick it up…'
               }}
             </div>
@@ -221,7 +221,7 @@
 
 @if (confirmReset()) {
   <assay-confirm-dialog
-    kicker="Application under test"
+    [kicker]="config().title"
     title="Reset to environment values?"
     [body]="resetBody()"
     confirmLabel="Reset"

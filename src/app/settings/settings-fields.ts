@@ -1,22 +1,22 @@
-import { TargetField } from '../api/models';
-
-/** The Settings page's content, as data, grouped the way the backend groups it. The application
- *  under test's VALUES come from GET /settings/target; what lives here is how each field is
- *  presented (label, kind, hint, unit, options). The judge placeholders and the operations tiles
- *  are still static - no endpoint exposes those groups yet. */
+/** The Settings page's content, as data, grouped the way the backend groups it. Each editable
+ *  group's VALUES come from GET /settings/<group>; what lives here is how each field is presented
+ *  (label, kind, hint, unit, options). The operations tiles are static - no endpoint exposes
+ *  that group. */
 
 export type SettingKind = 'url' | 'text' | 'select' | 'number' | 'json' | 'headers';
 
 export interface SettingField {
   /** The API's field name (`output_path`) - also what the env var is derived from. */
-  key: TargetField;
+  key: string;
   label: string;
   kind: SettingKind;
   /** One line, in user terms: what it means and what happens when it's missing or exhausted. */
   hint: string;
-  placeholder?: string;
-  /** `select` only. */
-  options?: string[];
+  /** An example value for the empty input - or one per value of another field (the judge's
+   *  examples depend on its provider): `{ from: 'provider', values: { anthropic: '…' } }`. */
+  placeholder?: string | { from: string; values: Record<string, string> };
+  /** `select` only. `value: ''` is "not set" (null). */
+  options?: { value: string; label: string }[];
   /** `number` only - shown after the input ("seconds per call"). */
   unit?: string;
   /** `number` only - the on-screen keyboard the shared `assayNumber` input offers (see
@@ -27,14 +27,10 @@ export interface SettingField {
   mono?: boolean;
 }
 
-/** "ASSAY_TARGET_OUTPUT_PATH" - the environment variable a field falls back to while nothing is
- *  saved from the UI. Derived from the API field name, never typed out next to the key. */
-export const envVar = (f: SettingField) => `ASSAY_TARGET_${f.key.toUpperCase()}`;
-
 /** Group A - the application under test, editable (since API 0.9.6). Pointing it at a different
  *  application changes what future runs call - every past run keeps the answer it actually
  *  scored (`evaluated_output`). */
-export const APPLICATION_FIELDS: SettingField[] = [
+export const TARGET_SETTING_FIELDS: SettingField[] = [
   {
     key: 'url',
     label: 'Target URL',
@@ -46,7 +42,7 @@ export const APPLICATION_FIELDS: SettingField[] = [
     key: 'method',
     label: 'Method',
     kind: 'select',
-    options: ['POST', 'PUT', 'PATCH'],
+    options: ['POST', 'PUT', 'PATCH'].map((m) => ({ value: m, label: m })),
     hint: 'Default POST.',
   },
   {
@@ -96,12 +92,73 @@ export const APPLICATION_FIELDS: SettingField[] = [
   },
 ];
 
-/** Group B - the LLM judge (provider, model, key). Not built yet (evaluators phase 7): a
- *  placeholder per future field, no controls. */
-export const JUDGE_PLACEHOLDERS: { label: string; note: string }[] = [
-  { label: 'Provider', note: 'Set in phase 7' },
-  { label: 'Model', note: 'Set in phase 7' },
-  { label: 'API key', note: 'Shown as configured / not configured, never the key' },
+/** Group B - the LLM judge: the model Assay asks to grade answers for the LLM-as-judge types
+ *  (phase 7). The API key is never entered here: the worker reads it from an environment
+ *  variable - see the group's note in settings-groups.ts. Hints are the backend's wording. */
+export const JUDGE_SETTING_FIELDS: SettingField[] = [
+  {
+    key: 'provider',
+    label: 'Provider',
+    kind: 'select',
+    options: [
+      { value: '', label: 'None' },
+      { value: 'anthropic', label: 'Anthropic' },
+      { value: 'openai', label: 'OpenAI (or compatible)' },
+    ],
+    hint: 'None: no judge - the judge test types fail in runs with "No judge configured".',
+  },
+  {
+    key: 'model',
+    label: 'Model',
+    kind: 'text',
+    mono: true,
+    placeholder: {
+      from: 'provider',
+      values: { anthropic: 'claude-sonnet-5-5', openai: 'gpt-4o-mini' },
+    },
+    hint:
+      "The provider's model name, e.g. claude-sonnet-5-5, or claude-haiku-4-5-20251001 for a " +
+      'cheaper judge. Temperature is always 0.',
+  },
+  {
+    key: 'base_url',
+    label: 'Base URL',
+    kind: 'url',
+    placeholder: {
+      from: 'provider',
+      values: { anthropic: 'https://api.anthropic.com', openai: 'https://api.openai.com/v1' },
+    },
+    hint:
+      "Leave empty for the provider's own API. With OpenAI, any OpenAI-compatible server " +
+      '(vLLM, Ollama, LM Studio, OpenRouter).',
+  },
+  {
+    key: 'api_key_env',
+    label: 'API key variable',
+    kind: 'text',
+    mono: true,
+    placeholder: {
+      from: 'provider',
+      values: { anthropic: 'ANTHROPIC_API_KEY', openai: 'OPENAI_API_KEY' },
+    },
+    hint: 'The name of the environment variable holding the key on the worker - never the key itself.',
+  },
+  {
+    key: 'timeout_seconds',
+    label: 'Timeout',
+    kind: 'number',
+    inputMode: 'decimal',
+    unit: 'seconds per call',
+    hint: 'More than 0, up to 600.',
+  },
+  {
+    key: 'max_retries',
+    label: 'Retries',
+    kind: 'number',
+    inputMode: 'numeric',
+    unit: 'after the first call',
+    hint: '0 to 10. 0 means a single call.',
+  },
 ];
 
 export interface ReadOnlySetting {

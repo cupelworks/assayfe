@@ -2,25 +2,31 @@ import { Injectable } from '@angular/core';
 import * as M from './models';
 import { ApiBase } from './api-base';
 
-/** /settings - so far only the application-under-test group (`/settings/target`). */
+/** A settings group - each lives at /settings/<group> and works the same way. */
+export type SettingsGroup = 'target' | 'judge';
+
+/** /settings/<group>: read, save only what changed, reset to the environment's values, and run a
+ *  check (a test call on a worker) with proposed changes that are never saved. One set of methods
+ *  for every group, since every group has the same endpoints. */
 @Injectable({ providedIn: 'root' })
 export class SettingsApiService extends ApiBase {
-  target() {
-    return this.http.get<M.TargetSettingsRead>(this.u('/settings/target'));
+  read<R>(group: SettingsGroup) {
+    return this.http.get<R>(this.u(`/settings/${group}`));
   }
   /** Only the fields sent change; the first save copies the environment's values forward. */
-  updateTarget(changes: M.TargetSettingsUpdate) {
-    return this.http.patch<M.TargetSettingsRead>(this.u('/settings/target'), changes);
+  update<R>(group: SettingsGroup, changes: object) {
+    return this.http.patch<R>(this.u(`/settings/${group}`), changes);
   }
   /** Drops what was saved from the UI; returns the settings now in effect (source "environment"). */
-  resetTarget() {
-    return this.http.delete<M.TargetSettingsRead>(this.u('/settings/target'));
+  reset<R>(group: SettingsGroup) {
+    return this.http.delete<R>(this.u(`/settings/${group}`));
   }
-  /** `settings`: proposed changes tried on top of the saved ones, never saved. */
-  startTargetCheck(input: string, settings: M.TargetSettingsUpdate | null) {
-    return this.http.post<M.TargetCheck>(this.u('/settings/target/checks'), { input, settings });
+  /** `body.settings`: proposed changes tried on top of the saved ones, never saved. The target
+   *  group's check also takes an `input`; the judge's asks a fixed question and takes none. */
+  startCheck<S>(group: SettingsGroup, body: { input?: string; settings: Partial<S> | null }) {
+    return this.http.post<M.SettingsCheck<S>>(this.u(`/settings/${group}/checks`), body);
   }
-  targetCheck(id: string) {
-    return this.http.get<M.TargetCheck>(this.u(`/settings/target/checks/${id}`));
+  check<S>(group: SettingsGroup, id: string) {
+    return this.http.get<M.SettingsCheck<S>>(this.u(`/settings/${group}/checks/${id}`));
   }
 }
