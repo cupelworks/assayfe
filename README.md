@@ -29,7 +29,7 @@ There's no automated FE suite; `docs/testing_checklist.md` is the manual, screen
 
 ## Structure
 
-`api/` models + one-method-per-endpoint service (incl. `SettingsApiService`) + root `CatalogStore` + `TestTypesStore` (with the pure display helpers `numericFieldHint` / `engineSettingsLabel` / `defaultRubric` shared by the catalogue, the config inputs and run detail) · `shared/` formatters (incl. `errText`, and `fieldErrors` to split an API error into per-field messages and the rest), page.css, `Paged`/`PagerComponent`, `ActionRunner`, `DateSort`, `TextFilter`, `Selection`, `FieldErrorStore`, `assayNumber` + `parseDecimal`, `pollWhile`, `<assay-rel-time>`, `<assay-copy-button>`, `<assay-chevron>`, dialogs (generic, name, confirm, pick, test form), test-type-picker · one folder per area (`datasets`, `tests`, `scopes`, `runs`, `test-types`, `guide`, `settings`) · `shell/` header/footer/theme.
+`api/` models + one-method-per-endpoint service (incl. `SettingsApiService`) + root `CatalogStore` + `TestTypesStore` (with the pure display helpers `numericFieldHint` / `engineSettingsLabel` / `defaultRubric` shared by the catalogue, the config inputs and run detail - `defaultRubric` by the catalogue only) · `shared/` formatters (incl. `errText`, and `fieldErrors` to split an API error into per-field messages and the rest), page.css, `Paged`/`PagerComponent`, `ActionRunner`, `DateSort`, `TextFilter`, `Selection`, `FieldErrorStore`, `assayNumber` + `parseDecimal`, `pollWhile`, `<assay-rel-time>`, `<assay-copy-button>`, `<assay-chevron>`, dialogs (generic, name, confirm, pick, test form), test-type-picker · one folder per area (`datasets`, `tests`, `scopes`, `runs`, `test-types`, `guide`, `settings`) · `shell/` header/footer/theme.
 
 ## Notes
 
