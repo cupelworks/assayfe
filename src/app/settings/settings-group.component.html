@@ -153,11 +153,6 @@
               </div>
             }
           </div>
-          @if (calls(); as c) {
-            <p class="small calls">
-              Calls: <span class="mono">{{ c }}</span>
-            </p>
-          }
         </fieldset>
 
         @if (saved()?.source === 'database') {

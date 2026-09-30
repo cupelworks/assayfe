@@ -27,8 +27,6 @@ export interface SettingsGroupConfig {
   };
   /** A line in the Test connection cell about the saved settings, or null. */
   note?: (saved: any) => string | null;
-  /** The URL the saved settings call, shown under the fields ("Calls: …"), or null to hide it. */
-  calls?: (saved: any) => string | null;
   /** The group's tile in the page's summary strip: the headline value and one line under it. */
   summary: (saved: any) => SettingsSummary;
 }
@@ -97,7 +95,6 @@ export const JUDGE_GROUP: SettingsGroupConfig = {
         'choose a provider and model.'
       : `API key: read from ${s.api_key_variable ?? 'the provider’s standard variable'} on the ` +
         'worker (its environment or .env). Use Test connection to confirm it is set there.',
-  calls: (s: JudgeSettingsRead) => s.endpoint,
   summary: (s: JudgeSettingsRead) =>
     s.provider == null
       ? { value: 'Not configured', detail: 'Judge test types fail until you choose one' }

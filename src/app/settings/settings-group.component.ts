@@ -58,12 +58,6 @@ export class SettingsGroupComponent implements OnInit {
     subject: this.config().check.subject,
   }));
 
-  /** "Calls: <url>" - the endpoint the saved settings call, when the group reports one. */
-  calls = computed(() => {
-    const s = this.saved();
-    return s ? (this.config().calls?.(s) ?? null) : null;
-  });
-
   dirty = computed(() => {
     const d = this.draft();
     const s = this.saved();
