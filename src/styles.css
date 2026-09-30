@@ -249,7 +249,7 @@ figcaption {
 }
 
 /* - disclosure - an "Advanced ⌄" toggle: quiet, like a hint, since most users never need what it
-   hides (a test type's answer path, the judge's endpoint). Pair with <assay-chevron [open]>. */
+   hides (a test type's answer path). Pair with <assay-chevron [open]>. */
 .adv-toggle {
   all: unset;
   cursor: pointer;

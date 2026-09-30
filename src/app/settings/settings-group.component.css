@@ -135,17 +135,16 @@
   font-size: 13px;
   margin: 0;
 }
-/* The endpoint the saved settings call, under the fields; then the Advanced toggle. */
+/* The endpoint the saved settings call, under the fields. */
 .calls {
-  margin: 20px 0 4px;
+  margin: 20px 0 0;
 }
 .calls .mono {
   color: var(--color-text);
   overflow-wrap: anywhere;
 }
-.adv-toggle {
-  margin-top: 12px;
-}
-.adv-toggle + .fields {
-  margin-top: 16px;
+/* "- optional" after a label: sentence case, like the dialogs' "- optional". */
+.opt {
+  text-transform: none;
+  letter-spacing: 0;
 }
