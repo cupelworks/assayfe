@@ -1,5 +1,5 @@
 import { SettingsGroup } from '../api/settings-api.service';
-import { JudgeSettingsRead } from '../api/models';
+import { JudgeSettingsRead, TargetSettingsRead } from '../api/models';
 import { SettingField, JUDGE_SETTING_FIELDS, TARGET_SETTING_FIELDS } from './settings-fields';
 import { SettingsDraftSpec } from './settings-draft';
 import { TARGET_DRAFT } from './target-draft';
@@ -25,9 +25,22 @@ export interface SettingsGroupConfig {
     /** What it calls, for the status lines: "Calling the judge…". */
     subject: string;
   };
-  /** A line under the intro about the saved settings, or null. */
+  /** A line in the Test connection cell about the saved settings, or null. */
   note?: (saved: any) => string | null;
+  /** The group's tile in the page's summary strip: the headline value and one line under it. */
+  summary: (saved: any) => SettingsSummary;
 }
+
+export interface SettingsSummary {
+  value: string;
+  detail: string;
+  /** Render the value in monospace (a URL). */
+  mono?: boolean;
+}
+
+/** A select field's label for its current value ("Anthropic" for "anthropic"). */
+const optionLabel = (fields: SettingField[], key: string, value: string | null) =>
+  fields.find((f) => f.key === key)?.options?.find((o) => o.value === (value ?? ''))?.label;
 
 export const TARGET_GROUP: SettingsGroupConfig = {
   group: 'target',
@@ -41,11 +54,19 @@ export const TARGET_GROUP: SettingsGroupConfig = {
   draft: TARGET_DRAFT,
   check: {
     intro:
-      'Sends one request to the application under test with the settings above - including ' +
+      'Sends one request to the application under test with the settings in the form - including ' +
       "changes you haven't saved, which testing never saves - and shows what comes back.",
     needsInput: true,
     subject: 'the application under test',
   },
+  summary: (s: TargetSettingsRead) =>
+    s.url
+      ? {
+          value: s.url.replace(/^https?:\/\//, ''),
+          detail: `${s.method} · answer at ${s.output_path}`,
+          mono: true,
+        }
+      : { value: 'Not set', detail: 'Runs that need an answer end Not Ran' },
 };
 
 export const JUDGE_GROUP: SettingsGroupConfig = {
@@ -60,7 +81,7 @@ export const JUDGE_GROUP: SettingsGroupConfig = {
   draft: JUDGE_DRAFT,
   check: {
     intro:
-      'Asks the judge one short fixed question with the settings above - including changes you ' +
+      'Asks the judge one short fixed question with the settings in the form - including changes you ' +
       "haven't saved, which testing never saves - and shows its answer. It runs on the worker, " +
       "so it's also how you find out whether the API key is set there.",
     needsInput: false,
@@ -73,5 +94,12 @@ export const JUDGE_GROUP: SettingsGroupConfig = {
       ? 'No judge configured: the judge test types fail in runs with that reason until you ' +
         'choose a provider and model.'
       : `API key: read from ${s.api_key_variable ?? 'the provider’s standard variable'} on the ` +
-        'worker. Use Test connection to confirm it is set there.',
+        'worker (its environment or .env). Use Test connection to confirm it is set there.',
+  summary: (s: JudgeSettingsRead) =>
+    s.provider == null
+      ? { value: 'Not configured', detail: 'Judge test types fail until you choose one' }
+      : {
+          value: optionLabel(JUDGE_SETTING_FIELDS, 'provider', s.provider) ?? s.provider,
+          detail: s.model ?? 'No model set',
+        },
 };

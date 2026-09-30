@@ -1,222 +1,266 @@
-<section class="cell cell-b col">
-  <div class="row-head">
-    <h2>{{ config().title }}</h2>
-    @if (saved(); as s) {
-      @if (s.source === 'database') {
-        <span class="tag tag-accent with-time"
-          >Saved in Assay · updated <assay-rel-time [iso]="s.updated_at"
-        /></span>
-      } @else {
-        <span class="tag tag-neutral">From the server's environment</span>
-      }
-    }
-  </div>
-  <p class="muted intro">{{ config().intro }}</p>
-  @if (note(); as n) {
-    <p class="small intro note">{{ n }}</p>
-  }
-
+<section class="group" [id]="'settings-' + config().group">
   @if (loadError(); as e) {
-    <div class="err">Couldn't load the settings: {{ e }}</div>
+    <div class="msg msg-err">Couldn't load the settings: {{ e }}</div>
   }
-
-  @if (draft(); as d) {
-    <!-- Locked while a save or reset is in flight: its response replaces the whole form. -->
-    <fieldset class="lock" [disabled]="act.busy()">
-      <div class="fields">
-        @for (f of config().fields; track f.key) {
-          <label
-            class="label field-label"
-            [attr.for]="f.kind === 'headers' ? null : controlId(f.key)"
-          >
-            {{ f.label }}
-            <span class="mono env">{{ envVar(f) }}</span>
-          </label>
-          <div class="control">
-            @switch (f.kind) {
-              @case ('select') {
-                <select
-                  class="input sel"
-                  [id]="controlId(f.key)"
-                  [class.invalid]="shownErrors()[f.key]"
-                  [ngModel]="value(f.key)"
-                  (ngModelChange)="set(f.key, $event)"
-                >
-                  @for (o of f.options ?? []; track o.value) {
-                    <option [value]="o.value">{{ o.label }}</option>
-                  }
-                </select>
-              }
-              @case ('json') {
-                <textarea
-                  class="input ta mono"
-                  [class.invalid]="shownErrors()[f.key]"
-                  [id]="controlId(f.key)"
-                  rows="4"
-                  spellcheck="false"
-                  [placeholder]="placeholderOf(f)"
-                  [ngModel]="value(f.key)"
-                  (ngModelChange)="set(f.key, $event)"
-                ></textarea>
-              }
-              @case ('headers') {
-                @for (h of rows(f.key); track $index) {
-                  <div class="hrow">
-                    <input
-                      class="input key"
-                      [class.invalid]="shownErrors()[f.key]"
-                      aria-label="Header name"
-                      placeholder="Authorization"
-                      [ngModel]="h.name"
-                      (ngModelChange)="setHeader(f.key, $index, 'name', $event)"
-                    />
-                    <input
-                      class="input mono"
-                      [class.invalid]="shownErrors()[f.key]"
-                      aria-label="Header value"
-                      placeholder="Bearer ${ASSAY_TARGET_API_KEY}"
-                      [ngModel]="h.value"
-                      (ngModelChange)="setHeader(f.key, $index, 'value', $event)"
-                    />
-                    <button
-                      type="button"
-                      class="btn btn-ghost btn-sm"
-                      (click)="removeHeader(f.key, $index)"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                }
-                <div>
-                  <button type="button" class="btn btn-ghost btn-sm" (click)="addHeader(f.key)">
-                    + Add header
-                  </button>
-                </div>
-              }
-              @case ('number') {
-                <div class="inline">
-                  <input
-                    class="input num"
-                    [assayNumber]="f.inputMode ?? ''"
-                    [class.invalid]="shownErrors()[f.key]"
-                    [id]="controlId(f.key)"
-                    [ngModel]="value(f.key)"
-                    (ngModelChange)="set(f.key, $event)"
-                  />
-                  <span class="muted">{{ f.unit }}</span>
-                </div>
-              }
-              @default {
-                <input
-                  class="input"
-                  [class.mono]="f.mono"
-                  [class.short]="f.mono"
-                  [class.invalid]="shownErrors()[f.key]"
-                  [type]="f.kind === 'url' ? 'url' : 'text'"
-                  [id]="controlId(f.key)"
-                  [placeholder]="placeholderOf(f)"
-                  [ngModel]="value(f.key)"
-                  (ngModelChange)="set(f.key, $event)"
-                />
-              }
+  @if (act.msg(); as m) {
+    <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
+  }
+  <div class="main">
+    <!-- The form: title, source and Save on top, like a page's hero actions. -->
+    <div class="cell cell-r">
+      <div class="row-head">
+        <div class="title">
+          <h2>{{ config().title }}</h2>
+          @if (saved(); as s) {
+            @if (s.source === 'database') {
+              <span class="tag tag-accent with-time"
+                >Saved in Assay · updated <assay-rel-time [iso]="s.updated_at"
+              /></span>
+            } @else {
+              <span class="tag tag-neutral">From the server's environment</span>
             }
-            @if (shownErrors()[f.key]; as e) {
-              <div class="err">{{ cap(e) }}</div>
+          }
+        </div>
+        @if (draft()) {
+          <div class="tools">
+            @if (unsavedLabel(); as u) {
+              <span class="unsaved">{{ u }}</span>
             }
-            <div class="small">{{ f.hint }}</div>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              [disabled]="!dirty() || act.busy()"
+              (click)="discard()"
+            >
+              Discard
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              [disabled]="!dirty() || act.busy()"
+              (click)="save()"
+            >
+              {{ act.busy() && !confirmReset() ? 'Saving…' : 'Save changes' }}
+            </button>
           </div>
         }
       </div>
-    </fieldset>
+      <p class="muted intro">{{ config().intro }}</p>
 
-    <div class="check">
-      <div class="label">Test connection</div>
-      <p class="small intro">{{ config().check.intro }}</p>
-      <div class="inline">
-        @if (config().check.needsInput) {
-          <input
-            class="input"
-            [class.invalid]="runner.fieldErrors.all()['input']"
-            aria-label="Test input"
-            placeholder="An input to send, e.g. What is your refund policy?"
-            [ngModel]="checkInput()"
-            (ngModelChange)="checkInput.set($event); runner.fieldErrors.clear('input')"
-            (keydown.enter)="canCheck() && runCheck()"
-          />
+      @if (draft(); as d) {
+        <!-- Locked while a save or reset is in flight: its response replaces the whole form. -->
+        <fieldset class="lock" [disabled]="act.busy()">
+          <div class="fields">
+            @for (f of config().fields; track f.key) {
+              <div class="field" [class.wide]="f.wide">
+                <label class="label" [attr.for]="f.kind === 'headers' ? null : controlId(f.key)">
+                  {{ f.label }}
+                  <span class="mono env">{{ envVar(f) }}</span>
+                </label>
+                @switch (f.kind) {
+                  @case ('select') {
+                    <select
+                      class="input sel"
+                      [id]="controlId(f.key)"
+                      [class.invalid]="shownErrors()[f.key]"
+                      [ngModel]="value(f.key)"
+                      (ngModelChange)="set(f.key, $event)"
+                    >
+                      @for (o of f.options ?? []; track o.value) {
+                        <option [value]="o.value">{{ o.label }}</option>
+                      }
+                    </select>
+                  }
+                  @case ('json') {
+                    <textarea
+                      class="input ta mono"
+                      [class.invalid]="shownErrors()[f.key]"
+                      [id]="controlId(f.key)"
+                      rows="4"
+                      spellcheck="false"
+                      [placeholder]="placeholderOf(f)"
+                      [ngModel]="value(f.key)"
+                      (ngModelChange)="set(f.key, $event)"
+                    ></textarea>
+                  }
+                  @case ('headers') {
+                    @for (h of rows(f.key); track $index) {
+                      <div class="hrow">
+                        <input
+                          class="input key"
+                          [class.invalid]="shownErrors()[f.key]"
+                          aria-label="Header name"
+                          placeholder="Authorization"
+                          [ngModel]="h.name"
+                          (ngModelChange)="setHeader(f.key, $index, 'name', $event)"
+                        />
+                        <input
+                          class="input mono"
+                          [class.invalid]="shownErrors()[f.key]"
+                          aria-label="Header value"
+                          placeholder="Bearer ${ASSAY_TARGET_API_KEY}"
+                          [ngModel]="h.value"
+                          (ngModelChange)="setHeader(f.key, $index, 'value', $event)"
+                        />
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-sm"
+                          (click)="removeHeader(f.key, $index)"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    }
+                    <div>
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="addHeader(f.key)">
+                        + Add header
+                      </button>
+                    </div>
+                  }
+                  @case ('number') {
+                    <div class="inline">
+                      <input
+                        class="input num"
+                        [assayNumber]="f.inputMode ?? ''"
+                        [class.invalid]="shownErrors()[f.key]"
+                        [id]="controlId(f.key)"
+                        [ngModel]="value(f.key)"
+                        (ngModelChange)="set(f.key, $event)"
+                      />
+                      <span class="muted">{{ f.unit }}</span>
+                    </div>
+                  }
+                  @default {
+                    <input
+                      class="input"
+                      [class.mono]="f.mono"
+                      [class.invalid]="shownErrors()[f.key]"
+                      [type]="f.kind === 'url' ? 'url' : 'text'"
+                      [id]="controlId(f.key)"
+                      [placeholder]="placeholderOf(f)"
+                      [ngModel]="value(f.key)"
+                      (ngModelChange)="set(f.key, $event)"
+                    />
+                  }
+                }
+                @if (shownErrors()[f.key]; as e) {
+                  <div class="err">{{ cap(e) }}</div>
+                }
+                <div class="small">{{ f.hint }}</div>
+              </div>
+            }
+          </div>
+        </fieldset>
+
+        @if (saved()?.source === 'database') {
+          <div class="foot">
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              [disabled]="act.busy()"
+              (click)="act.err.set(null); confirmReset.set(true)"
+            >
+              Reset to environment values
+            </button>
+          </div>
         }
-        <button
-          type="button"
-          class="btn btn-secondary"
-          [disabled]="!canCheck()"
-          (click)="runCheck()"
-        >
-          {{ runner.busy() ? 'Testing…' : config().check.needsInput ? 'Test' : 'Test connection' }}
-        </button>
-      </div>
-      @if (runner.fieldErrors.all()['input']; as e) {
-        <div class="err">{{ cap(e) }}</div>
       }
+    </div>
+
+    <!-- Test connection: the side panel, like Overview's Run status. -->
+    <div class="cell check">
+      <div>
+        <h2>Test connection</h2>
+        <p class="muted intro">{{ config().check.intro }}</p>
+      </div>
+      @if (note(); as n) {
+        <p class="note">{{ n }}</p>
+      }
+      @if (draft()) {
+        @if (config().check.needsInput) {
+          <div class="field">
+            <label class="label" [attr.for]="controlId('check-input')">Test input</label>
+            <input
+              class="input"
+              [id]="controlId('check-input')"
+              [class.invalid]="runner.fieldErrors.all()['input']"
+              placeholder="e.g. What is your refund policy?"
+              [ngModel]="checkInput()"
+              (ngModelChange)="checkInput.set($event); runner.fieldErrors.clear('input')"
+              (keydown.enter)="canCheck() && runCheck()"
+            />
+            @if (runner.fieldErrors.all()['input']; as e) {
+              <div class="err">{{ cap(e) }}</div>
+            }
+          </div>
+        }
+        <div>
+          <button
+            type="button"
+            class="btn btn-secondary"
+            [disabled]="!canCheck()"
+            (click)="runCheck()"
+          >
+            {{
+              runner.busy() ? 'Testing…' : config().check.needsInput ? 'Test' : 'Test connection'
+            }}
+          </button>
+        </div>
+      }
+
       @if (runner.error(); as e) {
         <div class="err">{{ e }}</div>
       } @else if (runner.check(); as c) {
-        <div class="result">
-          @if (c.status === 'completed') {
-            <div [class.ok]="c.ok" [class.err]="!c.ok">{{ checkSummary(c) }}</div>
-            @if (c.ok) {
-              <div class="answer">{{ c.answer }}</div>
-            } @else if (c.error) {
-              <div class="answer">{{ c.error }}</div>
+        @if (c.status === 'completed') {
+          <div class="status-grid">
+            <div class="status">
+              <div class="label">
+                <span class="dot" [style.background]="dotColor(c.ok ? 'Green' : 'Red')"></span
+                >{{ c.ok ? 'Answered' : 'Failed' }}
+              </div>
+              <div class="mid">
+                {{ c.status_code != null ? 'HTTP ' + c.status_code : 'No reply' }}
+              </div>
+            </div>
+            @if (c.latency_ms != null) {
+              <div class="status">
+                <div class="label">Latency</div>
+                <div class="mid num">{{ ms(c.latency_ms) }}</div>
+              </div>
             }
-          } @else if (runner.gaveUpMessage(); as m) {
-            <div class="err">{{ m }}</div>
-          } @else {
-            <div class="small">
+          </div>
+          @if (c.ok ? c.answer : c.error; as text) {
+            <div class="field">
+              <div class="label">{{ c.ok ? 'Answer' : 'Error' }}</div>
+              <div class="answer">{{ text }}</div>
+            </div>
+          }
+        } @else if (runner.gaveUpMessage(); as m) {
+          <div class="err">{{ m }}</div>
+        } @else {
+          <div class="status">
+            <div class="label">
+              <span
+                class="dot"
+                [style.background]="dotColor(c.status === 'running' ? 'Running' : 'Pending')"
+              ></span
+              >{{ c.status === 'running' ? 'Running' : 'Pending' }}
+            </div>
+            <div>
               {{
                 c.status === 'running'
                   ? 'Calling ' + config().check.subject + '…'
                   : 'Waiting for a worker to pick it up…'
               }}
             </div>
-            @if (runner.pollError(); as pe) {
-              <div class="err">Couldn't get the latest status ({{ pe }}) - still trying.</div>
-            }
+          </div>
+          @if (runner.pollError(); as pe) {
+            <div class="err">Couldn't get the latest status ({{ pe }}) - still trying.</div>
           }
-        </div>
+        }
       }
     </div>
-
-    <div class="actions">
-      <button
-        type="button"
-        class="btn btn-primary"
-        [disabled]="!dirty() || act.busy()"
-        (click)="save()"
-      >
-        {{ act.busy() && !confirmReset() ? 'Saving…' : 'Save changes' }}
-      </button>
-      <button
-        type="button"
-        class="btn btn-secondary"
-        [disabled]="!dirty() || act.busy()"
-        (click)="discard()"
-      >
-        Discard changes
-      </button>
-      @if (act.msg(); as m) {
-        <span [class.ok]="m.ok" [class.err]="!m.ok">{{ m.text }}</span>
-      }
-      @if (saved()?.source === 'database') {
-        <button
-          type="button"
-          class="btn btn-ghost btn-sm reset"
-          [disabled]="act.busy()"
-          (click)="act.err.set(null); confirmReset.set(true)"
-        >
-          Reset to environment values
-        </button>
-      }
-    </div>
-  }
+  </div>
 </section>
 
 @if (confirmReset()) {

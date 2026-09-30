@@ -1,5 +1,32 @@
-/* Label column | control column - the label carries the environment variable the field falls
-   back to while nothing is saved from the UI. */
+/* One settings group: the form (2/3) | Test connection (1/3), on Overview's `.main` grid. Each
+   field is a ruled block with its label on top - the label carries the environment variable the
+   field falls back to while nothing is saved from the UI. */
+.intro {
+  max-width: 760px;
+  margin: 0;
+}
+.group {
+  border-bottom: 2px solid var(--color-divider);
+  scroll-margin-top: 16px;
+}
+.title {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.row-head {
+  margin-bottom: 8px;
+}
+.row-head .tools {
+  gap: 10px;
+}
+.unsaved {
+  font-size: 12px;
+}
+.cell > .intro {
+  margin-bottom: 28px;
+}
 .lock {
   border: 0;
   margin: 0;
@@ -8,32 +35,30 @@
 }
 .fields {
   display: grid;
-  grid-template-columns: 260px minmax(0, 640px);
-  gap: 22px 32px;
-  align-items: start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px 32px;
 }
-.field-label {
+.field {
+  display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  padding-top: 9px;
+  gap: 6px;
+  min-width: 0;
+  border-top: 1px solid var(--color-divider);
+  padding-top: 12px;
+}
+.field.wide {
+  grid-column: span 2;
 }
 .env {
+  margin-left: auto;
   font-size: 11px;
   letter-spacing: 0;
   text-transform: none;
   color: var(--color-neutral-500);
-}
-.control {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  overflow-wrap: anywhere;
 }
 .sel {
-  width: 160px;
-}
-.short {
-  width: 320px;
+  width: 220px;
 }
 .num {
   width: 120px;
@@ -72,46 +97,41 @@
   font-size: 12px;
   color: var(--color-accent-700);
 }
-.actions {
+.foot {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-top: 28px;
   border-top: 1px solid var(--color-divider);
-  padding-top: 20px;
+  padding-top: 16px;
 }
-.actions .reset {
-  margin-left: auto;
-}
-.ok {
-  font-size: 12px;
-  color: var(--color-status-green);
-}
-/* Test connection - its own block under the fields, above Save. */
+/* Test connection - the side panel. */
 .check {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  border-top: 1px solid var(--color-divider);
-  padding-top: 20px;
-  max-width: 932px;
+  gap: 20px;
 }
-.check .inline .input {
-  flex: 1;
+.check h2 {
+  margin-bottom: 8px;
 }
-.result {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.check .intro {
+  margin: 0;
 }
-.result .answer {
+.check .status-grid {
+  margin-top: -4px;
+}
+/* A failed call with no reply has no latency tile - the status takes the whole row. */
+.check .status:only-child {
+  grid-column: span 2;
+}
+.answer {
   font-size: 14px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   padding: 10px 12px;
   background: var(--color-surface);
 }
-/* A line about the saved settings under the intro (the judge's API-key note). */
+/* A line about the saved settings (the judge's API-key note). */
 .note {
-  color: var(--color-text);
+  font-size: 13px;
+  margin: 0;
 }

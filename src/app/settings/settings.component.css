@@ -1,13 +1,79 @@
+/* The summary strip: Overview's .stats tiles, three across so they sit on the same thirds as the
+   sections' form | Test connection grid below. */
+.strip {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.strip .stat {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-right: 1px solid var(--color-divider);
+  min-width: 0;
+}
+.strip .stat:last-child {
+  border-right: 0;
+}
+.strip .stat:hover {
+  background: var(--color-surface);
+}
+.value {
+  font-size: 28px;
+  font-weight: var(--font-heading-weight);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.value.mono {
+  font-weight: 600;
+}
+.tile-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.go {
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+/* Operations: a ruled 4 × 2 grid. */
+.ops-section .row-head {
+  margin: 0;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--color-divider);
+}
+.ops-section .hero-note {
+  max-width: 460px;
+  text-align: right;
+}
+.title {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
 .ops {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px 32px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
-.ops .field-ro {
+.op {
+  padding: 24px 40px;
+  border-right: 1px solid var(--color-divider);
+  border-bottom: 1px solid var(--color-divider);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
+  min-width: 0;
 }
-.ops .body {
-  margin-top: 0;
+.op:nth-child(4n) {
+  border-right: 0;
+}
+/* The last row sits on the footer's rule. */
+.op:nth-last-child(-n + 4) {
+  border-bottom: 0;
+}
+.op .value {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }

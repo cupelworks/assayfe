@@ -1,8 +1,8 @@
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SettingsApiService } from '../api/settings-api.service';
-import { SettingsCheck, SettingsSource } from '../api/models';
-import { errText, fieldErrors } from '../shared/format';
+import { SettingsSource } from '../api/models';
+import { errText, fieldErrors, statusColor } from '../shared/format';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
 import { ActionRunner } from '../shared/action-runner';
@@ -33,10 +33,12 @@ type Draft = Record<string, any>;
   standalone: true,
   imports: [FormsModule, RelTimeComponent, ConfirmDialogComponent, NumberInputDirective],
   templateUrl: './settings-group.component.html',
-  styleUrls: ['../shared/page.css', './settings-section.css', './settings-group.component.css'],
+  styleUrls: ['../shared/page.css', './settings-group.component.css'],
 })
 export class SettingsGroupComponent implements OnInit {
   config = input.required<SettingsGroupConfig>();
+  /** The saved settings, on every load, save and reset - the page's summary strip shows them. */
+  loaded = output<Saved>();
   private api = inject(SettingsApiService);
 
   saved = signal<Saved | null>(null);
@@ -60,6 +62,17 @@ export class SettingsGroupComponent implements OnInit {
     const d = this.draft();
     const s = this.saved();
     return !!d && !!s && isDirty(this.config().draft, d, s);
+  });
+  /** "2 unsaved changes" next to Save - the fields that would be sent. A draft that can't be
+   *  parsed yet (half-typed JSON) can't be counted, so it just says there are changes. */
+  unsavedLabel = computed(() => {
+    const d = this.draft();
+    const s = this.saved();
+    if (!d || !s || !this.dirty()) return null;
+    const spec = this.config().draft;
+    const { value } = spec.parseDraft(d);
+    const n = value ? Object.keys(changedFields(spec.fields, value, s)).length : 0;
+    return n === 1 ? '1 unsaved change' : n ? `${n} unsaved changes` : 'Unsaved changes';
   });
   note = computed(() => {
     const s = this.saved();
@@ -88,6 +101,7 @@ export class SettingsGroupComponent implements OnInit {
 
   private load(s: Saved) {
     this.saved.set(s);
+    this.loaded.emit(s);
     this.draft.set(this.config().draft.toDraft(s));
     this.errors.reset();
     // The settings fields under any check error were just replaced, so those messages no longer
@@ -192,16 +206,9 @@ export class SettingsGroupComponent implements OnInit {
   canCheck = computed(
     () => !this.runner.busy() && (!this.config().check.needsInput || !!this.checkInput().trim()),
   );
-  /** "Answered · HTTP 200 · 312 ms" - only the parts the check actually has. */
-  checkSummary(c: SettingsCheck<unknown>): string {
-    return [
-      c.ok ? 'Answered' : 'Failed',
-      c.status_code != null ? `HTTP ${c.status_code}` : null,
-      c.latency_ms != null ? `${Math.round(c.latency_ms)} ms` : null,
-    ]
-      .filter(Boolean)
-      .join(' · ');
-  }
+  /** A check's state as a run status dot - the colours the rest of the app uses. */
+  dotColor = statusColor;
+  ms = (latency: number) => `${Math.round(latency)} ms`;
   /** API messages read "must be …" - shown under their field, so capitalise the first letter. */
   cap = (m: string) => m.charAt(0).toUpperCase() + m.slice(1);
   controlId = (key: string) => `setting-${this.config().group}-${key}`;

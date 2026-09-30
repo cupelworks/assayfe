@@ -1,29 +1,44 @@
 <div class="hero">
   <div>
-    <div class="kicker">Configuration</div>
-    <h1>Settings</h1>
+    <div class="kicker">Settings</div>
+    <h1>What Assay tests,<br />and who judges it.</h1>
   </div>
-  <p class="hero-note text-muted">What Assay tests and how it's set up.</p>
+  <p class="hero-note">Changes apply from the next run. Past runs keep what they scored.</p>
 </div>
 
-<assay-settings-group [config]="target" />
-<assay-settings-group [config]="judge" />
+<!-- One tile per section, like Overview's counts; each jumps to its section. -->
+<section class="stats strip">
+  @for (t of tiles(); track t.id) {
+    <button type="button" class="stat plain tile" (click)="jump(t.id)">
+      <div class="label">{{ t.label }}</div>
+      <div class="value" [class.mono]="t.mono">{{ t.value }}</div>
+      <div class="small tile-foot">
+        <span>{{ t.detail }}</span
+        ><span class="go">{{ t.go }} ↓</span>
+      </div>
+    </button>
+  }
+</section>
 
-<section class="cell col">
-  <div class="row-head">
-    <h2>Operations</h2>
-    <span class="tag tag-neutral">Read-only</span>
+<assay-settings-group [config]="target" (loaded)="saved.target.set($event)" />
+<assay-settings-group [config]="judge" (loaded)="saved.judge.set($event)" />
+
+<section class="ops-section" id="settings-operations">
+  <div class="cell row-head">
+    <div class="title">
+      <h2>Operations</h2>
+      <span class="tag tag-neutral">Read-only</span>
+    </div>
+    <p class="hero-note">
+      Read once when a process starts; changing one means restarting the API and/or the worker.
+      Connection strings are never shown - they can embed credentials.
+    </p>
   </div>
-  <p class="muted intro">
-    Deployment-level values, read once when a process starts. Changing any of them means restarting
-    the API and/or the worker - they are shown so an operator can confirm what is running, never
-    edited here. Connection strings are never displayed: they can embed credentials.
-  </p>
   <div class="ops">
     @for (o of operations; track o.label) {
-      <div class="field-ro">
+      <div class="op">
         <div class="label">{{ o.label }}</div>
-        <div class="body" [class.mono]="o.mono">{{ o.value }}</div>
+        <div class="value" [class.mono]="o.mono">{{ o.value }}</div>
         <div class="small">{{ o.hint }}</div>
       </div>
     }

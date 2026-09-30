@@ -260,6 +260,15 @@ button {
 .split > * {
   min-width: 0;
 }
+/* Main content | side panel, on the same thirds as a 3-tile strip above it (Overview, Settings). */
+.main {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  flex: 1;
+}
+.main > * {
+  min-width: 0;
+}
 .half {
   display: grid;
   grid-template-columns: 1fr 1fr;

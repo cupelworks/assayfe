@@ -25,6 +25,9 @@ export interface SettingField {
   inputMode?: 'decimal' | 'numeric';
   /** Render the value in monospace (a path, a JSON template). */
   mono?: boolean;
+  /** Spans both columns of the form's grid (a URL, the headers, a JSON body); other fields pair
+   *  up two per row, so a group's field order is also its layout. */
+  wide?: boolean;
 }
 
 /** Group A - the application under test, editable (since API 0.9.6). Pointing it at a different
@@ -35,6 +38,7 @@ export const TARGET_SETTING_FIELDS: SettingField[] = [
     key: 'url',
     label: 'Target URL',
     kind: 'url',
+    wide: true,
     placeholder: 'https://your-app.example.com/answer',
     hint: 'A run that needs the application under test ends Not Ran when Target URL is empty.',
   },
@@ -46,9 +50,17 @@ export const TARGET_SETTING_FIELDS: SettingField[] = [
     hint: 'Default POST.',
   },
   {
+    key: 'output_path',
+    label: 'Answer path',
+    kind: 'text',
+    hint: 'JSONPath to the answer inside the reply from the application under test.',
+    mono: true,
+  },
+  {
     key: 'headers',
     label: 'Headers',
     kind: 'headers',
+    wide: true,
     hint:
       'Headers Assay adds to every call to the application under test, for example to authenticate. ' +
       "Don't type a secret here. Write ${NAME} instead, where NAME is an environment variable " +
@@ -60,18 +72,12 @@ export const TARGET_SETTING_FIELDS: SettingField[] = [
     key: 'body',
     label: 'Request body',
     kind: 'json',
+    wide: true,
     hint:
       'The JSON body Assay sends to the application under test on every call. ' +
       "Write {{input}} wherever the test's input should go - Assay swaps it for the actual " +
       'input before sending. Example: with the default body and a test whose input is ' +
       '"What is your refund policy?", Assay sends {"input": "What is your refund policy?"}',
-    mono: true,
-  },
-  {
-    key: 'output_path',
-    label: 'Answer path',
-    kind: 'text',
-    hint: 'JSONPath to the answer inside the reply from the application under test.',
     mono: true,
   },
   {

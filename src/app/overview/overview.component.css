@@ -1,14 +1,6 @@
 .stat:hover {
   background: var(--color-surface);
 }
-.main {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  flex: 1;
-}
-.main > * {
-  min-width: 0;
-}
 .tile-foot {
   display: flex;
   justify-content: space-between;
