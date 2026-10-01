@@ -6,6 +6,7 @@ import {
   TestTypesStore,
   assignmentFields,
   numericFieldHint,
+  isCodeField,
   ANSWER_PATH,
 } from '../api/test-types.store';
 
@@ -55,6 +56,7 @@ export class TestTypeConfigFieldsComponent implements OnInit {
   });
 
   numericFieldHint = numericFieldHint;
+  isCode = isCodeField;
 
   /** Open Advanced for every type that arrives with a path already set, so it's never hidden. */
   ngOnInit() {

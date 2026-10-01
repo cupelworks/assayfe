@@ -9,7 +9,12 @@ import {
 import { rel, absTime, statusColor, statusLabel, prettyJson } from '../shared/format';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { ChevronComponent } from '../shared/chevron.component';
-import { TestTypesStore, assignmentFields, engineSettingsLabel } from '../api/test-types.store';
+import {
+  TestTypesStore,
+  assignmentFields,
+  engineSettingsLabel,
+  isCodeField,
+} from '../api/test-types.store';
 
 /** Status / error / per-type results (left) + frozen or live test content (right). */
 @Component({
@@ -224,7 +229,7 @@ export class RunBodyComponent {
               label: f.label,
               value,
               long: f.kind !== 'numeric' && value.length > 140,
-              mono: f.kind === 'json' || f.kind === 'jsonpath',
+              mono: isCodeField(f),
             },
           ]
         : [];

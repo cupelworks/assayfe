@@ -40,6 +40,9 @@ export interface TestTypeResult {
    *  the type's `default`. Null for other types, for a judge that couldn't be asked (`detail`
    *  says why) and on results written before this field existed. */
   rubric?: JudgeRubric | null;
+  /** The model that gave a judge's verdict, recorded at execution time. Null for other types,
+   *  for a judge that couldn't be asked, and on older results. */
+  judge?: { provider: JudgeProvider; model: string } | null;
 }
 export interface JudgeRubric {
   /** Trimmed, exactly as the judge received it. */
@@ -243,17 +246,27 @@ export type TestCategory = 'deterministic' | 'nlp_metric' | 'llm_as_judge';
 /** "json": JSON text (a document or a single value - strings in double quotes). "jsonpath": a
  *  JSONPath expression like $.status. Both are checked on save by the API (422) and in the form. */
 export type ConfigFieldKind =
-  'reference' | 'multiline' | 'rubric' | 'numeric' | 'json' | 'jsonpath';
+  | 'reference'
+  | 'multiline'
+  | 'rubric'
+  | 'numeric'
+  | 'json'
+  | 'jsonpath'
+  /** A regular expression - compiled by the API on save (a 422 with the reason if it isn't). */
+  | 'regex'
+  /** A JSON Schema written as JSON - checked by the API on save to be a valid schema. */
+  | 'json_schema';
 export interface ConfigFieldDescriptor {
   key: string;
   label: string;
   kind: ConfigFieldKind;
   required: boolean;
-  /** Advisory bounds for a "numeric" field - null for every other kind. The API does not
-   *  validate a submitted value against these (or that it's numeric at all), so they only drive
-   *  the FE's own input constraints and validation. */
+  /** Inclusive bounds for a "numeric" field - null for every other kind. Enforced by the API when
+   *  a type is assigned (a 422); the FE mirrors them so the form says so before saving. */
   min?: number | null;
   max?: number | null;
+  /** A "numeric" field that must be a whole number (Word Count Limit's max/min); false otherwise. */
+  integer?: boolean;
   /** An example value for the empty input, or null. */
   placeholder?: string | null;
   /** A one-line note shown under the field, or null. */

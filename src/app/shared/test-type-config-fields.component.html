@@ -25,7 +25,7 @@
               @case ('numeric') {
                 <input
                   class="input num"
-                  assayNumber
+                  [assayNumber]="f.integer ? 'numeric' : ''"
                   [placeholder]="f.placeholder ?? ''"
                   [ngModel]="fieldValue(s.name, f.key)"
                   (ngModelChange)="setFieldValue(s.name, f.key, $event)"
@@ -43,9 +43,9 @@
               @default {
                 <textarea
                   class="input ta"
-                  [class.mono]="f.kind === 'json'"
+                  [class.mono]="isCode(f)"
                   rows="3"
-                  [attr.spellcheck]="f.kind === 'json' ? 'false' : null"
+                  [attr.spellcheck]="isCode(f) ? 'false' : null"
                   [placeholder]="f.placeholder ?? ''"
                   [ngModel]="fieldValue(s.name, f.key)"
                   (ngModelChange)="setFieldValue(s.name, f.key, $event)"

@@ -17,14 +17,15 @@ export const needsSetup = (t: TestType) => t.config_fields.some((f) => f.require
  *  always resolve from the test case's own expected_output and are never written into config. */
 export const assignmentFields = (t: TestType) =>
   t.config_fields.filter((f) => f.kind !== 'reference');
-/** For a non-empty "numeric" field value: null if it parses to a plain number within the
- *  descriptor's own min/max (each independently optional), otherwise a short problem phrase to
- *  append to the field's label. Bounds come from the descriptor, never assumed - the API sends
- *  min/max as advisory metadata and does not itself validate a submitted value against them (or
- *  that it's numeric at all), so this is the only check it gets. */
+/** For a non-empty "numeric" field value: null if it parses to a plain number - a whole one when
+ *  the descriptor says `integer` - within its own min/max (each independently optional),
+ *  otherwise a short problem phrase to append to the field's label. Bounds come from the
+ *  descriptor, never assumed; the API enforces the same rules on save (a 422), so this only says
+ *  so before the round trip. */
 export const numericFieldIssue = (f: ConfigFieldDescriptor, raw: string): string | null => {
   const n = parseDecimal(raw);
   if (n == null) return 'must be a number';
+  if (f.integer && !Number.isInteger(n)) return 'must be a whole number';
   if (f.min != null && f.max != null)
     return n < f.min || n > f.max ? `must be between ${f.min} and ${f.max}` : null;
   if (f.min != null) return n < f.min ? `must be at least ${f.min}` : null;
@@ -46,14 +47,18 @@ export const ANSWER_PATH = {
 };
 /** For a non-empty config value: a short problem phrase to append to the field's label, or null
  *  when it's fit to send - by the field's kind. "numeric": `numericFieldIssue`. "json": must
- *  parse. "jsonpath": must start with "$" - there's no standard JS JSONPath parser, so this is a
- *  light check and the API's own on-save check (a 422 naming the field) is the full one. Other
- *  kinds (multiline, rubric) take any text. */
+ *  parse ("json_schema" too - whether it's a valid schema is the API's 422). "jsonpath": must
+ *  start with "$" - there's no standard JS JSONPath parser, so this is a light check and the
+ *  API's own on-save check (a 422 naming the field) is the full one. "regex" isn't checked here:
+ *  the API compiles it with Python's `re`, whose syntax differs from JS's (`(?P<name>…)` is valid
+ *  there, not here), so a JS check could block a valid pattern - the 422 carries the reason.
+ *  Other kinds (multiline, rubric) take any text. */
 export const configFieldIssue = (f: ConfigFieldDescriptor, raw: string): string | null => {
   switch (f.kind) {
     case 'numeric':
       return numericFieldIssue(f, raw);
     case 'json':
+    case 'json_schema':
       try {
         JSON.parse(raw);
         return null;
@@ -128,8 +133,13 @@ export function buildAssignments(
     };
   });
 }
+/** Fields whose value is code rather than prose - JSON, a JSON Schema, a JSONPath, a regex -
+ *  shown in monospace (and not spell-checked) wherever they're edited or displayed. */
+export const isCodeField = (f: ConfigFieldDescriptor): boolean =>
+  f.kind === 'json' || f.kind === 'json_schema' || f.kind === 'jsonpath' || f.kind === 'regex';
 /** "0 to 100, passes when score ≥ threshold" - a numeric field's bounds plus the type's pass
- *  direction, each part only when known: a one-sided bound reads "at least 0" / "at most 100"
+ *  direction, each part only when known, led by "a whole number" for an `integer` field (the
+ *  API's hints leave that to the flag): a one-sided bound reads "at least 0" / "at most 100"
  *  (the same shapes `numericFieldIssue` validates), `comparison` is null for a type with no
  *  threshold, and with neither there's nothing to say - null, so callers skip the hint entirely.
  *  Null for any non-numeric field too, so a caller iterating mixed fields needn't check the kind.
@@ -140,7 +150,8 @@ export const numericFieldHint = (
   comparison: TestType['comparison'],
 ): string | null => {
   if (f.kind !== 'numeric') return null;
-  const range =
+  const whole = f.integer ? 'a whole number' : null;
+  const bounds =
     f.min != null && f.max != null
       ? `${f.min} to ${f.max}`
       : f.min != null
@@ -151,7 +162,7 @@ export const numericFieldHint = (
   const rule = comparison
     ? `passes when score ${comparison === 'gte' ? '≥' : '≤'} threshold`
     : null;
-  return range && rule ? `${range}, ${rule}` : (range ?? rule);
+  return [whole, bounds, rule].filter(Boolean).join(', ') || null;
 };
 /** Engine settings that are prose rather than knobs (a judge's fallback rubric is a paragraph) -
  *  never listed by `engineSettingsLabel`, surfaced on their own via `defaultRubric` instead. */
