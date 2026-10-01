@@ -7,6 +7,11 @@
   </div>
   @if (total()) {
     <div class="cv-table">
+      <!-- The same headings as the checks form. -->
+      <div class="cols th">
+        <span class="label">Type</span><span class="label">Name</span
+        ><span class="label">Settings</span>
+      </div>
       @for (r of shown(); track r.key) {
         <div class="cols row" [class.group-start]="r.first">
           <span class="label type">{{ r.first ? r.type : '' }}</span>

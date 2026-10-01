@@ -22,8 +22,8 @@
 .row.group-start {
   border-top: 1px solid var(--color-divider);
 }
-.row.group-start:first-child {
-  border-top: 0;
+.th {
+  padding: 8px 0 6px;
 }
 .type {
   color: var(--color-text);
