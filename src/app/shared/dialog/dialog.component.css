@@ -53,16 +53,24 @@
   padding: 16px 28px 24px;
   border-top: 2px solid var(--color-divider);
   display: flex;
+  align-items: center;
   gap: 12px;
+}
+/* The buttons keep their own size however long the text beside them gets. */
+.foot .btn {
+  flex: none;
 }
 .danger {
   background: var(--color-accent-700);
 }
-/* Why the primary is disabled, beside it - never scrolled out of view. */
+/* Why the primary is disabled, beside it - never scrolled out of view. At most three lines;
+   a longer list scrolls inside, so the footer never grows past the buttons' row. */
 .blockers {
   flex: 1;
   min-width: 0;
-  align-self: center;
+  max-height: calc(3 * 1.5em);
+  overflow-y: auto;
+  line-height: 1.5;
   font-size: 12px;
   color: var(--color-accent-700);
 }
