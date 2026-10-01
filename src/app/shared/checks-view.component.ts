@@ -2,11 +2,23 @@ import { Component, OnInit, computed, inject, input, signal } from '@angular/cor
 import { TestTypeAssignment } from '../api/models';
 import { TestTypesStore, assignmentFields, isCodeField } from '../api/test-types.store';
 import { checkName } from '../api/checks';
+import { prettyJson } from './format';
+
+/** One setting as shown: "Label: value" on a line, or a JSON value as an indented block. */
+interface Setting {
+  label: string;
+  value: string;
+  mono: boolean;
+  /** An object or array, pretty-printed - shown as an indented block under its label. */
+  block: boolean;
+}
 
 /** How many checks show before "Show all N checks". */
 const FIRST = 5;
 /** A setting value longer than this folds to two lines behind "More ↓", as on the run page. */
 const LONG = 140;
+/** A JSON block (a schema) longer than this many lines folds to them behind "More ↓". */
+const BLOCK_LINES = 6;
 
 /**
  * A test's checks, read-only, on the test page - the form's table without inputs: Type | Name |
@@ -65,12 +77,12 @@ export class ChecksViewComponent implements OnInit {
   private settingsOf(
     a: TestTypeAssignment,
     t: ReturnType<TestTypesStore['byName']> extends Map<string, infer T> ? T | undefined : never,
-  ): { label: string; value: string; mono: boolean }[] | string {
+  ): Setting[] | string {
     const config = a.config ?? {};
     if (!t) {
       const raw = Object.entries(config);
       return raw.length
-        ? raw.map(([k, v]) => ({ label: k, value: v, mono: false }))
+        ? raw.map(([k, v]) => ({ label: k, value: v, mono: false, block: false }))
         : 'Not in the catalogue';
     }
     const fields = assignmentFields(t);
@@ -78,15 +90,24 @@ export class ChecksViewComponent implements OnInit {
     const parts = fields
       .map((f) => {
         const v = config[f.key]?.trim();
-        if (v) return { label: f.label, value: v, mono: isCodeField(f) };
-        return f.kind === 'rubric' ? { label: 'Default rubric', value: '', mono: false } : null;
+        if (v) {
+          // A JSON object or array (a schema, an expected value) keeps its indentation.
+          const pretty = f.kind === 'json' || f.kind === 'json_schema' ? prettyJson(v) : null;
+          return pretty
+            ? { label: f.label, value: pretty, mono: true, block: true }
+            : { label: f.label, value: v, mono: isCodeField(f), block: false };
+        }
+        return f.kind === 'rubric'
+          ? { label: 'Default rubric', value: '', mono: false, block: false }
+          : null;
       })
-      .filter((p): p is { label: string; value: string; mono: boolean } => !!p);
+      .filter((p): p is Setting => !!p);
     return parts.length ? parts : 'Defaults';
   }
-  /** A value long enough to fold to two lines (a rubric, a schema) - the run page's threshold. */
-  isLong(p: { value: string }) {
-    return p.value.length > LONG;
+  /** A value long enough to fold: text over 140 characters (to two lines, the run page's
+   *  threshold), a JSON block over BLOCK_LINES lines (to that many). */
+  isLong(p: Setting) {
+    return p.block ? p.value.split('\n').length > BLOCK_LINES : p.value.length > LONG;
   }
   /** Long values unfolded, keyed "<check>|<field>". */
   private open = signal<ReadonlySet<string>>(new Set());

@@ -24,12 +24,19 @@
             } @else {
               <!-- One setting per line, wrapping; only a very long value folds to two lines. -->
               @for (p of r.settings; track p.label) {
-                <span class="setting" [class.clamp]="isLong(p) && !isOpen(r.key, p.label)">
-                  <span class="k">{{ p.label }}{{ p.value ? ':' : '' }}</span>
-                  @if (p.value) {
-                    <span [class.mono]="p.mono">{{ p.value }}</span>
-                  }
-                </span>
+                @if (p.block) {
+                  <span class="k">{{ p.label }}:</span>
+                  <pre class="json" [class.folded]="isLong(p) && !isOpen(r.key, p.label)">{{
+                    p.value
+                  }}</pre>
+                } @else {
+                  <span class="setting" [class.clamp]="isLong(p) && !isOpen(r.key, p.label)">
+                    <span class="k">{{ p.label }}{{ p.value ? ':' : '' }}</span>
+                    @if (p.value) {
+                      <span [class.mono]="p.mono">{{ p.value }}</span>
+                    }
+                  </span>
+                }
                 @if (isLong(p)) {
                   <button type="button" class="toggle small" (click)="toggle(r.key, p.label)">
                     {{ isOpen(r.key, p.label) ? 'Less ↑' : 'More ↓' }}
