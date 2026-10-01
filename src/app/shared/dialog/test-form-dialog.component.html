@@ -5,6 +5,7 @@
   [primaryLabel]="busy() ? 'Saving…' : submitLabel()"
   [primaryDisabled]="!valid() || busy()"
   [error]="error()"
+  [blockers]="blockers()"
   (primary)="go()"
   (close)="closed.emit()"
 >
@@ -58,8 +59,5 @@
   </div>
   <div class="field">
     <assay-checks-table [(checks)]="checks" [hasReference]="hasReference()" />
-    @if (configIssues().length) {
-      <div class="note note-warn">Fix before saving: {{ configIssues().join(', ') }}</div>
-    }
   </div>
 </assay-dialog>

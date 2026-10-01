@@ -17,6 +17,12 @@
       <div class="err">{{ e }}</div>
     }
     <div class="dialog-actions foot">
+      @if (blockers().length; as n) {
+        <div class="blockers" role="status">
+          <span class="strong">{{ n }} {{ n === 1 ? 'thing' : 'things' }} to fix:</span>
+          {{ blockersText() }}
+        </div>
+      }
       <button
         class="btn btn-primary"
         [class.danger]="danger()"

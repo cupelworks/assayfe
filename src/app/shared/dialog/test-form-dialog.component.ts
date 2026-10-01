@@ -50,7 +50,13 @@ export class TestFormDialogComponent {
   configIssues = computed(() =>
     checkIssues(this.checks(), this.store.byName(), this.hasReference()),
   );
-  valid = computed(() => !!this.inp().trim() && !this.configIssues().length);
+  /** Everything that keeps Save disabled, for the dialog's footer: an empty Input, then the
+   *  checks' problems. */
+  blockers = computed(() => [
+    ...(this.inp().trim() ? [] : ['Input is empty']),
+    ...this.configIssues(),
+  ]);
+  valid = computed(() => !this.blockers().length);
   ngOnInit() {
     const i = this.initial();
     if (i) {

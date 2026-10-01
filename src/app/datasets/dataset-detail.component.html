@@ -245,6 +245,7 @@
       [primaryLabel]="act.busy() ? 'Creating…' : 'Create ' + total() + ' tests'"
       [primaryDisabled]="act.busy() || configIssues().length > 0"
       [error]="act.err()"
+      [blockers]="configIssues()"
       (primary)="toTests()"
       (close)="dlg.set(null)"
     >
@@ -258,9 +259,6 @@
           [hasReference]="null"
           hint="every test created from the rows gets these"
         />
-        @if (configIssues().length) {
-          <div class="note-warn">Fix before saving: {{ configIssues().join(', ') }}</div>
-        }
         @if (referenceTypesInBatch().length) {
           <div class="note-info">
             Needs a non-empty expected output: {{ referenceTypesInBatch().join(', ') }} - rows

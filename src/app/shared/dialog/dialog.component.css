@@ -58,3 +58,14 @@
 .danger {
   background: var(--color-accent-700);
 }
+/* Why the primary is disabled, beside it - never scrolled out of view. */
+.blockers {
+  flex: 1;
+  min-width: 0;
+  align-self: center;
+  font-size: 12px;
+  color: var(--color-accent-700);
+}
+.blockers .strong {
+  font-weight: 600;
+}
