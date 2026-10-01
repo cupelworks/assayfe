@@ -87,6 +87,12 @@ import {
                   </button>
                 }
               }
+              @if (s.judgedBy) {
+                <div class="detail muted cfg">
+                  <span class="strong">Judged by:</span>
+                  <span class="mono">{{ s.judgedBy }}</span>
+                </div>
+              }
               @if (s.detail) {
                 <div class="detail muted">{{ s.detail }}</div>
               }
@@ -256,6 +262,9 @@ export class RunBodyComponent {
       pct: this.resultPct(name, r),
       detail: r.detail,
       config: this.configFields(name, r),
+      // The model that gave a judge's verdict, under its rubric - null for other types, a judge
+      // that couldn't be asked, and older results, so the line hides.
+      judgedBy: r.judge?.model ?? null,
       // What scored it, as stamped on the result at execution time - null on legacy results and
       // on a type that wasn't in the catalogue when the run executed, so both rows then hide.
       answerPath: r.answer_path ?? null,
