@@ -184,7 +184,7 @@ export class ExecutionComponent {
       total,
       passPct: (passed / total) * 100 + '%',
       failPct: (failing.length / total) * 100 + '%',
-      title: failing.length ? `Failed: ${failing.join(', ')}` : 'All checks passed',
+      title: failing.length ? `Not met: ${failing.join(', ')}` : 'All checks met',
     };
   }
   replay() {

@@ -75,7 +75,7 @@ export const configFieldIssue = (f: ConfigFieldDescriptor, raw: string): string 
  *  shown in monospace (and not spell-checked) wherever they're edited or displayed. */
 export const isCodeField = (f: ConfigFieldDescriptor): boolean =>
   f.kind === 'json' || f.kind === 'json_schema' || f.kind === 'jsonpath' || f.kind === 'regex';
-/** "0 to 100, passes when score ≥ threshold" - a numeric field's bounds plus the type's pass
+/** "0 to 100, met when score ≥ threshold" - a numeric field's bounds plus the type's pass
  *  direction, each part only when known, led by "a whole number" for an `integer` field (the
  *  API's hints leave that to the flag): a one-sided bound reads "at least 0" / "at most 100"
  *  (the same shapes `numericFieldIssue` validates), `comparison` is null for a type with no
@@ -97,9 +97,7 @@ export const numericFieldHint = (
         : f.max != null
           ? `at most ${f.max}`
           : null;
-  const rule = comparison
-    ? `passes when score ${comparison === 'gte' ? '≥' : '≤'} threshold`
-    : null;
+  const rule = comparison ? `met when score ${comparison === 'gte' ? '≥' : '≤'} threshold` : null;
   return [whole, bounds, rule].filter(Boolean).join(', ') || null;
 };
 /** Engine settings that are prose rather than knobs (a judge's fallback rubric is a paragraph) -

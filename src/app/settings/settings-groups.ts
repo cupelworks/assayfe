@@ -107,7 +107,7 @@ export const JUDGE_GROUP: SettingsGroupConfig = {
   // so the page says where it's read from and points at the check instead of claiming either way.
   note: (s: JudgeSettingsRead) =>
     s.provider == null
-      ? 'No judge configured: the judge test types fail in runs with that reason until you ' +
+      ? 'No judge configured: judge checks are not met in runs, with that reason, until you ' +
         'choose a provider and model.'
       : `API key: read from ${s.api_key_variable ?? 'the provider’s standard variable'} on the ` +
         'worker (its environment or .env). Use Test connection to confirm it is set there.',
@@ -118,7 +118,7 @@ export const JUDGE_GROUP: SettingsGroupConfig = {
       : {},
   summary: (s: JudgeSettingsRead) =>
     s.provider == null
-      ? { value: 'Not configured', detail: 'Judge test types fail until you choose one' }
+      ? { value: 'Not configured', detail: "Judge checks can't run until you choose one" }
       : {
           value: optionLabel(JUDGE_SETTING_FIELDS, 'provider', s.provider) ?? s.provider,
           detail: s.model ?? 'No model set',

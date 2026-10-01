@@ -114,7 +114,7 @@ export const JUDGE_SETTING_FIELDS: SettingField[] = [
       { value: 'anthropic', label: 'Anthropic' },
       { value: 'openai', label: 'OpenAI' },
     ],
-    hint: 'None: no judge - the judge test types fail in runs with "No judge configured".',
+    hint: 'None: no judge - judge checks are not met in runs, with "No judge configured" as the reason.',
   },
   {
     key: 'model',

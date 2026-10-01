@@ -90,7 +90,7 @@ import { ClampDirective } from '../shared/clamp.directive';
                 @if (s.detail) {
                   <div class="detail muted">{{ s.detail }}</div>
                 }
-                <!-- A failure shows what it needed; a pass keeps it under Details. -->
+                <!-- A check not met shows what it needed; a met one keeps it under Details. -->
                 @if (!s.passed) {
                   <ng-container *ngTemplateOutlet="config; context: { $implicit: s }" />
                 }
@@ -136,7 +136,7 @@ import { ClampDirective } from '../shared/clamp.directive';
               <div class="score muted">
                 {{
                   r.status === 'NotRan'
-                    ? 'Run failed before anything could be evaluated - see error above.'
+                    ? 'Nothing could be evaluated in this run - see error above.'
                     : 'No results yet - run is ' + statusLabel(r.status) + '.'
                 }}
               </div>
@@ -197,7 +197,7 @@ import { ClampDirective } from '../shared/clamp.directive';
         </div>
       </section>
     }
-    <!-- What a check was run with - shown for a failure, under Details for a pass. -->
+    <!-- What a check was run with - shown when it wasn't met, under Details when it was. -->
     <ng-template #config let-s>
       @for (c of s.config; track c.key) {
         <div
@@ -375,13 +375,14 @@ export class RunBodyComponent {
     if (reply == null) return null;
     return typeof reply === 'string' ? reply : JSON.stringify(reply, null, 2);
   });
-  /** "2 of 3 checks passed" - a headline the per-check dots otherwise make the reader count out
-   *  themselves. Null (hidden) while there's nothing to summarize yet. */
+  /** "2 of 3 checks met" - a headline the per-check dots otherwise make the reader count out
+   *  themselves. "Met", not "passed": one run is a signal, and passed / failed is the verdict the
+   *  statistics over repeated runs will give. Null (hidden) while there's nothing to summarize yet. */
   resultsSummary = computed(() => {
     const r = this.results();
     if (!r.length) return null;
     const passed = r.filter((x) => x.passed).length;
-    return `${passed} of ${r.length} check${r.length === 1 ? '' : 's'} passed`;
+    return `${passed} of ${r.length} check${r.length === 1 ? '' : 's'} met`;
   });
   fields = computed(() => {
     const c = this.content();

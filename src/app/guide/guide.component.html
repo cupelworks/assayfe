@@ -66,13 +66,13 @@
     types stay visible for history but can no longer be newly assigned.
   </p>
   <p>
-    What a result looks like depends on the category. <strong>Deterministic</strong> checks are
-    pass/fail - there's no score, only whether the answer matched.
-    <strong>NLP metrics</strong> produce a score on the metric's own scale (0 to 1 for most, 0 to
-    100 for BLEU, -1 to 1 for cosine similarity) and pass when it clears the threshold you set.
-    <strong>LLM judges</strong> return a verdict with a written rationale. Each type's card in the
-    catalogue shows which engine scores it, its settings, and - for a threshold-scored type - its
-    range and pass rule.
+    What a result looks like depends on the category. <strong>Deterministic</strong> checks are met
+    or not - there's no score, only whether the answer matched. <strong>NLP metrics</strong> produce
+    a score on the metric's own scale (0 to 1 for most, 0 to 100 for BLEU, -1 to 1 for cosine
+    similarity) and are met when it clears the threshold you set. <strong>LLM judges</strong> decide
+    whether the answer meets the rubric, with a written rationale. Each type's card in the catalogue
+    shows which engine scores it, its settings, and - for a threshold-scored type - its range and
+    when the score meets it.
   </p>
   <div class="callout">
     See the full <a routerLink="/test-types">test types catalogue</a> for the current list of
@@ -305,7 +305,9 @@
   <h2>Run lifecycle &amp; statuses</h2>
   <p class="section-lead">
     Every run moves through the same two lifecycle states, then lands on one of four outcomes - a
-    summary of how each assigned test type did, not just "did it finish."
+    summary of how each check did in that run, not just "did it finish." An outcome is what happened
+    once: a GenAI application can answer differently each time, so one run is a signal, not a
+    verdict - repeat the run before concluding that something passes or fails.
   </p>
   <div class="status-grid" style="margin-bottom: 16px">
     <div class="status">
@@ -324,17 +326,17 @@
       <div class="label">
         <span class="dot" style="background: var(--color-status-green)"></span>Green
       </div>
-      <div class="small">Every assigned test type passed.</div>
+      <div class="small">Every check was met in this run.</div>
     </div>
     <div class="status">
       <div class="label">
         <span class="dot" style="background: var(--color-status-amber)"></span>Amber
       </div>
-      <div class="small">Some assigned test types passed, some didn't.</div>
+      <div class="small">Some checks were met in this run, some weren't.</div>
     </div>
     <div class="status">
       <div class="label"><span class="dot" style="background: var(--color-accent)"></span>Red</div>
-      <div class="small">Every assigned test type was checked, and none passed.</div>
+      <div class="small">Every check was evaluated, and none was met.</div>
     </div>
     <div class="status">
       <div class="label">
@@ -343,7 +345,7 @@
       <div class="small">
         The run couldn't be evaluated at all - something went wrong before any test type could be
         checked (e.g. the model couldn't be reached, the application under test kept failing, or the
-        test's content couldn't be loaded). Unlike Red, nothing here failed a check - nothing was
+        test's content couldn't be loaded). Unlike Red, no check was missed here - nothing was
         checked.
       </div>
     </div>
@@ -356,10 +358,10 @@
     shows the evaluated output and labels which of the two it was.
   </p>
   <p>
-    <strong>One check failing isn't the run failing.</strong> If a single check can't evaluate - a
-    regex pattern that won't compile, say - only that check fails, with the reason as its detail,
-    and the rest still run. The run then usually lands on Amber, not Not Ran. Not Ran is reserved
-    for nothing being checkable at all.
+    <strong>One check that can't evaluate doesn't sink the run.</strong> If a single check can't
+    evaluate - a regex pattern that won't compile, say - only that check counts as not met, with the
+    reason as its detail, and the rest still run. The run then usually lands on Amber, not Not Ran.
+    Not Ran is reserved for nothing being checkable at all.
   </p>
 </section>
 
@@ -397,10 +399,10 @@
       <div class="q">?</div>
       <div class="a">
         <strong>One check shows an error message, but the run isn't Not Ran - why?</strong> A check
-        that can't evaluate - a regex that won't compile, a bad threshold - fails on its own, with
-        the reason as its detail, and the other checks still run. Not Ran only means nothing could
-        be checked at all: the model or the application under test was unreachable, or the content
-        couldn't be loaded.
+        that can't evaluate - a regex that won't compile, a bad threshold - counts as not met on its
+        own, with the reason as its detail, and the other checks still run. Not Ran only means
+        nothing could be checked at all: the model or the application under test was unreachable, or
+        the content couldn't be loaded.
       </div>
     </div>
     <div class="guard">
