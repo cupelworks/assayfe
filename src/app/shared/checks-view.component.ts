@@ -5,13 +5,15 @@ import { checkName } from '../api/checks';
 
 /** How many checks show before "Show all N checks". */
 const FIRST = 5;
+/** A setting value longer than this folds to two lines behind "More ↓", as on the run page. */
+const LONG = 140;
 
 /**
  * A test's checks, read-only, on the test page - the form's table without inputs: Type | Name |
- * Settings, checks of a type grouped under it. Each check's settings on one line ("Required
- * substring: 4471 · …", code values in monospace, an unset rubric as "Default rubric", a type
- * with none as "No settings"), cut with "…" when long - the full text on hover - and a
- * "reads $.x" mark when it reads its own path. A test with many checks shows the first five and
+ * Settings, checks of a type grouped under it. Each setting on its own line, wrapping ("Required
+ * substring: 4471"; code values in monospace, an unset rubric as "Default rubric", a type with
+ * none as "No settings"); a very long value (a rubric, a schema) folds to two lines behind
+ * "More ↓", as on the run page; "reads $.x" under the name when it reads its own path. A test with many checks shows the first five and
  * "Show all N checks", so the page never turns into a wall of rows.
  */
 @Component({
@@ -82,11 +84,20 @@ export class ChecksViewComponent implements OnInit {
       .filter((p): p is { label: string; value: string; mono: boolean } => !!p);
     return parts.length ? parts : 'Defaults';
   }
-  /** The settings as plain text, for the hover title on a line cut short. */
-  titleOf(s: { label: string; value: string }[] | string) {
-    return typeof s === 'string'
-      ? s
-      : s.map((p) => (p.value ? `${p.label}: ${p.value}` : p.label)).join(' · ');
+  /** A value long enough to fold to two lines (a rubric, a schema) - the run page's threshold. */
+  isLong(p: { value: string }) {
+    return p.value.length > LONG;
+  }
+  /** Long values unfolded, keyed "<check>|<field>". */
+  private open = signal<ReadonlySet<string>>(new Set());
+  isOpen(check: string, field: string) {
+    return this.open().has(`${check}|${field}`);
+  }
+  toggle(check: string, field: string) {
+    const k = `${check}|${field}`;
+    const next = new Set(this.open());
+    next.has(k) ? next.delete(k) : next.add(k);
+    this.open.set(next);
   }
   isText(s: unknown): s is string {
     return typeof s === 'string';

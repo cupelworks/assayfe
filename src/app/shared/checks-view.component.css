@@ -35,23 +35,31 @@
 }
 .name {
   font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
-/* One line, cut with "…" when long - the full text is the hover title. */
+/* One setting per line, wrapping. */
 .settings {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-wrap: anywhere;
+}
+/* A long value folds to two lines until "More ↓". */
+.setting.clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+.toggle {
+  all: unset;
+  cursor: pointer;
+  align-self: flex-start;
+  color: var(--color-accent);
 }
 .k {
   color: var(--color-neutral-600);
-}
-.sep {
-  margin: 0 6px;
-  color: var(--color-neutral-500);
 }
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;

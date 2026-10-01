@@ -11,24 +11,29 @@
         <div class="cols row" [class.group-start]="r.first">
           <span class="label type">{{ r.first ? r.type : '' }}</span>
           <span class="name-cell">
-            <span class="name" [title]="r.name">{{ r.name }}</span>
+            <span class="name">{{ r.name }}</span>
             @if (r.path; as p) {
               <span class="reads"
                 >reads <span class="mono">{{ p }}</span></span
               >
             }
           </span>
-          <span class="settings" [title]="titleOf(r.settings)">
+          <span class="settings">
             @if (isText(r.settings)) {
               <span class="muted">{{ r.settings }}</span>
             } @else {
-              @for (p of r.settings; track p.label; let last = $last) {
-                <span class="k">{{ p.label }}{{ p.value ? ':' : '' }}</span>
-                @if (p.value) {
-                  <span [class.mono]="p.mono">{{ p.value }}</span>
-                }
-                @if (!last) {
-                  <span class="sep">·</span>
+              <!-- One setting per line, wrapping; only a very long value folds to two lines. -->
+              @for (p of r.settings; track p.label) {
+                <span class="setting" [class.clamp]="isLong(p) && !isOpen(r.key, p.label)">
+                  <span class="k">{{ p.label }}{{ p.value ? ':' : '' }}</span>
+                  @if (p.value) {
+                    <span [class.mono]="p.mono">{{ p.value }}</span>
+                  }
+                </span>
+                @if (isLong(p)) {
+                  <button type="button" class="toggle small" (click)="toggle(r.key, p.label)">
+                    {{ isOpen(r.key, p.label) ? 'Less ↑' : 'More ↓' }}
+                  </button>
                 }
               }
             }
