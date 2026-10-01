@@ -1,5 +1,6 @@
 import { Component, inject, input, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { NgTemplateOutlet } from '@angular/common';
 import {
   RunDetails,
   StandaloneRunDetails,
@@ -22,161 +23,186 @@ import { TypeTagsComponent } from '../shared/type-tags.component';
 @Component({
   selector: 'assay-run-body',
   standalone: true,
-  imports: [TypeTagsComponent, RouterLink, RelTimeComponent, ChevronComponent],
+  imports: [TypeTagsComponent, RouterLink, NgTemplateOutlet, RelTimeComponent, ChevronComponent],
   styleUrls: ['../shared/page.css', './run-body.component.css'],
   template: ` @if (run(); as r) {
-    <section class="half">
-      <div class="cell cell-r col">
-        <div>
-          <div class="label">Status</div>
-          <div class="status-line">
-            <span class="dot lg" [style.background]="statusColor(r.status)"></span
-            >{{ statusLabel(r.status) }}
-          </div>
-          <div
-            class="muted"
-            [title]="
-              absTime(r.created_at) + (r.executed_at ? ' · executed ' + absTime(r.executed_at) : '')
-            "
-          >
-            {{
-              r.executed_at
-                ? 'created ' + rel(r.created_at) + ' · executed ' + rel(r.executed_at)
-                : 'created ' + rel(r.created_at) + ' · not executed yet'
-            }}
-          </div>
-        </div>
-        @if (r.error) {
-          <pre class="error">{{ r.error }}</pre>
-        }
-        <div>
-          <div class="row-head" style="margin-bottom: 12px">
-            <div class="label">Results</div>
-            @if (resultsSummary(); as summary) {
-              <span class="small muted">{{ summary }}</span>
-            }
-          </div>
-          @for (s of results(); track s.name) {
-            <div class="score">
-              <div class="strong">
-                <span
-                  class="dot"
-                  [style.background]="
-                    s.passed ? 'var(--color-status-green)' : 'var(--color-accent)'
-                  "
-                ></span>
-                {{ s.name }}
-                @if (s.type) {
-                  <span class="tag tag-neutral type-tag">{{ s.type }}</span>
-                }
-              </div>
-              @if (s.answerPath) {
-                <div class="detail small muted">
-                  read from <span class="mono">{{ s.answerPath }}</span>
-                </div>
-              }
-              @if (s.valueText) {
-                <div class="val">{{ s.valueText }}</div>
-              }
-              @if (s.pct) {
-                <div class="track"><div [style.width]="s.pct"></div></div>
-              }
-              @for (c of s.config; track c.key) {
-                <div class="detail muted cfg" [class.clamp]="c.long && !isConfigOpen(c.key)">
-                  <span class="strong">{{ c.label }}:</span>
-                  <span [class.mono]="c.mono">{{ c.value }}</span>
-                </div>
-                @if (c.long) {
-                  <button type="button" class="more small" (click)="toggleConfig(c.key)">
-                    {{ isConfigOpen(c.key) ? 'Less ↑' : 'More ↓' }}
-                  </button>
-                }
-              }
-              @if (s.judgedBy) {
-                <div class="detail muted cfg">
-                  <span class="strong">Judged by:</span>
-                  <span class="mono">{{ s.judgedBy }}</span>
-                </div>
-              }
-              @if (s.detail) {
-                <div class="detail muted">{{ s.detail }}</div>
-              }
-              @if (s.engine) {
-                <div class="detail small muted">
-                  <span class="strong">Engine:</span> {{ s.engine }}
-                </div>
-              }
-              @if (s.engineSettings) {
-                <div class="detail small muted">
-                  <span class="strong">Engine settings:</span> {{ s.engineSettings }}
-                </div>
-              }
+      <section class="half">
+        <div class="cell cell-r col">
+          <div>
+            <div class="label">Status</div>
+            <div class="status-line">
+              <span class="dot lg" [style.background]="statusColor(r.status)"></span
+              >{{ statusLabel(r.status) }}
             </div>
-          } @empty {
-            <div class="score muted">
+            <div
+              class="muted"
+              [title]="
+                absTime(r.created_at) +
+                (r.executed_at ? ' · executed ' + absTime(r.executed_at) : '')
+              "
+            >
               {{
-                r.status === 'NotRan'
-                  ? 'Run failed before anything could be evaluated - see error above.'
-                  : 'No results yet - run is ' + statusLabel(r.status) + '.'
+                r.executed_at
+                  ? 'created ' + rel(r.created_at) + ' · executed ' + rel(r.executed_at)
+                  : 'created ' + rel(r.created_at) + ' · not executed yet'
               }}
             </div>
+          </div>
+          @if (r.error) {
+            <pre class="error">{{ r.error }}</pre>
           }
-        </div>
-      </div>
-      <div class="cell col">
-        <div class="row-head">
-          <h2>{{ heading() }}</h2>
-          @if (snapshotAt()) {
-            <span class="small">snapshot <assay-rel-time [iso]="snapshotAt()" /></span>
-          }
-        </div>
-        <assay-type-tags [assignments]="content()?.test_type_assignments" />
-        @if (r.evaluated_output != null) {
-          <div class="field-ro">
-            <div class="label">
-              Evaluated output
-              <span
-                class="tag"
-                [class.tag-accent]="r.output_source === 'application'"
-                [class.tag-outline]="r.output_source !== 'application'"
-                >{{ r.output_source === 'application' ? 'From application' : 'Recorded' }}</span
-              >
-            </div>
-            @if (evaluated(); as ev) {
-              @if (ev.empty) {
-                <div class="body muted">(empty answer)</div>
-              } @else {
-                <div class="body" [class.mono]="ev.json">{{ ev.text }}</div>
+          <div>
+            <div class="row-head" style="margin-bottom: 12px">
+              <div class="label">Results</div>
+              @if (resultsSummary(); as summary) {
+                <span class="small muted">{{ summary }}</span>
               }
-            }
-            @if (r.output_source === 'application') {
-              <div class="small source-note">
-                Read from the application's reply at the Answer path in
-                <a routerLink="/settings" class="plain">Settings</a>.
+            </div>
+            @for (s of results(); track s.name) {
+              <div class="score">
+                <div class="strong">
+                  <span
+                    class="dot"
+                    [style.background]="
+                      s.passed ? 'var(--color-status-green)' : 'var(--color-accent)'
+                    "
+                  ></span>
+                  {{ s.name }}
+                  @if (s.type) {
+                    <span class="tag tag-neutral type-tag">{{ s.type }}</span>
+                  }
+                </div>
+                <!-- The score beside the name, its bar, then the reason. -->
+                @if (s.valueText) {
+                  <div class="val">{{ s.valueText }}</div>
+                }
+                @if (s.pct) {
+                  <div class="track"><div [style.width]="s.pct"></div></div>
+                }
+                @if (s.detail) {
+                  <div class="detail muted">{{ s.detail }}</div>
+                }
+                <!-- A failure shows what it needed; a pass keeps it under Details. -->
+                @if (!s.passed) {
+                  <ng-container *ngTemplateOutlet="config; context: { $implicit: s }" />
+                }
+                @if (s.hasDetails) {
+                  <button
+                    type="button"
+                    class="adv-toggle"
+                    [attr.aria-expanded]="isOpen('details:' + s.name)"
+                    (click)="toggle('details:' + s.name)"
+                  >
+                    Details <assay-chevron [open]="isOpen('details:' + s.name)" />
+                  </button>
+                  @if (isOpen('details:' + s.name)) {
+                    @if (s.passed) {
+                      <ng-container *ngTemplateOutlet="config; context: { $implicit: s }" />
+                    }
+                    @if (s.answerPath) {
+                      <div class="detail small muted">
+                        <span class="strong">Read from:</span>
+                        <span class="mono">{{ s.answerPath }}</span>
+                      </div>
+                    }
+                    @if (s.judgedBy) {
+                      <div class="detail small muted">
+                        <span class="strong">Judged by:</span>
+                        <span class="mono">{{ s.judgedBy }}</span>
+                      </div>
+                    }
+                    @if (s.engine) {
+                      <div class="detail small muted">
+                        <span class="strong">Engine:</span> {{ s.engine }}
+                      </div>
+                    }
+                    @if (s.engineSettings) {
+                      <div class="detail small muted">
+                        <span class="strong">Engine settings:</span> {{ s.engineSettings }}
+                      </div>
+                    }
+                  }
+                }
+              </div>
+            } @empty {
+              <div class="score muted">
+                {{
+                  r.status === 'NotRan'
+                    ? 'Run failed before anything could be evaluated - see error above.'
+                    : 'No results yet - run is ' + statusLabel(r.status) + '.'
+                }}
               </div>
             }
           </div>
-        }
-        @if (replyText(); as reply) {
-          <details class="field-ro reply" (toggle)="replyOpen.set($any($event.target).open)">
-            <summary class="label">
-              Full application reply <assay-chevron [open]="replyOpen()" />
-            </summary>
-            <div class="body mono">{{ reply }}</div>
-          </details>
-        }
-        @for (f of fields(); track f[0]) {
-          <div class="field-ro">
-            <div class="label">{{ f[0] }}</div>
-            <div class="body">{{ f[1] }}</div>
+        </div>
+        <div class="cell col">
+          <div class="row-head">
+            <h2>{{ heading() }}</h2>
+            @if (snapshotAt()) {
+              <span class="small">snapshot <assay-rel-time [iso]="snapshotAt()" /></span>
+            }
           </div>
+          <assay-type-tags [assignments]="content()?.test_type_assignments" />
+          @if (r.evaluated_output != null) {
+            <div class="field-ro">
+              <div class="label">
+                Evaluated output
+                <span
+                  class="tag"
+                  [class.tag-accent]="r.output_source === 'application'"
+                  [class.tag-outline]="r.output_source !== 'application'"
+                  >{{ r.output_source === 'application' ? 'From application' : 'Recorded' }}</span
+                >
+              </div>
+              @if (evaluated(); as ev) {
+                @if (ev.empty) {
+                  <div class="body muted">(empty answer)</div>
+                } @else {
+                  <div class="body" [class.mono]="ev.json">{{ ev.text }}</div>
+                }
+              }
+              @if (r.output_source === 'application') {
+                <div class="small source-note">
+                  Read from the application's reply at the Answer path in
+                  <a routerLink="/settings" class="plain">Settings</a>.
+                </div>
+              }
+            </div>
+          }
+          @if (replyText(); as reply) {
+            <details class="field-ro reply" (toggle)="replyOpen.set($any($event.target).open)">
+              <summary class="label">
+                Full application reply <assay-chevron [open]="replyOpen()" />
+              </summary>
+              <div class="body mono">{{ reply }}</div>
+            </details>
+          }
+          @for (f of fields(); track f[0]) {
+            <div class="field-ro">
+              <div class="label">{{ f[0] }}</div>
+              <div class="body">{{ f[1] }}</div>
+            </div>
+          }
+          @if (sourceLink(); as l) {
+            <a class="plain small" [routerLink]="l">Open originating test →</a>
+          }
+        </div>
+      </section>
+    }
+    <!-- What a check was run with - shown for a failure, under Details for a pass. -->
+    <ng-template #config let-s>
+      @for (c of s.config; track c.key) {
+        <div class="detail muted cfg" [class.clamp]="c.long && !isOpen(c.key)">
+          <span class="strong">{{ c.label }}:</span>
+          <span [class.mono]="c.mono">{{ c.value }}</span>
+        </div>
+        @if (c.long) {
+          <button type="button" class="more small" (click)="toggle(c.key)">
+            {{ isOpen(c.key) ? 'Less ↑' : 'More ↓' }}
+          </button>
         }
-        @if (sourceLink(); as l) {
-          <a class="plain small" [routerLink]="l">Open originating test →</a>
-        }
-      </div>
-    </section>
-  }`,
+      }
+    </ng-template>`,
 })
 export class RunBodyComponent {
   run = input.required<RunDetails | StandaloneRunDetails | null>();
@@ -194,17 +220,18 @@ export class RunBodyComponent {
   statusColor = statusColor;
   statusLabel = statusLabel;
   private testTypes = inject(TestTypesStore);
-  /** Which long config values (keyed "<type name>:<field key>") are expanded past their clamp -
-   *  a rubric can run to a full paragraph, so it starts collapsed like a test type card's "More". */
-  private openConfigKeys = signal<Set<string>>(new Set());
+  /** What's expanded: long config values past their clamp (keyed "<check>:<field key>" - a
+   *  rubric can run to a full paragraph, so it starts collapsed like a test type card's "More")
+   *  and a result's Details ("details:<check>"). */
+  private openKeys = signal<Set<string>>(new Set());
   constructor() {
     this.testTypes.load();
   }
-  isConfigOpen(key: string) {
-    return this.openConfigKeys().has(key);
+  isOpen(key: string) {
+    return this.openKeys().has(key);
   }
-  toggleConfig(key: string) {
-    this.openConfigKeys.update((s) => {
+  toggle(key: string) {
+    this.openKeys.update((s) => {
       const next = new Set(s);
       next.has(key) ? next.delete(key) : next.add(key);
       return next;
@@ -257,8 +284,16 @@ export class RunBodyComponent {
     }
     return rows;
   }
+  /** Failures first - what needs attention is at the top - then passes, each group in the API's
+   *  order (by check name). */
   results = computed(() =>
-    Object.entries(this.run()?.results ?? {}).map(([name, r]) => ({
+    [...this.resultRows()].sort((a, b) => Number(a.passed) - Number(b.passed)),
+  );
+  private resultRows = computed(() =>
+    Object.entries(this.run()?.results ?? {}).map(([name, r]) => this.resultRow(name, r)),
+  );
+  private resultRow(name: string, r: TestTypeResult) {
+    const row = {
       name,
       // The check's type beside its name, when the name isn't simply the type's.
       type: r.test_type && r.test_type !== name ? r.test_type : null,
@@ -277,8 +312,13 @@ export class RunBodyComponent {
       answerPath: r.answer_path ?? null,
       engine: r.engine ?? null,
       engineSettings: r.engine ? engineSettingsLabel(r.engine_settings) : null,
-    })),
-  );
+    };
+    // Something to fold under Details: a pass's config, or any of the technical lines.
+    const hasDetails =
+      (row.passed && row.config.length > 0) ||
+      !!(row.answerPath || row.judgedBy || row.engine || row.engineSettings);
+    return { ...row, hasDetails };
+  }
   /** Bar width for a result's score - null (no bar) when there's no score: LLM judges and the
    *  deterministic types (every type on the exact_match / contains / regex engines, negated variants included) return `score: null` by contract, so
    *  they get the pass/fail dot only. A threshold-scored type (`comparison` non-null) reports its

@@ -108,3 +108,8 @@
   margin-left: 6px;
   font-weight: 400;
 }
+/* A result's Details toggle starts its own full-width line. */
+.score .adv-toggle {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
