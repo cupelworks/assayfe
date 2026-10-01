@@ -250,22 +250,13 @@
     >
       <p class="muted" style="margin: 0">
         Every row becomes a live test (prompt → input, expected → expected output, model output
-        copied). All share the test types and config values you set here; leave empty to assign
-        later.
+        copied). All share the checks you set here; leave empty to assign them later.
       </p>
       <div class="field">
-        <label>Test types</label
-        ><assay-test-type-picker
-          [selected]="typeNames()"
-          [hasReference]="true"
-          (selectedChange)="typeNames.set($event)"
-        />
-        <assay-test-type-config-fields
-          [selected]="typeNames()"
-          [value]="batchConfig()"
-          (valueChange)="batchConfig.set($event)"
-          [answerPaths]="batchAnswerPaths()"
-          (answerPathsChange)="batchAnswerPaths.set($event)"
+        <assay-checks-table
+          [(checks)]="batchChecks"
+          [hasReference]="null"
+          hint="every test created from the rows gets these"
         />
         @if (configIssues().length) {
           <div class="note-warn">Fix before saving: {{ configIssues().join(', ') }}</div>

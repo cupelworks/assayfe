@@ -69,8 +69,8 @@
           <td>
             @if (t.test_type_assignments?.length) {
               <div class="tags">
-                @for (x of t.test_type_assignments; track x.name) {
-                  <span class="tag tag-outline">{{ x.name }}</span>
+                @for (x of t.test_type_assignments; track $index) {
+                  <span class="tag tag-outline">{{ checkName(x) }}</span>
                 }
               </div>
             } @else {

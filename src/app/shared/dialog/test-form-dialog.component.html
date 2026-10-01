@@ -57,22 +57,7 @@
     </div>
   </div>
   <div class="field">
-    <label
-      >Test types
-      <span class="hint">- how the output is evaluated; a test with none can't be run</span></label
-    >
-    <assay-test-type-picker
-      [selected]="types()"
-      [hasReference]="hasReference()"
-      (selectedChange)="types.set($event)"
-    />
-    <assay-test-type-config-fields
-      [selected]="types()"
-      [value]="configs()"
-      (valueChange)="configs.set($event)"
-      [answerPaths]="answerPaths()"
-      (answerPathsChange)="answerPaths.set($event)"
-    />
+    <assay-checks-table [(checks)]="checks" [hasReference]="hasReference()" />
     @if (configIssues().length) {
       <div class="note note-warn">Fix before saving: {{ configIssues().join(', ') }}</div>
     }

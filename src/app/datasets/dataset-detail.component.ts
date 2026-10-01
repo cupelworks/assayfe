@@ -6,15 +6,10 @@ import { DatasetsApiService } from '../api/datasets-api.service';
 import { TestsApiService } from '../api/tests-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { DataSetMetadata, DataSetRow, DataSetRowSchema } from '../api/models';
-import {
-  TestTypesStore,
-  needsReference,
-  configIssuesFor,
-  buildAssignments,
-} from '../api/test-types.store';
+import { TestTypesStore } from '../api/test-types.store';
+import { CheckDraft, checkIssues, toAssignments, typesNeedingReference } from '../api/checks';
 import { rel, short, errText } from '../shared/format';
-import { TestTypePickerComponent } from '../shared/test-type-picker.component';
-import { TestTypeConfigFieldsComponent } from '../shared/test-type-config-fields.component';
+import { ChecksTableComponent } from '../shared/checks-table.component';
 import { DialogComponent } from '../shared/dialog/dialog.component';
 import { NameDialogComponent } from '../shared/dialog/name-dialog.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
@@ -36,8 +31,7 @@ import { Selection } from '../shared/selection';
     NameDialogComponent,
     ConfirmDialogComponent,
     PagerComponent,
-    TestTypePickerComponent,
-    TestTypeConfigFieldsComponent,
+    ChecksTableComponent,
   ],
   templateUrl: './dataset-detail.component.html',
   styleUrls: ['../shared/page.css', './dataset-detail.component.css'],
@@ -69,39 +63,20 @@ export class DatasetDetailComponent {
     },
   });
   jsonl = signal('');
-  typeNames = signal<string[]>([]);
-  /** Config values for the "Create tests from rows" batch - one shared value per field across
-   *  every row created, same shape as TestFormDialogComponent's per-test configs. */
-  batchConfig = signal<Record<string, Record<string, string>>>({});
-  /** Per-type answer_path for the batch - one value per type across every row created. */
-  batchAnswerPaths = signal<Record<string, string>>({});
-  /** What blocks "Create tests from rows": configIssuesFor (test-types.store.ts, shared with the
-   *  test form) over the batch-picked types, with reference fields skipped - every row already
-   *  carries its own expected_output via DataSetRowSchema, so a reference is always satisfied. */
-  configIssues = computed(() => {
-    const cfg = this.batchConfig();
-    return configIssuesFor(
-      this.typeNames(),
-      this.testTypesStore.byName(),
-      (type, key) => cfg[type]?.[key] ?? '',
-      null,
-      (type) => this.batchAnswerPaths()[type] ?? '',
-    );
-  });
-  /** Batch-picked type names that need a non-empty expected_output per row - informational only,
-   *  not part of configIssues() (which only blocks on things provably wrong from what's loaded
-   *  here). Unlike the single-test form, this dialog can't check every dataset row's own
-   *  expected_output without fetching the whole dataset just for this, so it can't say which
-   *  rows (if any) are actually empty - only that some selected type needs one. The backend now
-   *  rejects the create call outright (422, listing the offending row ids) if any row is
-   *  missing one - see docs/test_type_config/dev_notes.md note 10. */
-  referenceTypesInBatch = computed(() => {
-    const byName = this.testTypesStore.byName();
-    return this.typeNames().filter((name) => {
-      const t = byName.get(name);
-      return t && needsReference(t);
-    });
-  });
+  /** The checks every test created from the rows gets - the same table as the test form. */
+  batchChecks = signal<CheckDraft[]>([]);
+  /** What blocks "Create tests from rows": `checkIssues` (api/checks.ts, shared with the test
+   *  form), with reference fields skipped - every row brings its own expected_output. */
+  configIssues = computed(() =>
+    checkIssues(this.batchChecks(), this.testTypesStore.byName(), null),
+  );
+  /** Checks' types that need a non-empty expected_output per row - informational only, not part
+   *  of configIssues(): this dialog can't check every row's expected_output without fetching the
+   *  whole dataset, so it can only say that some check needs one. The backend rejects the create
+   *  call (422, listing the offending row ids) if any row is missing one. */
+  referenceTypesInBatch = computed(() =>
+    typesNeedingReference(this.batchChecks(), this.testTypesStore.byName()),
+  );
   editing = signal<DataSetRow | null>(null);
   draft = signal<DataSetRowSchema>({ ...EMPTY });
   name = computed(() => this.meta()?.name ?? short(this.id()));
@@ -178,9 +153,7 @@ export class DatasetDetailComponent {
   open(d: Dlg, row?: DataSetRow) {
     this.act.err.set(null);
     this.jsonl.set('');
-    this.typeNames.set([]);
-    this.batchConfig.set({});
-    this.batchAnswerPaths.set({});
+    this.batchChecks.set([]);
     if (row) {
       this.editing.set(row);
       this.draft.set({ ...row.row_info });
@@ -227,12 +200,7 @@ export class DatasetDetailComponent {
   }
   toTests() {
     if (this.configIssues().length) return;
-    const assignments = buildAssignments(
-      this.typeNames(),
-      this.testTypesStore.byName(),
-      this.batchConfig(),
-      this.batchAnswerPaths(),
-    );
+    const assignments = toAssignments(this.batchChecks(), this.testTypesStore.byName());
     this.act.run(this.testsApi.createTestsFromDataset(this.id(), assignments), {
       ok: (r) => `Created ${r.test_cases.length} tests from this dataset.`,
       then: () => this.router.navigate(['/tests']),

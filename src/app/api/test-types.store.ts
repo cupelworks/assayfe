@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { TestsApiService } from './tests-api.service';
-import { ConfigFieldDescriptor, TestCategory, TestType, TestTypeAssignment } from './models';
+import { ConfigFieldDescriptor, TestCategory, TestType } from './models';
 import { parseDecimal } from '../shared/number';
 
 /** Whether a type needs an expected_output to work at all - derived from config_fields instead
@@ -9,7 +9,7 @@ import { parseDecimal } from '../shared/number';
 export const needsReference = (t: TestType) =>
   t.config_fields.some((f) => f.kind === 'reference' && f.required);
 /** Whether a type needs ANY required input before it'll score anything - reference or not.
- *  Catalogue-level, context-free (unlike TestTypePickerComponent's own needsAttention(), which
+ *  Catalogue-level, context-free (unlike ChecksTableComponent's own needsAttention(), which
  *  also knows whether the current test already has a reference filled in) - use this where
  *  there's no specific test to check against, e.g. the catalogue page's per-card tag. */
 export const needsSetup = (t: TestType) => t.config_fields.some((f) => f.required);
@@ -71,68 +71,6 @@ export const configFieldIssue = (f: ConfigFieldDescriptor, raw: string): string 
       return null;
   }
 };
-/** "<field label> (<type name>)" for every selected type's required config field left empty, and
- *  (via `answerPathOf`) its answer_path when that isn't a plausible JSONPath; and
- *  "<field label> (<type name>) - <problem>" for a filled one that isn't fit to send
- *  (`configFieldIssue`) - what every form with type config blocks saving on and lists as "Fix
- *  before saving". `hasReference` says whether the item being edited has an expected output, for
- *  "reference" fields; pass null where every item always brings its own (the dataset batch, whose
- *  rows each carry one), so reference fields are skipped. */
-export function configIssuesFor(
-  types: readonly string[],
-  byName: Map<string, TestType>,
-  valueOf: (type: string, key: string) => string,
-  hasReference: boolean | null,
-  answerPathOf: (type: string) => string = () => '',
-): string[] {
-  const out: string[] = [];
-  for (const name of types) {
-    const path = answerPathOf(name).trim();
-    const pathIssue = path ? jsonPathIssue(path) : null;
-    if (pathIssue) out.push(`${ANSWER_PATH.label} (${name}) - ${pathIssue}`);
-    const t = byName.get(name);
-    if (!t) continue;
-    for (const f of t.config_fields) {
-      if (f.kind === 'reference') {
-        if (hasReference === false && f.required) out.push(`${f.label} (${name})`);
-        continue;
-      }
-      const raw = valueOf(name, f.key).trim();
-      if (!raw) {
-        if (f.required) out.push(`${f.label} (${name})`);
-        continue;
-      }
-      const issue = configFieldIssue(f, raw);
-      if (issue) out.push(`${f.label} (${name}) - ${issue}`);
-    }
-  }
-  return out;
-}
-/** The assignments a form sends for the ticked types: each type's non-empty config values (only
- *  its own non-reference fields), and ALWAYS its answer_path (null when empty). Always, because
- *  the API replaces the whole list on save and reads a missing answer_path as null - leaving it
- *  out would silently reset a path the user set earlier. Shared by the test form and the dataset
- *  "Create tests from rows" batch. */
-export function buildAssignments(
-  types: readonly string[],
-  byName: Map<string, TestType>,
-  configs: Record<string, Record<string, string>>,
-  answerPaths: Record<string, string>,
-): TestTypeAssignment[] {
-  return types.map((name) => {
-    const t = byName.get(name);
-    const config: Record<string, string> = {};
-    for (const f of t ? assignmentFields(t) : []) {
-      const v = configs[name]?.[f.key]?.trim();
-      if (v) config[f.key] = v;
-    }
-    return {
-      name,
-      config: Object.keys(config).length ? config : null,
-      answer_path: answerPaths[name]?.trim() || null,
-    };
-  });
-}
 /** Fields whose value is code rather than prose - JSON, a JSON Schema, a JSONPath, a regex -
  *  shown in monospace (and not spell-checked) wherever they're edited or displayed. */
 export const isCodeField = (f: ConfigFieldDescriptor): boolean =>

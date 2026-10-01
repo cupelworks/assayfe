@@ -1,3 +1,4 @@
+import { checkName } from '../api/checks';
 import { Component, inject, signal, computed } from '@angular/core';
 import { ActionRunner } from '../shared/action-runner';
 import { RouterLink } from '@angular/router';
@@ -28,6 +29,7 @@ import { Selection } from '../shared/selection';
   styleUrls: ['../shared/page.css'],
 })
 export class TestsListComponent {
+  checkName = checkName;
   store = inject(CatalogStore);
   api = inject(TestsApiService);
   displayName = displayName;

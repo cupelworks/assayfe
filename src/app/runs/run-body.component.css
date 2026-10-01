@@ -103,3 +103,8 @@
 .source-note {
   margin-top: 6px;
 }
+/* The check's type beside its name, when the name is the user's own. */
+.type-tag {
+  margin-left: 6px;
+  font-weight: 400;
+}

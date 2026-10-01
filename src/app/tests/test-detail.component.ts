@@ -1,3 +1,4 @@
+import { checkName } from '../api/checks';
 import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
 import { ActionRunner } from '../shared/action-runner';
 import { Router, RouterLink } from '@angular/router';
@@ -36,6 +37,7 @@ import { pollWhile } from '../shared/poll';
   styleUrls: ['../shared/page.css'],
 })
 export class TestDetailComponent {
+  checkName = checkName;
   id = input.required<string>();
   testsApi = inject(TestsApiService);
   runsApi = inject(RunsApiService);

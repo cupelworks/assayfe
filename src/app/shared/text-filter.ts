@@ -8,7 +8,7 @@ import { signal } from '@angular/core';
  * own small piece: `sort.apply(filter.apply(items))`.
  *
  * Doesn't try to cover the catalogue/picker pages (`test-types.component.ts`,
- * `test-type-picker.component.ts`) - those combine text search with category chips and other
+ * `checks-table.component.ts`'s type picker) - those combine text search with category chips and other
  * criteria in ways that are genuinely per-page, not a variant of this.
  */
 export class TextFilter<T> {

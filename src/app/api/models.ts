@@ -22,7 +22,11 @@ export type TestStatus = 'Pending' | 'Running' | 'Green' | 'Amber' | 'Red' | 'No
  *  deterministic types, which are pass/fail only. `detail` carries a judge's rationale, or this
  *  specific type's own error message if only it failed to evaluate while the rest of the run's
  *  other types proceeded normally. */
+/** One check's result, keyed in a run's `results` by the check's label. */
 export interface TestTypeResult {
+  /** The catalogue type that ran - look the type up by this, never by the result's key (a
+   *  label). Null only on results written before labels existed. */
+  test_type?: string | null;
   passed: boolean;
   score: number | null;
   detail: string | null;
@@ -97,12 +101,19 @@ export interface DataSetMutationResult {
  *  expected_output instead (see TestType.config_fields). Null when the type has no non-reference
  *  fields, or none were filled in. */
 export interface TestTypeAssignment {
+  /** The catalogue type it runs. A test can hold the same type more than once. */
   name: string;
+  /** The check's own name - unique within the test, ignoring letter case, at most 100
+   *  characters. Null or blank → the API names it: the type's name, numbered past every name in
+   *  use ("Contains", "Contains 2", …). A form must send back the names it was given, so a check
+   *  keeps its identity (and its results stay comparable) across edits - see checks.ts. Always
+   *  set in responses, which list assignments sorted by it, ignoring case. */
+  label?: string | null;
   config?: Record<string, string> | null;
   /** Which part of the application's reply this check reads, as a JSONPath (e.g. "$.stop_reason",
    *  or "$" for the whole reply); null = the default answer (`evaluated_output`). The API replaces
    *  the assignment list whole on PATCH and reads a missing key as null, so a form must always
-   *  send it back - see `buildAssignments`. */
+   *  send it back - see `toAssignments` in checks.ts. */
   answer_path?: string | null;
 }
 export interface TestCaseBody {

@@ -93,8 +93,8 @@
             <td class="muted ellip" style="width: auto">{{ e.input }}</td>
             <td>
               <div class="tags">
-                @for (t of e.test_type_assignments ?? []; track t.name) {
-                  <span class="tag tag-outline">{{ t.name }}</span>
+                @for (t of e.test_type_assignments ?? []; track $index) {
+                  <span class="tag tag-outline">{{ checkName(t) }}</span>
                 } @empty {
                   <span class="small">none</span>
                 }

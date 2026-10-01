@@ -1,3 +1,4 @@
+import { checkName } from '../api/checks';
 import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
 import { ActionRunner } from '../shared/action-runner';
 import { Router, RouterLink } from '@angular/router';
@@ -35,6 +36,7 @@ import { Selection } from '../shared/selection';
   styleUrls: ['../shared/page.css'],
 })
 export class TestSetDetailComponent {
+  checkName = checkName;
   id = input.required<string>();
   testSetsApi = inject(TestSetsApiService);
   runsApi = inject(RunsApiService);
@@ -91,7 +93,7 @@ export class TestSetDetailComponent {
           ? 'already in set'
           : noTypes
             ? 'no test types'
-            : t.test_type_assignments!.map((a) => a.name).join(', '),
+            : t.test_type_assignments!.map(checkName).join(', '),
         disabled: dup,
         dim: noTypes,
       };

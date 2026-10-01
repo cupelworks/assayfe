@@ -15,6 +15,7 @@ import {
   engineSettingsLabel,
   isCodeField,
 } from '../api/test-types.store';
+import { checkName } from '../api/checks';
 
 /** Status / error / per-type results (left) + frozen or live test content (right). */
 @Component({
@@ -64,6 +65,9 @@ import {
                   "
                 ></span>
                 {{ s.name }}
+                @if (s.type) {
+                  <span class="tag tag-neutral type-tag">{{ s.type }}</span>
+                }
               </div>
               @if (s.answerPath) {
                 <div class="detail small muted">
@@ -126,8 +130,8 @@ import {
           }
         </div>
         <div class="tags">
-          @for (t of content()?.test_type_assignments ?? []; track t.name) {
-            <span class="tag tag-outline">{{ t.name }}</span>
+          @for (t of content()?.test_type_assignments ?? []; track $index) {
+            <span class="tag tag-outline">{{ checkName(t) }}</span>
           }
         </div>
         @if (r.evaluated_output != null) {
@@ -178,6 +182,7 @@ import {
   }`,
 })
 export class RunBodyComponent {
+  checkName = checkName;
   run = input.required<RunDetails | StandaloneRunDetails | null>();
   content = input<{
     input?: string;
@@ -222,8 +227,12 @@ export class RunBodyComponent {
     name: string,
     result: TestTypeResult,
   ): { key: string; label: string; value: string; long: boolean; mono: boolean }[] {
-    const config = this.content()?.test_type_assignments?.find((a) => a.name === name)?.config;
-    const type = this.testTypes.byName().get(name);
+    // Results are keyed by the check's label; its type is the result's own test_type (the key
+    // itself on results from before labels).
+    const config = this.content()?.test_type_assignments?.find(
+      (a) => checkName(a) === name,
+    )?.config;
+    const type = this.testTypes.byName().get(result.test_type ?? name);
     const fields = type ? assignmentFields(type) : [];
     const valueOf = (key: string) => config?.[key]?.trim() || null;
     const rows = fields.flatMap((f) => {
@@ -255,6 +264,8 @@ export class RunBodyComponent {
   results = computed(() =>
     Object.entries(this.run()?.results ?? {}).map(([name, r]) => ({
       name,
+      // The check's type beside its name, when the name isn't simply the type's.
+      type: r.test_type && r.test_type !== name ? r.test_type : null,
       passed: r.passed,
       // 4 decimals - the precision the backend keeps and quotes in a miss's detail ("0.3704 is
       // below the threshold 0.5"), so the number beside the bar matches it.
@@ -285,7 +296,7 @@ export class RunBodyComponent {
    *  the bar doesn't, rather than guessing a scale. */
   private resultPct(name: string, r: TestTypeResult): string | null {
     if (r.score == null) return null;
-    const type = this.testTypes.byName().get(name);
+    const type = this.testTypes.byName().get(r.test_type ?? name);
     if (!type?.comparison || (r.engine && r.engine !== type.engine)) return null;
     const threshold = assignmentFields(type).find((f) => f.kind === 'numeric');
     if (threshold?.min == null || threshold?.max == null || threshold.max <= threshold.min)
@@ -317,13 +328,13 @@ export class RunBodyComponent {
     if (reply == null) return null;
     return typeof reply === 'string' ? reply : JSON.stringify(reply, null, 2);
   });
-  /** "2 of 3 test types passed" - a headline the per-type dots+labels otherwise make the reader
-   *  count out themselves. Null (hidden) while there's nothing to summarize yet. */
+  /** "2 of 3 checks passed" - a headline the per-check dots otherwise make the reader count out
+   *  themselves. Null (hidden) while there's nothing to summarize yet. */
   resultsSummary = computed(() => {
     const r = this.results();
     if (!r.length) return null;
     const passed = r.filter((x) => x.passed).length;
-    return `${passed} of ${r.length} test type${r.length === 1 ? '' : 's'} passed`;
+    return `${passed} of ${r.length} check${r.length === 1 ? '' : 's'} passed`;
   });
   fields = computed(() => {
     const c = this.content();

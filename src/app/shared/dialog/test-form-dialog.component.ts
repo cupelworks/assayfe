@@ -2,20 +2,21 @@ import { Component, inject, input, output, signal, computed } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { DialogComponent } from './dialog.component';
 import { TestCaseBody } from '../../api/models';
+import { TestTypesStore } from '../../api/test-types.store';
 import {
-  TestTypesStore,
-  needsReference,
-  configIssuesFor,
-  buildAssignments,
-} from '../../api/test-types.store';
-import { TestTypePickerComponent } from '../test-type-picker.component';
-import { TestTypeConfigFieldsComponent } from '../test-type-config-fields.component';
+  CheckDraft,
+  checkIssues,
+  checksFrom,
+  toAssignments,
+  typesNeedingReference,
+} from '../../api/checks';
+import { ChecksTableComponent } from '../checks-table.component';
 
 /** name / input / expected_output / model_output / test_type_assignments - the CreateTestCaseRequest & ModifyTestCaseRequest shape. */
 @Component({
   selector: 'assay-test-form-dialog',
   standalone: true,
-  imports: [DialogComponent, FormsModule, TestTypePickerComponent, TestTypeConfigFieldsComponent],
+  imports: [DialogComponent, FormsModule, ChecksTableComponent],
   templateUrl: './test-form-dialog.component.html',
   styleUrl: './test-form-dialog.component.css',
 })
@@ -33,37 +34,21 @@ export class TestFormDialogComponent {
   inp = signal('');
   expected = signal('');
   modelOut = signal('');
-  types = signal<string[]>([]);
-  /** Per-type config values, keyed by type name then field key - see TestTypeConfigFieldsComponent. */
-  configs = signal<Record<string, Record<string, string>>>({});
-  /** Per-type answer_path text ('' = the default answer) - see TestTypeConfigFieldsComponent. */
-  answerPaths = signal<Record<string, string>>({});
+  /** The test's checks - see api/checks.ts and ChecksTableComponent. */
+  checks = signal<CheckDraft[]>([]);
   hasReference = computed(() => !!this.expected().trim());
-  /** The Expected output label's hint, live as types are ticked: "required by BLEU, ROUGE" when
-   *  any selected type needs a reference (per its config_fields - `needsReference`, the same rule
-   *  as the catalogue's tag), "optional" when none does. It says up front what configIssues would
-   *  otherwise only report when saving is blocked. */
+  /** The Expected output label's hint, live as checks are added: "required by BLEU, ROUGE" when
+   *  any check's type needs a reference (`needsReference`, the same rule as the catalogue's
+   *  tag), "optional" when none does - up front, before saving is blocked for it. */
   expectedHint = computed(() => {
-    const byName = this.store.byName();
-    const needing = this.types().filter((n) => {
-      const t = byName.get(n);
-      return !!t && needsReference(t);
-    });
+    const needing = typesNeedingReference(this.checks(), this.store.byName());
     return needing.length ? `required by ${needing.join(', ')}` : 'optional';
   });
-  /** What blocks saving and is listed as "Fix before saving": every selected type's required
-   *  field left empty (a "reference" field checks this test's own expected output) and every
-   *  filled one that isn't fit to send (a number out of range, JSON that doesn't parse, …) - see
-   *  configIssuesFor in test-types.store.ts, shared with the dataset batch. The API repeats the
-   *  JSON/JSONPath checks on save; the rest this is the only guard for. */
+  /** What blocks saving, listed as "Fix before saving" - `checkIssues` in api/checks.ts, shared
+   *  with the dataset batch: a name used twice, required settings left empty, values that aren't
+   *  fit to send. The API repeats its own checks on save (a 422, shown as sent). */
   configIssues = computed(() =>
-    configIssuesFor(
-      this.types(),
-      this.store.byName(),
-      (type, key) => this.configs()[type]?.[key] ?? '',
-      this.hasReference(),
-      (type) => this.answerPaths()[type] ?? '',
-    ),
+    checkIssues(this.checks(), this.store.byName(), this.hasReference()),
   );
   valid = computed(() => !!this.inp().trim() && !this.configIssues().length);
   ngOnInit() {
@@ -73,12 +58,8 @@ export class TestFormDialogComponent {
       this.inp.set(i.input ?? '');
       this.expected.set(i.expected_output ?? '');
       this.modelOut.set(i.model_output ?? '');
-      const assignments = i.test_type_assignments ?? [];
-      this.types.set(assignments.map((a) => a.name));
-      this.configs.set(Object.fromEntries(assignments.map((a) => [a.name, a.config ?? {}])));
-      this.answerPaths.set(
-        Object.fromEntries(assignments.map((a) => [a.name, a.answer_path ?? ''])),
-      );
+      // Keeps every label the API gave, so each check keeps its identity when saved again.
+      this.checks.set(checksFrom(i.test_type_assignments));
     }
   }
   go() {
@@ -88,12 +69,7 @@ export class TestFormDialogComponent {
       input: this.inp(),
       expected_output: this.expected().trim() || null,
       model_output: this.modelOut().trim() || null,
-      test_type_assignments: buildAssignments(
-        this.types(),
-        this.store.byName(),
-        this.configs(),
-        this.answerPaths(),
-      ),
+      test_type_assignments: toAssignments(this.checks(), this.store.byName()),
     });
   }
 }
