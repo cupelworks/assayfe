@@ -36,6 +36,8 @@ import { pollWhile } from '../shared/poll';
   ],
   templateUrl: './test-detail.component.html',
   styleUrls: ['../shared/page.css'],
+  // Input opens the column now (the checks moved below the fields), so it needs no rule above it.
+  styles: ['.cell > .field-ro:first-child { border-top: 0; padding-top: 0; }'],
 })
 export class TestDetailComponent {
   id = input.required<string>();

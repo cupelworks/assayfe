@@ -25,10 +25,6 @@
 @if (test(); as t) {
   <section class="split">
     <div class="cell cell-r" style="display: flex; flex-direction: column; gap: 20px">
-      <assay-checks-view
-        [assignments]="t.test_type_assignments"
-        empty="No checks - this test can't be run until one is added."
-      />
       @for (f of fields(); track f.label) {
         <div class="field-ro">
           <div class="label">
@@ -47,6 +43,11 @@
           <div class="body">{{ f.value }}</div>
         </div>
       }
+      <!-- The test first (input, expected, model output), then what checks it. -->
+      <assay-checks-view
+        [assignments]="t.test_type_assignments"
+        empty="No checks - this test can't be run until one is added."
+      />
     </div>
     <div class="cell">
       <div class="row-head" style="margin-bottom: 8px">
