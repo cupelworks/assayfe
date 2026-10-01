@@ -68,11 +68,7 @@
           <td class="muted ellip" style="width: auto">{{ t.input }}</td>
           <td>
             @if (t.test_type_assignments?.length) {
-              <div class="tags">
-                @for (x of t.test_type_assignments; track $index) {
-                  <span class="tag tag-outline">{{ checkName(x) }}</span>
-                }
-              </div>
+              <assay-type-tags [assignments]="t.test_type_assignments" />
             } @else {
               <span class="small"
                 >none - <a class="plain" routerLink="/test-types">pick a type</a></span

@@ -16,12 +16,13 @@ import {
   isCodeField,
 } from '../api/test-types.store';
 import { checkName } from '../api/checks';
+import { TypeTagsComponent } from '../shared/type-tags.component';
 
 /** Status / error / per-type results (left) + frozen or live test content (right). */
 @Component({
   selector: 'assay-run-body',
   standalone: true,
-  imports: [RouterLink, RelTimeComponent, ChevronComponent],
+  imports: [TypeTagsComponent, RouterLink, RelTimeComponent, ChevronComponent],
   styleUrls: ['../shared/page.css', './run-body.component.css'],
   template: ` @if (run(); as r) {
     <section class="half">
@@ -129,11 +130,7 @@ import { checkName } from '../api/checks';
             <span class="small">snapshot <assay-rel-time [iso]="snapshotAt()" /></span>
           }
         </div>
-        <div class="tags">
-          @for (t of content()?.test_type_assignments ?? []; track $index) {
-            <span class="tag tag-outline">{{ checkName(t) }}</span>
-          }
-        </div>
+        <assay-type-tags [assignments]="content()?.test_type_assignments" />
         @if (r.evaluated_output != null) {
           <div class="field-ro">
             <div class="label">
@@ -182,7 +179,6 @@ import { checkName } from '../api/checks';
   }`,
 })
 export class RunBodyComponent {
-  checkName = checkName;
   run = input.required<RunDetails | StandaloneRunDetails | null>();
   content = input<{
     input?: string;

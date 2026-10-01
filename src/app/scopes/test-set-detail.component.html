@@ -92,13 +92,7 @@
             </td>
             <td class="muted ellip" style="width: auto">{{ e.input }}</td>
             <td>
-              <div class="tags">
-                @for (t of e.test_type_assignments ?? []; track $index) {
-                  <span class="tag tag-outline">{{ checkName(t) }}</span>
-                } @empty {
-                  <span class="small">none</span>
-                }
-              </div>
+              <assay-type-tags [assignments]="e.test_type_assignments" empty="none" />
             </td>
             <td>
               <button class="btn btn-ghost btn-sm" (click)="open('editEntry', e)">Edit</button>

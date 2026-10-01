@@ -25,13 +25,10 @@
 @if (test(); as t) {
   <section class="split">
     <div class="cell cell-r" style="display: flex; flex-direction: column; gap: 20px">
-      <div class="tags">
-        @for (x of t.test_type_assignments ?? []; track $index) {
-          <span class="tag tag-outline">{{ checkName(x) }}</span>
-        } @empty {
-          <span class="small">No test types - this test can't be run until one is assigned.</span>
-        }
-      </div>
+      <assay-type-tags
+        [assignments]="t.test_type_assignments"
+        empty="No test types - this test can't be run until one is assigned."
+      />
       @for (f of fields(); track f.label) {
         <div class="field-ro">
           <div class="label">

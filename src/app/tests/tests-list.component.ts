@@ -1,4 +1,4 @@
-import { checkName } from '../api/checks';
+import { TypeTagsComponent } from '../shared/type-tags.component';
 import { Component, inject, signal, computed } from '@angular/core';
 import { ActionRunner } from '../shared/action-runner';
 import { RouterLink } from '@angular/router';
@@ -19,6 +19,7 @@ import { Selection } from '../shared/selection';
   selector: 'assay-tests-list',
   standalone: true,
   imports: [
+    TypeTagsComponent,
     RouterLink,
     FormsModule,
     TestFormDialogComponent,
@@ -29,7 +30,6 @@ import { Selection } from '../shared/selection';
   styleUrls: ['../shared/page.css'],
 })
 export class TestsListComponent {
-  checkName = checkName;
   store = inject(CatalogStore);
   api = inject(TestsApiService);
   displayName = displayName;

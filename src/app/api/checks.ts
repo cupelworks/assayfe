@@ -159,3 +159,18 @@ export function toAssignments(
 /** A check's name for display wherever a test's assignments are listed - its label, or the type
  *  for an assignment from before labels existed. */
 export const checkName = (a: TestTypeAssignment) => a.label || a.name;
+
+/** A test's checks summed up by type, in order of first appearance: "Contains" ×2, "Is Valid
+ *  JSON" ×1 - how the tags on lists and the test page show what a test checks. */
+export function typeCounts(
+  assignments?: readonly TestTypeAssignment[] | null,
+): { name: string; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const a of assignments ?? []) counts.set(a.name, (counts.get(a.name) ?? 0) + 1);
+  return [...counts].map(([name, count]) => ({ name, count }));
+}
+/** The same as one line: "Contains ×2, Is Valid JSON". */
+export const typeSummary = (assignments?: readonly TestTypeAssignment[] | null) =>
+  typeCounts(assignments)
+    .map((t) => (t.count > 1 ? `${t.name} ×${t.count}` : t.name))
+    .join(', ');

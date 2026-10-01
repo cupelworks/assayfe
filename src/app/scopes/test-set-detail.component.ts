@@ -1,4 +1,5 @@
-import { checkName } from '../api/checks';
+import { typeSummary } from '../api/checks';
+import { TypeTagsComponent } from '../shared/type-tags.component';
 import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
 import { ActionRunner } from '../shared/action-runner';
 import { Router, RouterLink } from '@angular/router';
@@ -24,6 +25,7 @@ import { Selection } from '../shared/selection';
   selector: 'assay-test-set-detail',
   standalone: true,
   imports: [
+    TypeTagsComponent,
     RouterLink,
     NameDialogComponent,
     ConfirmDialogComponent,
@@ -36,7 +38,6 @@ import { Selection } from '../shared/selection';
   styleUrls: ['../shared/page.css'],
 })
 export class TestSetDetailComponent {
-  checkName = checkName;
   id = input.required<string>();
   testSetsApi = inject(TestSetsApiService);
   runsApi = inject(RunsApiService);
@@ -93,7 +94,7 @@ export class TestSetDetailComponent {
           ? 'already in set'
           : noTypes
             ? 'no test types'
-            : t.test_type_assignments!.map(checkName).join(', '),
+            : typeSummary(t.test_type_assignments),
         disabled: dup,
         dim: noTypes,
       };
