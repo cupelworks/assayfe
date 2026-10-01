@@ -1,0 +1,47 @@
+<div class="cv">
+  <div class="cv-head">
+    <span class="label">Checks</span>
+    @if (total()) {
+      <span class="small">{{ total() }} check{{ total() === 1 ? '' : 's' }}</span>
+    }
+  </div>
+  @if (total()) {
+    <div class="cv-table">
+      @for (r of shown(); track r.key) {
+        <div class="cols row" [class.group-start]="r.first">
+          <span class="label type">{{ r.first ? r.type : '' }}</span>
+          <span class="name-cell">
+            <span class="name" [title]="r.name">{{ r.name }}</span>
+            @if (r.path; as p) {
+              <span class="reads"
+                >reads <span class="mono">{{ p }}</span></span
+              >
+            }
+          </span>
+          <span class="settings" [title]="titleOf(r.settings)">
+            @if (isText(r.settings)) {
+              <span class="muted">{{ r.settings }}</span>
+            } @else {
+              @for (p of r.settings; track p.label; let last = $last) {
+                <span class="k">{{ p.label }}{{ p.value ? ':' : '' }}</span>
+                @if (p.value) {
+                  <span [class.mono]="p.mono">{{ p.value }}</span>
+                }
+                @if (!last) {
+                  <span class="sep">·</span>
+                }
+              }
+            }
+          </span>
+        </div>
+      }
+    </div>
+    @if (total() > first) {
+      <button type="button" class="btn btn-ghost btn-sm more" (click)="expanded.set(!expanded())">
+        {{ expanded() ? 'Show fewer ↑' : 'Show all ' + total() + ' checks ↓' }}
+      </button>
+    }
+  } @else {
+    <div class="small">{{ empty() }}</div>
+  }
+</div>

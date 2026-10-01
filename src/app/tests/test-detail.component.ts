@@ -1,4 +1,4 @@
-import { TypeTagsComponent } from '../shared/type-tags.component';
+import { ChecksViewComponent } from '../shared/checks-view.component';
 import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
 import { ActionRunner } from '../shared/action-runner';
 import { Router, RouterLink } from '@angular/router';
@@ -26,7 +26,7 @@ import { pollWhile } from '../shared/poll';
   selector: 'assay-test-detail',
   standalone: true,
   imports: [
-    TypeTagsComponent,
+    ChecksViewComponent,
     RouterLink,
     TestFormDialogComponent,
     ConfirmDialogComponent,

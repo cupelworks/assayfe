@@ -25,9 +25,9 @@
 @if (test(); as t) {
   <section class="split">
     <div class="cell cell-r" style="display: flex; flex-direction: column; gap: 20px">
-      <assay-type-tags
+      <assay-checks-view
         [assignments]="t.test_type_assignments"
-        empty="No test types - this test can't be run until one is assigned."
+        empty="No checks - this test can't be run until one is added."
       />
       @for (f of fields(); track f.label) {
         <div class="field-ro">
