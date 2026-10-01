@@ -1,5 +1,5 @@
 import { Component, computed, signal } from '@angular/core';
-import { SettingsSource, WorkerHealth } from '../api/models';
+import { SettingsSource, TargetSettingsRead, WorkerHealth } from '../api/models';
 import { OPERATIONS } from './settings-fields';
 import { SettingsGroupComponent } from './settings-group.component';
 import { JUDGE_GROUP, SettingsGroupConfig, TARGET_GROUP } from './settings-groups';
@@ -40,6 +40,8 @@ export class SettingsComponent {
     judge: signal<SettingsSource | null>(null),
   };
   workers = signal<WorkerHealth | null>(null);
+  /** The application under test's saved URL - the judge group warns when its URL is this one. */
+  targetUrl = computed(() => (this.saved.target() as TargetSettingsRead | null)?.url ?? null);
 
   tiles = computed<Tile[]>(() => [
     this.groupTile(this.target, this.saved.target()),

@@ -25,11 +25,27 @@ export interface SettingsGroupConfig {
     /** What it calls, for the status lines: "Calling the judge…". */
     subject: string;
   };
+  /** Mistakes the page can spot on its own while you type, by field - shown like an error but
+   *  never blocking Save (the API decides what's valid). Gets the form's values and what the
+   *  page knows about the other groups. */
+  warnings?: (draft: Record<string, any>, context: SettingsContext) => Record<string, string>;
   /** A line in the Test connection cell about the saved settings, or null. */
   note?: (saved: any) => string | null;
   /** The group's tile in the page's summary strip: the headline value and one line under it. */
   summary: (saved: any) => SettingsSummary;
 }
+
+/** What a group's checks may know about the other groups' saved settings. */
+export interface SettingsContext {
+  /** The application under test's saved URL. */
+  targetUrl: string | null;
+}
+
+/** Two URLs that call the same place: trimmed, case-insensitive, trailing "/" ignored. */
+const sameUrl = (a: string | null | undefined, b: string | null | undefined) => {
+  const norm = (u: string) => u.trim().replace(/\/+$/, '').toLowerCase();
+  return !!a?.trim() && !!b?.trim() && norm(a) === norm(b);
+};
 
 export interface SettingsSummary {
   value: string;
@@ -95,6 +111,11 @@ export const JUDGE_GROUP: SettingsGroupConfig = {
         'choose a provider and model.'
       : `API key: read from ${s.api_key_variable ?? 'the provider’s standard variable'} on the ` +
         'worker (its environment or .env). Use Test connection to confirm it is set there.',
+  // The judge pointed at the application under test - a URL pasted into the wrong group.
+  warnings: (d, ctx): Record<string, string> =>
+    sameUrl(d['url'], ctx.targetUrl)
+      ? { url: "This is the application under test's URL (Target URL), not a judge's." }
+      : {},
   summary: (s: JudgeSettingsRead) =>
     s.provider == null
       ? { value: 'Not configured', detail: 'Judge test types fail until you choose one' }

@@ -11,7 +11,7 @@ import { FieldErrorStore } from '../shared/field-errors';
 import { SettingField } from './settings-fields';
 import { FieldErrors, HeaderRow, changedFields, emptyHeaderRow, isDirty } from './settings-draft';
 import { SettingsCheckRunner } from './settings-check';
-import { SettingsGroupConfig } from './settings-groups';
+import { SettingsContext, SettingsGroupConfig } from './settings-groups';
 
 /** A group's saved settings as the API returns them - its fields plus source/updated_at (and, for
  *  the judge, api_key_variable). */
@@ -37,6 +37,8 @@ type Draft = Record<string, any>;
 })
 export class SettingsGroupComponent implements OnInit {
   config = input.required<SettingsGroupConfig>();
+  /** What the page knows about the other groups, for this group's `warnings`. */
+  context = input<SettingsContext>({ targetUrl: null });
   /** The saved settings, on every load, save and reset - the page's summary strip shows them. */
   loaded = output<Saved>();
   private api = inject(SettingsApiService);
@@ -86,6 +88,12 @@ export class SettingsGroupComponent implements OnInit {
       'environment again. Past runs are not affected.' +
       (this.dirty() ? ' Your unsaved changes on this form will be lost too.' : ''),
   );
+  /** The group's own warnings for what's typed now (the judge's URL being the application's). */
+  warnings = computed<Record<string, string>>(() => {
+    const d = this.draft();
+    const w = this.config().warnings;
+    return d && w ? w(d, this.context()) : {};
+  });
   /** What's shown under each field: this form's own errors first, then a check's 422s. */
   shownErrors = computed<FieldErrors>(() => ({
     ...this.runner.fieldErrors.all(),

@@ -65,7 +65,7 @@
                     <select
                       class="input sel"
                       [id]="controlId(f.key)"
-                      [class.invalid]="shownErrors()[f.key]"
+                      [class.invalid]="shownErrors()[f.key] || warnings()[f.key]"
                       [ngModel]="value(f.key)"
                       (ngModelChange)="set(f.key, $event)"
                     >
@@ -77,7 +77,7 @@
                   @case ('json') {
                     <textarea
                       class="input ta mono"
-                      [class.invalid]="shownErrors()[f.key]"
+                      [class.invalid]="shownErrors()[f.key] || warnings()[f.key]"
                       [id]="controlId(f.key)"
                       rows="4"
                       spellcheck="false"
@@ -91,7 +91,7 @@
                       <div class="hrow">
                         <input
                           class="input key"
-                          [class.invalid]="shownErrors()[f.key]"
+                          [class.invalid]="shownErrors()[f.key] || warnings()[f.key]"
                           aria-label="Header name"
                           placeholder="Authorization"
                           [ngModel]="h.name"
@@ -99,7 +99,7 @@
                         />
                         <input
                           class="input mono"
-                          [class.invalid]="shownErrors()[f.key]"
+                          [class.invalid]="shownErrors()[f.key] || warnings()[f.key]"
                           aria-label="Header value"
                           placeholder="Bearer ${ASSAY_TARGET_API_KEY}"
                           [ngModel]="h.value"
@@ -125,7 +125,7 @@
                       <input
                         class="input num"
                         [assayNumber]="f.inputMode ?? ''"
-                        [class.invalid]="shownErrors()[f.key]"
+                        [class.invalid]="shownErrors()[f.key] || warnings()[f.key]"
                         [id]="controlId(f.key)"
                         [ngModel]="value(f.key)"
                         (ngModelChange)="set(f.key, $event)"
@@ -137,7 +137,7 @@
                     <input
                       class="input"
                       [class.mono]="f.mono"
-                      [class.invalid]="shownErrors()[f.key]"
+                      [class.invalid]="shownErrors()[f.key] || warnings()[f.key]"
                       [type]="f.kind === 'url' ? 'url' : 'text'"
                       [id]="controlId(f.key)"
                       [placeholder]="placeholderOf(f)"
@@ -148,6 +148,8 @@
                 }
                 @if (shownErrors()[f.key]; as e) {
                   <div class="err">{{ cap(e) }}</div>
+                } @else if (warnings()[f.key]; as w) {
+                  <div class="err">{{ w }}</div>
                 }
                 <div class="small">{{ f.hint }}</div>
               </div>

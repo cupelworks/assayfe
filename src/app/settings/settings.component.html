@@ -26,7 +26,11 @@
 </section>
 
 <assay-settings-group [config]="target" (loaded)="saved.target.set($event)" />
-<assay-settings-group [config]="judge" (loaded)="saved.judge.set($event)" />
+<assay-settings-group
+  [config]="judge"
+  [context]="{ targetUrl: targetUrl() }"
+  (loaded)="saved.judge.set($event)"
+/>
 <assay-worker-status (loaded)="workers.set($event)" />
 
 <section class="ops-section" id="settings-operations">
