@@ -1,0 +1,37 @@
+/* Three tiles across, not the Run status pair. */
+.tiles {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 28px;
+}
+.workers td {
+  vertical-align: top;
+}
+.workers .small {
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.none {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-neutral-600);
+}
+.verdict {
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.recheck {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}

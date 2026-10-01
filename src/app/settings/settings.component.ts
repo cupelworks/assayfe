@@ -1,8 +1,10 @@
 import { Component, computed, signal } from '@angular/core';
-import { SettingsSource } from '../api/models';
+import { SettingsSource, WorkerHealth } from '../api/models';
 import { OPERATIONS } from './settings-fields';
 import { SettingsGroupComponent } from './settings-group.component';
 import { JUDGE_GROUP, SettingsGroupConfig, TARGET_GROUP } from './settings-groups';
+import { WorkerStatusComponent } from './worker-status.component';
+import { WORKER_STATUS, workersToRestart } from './worker-status';
 
 interface Tile {
   id: string;
@@ -10,6 +12,8 @@ interface Tile {
   value: string;
   detail: string;
   mono?: boolean;
+  /** A status dot before the label (the workers' verdict). */
+  dot?: string;
   go: string;
 }
 
@@ -23,9 +27,9 @@ interface Tile {
 @Component({
   selector: 'assay-settings',
   standalone: true,
-  imports: [SettingsGroupComponent],
+  imports: [SettingsGroupComponent, WorkerStatusComponent],
   templateUrl: './settings.component.html',
-  styleUrls: ['../shared/page.css', './settings.component.css'],
+  styleUrls: ['../shared/page.css', './settings-section.css', './settings.component.css'],
 })
 export class SettingsComponent {
   target = TARGET_GROUP;
@@ -35,10 +39,12 @@ export class SettingsComponent {
     target: signal<SettingsSource | null>(null),
     judge: signal<SettingsSource | null>(null),
   };
+  workers = signal<WorkerHealth | null>(null);
 
   tiles = computed<Tile[]>(() => [
     this.groupTile(this.target, this.saved.target()),
     this.groupTile(this.judge, this.saved.judge()),
+    this.workersTile(this.workers()),
     {
       id: 'operations',
       label: 'Operations',
@@ -60,7 +66,24 @@ export class SettingsComponent {
     };
   }
 
+  private workersTile(h: WorkerHealth | null): Tile {
+    const tile = { id: 'workers', label: 'Workers', go: 'View' };
+    if (!h) return { ...tile, value: '…', detail: 'Checking' };
+    const n = h.workers.length;
+    const restart = workersToRestart(h).length;
+    return {
+      ...tile,
+      dot: WORKER_STATUS[h.status].color,
+      value: WORKER_STATUS[h.status].label,
+      detail: !n
+        ? 'No worker connected'
+        : restart
+          ? `${restart} of ${n} need a restart`
+          : `${n} worker${n === 1 ? '' : 's'} on the current code`,
+    };
+  }
+
   jump(id: string) {
-    document.getElementById(`settings-${id}`)?.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById(`settings-${id}`)?.scrollIntoView();
   }
 }

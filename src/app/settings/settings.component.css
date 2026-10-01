@@ -1,8 +1,4 @@
-/* The summary strip: Overview's .stats tiles, three across so they sit on the same thirds as the
-   sections' form | Test connection grid below. */
-.strip {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
+/* The summary strip: Overview's .stats tiles, four across like Overview's. */
 .strip .stat {
   font: inherit;
   color: inherit;
@@ -46,11 +42,6 @@
 .ops-section .hero-note {
   max-width: 460px;
   text-align: right;
-}
-.title {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
 }
 .ops {
   display: grid;

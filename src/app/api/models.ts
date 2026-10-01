@@ -373,3 +373,30 @@ export interface JudgeSettingsRead extends JudgeSettings, SettingsSource {
 }
 export type JudgeSettingsUpdate = Partial<JudgeSettings>;
 export type JudgeCheck = SettingsCheck<JudgeSettings>;
+
+// Worker health - GET /health/worker: the broker and the workers, as seen from the API. Always 200
+// (the API is up); takes about a second, so it's fetched on demand, never per request.
+export type WorkerHealthStatus = 'ready' | 'outdated' | 'no_worker' | 'broker_unreachable';
+export interface WorkerHealthWorker {
+  name: string;
+  /** The Assay version it runs; null = too old to report one. */
+  version: string | null;
+  /** Opaque hash of its code at start-up - compared by the API, never shown or parsed here. */
+  code_fingerprint: string | null;
+  /** Same code as the API. */
+  current_code: boolean;
+  /** Kinds of job (task names) it doesn't know; [] when fine. */
+  missing_tasks: string[];
+  /** One sentence to show as sent; null when the worker is fine. */
+  problem: string | null;
+}
+export interface WorkerHealth {
+  status: WorkerHealthStatus;
+  broker: { reachable: boolean; error: string | null };
+  /** Empty for no_worker and broker_unreachable. */
+  workers: WorkerHealthWorker[];
+  /** The API's own version and fingerprint - the reference the workers are compared with. */
+  version: string;
+  code_fingerprint: string;
+  checked_at: string;
+}

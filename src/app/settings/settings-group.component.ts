@@ -33,7 +33,7 @@ type Draft = Record<string, any>;
   standalone: true,
   imports: [FormsModule, RelTimeComponent, ConfirmDialogComponent, NumberInputDirective],
   templateUrl: './settings-group.component.html',
-  styleUrls: ['../shared/page.css', './settings-group.component.css'],
+  styleUrls: ['../shared/page.css', './settings-section.css', './settings-group.component.css'],
 })
 export class SettingsGroupComponent implements OnInit {
   config = input.required<SettingsGroupConfig>();

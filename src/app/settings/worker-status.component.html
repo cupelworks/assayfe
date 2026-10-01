@@ -1,0 +1,120 @@
+<section class="group" id="settings-workers">
+  @if (error(); as e) {
+    <div class="msg msg-err">Couldn't check the workers: {{ e }}</div>
+  }
+  <div class="main">
+    <div class="cell cell-r">
+      <div class="row-head">
+        <div class="title">
+          <h2>Workers</h2>
+          <span class="tag tag-neutral">Read-only</span>
+        </div>
+      </div>
+      <p class="muted intro">
+        The broker queues runs and connection tests; workers pick them up and run them. A worker
+        started before the code changed has to be restarted to run the current code.
+      </p>
+
+      @if (health(); as h) {
+        <div class="status-grid tiles">
+          <div class="status">
+            <div class="label">
+              <span class="dot" [style.background]="h.broker.reachable ? green : red"></span>Broker
+            </div>
+            <div class="mid">{{ h.broker.reachable ? 'Reachable' : 'Unreachable' }}</div>
+          </div>
+          <div class="status">
+            <div class="label">Workers</div>
+            <div class="mid num">{{ h.broker.reachable ? h.workers.length : '–' }}</div>
+          </div>
+          <div class="status">
+            <div class="label">
+              <span class="dot" [style.background]="toRestart().length ? amber : neutral"></span
+              >Need a restart
+            </div>
+            <div class="mid num">{{ h.broker.reachable ? toRestart().length : '–' }}</div>
+          </div>
+        </div>
+
+        @if (h.workers.length) {
+          <table class="table workers">
+            <colgroup>
+              <col style="width: 24%" />
+              <col style="width: 12%" />
+              <col style="width: 18%" />
+              <col />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Worker</th>
+                <th>Version</th>
+                <th>State</th>
+                <th>Problem</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (w of h.workers; track w.name) {
+                <tr>
+                  <td class="mono">{{ w.name }}</td>
+                  <td class="mono" [class.muted]="!w.version">{{ w.version ?? 'unknown' }}</td>
+                  <td>
+                    <span class="state"
+                      ><span class="dot" [style.background]="w.problem ? amber : green"></span
+                      >{{ w.problem ? 'Restart needed' : 'Up to date' }}</span
+                    >
+                  </td>
+                  <td [class.muted]="!w.problem">
+                    {{ w.problem ?? 'None' }}
+                    @if (w.missing_tasks.length) {
+                      <div class="small mono">{{ w.missing_tasks.join(', ') }}</div>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="none">
+            {{
+              h.broker.reachable
+                ? 'No worker is connected to the broker.'
+                : "Workers can't be listed while the broker is unreachable."
+            }}
+          </p>
+        }
+      } @else if (!error()) {
+        <p class="small">Checking…</p>
+      }
+    </div>
+
+    <!-- The verdict and what to do, like Overview's Run status. -->
+    <div class="cell check">
+      <h2>Worker status</h2>
+      @if (health(); as h) {
+        @if (view(); as v) {
+          <div class="status">
+            <div class="label"><span class="dot" [style.background]="v.color"></span>Overall</div>
+            <div class="mid">{{ v.label }}</div>
+            <p class="verdict">{{ v.text }}</p>
+          </div>
+        }
+        @if (h.broker.error; as be) {
+          <div class="field">
+            <div class="label">Broker error</div>
+            <div class="answer">{{ be }}</div>
+          </div>
+        }
+      }
+      <div class="recheck">
+        <button type="button" class="btn btn-secondary" [disabled]="loading()" (click)="check()">
+          {{ loading() ? 'Checking…' : 'Check again' }}
+        </button>
+        @if (health(); as h) {
+          <span class="small"
+            >Checked <assay-rel-time [iso]="h.checked_at" /> · API {{ h.version }}</span
+          >
+        }
+      </div>
+    </div>
+  </div>
+</section>

@@ -6,11 +6,16 @@
   <p class="hero-note">Changes apply from the next run. Past runs keep what they scored.</p>
 </div>
 
-<!-- One tile per section, like Overview's counts; each jumps to its section. -->
+<!-- One tile per section, four across like Overview's counts; each jumps to its section. -->
 <section class="stats strip">
   @for (t of tiles(); track t.id) {
     <button type="button" class="stat plain tile" (click)="jump(t.id)">
-      <div class="label">{{ t.label }}</div>
+      <div class="label">
+        @if (t.dot) {
+          <span class="dot" [style.background]="t.dot"></span>
+        }
+        {{ t.label }}
+      </div>
       <div class="value" [class.mono]="t.mono">{{ t.value }}</div>
       <div class="small tile-foot">
         <span>{{ t.detail }}</span
@@ -22,6 +27,7 @@
 
 <assay-settings-group [config]="target" (loaded)="saved.target.set($event)" />
 <assay-settings-group [config]="judge" (loaded)="saved.judge.set($event)" />
+<assay-worker-status (loaded)="workers.set($event)" />
 
 <section class="ops-section" id="settings-operations">
   <div class="cell row-head">
