@@ -18,12 +18,20 @@ import {
 } from '../api/test-types.store';
 import { checkName } from '../api/checks';
 import { TypeTagsComponent } from '../shared/type-tags.component';
+import { ClampDirective } from '../shared/clamp.directive';
 
 /** Status / error / per-type results (left) + frozen or live test content (right). */
 @Component({
   selector: 'assay-run-body',
   standalone: true,
-  imports: [TypeTagsComponent, RouterLink, NgTemplateOutlet, RelTimeComponent, ChevronComponent],
+  imports: [
+    ClampDirective,
+    TypeTagsComponent,
+    RouterLink,
+    NgTemplateOutlet,
+    RelTimeComponent,
+    ChevronComponent,
+  ],
   styleUrls: ['../shared/page.css', './run-body.component.css'],
   template: ` @if (run(); as r) {
       <section class="half">
@@ -192,11 +200,16 @@ import { TypeTagsComponent } from '../shared/type-tags.component';
     <!-- What a check was run with - shown for a failure, under Details for a pass. -->
     <ng-template #config let-s>
       @for (c of s.config; track c.key) {
-        <div class="detail muted cfg" [class.clamp]="c.long && !isOpen(c.key)">
+        <div
+          class="detail muted cfg"
+          [class.clamp]="!isOpen(c.key)"
+          [assayClamp]="!isOpen(c.key)"
+          #fold="clamp"
+        >
           <span class="strong">{{ c.label }}:</span>
           <span [class.mono]="c.mono">{{ c.value }}</span>
         </div>
-        @if (c.long) {
+        @if (fold.overflows() || isOpen(c.key)) {
           <button type="button" class="more small" (click)="toggle(c.key)">
             {{ isOpen(c.key) ? 'Less ↑' : 'More ↓' }}
           </button>
@@ -241,7 +254,7 @@ export class RunBodyComponent {
    *  a failed score like BERTScore 0.56 is unexplained, since the pass/fail line alone doesn't say
    *  what it needed to clear. One entry per field, labeled via the matching TestType's
    *  config_fields (assignmentFields excludes "reference", which never appears here); a non-numeric
-   *  value over 140 chars (a rubric, typically) is flagged `long` for the template to clamp.
+   *  value folds to two lines in the template, with More only when that hides something.
    *  A judge's rubric comes only from the result's own `rubric` stamp - what it actually graded
    *  with - as "Rubric" (its own, which replaced the default) or "Default rubric", never from the
    *  config's rubric field. No stamp means the judge wasn't asked (`detail` says why), so no
@@ -249,7 +262,7 @@ export class RunBodyComponent {
   private configFields(
     name: string,
     result: TestTypeResult,
-  ): { key: string; label: string; value: string; long: boolean; mono: boolean }[] {
+  ): { key: string; label: string; value: string; mono: boolean }[] {
     // Results are keyed by the check's label; its type is the result's own test_type (the key
     // itself on results from before labels).
     const config = this.content()?.test_type_assignments?.find(
@@ -266,7 +279,6 @@ export class RunBodyComponent {
               key: `${name}:${f.key}`,
               label: f.label,
               value,
-              long: f.kind !== 'numeric' && value.length > 140,
               mono: isCodeField(f),
             },
           ]
@@ -278,7 +290,6 @@ export class RunBodyComponent {
         key: `${name}:rubric`,
         label: rubric.source === 'custom' ? 'Rubric' : 'Default rubric',
         value: rubric.text,
-        long: rubric.text.length > 140,
         mono: false,
       });
     }

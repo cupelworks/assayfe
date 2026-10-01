@@ -1,4 +1,6 @@
 import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ClampDirective } from './clamp.directive';
 import { TestTypeAssignment } from '../api/models';
 import { TestTypesStore, assignmentFields, isCodeField } from '../api/test-types.store';
 import { checkName } from '../api/checks';
@@ -15,22 +17,19 @@ interface Setting {
 
 /** How many checks show before "Show all N checks". */
 const FIRST = 5;
-/** A setting value longer than this folds to two lines behind "More ↓", as on the run page. */
-const LONG = 140;
-/** A JSON block (a schema) longer than this many lines folds to them behind "More ↓". */
-const BLOCK_LINES = 6;
 
 /**
  * A test's checks, read-only, on the test page - the form's table without inputs: Type | Name |
  * Settings, checks of a type grouped under it. Each setting on its own line, wrapping ("Required
  * substring: 4471"; code values in monospace, an unset rubric as "Default rubric", a type with
- * none as "No settings"); a very long value (a rubric, a schema) folds to two lines behind
- * "More ↓", as on the run page; "reads $.x" under the name when it reads its own path. A test with many checks shows the first five and
+ * none as "No settings"); a value longer than two lines folds to them, a JSON block to six,
+ * behind "More ↓" - shown only when the fold really hides something (ClampDirective); "reads $.x" under the name when it reads its own path. A test with many checks shows the first five and
  * "Show all N checks", so the page never turns into a wall of rows.
  */
 @Component({
   selector: 'assay-checks-view',
   standalone: true,
+  imports: [NgTemplateOutlet, ClampDirective],
   templateUrl: './checks-view.component.html',
   styleUrls: ['./page.css', './checks-view.component.css'],
 })
@@ -103,11 +102,6 @@ export class ChecksViewComponent implements OnInit {
       })
       .filter((p): p is Setting => !!p);
     return parts.length ? parts : 'Defaults';
-  }
-  /** A value long enough to fold: text over 140 characters (to two lines, the run page's
-   *  threshold), a JSON block over BLOCK_LINES lines (to that many). */
-  isLong(p: Setting) {
-    return p.block ? p.value.split('\n').length > BLOCK_LINES : p.value.length > LONG;
   }
   /** Long values unfolded, keyed "<check>|<field>". */
   private open = signal<ReadonlySet<string>>(new Set());
