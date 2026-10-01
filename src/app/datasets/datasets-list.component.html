@@ -46,7 +46,11 @@
         @if (!page.loading()) {
           <tr>
             <td colspan="2" class="empty">
-              No datasets. Import a <code>.jsonl</code> file to start.
+              @if (filter.query()) {
+                <assay-filter-miss noun="dataset" [filter]="filter" [page]="page" />
+              } @else {
+                No datasets. Import a <code>.jsonl</code> file to start.
+              }
             </td>
           </tr>
         }

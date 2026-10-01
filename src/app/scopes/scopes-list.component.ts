@@ -1,3 +1,4 @@
+import { FilterMissComponent } from '../shared/filter-miss.component';
 import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
 import { ActionRunner } from '../shared/action-runner';
 import { Router, RouterLink } from '@angular/router';
@@ -19,7 +20,14 @@ import { NameDialogComponent } from '../shared/dialog/name-dialog.component';
 @Component({
   selector: 'assay-scopes-list',
   standalone: true,
-  imports: [RouterLink, FormsModule, NameDialogComponent, PagerComponent, RelTimeComponent],
+  imports: [
+    FilterMissComponent,
+    RouterLink,
+    FormsModule,
+    NameDialogComponent,
+    PagerComponent,
+    RelTimeComponent,
+  ],
   templateUrl: './scopes-list.component.html',
   styleUrls: ['../shared/page.css'],
 })
@@ -38,6 +46,7 @@ export class ScopesListComponent {
   });
   isSet = computed(() => this.kind() === 'test-sets');
   title = computed(() => (this.isSet() ? 'Test sets' : 'Test plans'));
+  noun = computed(() => (this.isSet() ? 'test set' : 'test plan'));
   single = computed(() => (this.isSet() ? 'test set' : 'test plan'));
   /** "Entries" (test sets) vs "Linked sets" (test plans) - the two kinds count a different
    *  thing, so the column header has to say which. */

@@ -1,3 +1,4 @@
+import { FilterMissComponent } from '../shared/filter-miss.component';
 import { TypeTagsComponent } from '../shared/type-tags.component';
 import { Component, inject, signal, computed } from '@angular/core';
 import { ActionRunner } from '../shared/action-runner';
@@ -19,6 +20,7 @@ import { Selection } from '../shared/selection';
   selector: 'assay-tests-list',
   standalone: true,
   imports: [
+    FilterMissComponent,
     TypeTagsComponent,
     RouterLink,
     FormsModule,

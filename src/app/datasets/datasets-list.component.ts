@@ -1,3 +1,4 @@
+import { FilterMissComponent } from '../shared/filter-miss.component';
 import { Component, inject, signal, computed } from '@angular/core';
 import { ActionRunner } from '../shared/action-runner';
 import { Router, RouterLink } from '@angular/router';
@@ -16,7 +17,14 @@ import { DataSetMetadata } from '../api/models';
 @Component({
   selector: 'assay-datasets-list',
   standalone: true,
-  imports: [RouterLink, FormsModule, DialogComponent, PagerComponent, RelTimeComponent],
+  imports: [
+    FilterMissComponent,
+    RouterLink,
+    FormsModule,
+    DialogComponent,
+    PagerComponent,
+    RelTimeComponent,
+  ],
   templateUrl: './datasets-list.component.html',
   styleUrls: ['../shared/page.css'],
 })

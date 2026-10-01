@@ -80,7 +80,11 @@
         @if (!page.loading()) {
           <tr>
             <td colspan="4" class="empty">
-              No tests yet. Create one, or generate them from a dataset.
+              @if (filter.query()) {
+                <assay-filter-miss noun="test" [filter]="filter" [page]="page" />
+              } @else {
+                No tests yet. Create one, or generate them from a dataset.
+              }
             </td>
           </tr>
         }

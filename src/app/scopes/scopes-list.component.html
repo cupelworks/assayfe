@@ -50,7 +50,13 @@
       } @empty {
         @if (!page.loading()) {
           <tr>
-            <td colspan="4" class="empty">No {{ title().toLowerCase() }} yet.</td>
+            <td colspan="4" class="empty">
+              @if (filter.query()) {
+                <assay-filter-miss [noun]="noun()" [filter]="filter" [page]="page" />
+              } @else {
+                No {{ title().toLowerCase() }} yet.
+              }
+            </td>
           </tr>
         }
       }
