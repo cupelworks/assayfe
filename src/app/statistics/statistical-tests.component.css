@@ -5,6 +5,17 @@
 .type:hover {
   background: var(--color-surface);
 }
+/* An open card takes two columns with an accent line on top, as in the design: the cards after
+   it fill the rest of the row (at 1440 px, the open card and the other two of its kind share it). */
+.type.open {
+  grid-column: span 2;
+  box-shadow: inset 0 3px 0 var(--color-accent);
+}
+@media (max-width: 700px) {
+  .type.open {
+    grid-column: auto;
+  }
+}
 .more {
   all: unset;
   cursor: pointer;
