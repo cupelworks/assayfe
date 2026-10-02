@@ -1,0 +1,349 @@
+<section class="cell guide-head">
+  <div class="kicker">How to read the charts</div>
+  <h2 class="title">
+    Every chart says one thing: where the evidence is, against the line that decides.
+  </h2>
+  <p class="hero-note">
+    Drawn here by the same charts a batch's and a comparison's pages use. Each part is numbered;
+    beside each chart, how a verdict reads off it.
+  </p>
+</section>
+
+<section class="sec" [id]="anchor('range')">
+  <div>
+    <h3>The verdict and its range</h3>
+    <p class="sub">
+      One row per check, on a batch's page. Here a 90% target at 95% confidence, three checks after
+      29 times.
+    </p>
+    <div class="rows">
+      <span></span><span></span>
+      <div class="lane">
+        <span class="no" style="left: 86.2%">1</span><span class="no" style="left: 62%">2</span>
+      </div>
+      <span></span>
+      <span class="label th">Check</span><span class="label th">Met</span>
+      <div class="th">
+        <span class="label">Met rate · its range</span>
+        <div class="ticks">
+          <span class="first" style="left: 0%">50%</span><span style="left: 20%">60</span
+          ><span style="left: 40%">70</span><span style="left: 60%">80</span
+          ><span class="line" style="left: 80%"><span class="no">3</span> 90</span
+          ><span class="last" style="left: 100%">100</span>
+        </div>
+      </div>
+      <span class="label th">Verdict</span>
+      @for (r of gate; track r.name) {
+        <span class="c strong">{{ r.name }}</span>
+        <span class="c num">{{ r.met }}</span>
+        <assay-range-chart
+          class="c"
+          [min]="0.5"
+          [max]="1"
+          [lower]="r.interval.lower"
+          [upper]="r.interval.upper"
+          [point]="r.interval.point"
+          [line]="0.9"
+          [mark]="r.verdict"
+          [ticks]="rateTicks"
+        />
+        <span class="c w"><assay-mark [of]="r.verdict" />{{ markLabel(r.verdict) }}</span>
+      }
+    </div>
+  </div>
+  <div class="expl">
+    <div class="item">
+      <span class="no">1</span>
+      <p><strong>The point</strong> is the met rate the batch saw: 27 of 29 is 93%.</p>
+    </div>
+    <div class="item">
+      <span class="no">2</span>
+      <p>
+        <strong>The range</strong> is where the real rate can be, at the confidence you chose. It is
+        the arithmetic the verdict used, so the two never disagree.
+      </p>
+    </div>
+    <div class="item">
+      <span class="no">3</span>
+      <p><strong>The red line</strong> is the target.</p>
+    </div>
+    <div class="rule">
+      <div class="label">Reading it</div>
+      <div class="r"><assay-mark of="pass" />The whole range right of the line: Passed.</div>
+      <div class="r">
+        <assay-mark of="inconclusive" />The line inside the range: Inconclusive - the row says how
+        large a new batch would settle it.
+      </div>
+      <div class="r"><assay-mark of="fail" />The whole range left of the line: Failed.</div>
+    </div>
+    <p class="small">
+      Every row of a batch shares the axis; it starts at 50% unless a range reaches lower. 29 of 29
+      is just enough at 90% - 28 of 28 isn't: its range starts at 89.9%.
+    </p>
+  </div>
+</section>
+
+<section class="sec" [id]="anchor('strip')">
+  <div>
+    <h3>The times, as a strip</h3>
+    <p class="sub">Beside each check: one square per time, in order. This check ran 29 times.</p>
+    <div class="strip-wrap">
+      <div class="lane">
+        <span class="no" style="left: 1.7%">1</span><span class="no" style="left: 19%">2</span
+        ><span class="no" style="left: 56.9%">3</span>
+      </div>
+      <assay-run-strip [series]="series" />
+    </div>
+  </div>
+  <div class="expl">
+    <div class="item">
+      <span class="no">1</span>
+      <p><strong>Green</strong>: met that time.</p>
+    </div>
+    <div class="item">
+      <span class="no">2</span>
+      <p><strong>Red</strong>: not met.</p>
+    </div>
+    <div class="item">
+      <span class="no">3</span>
+      <p>
+        <strong>Grey</strong>: no value - the check couldn't run (no judge chosen, say), or the run
+        was Not Ran. It counts neither way: the sample is the green and red squares.
+      </p>
+    </div>
+    <p class="small">On a batch's page each square opens its run, to see what was answered then.</p>
+  </div>
+</section>
+
+<section class="sec" [id]="anchor('grid')">
+  <div>
+    <h3>The runs grid</h3>
+    <p class="sub">
+      At the top of a batch's page: a row per entry (or the one test), a square per time.
+    </p>
+    <assay-runs-grid [rows]="grid" />
+  </div>
+  <div class="expl">
+    <p>
+      Each square is <strong>one run's own status</strong>: Green when every check was met in it,
+      Amber when some were, Red when none was, Not Ran when nothing could be evaluated.
+    </p>
+    <p>
+      While the batch runs, the grid fills in from Pending to Running to an outcome. It shows
+      statuses only - never a verdict, which waits until every run has finished.
+    </p>
+    <p class="small">
+      A column of Amber across every entry points at one bad time - an outage, say; a row of it, at
+      one entry.
+    </p>
+  </div>
+</section>
+
+<section class="sec" [id]="anchor('trend')">
+  <div>
+    <h3>The met rate over time</h3>
+    <p class="sub">Open a check on a batch's page. The same 27 of 29 as above.</p>
+    <assay-rate-trend [series]="series" [target]="0.9" targetLabel="90% target" />
+  </div>
+  <div class="expl">
+    <p>
+      The line is the met rate after each time: one miss early on swings it a lot (time 6: from 100%
+      to 83%), the same miss late barely moves it (time 21).
+    </p>
+    <p>
+      <strong>An early streak proves nothing.</strong> The verdict uses every time, which is why a
+      running batch shows no verdict: stopping on a good start would make a pass look proven when it
+      isn't.
+    </p>
+  </div>
+</section>
+
+<section class="sec" [id]="anchor('scores')">
+  <div>
+    <h3>Scores</h3>
+    <p class="sub">
+      A scored check (ROUGE, BLEU, …) under the t-test, on its own scale. Here ROUGE-L Recall,
+      threshold 0.3, 30 times.
+    </p>
+    <assay-score-plot
+      [series]="scoreSeries"
+      [scores]="scores"
+      [interval]="scoreInterval"
+      verdict="pass"
+      [threshold]="0.3"
+      comparison="gte"
+      [min]="0"
+      [max]="1"
+      [numbered]="true"
+    />
+  </div>
+  <div class="expl">
+    <div class="item">
+      <span class="no">1</span>
+      <p><strong>Every score</strong>, equal ones stacked: green met the threshold, red didn't.</p>
+    </div>
+    <div class="item">
+      <span class="no">2</span>
+      <p>
+        <strong>The spread</strong>: the box holds the middle half of the scores, the thick bar is
+        the median, the line runs from the 10th to the 90th percentile.
+      </p>
+    </div>
+    <div class="item">
+      <span class="no">3</span>
+      <p>
+        <strong>The average</strong> with the bounds the t-test used: 0.367, at least 0.336 at 95%.
+      </p>
+    </div>
+    <div class="item">
+      <span class="no">4</span>
+      <p><strong>The red line</strong> is the check's own threshold.</p>
+    </div>
+    <div class="rule">
+      <div class="label">Reading it</div>
+      <div class="r">
+        <assay-mark of="pass" />Bounds entirely on the passing side of the line: Passed.
+      </div>
+      <div class="r">
+        <assay-mark of="inconclusive" />The line between the bounds: Inconclusive.
+      </div>
+      <div class="r"><assay-mark of="fail" />Bounds entirely on the other side: Failed.</div>
+    </div>
+    <p class="small">
+      An average can pass while single answers miss: here 8 of 30 scored under 0.3. To ask how often
+      each answer clears it, run the binomial gate.
+    </p>
+  </div>
+</section>
+
+<section class="sec" [id]="anchor('compare')">
+  <div>
+    <h3>A against B</h3>
+    <p class="sub">
+      A comparison's page: A is the baseline, B the change. 29 times each, pass rates.
+    </p>
+    <div class="cmp">
+      <span class="label th">Check</span>
+      <div class="th">
+        <span class="label"><span class="no">1</span>Pass rate · A → B</span>
+        <div class="ticks">
+          <span class="first" style="left: 0%">0%</span><span style="left: 50%">50</span
+          ><span class="last" style="left: 100%">100</span>
+        </div>
+      </div>
+      <div class="th">
+        <span class="label"><span class="no">2</span>B − A · its range</span>
+        <div class="ticks">
+          <span class="first" style="left: 0%">−60</span
+          ><span class="line" style="left: 50%"><span class="no">3</span> 0</span
+          ><span class="last" style="left: 100%">+60 points</span>
+        </div>
+      </div>
+      <span class="label th">Verdict</span>
+      @for (r of compare; track r.name) {
+        <span class="c strong">{{ r.name }}</span>
+        <div class="c">
+          <assay-dumbbell [a]="r.a" [b]="r.b" [mark]="r.verdict" />
+        </div>
+        <div class="c">
+          <assay-range-chart
+            [min]="-0.6"
+            [max]="0.6"
+            [lower]="r.lo"
+            [upper]="r.hi"
+            [point]="r.d"
+            [line]="0"
+            [mark]="r.verdict"
+            [ticks]="diffTicks"
+          />
+          <div class="small num">{{ r.text }}</div>
+        </div>
+        <span class="c w"><assay-mark [of]="r.verdict" />{{ markLabel(r.verdict) }}</span>
+      }
+    </div>
+  </div>
+  <div class="expl">
+    <div class="item">
+      <span class="no">1</span>
+      <p>
+        <strong>A → B</strong>: the hollow square is A, the filled one B, wearing the verdict's
+        mark.
+      </p>
+    </div>
+    <div class="item">
+      <span class="no">2</span>
+      <p>
+        <strong>B − A</strong>: the change in points, and the range it can be in at 95% - the
+        arithmetic the verdict used.
+      </p>
+    </div>
+    <div class="item">
+      <span class="no">3</span>
+      <p><strong>The line at 0</strong>: no change.</p>
+    </div>
+    <div class="rule">
+      <div class="label">Reading it</div>
+      <div class="r"><assay-mark of="better" />The whole range right of 0: Better.</div>
+      <div class="r"><assay-mark of="worse" />The whole range left of 0: Worse.</div>
+      <div class="r">
+        <assay-mark of="no_difference" />0 inside the range: no real difference at this size - more
+        times on both sides narrow the range.
+      </div>
+    </div>
+    <p class="small">
+      "No worse than A" moves the line to −margin: the whole range right of it is No worse.
+    </p>
+  </div>
+</section>
+
+<section class="sec last" [id]="anchor('marks')">
+  <div>
+    <h3>The marks</h3>
+    <p class="sub">
+      One square per word, the same everywhere: in lists, on a batch's page, beside each check.
+    </p>
+    <div class="marks">
+      <div>
+        <div class="label col-head">A batch</div>
+        @for (m of batchMarks; track m.key) {
+          <div class="mark-row">
+            <assay-mark [of]="m.key" /><span class="strong">{{ markLabel(m.key) }}</span
+            ><span></span><span class="small">{{ m.text }}</span>
+          </div>
+        }
+      </div>
+      <div>
+        <div class="label col-head">A check in a batch</div>
+        @for (m of checkMarks; track m.key) {
+          <div class="mark-row">
+            <assay-mark [of]="m.key" /><span class="strong">{{ markLabel(m.key) }}</span
+            ><span></span><span class="small">{{ m.text }}</span>
+          </div>
+        }
+      </div>
+      <div>
+        <div class="label col-head">A comparison</div>
+        @for (m of compareMarks; track m.key) {
+          <div class="mark-row">
+            <assay-mark [of]="m.key" /><span class="strong">{{ markLabel(m.key) }}</span
+            ><span></span><span class="small">{{ m.text }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+  <div class="expl">
+    <p>
+      <strong>Inconclusive is hollow</strong> because it isn't a warning: 28 passes out of 28 is
+      Inconclusive at 90% only for lack of runs.
+    </p>
+    <p>
+      <strong>Incomplete is half-filled</strong>: the batch was stopped. What ran is kept, with
+      verdicts where enough ran.
+    </p>
+    <p class="small">
+      A run keeps its own words - Green, Amber, Red. Passed and Failed are said only of a batch and
+      its checks.
+    </p>
+  </div>
+</section>

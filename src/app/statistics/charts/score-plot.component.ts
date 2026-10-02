@@ -17,7 +17,14 @@ import { runLink } from '../stats-format';
   styleUrls: ['../../shared/page.css'],
   template: `
     <div class="plot">
-      <div class="k">The {{ scored().length }} scores</div>
+      <div class="k">
+        <span class="kt">
+          @if (numbered()) {
+            <span class="no">1</span>
+          }
+          The {{ scored().length }} scores
+        </span>
+      </div>
       <div class="v dots" [style.height.px]="dotsHeight()">
         <i class="thr" [style.left.%]="thr()"></i>
         @for (d of dots(); track d.index) {
@@ -33,7 +40,13 @@ import { runLink } from '../stats-format';
         }
       </div>
       <div class="k">
-        Spread<span class="small">box: the middle half · lines: 10th to 90th percentile</span>
+        <span class="kt">
+          @if (numbered()) {
+            <span class="no">2</span>
+          }
+          Spread
+        </span>
+        <span class="small">box: the middle half · lines: 10th to 90th percentile</span>
       </div>
       <div class="v">
         @if (box(); as b) {
@@ -43,7 +56,15 @@ import { runLink } from '../stats-format';
         }
         <i class="thr" [style.left.%]="thr()"></i>
       </div>
-      <div class="k">Average<span class="small">with the bounds its verdict used</span></div>
+      <div class="k">
+        <span class="kt">
+          @if (numbered()) {
+            <span class="no">3</span>
+          }
+          Average
+        </span>
+        <span class="small">with the bounds its verdict used</span>
+      </div>
       <div class="v">
         @if (avg(); as a) {
           <i class="whisk" [style.left.%]="a.lo" [style.width.%]="a.w"></i>
@@ -54,10 +75,19 @@ import { runLink } from '../stats-format';
       <div></div>
       <div class="ticks">
         <span style="left: 0; transform: none">{{ min() }}</span>
-        <span class="t-thr" [style.left.%]="thr()">{{ threshold() }}</span>
+        <span class="t-thr" [style.left.%]="thr()">
+          @if (numbered()) {
+            <span class="no">4</span>
+          }
+          {{ threshold() }}</span
+        >
         <span style="left: 100%; transform: translateX(-100%)">{{ max() }}</span>
       </div>
-      <div class="k">Score per run<span class="small">in order, each opening its run</span></div>
+      <div class="k">
+        Score per run<span class="small"
+          >in order{{ scope() ? ', each opening its run' : '' }}</span
+        >
+      </div>
       <div class="v series">
         <i class="hthr" [style.bottom.%]="thr()"></i>
         @for (p of perRun(); track p.index) {
@@ -155,7 +185,8 @@ import { runLink } from '../stats-format';
     .ticks:not(.runs) {
       margin-bottom: 16px;
     }
-    .ticks span {
+    .ticks > span {
+      white-space: nowrap;
       position: absolute;
       top: 4px;
       transform: translateX(-50%);
@@ -165,6 +196,26 @@ import { runLink } from '../stats-format';
     }
     .ticks .t-thr {
       color: var(--color-accent);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .kt {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    /* A numbered part, when the plot is an example the text beside it explains. */
+    .no {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      font-size: 10px;
+      font-weight: 800;
+      background: var(--color-text);
+      color: var(--color-bg);
     }
     .v.series {
       height: 150px;
@@ -201,8 +252,15 @@ export class ScorePlotComponent {
   comparison = input<string | null>('gte');
   min = input.required<number>();
   max = input.required<number>();
-  scope = input.required<StatsScope>();
+  /** Null draws an example: nothing links to a run. */
+  scope = input<StatsScope | null>(null);
   testId = input<string | null>(null);
+  /** Number the parts (1 to 4), for an example the text beside it explains. */
+  numbered = input(false);
+  private link = (p: SeriesPoint) => {
+    const s = this.scope();
+    return s ? runLink(s, p, this.testId()) : null;
+  };
   private at = (v: number) => along(v, this.min(), this.max());
   private met = (v: number) =>
     this.comparison() === 'lte' ? v <= this.threshold() : v >= this.threshold();
@@ -221,7 +279,7 @@ export class ScorePlotComponent {
         x: this.at(v),
         y: 6 + level * 10,
         met: this.met(v),
-        link: runLink(this.scope(), p, this.testId()),
+        link: this.link(p),
         title: `Run ${p.index}: ${v}`,
       };
     });
@@ -260,7 +318,7 @@ export class ScorePlotComponent {
       index: p.index,
       y: p.score == null ? null : this.at(p.score),
       met: p.score != null && this.met(p.score),
-      link: runLink(this.scope(), p, this.testId()),
+      link: this.link(p),
       title:
         p.score == null
           ? `Run ${p.index}: no score${p.error ? ' - ' + p.error : ''}`

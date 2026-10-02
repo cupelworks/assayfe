@@ -17,6 +17,7 @@ import { GuideComponent } from './guide/guide.component';
 import { SettingsComponent } from './settings/settings.component';
 import { BatchComponent } from './statistics/batch.component';
 import { ComparisonComponent } from './statistics/comparison.component';
+import { StatisticalTestsComponent } from './statistics/statistical-tests.component';
 
 // Route data keys map onto component inputs via withComponentInputBinding().
 export const routes: Routes = [
@@ -40,6 +41,7 @@ export const routes: Routes = [
       { path: 'statistics/batches/:id', component: BatchComponent },
       { path: 'statistics/comparisons/:id', component: ComparisonComponent },
       { path: 'test-types', component: TestTypesComponent },
+      { path: 'statistical-tests', component: StatisticalTestsComponent },
       { path: 'guide', component: GuideComponent },
       { path: 'settings', component: SettingsComponent },
       { path: '**', redirectTo: '' },

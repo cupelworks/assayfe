@@ -49,23 +49,13 @@
 
   <div class="field">
     <div class="flabel" id="cmp-test">How to compare</div>
-    <div class="qs" role="radiogroup" aria-labelledby="cmp-test">
-      @for (q of tests(); track q.t.id) {
-        <label class="q" [class.on]="q.t.id === choice()" [class.off]="q.off">
-          <input
-            type="radio"
-            name="cmp-test"
-            [checked]="q.t.id === choice()"
-            [disabled]="q.off"
-            (change)="pick(q.t.id)"
-          />
-          <span class="q-text">
-            <span class="q-name">{{ q.t.name }}</span>
-            <span class="small">{{ q.reason ?? q.t.question }}</span>
-          </span>
-        </label>
-      }
-    </div>
+    <assay-test-choice
+      [items]="tests()"
+      [choice]="choice()"
+      name="cmp-test"
+      labelledBy="cmp-test"
+      (picked)="pick($event)"
+    />
   </div>
 
   @if (mainParams().length) {

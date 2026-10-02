@@ -109,7 +109,8 @@ export interface GridRow {
 })
 export class RunsGridComponent {
   rows = input.required<GridRow[]>();
-  scope = input.required<StatsScope>();
+  /** Null draws an example: the squares link nowhere. */
+  scope = input<StatsScope | null>(null);
   statusColor = statusColor;
   statusLabel = statusLabel;
   /** Each run status the grid holds, with its count, in the usual order. */
@@ -124,6 +125,7 @@ export class RunsGridComponent {
     }));
   });
   link(c: StripPoint, testId: string | null) {
-    return runLink(this.scope(), c, testId);
+    const s = this.scope();
+    return s ? runLink(s, c, testId) : null;
   }
 }

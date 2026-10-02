@@ -68,11 +68,7 @@
           <div class="pair-name">
             {{ x.label }}<span class="small">{{ x.name }}</span>
           </div>
-          <div class="dumb">
-            <i class="link" [style.left.%]="x.left" [style.width.%]="x.width"></i>
-            <i class="a" [style.left.%]="x.a"></i>
-            <assay-mark class="b" [of]="x.cls" [style.left.%]="x.b" />
-          </div>
+          <assay-dumbbell [a]="x.rate_a" [b]="x.rate_b" [mark]="x.cls" />
           <div class="small num">{{ x.text }}</div>
         }
       </div>
@@ -80,6 +76,14 @@
   }
 
   <section class="cell">
+    <div class="row-head">
+      <span class="head-with-link">
+        <h2>Checks</h2>
+        <a class="read-link" routerLink="/statistical-tests" fragment="chart-compare"
+          >How to read A against B →</a
+        >
+      </span>
+    </div>
     <div class="cols th">
       <span class="label">Check</span>
       <div>
@@ -119,15 +123,13 @@
           <span class="s">{{ r.entry ?? r.type ?? '' }}</span>
         </div>
         <div>
-          <div class="dumb">
-            <i class="link" [style.left.%]="r.linkLeft" [style.width.%]="r.linkWidth"></i>
-            @if (r.a != null) {
-              <i class="a" [style.left.%]="r.a" title="A"></i>
-            }
-            @if (r.b != null) {
-              <assay-mark class="b" [of]="r.verdict" [style.left.%]="r.b" />
-            }
-          </div>
+          <assay-dumbbell
+            [a]="r.a"
+            [b]="r.b"
+            [min]="valueAxis().min"
+            [max]="valueAxis().max"
+            [mark]="r.verdict"
+          />
           <div class="small num">{{ r.values }}</div>
         </div>
         <div>

@@ -16,6 +16,7 @@ import { ChevronComponent } from '../shared/chevron.component';
 import { StatusMarkComponent, markLabel } from '../shared/status-mark.component';
 import { absTime, isInFlight } from '../shared/format';
 import { ParamFieldComponent } from './param-field.component';
+import { TestChoiceComponent } from './test-choice.component';
 import { paramRows, paramValues, problems } from './stats-params';
 import { scopePlace, scopeRef, timesText } from './stats-format';
 
@@ -33,6 +34,7 @@ import { scopePlace, scopeRef, timesText } from './stats-format';
     FormsModule,
     ParamFieldComponent,
     StatusMarkComponent,
+    TestChoiceComponent,
   ],
   templateUrl: './compare-dialog.component.html',
   styleUrls: ['../shared/page.css', './stats-form.css'],

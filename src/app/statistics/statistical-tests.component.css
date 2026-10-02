@@ -1,0 +1,90 @@
+/* A card opens with its own button (it holds links); the card itself isn't clickable. */
+.type {
+  cursor: default;
+}
+.type:hover {
+  background: var(--color-surface);
+}
+.type.open {
+  grid-column: 1 / -1;
+  box-shadow: inset 0 3px 0 var(--color-accent);
+}
+.more {
+  all: unset;
+  cursor: pointer;
+  align-self: flex-start;
+  margin-top: auto;
+  font-size: 12px;
+  padding: 4px 0;
+  color: var(--color-accent);
+}
+.more:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.stat.cat {
+  text-decoration: none;
+}
+.marks {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.mk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+.ex {
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 8px;
+}
+.ex th {
+  font-weight: 400;
+  text-align: left;
+  color: var(--color-neutral-600);
+  padding: 3px 16px 3px 0;
+  border-bottom: 1px solid var(--color-divider);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ex td {
+  padding: 3px 16px 3px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+.formula {
+  margin-top: 8px;
+  font-size: 12px;
+}
+.params {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.params .range {
+  margin-left: 8px;
+}
+.params .hint {
+  color: var(--color-neutral-600);
+  text-wrap: pretty;
+}
+.chart-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+.chart-links a {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-size: 12px;
+}
+.chart-links a:hover {
+  text-decoration: underline;
+}

@@ -75,7 +75,7 @@ const runsLine = (runs: RunCounts) =>
     CompareDialogComponent,
   ],
   templateUrl: './batch.component.html',
-  styleUrls: ['../shared/page.css', './batch.component.css'],
+  styleUrls: ['../shared/page.css', './stats-page.css', './batch.component.css'],
 })
 export class BatchComponent {
   id = input.required<string>();

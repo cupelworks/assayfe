@@ -5,7 +5,8 @@ import { CheckComparison, ComparedBatch, Comparison, ScoreSummary } from '../api
 import { StatisticalTestsStore, StatisticsApiService } from '../api/statistics-api.service';
 import { absTime, errText } from '../shared/format';
 import { StatusMarkComponent, markLabel } from '../shared/status-mark.component';
-import { RangeChartComponent, along } from './charts/range-chart.component';
+import { RangeChartComponent } from './charts/range-chart.component';
+import { DumbbellComponent } from './charts/dumbbell.component';
 import { pct, points, scopeLink, scopePlace } from './stats-format';
 
 /** How each p-value was computed, as the caption names it. */
@@ -45,9 +46,9 @@ const halfWidth = (m: number, step: number) => Math.max(step, Math.ceil(m / step
 @Component({
   selector: 'assay-comparison',
   standalone: true,
-  imports: [RouterLink, DecimalPipe, StatusMarkComponent, RangeChartComponent],
+  imports: [RouterLink, DecimalPipe, StatusMarkComponent, RangeChartComponent, DumbbellComponent],
   templateUrl: './comparison.component.html',
-  styleUrls: ['../shared/page.css', './comparison.component.css'],
+  styleUrls: ['../shared/page.css', './stats-page.css', './comparison.component.css'],
 })
 export class ComparisonComponent {
   id = input.required<string>();
@@ -149,10 +150,6 @@ export class ComparisonComponent {
           : '',
       pairs: p.pairs.map((x) => ({
         ...x,
-        a: along(x.rate_a, 0, 1),
-        b: along(x.rate_b, 0, 1),
-        left: along(Math.min(x.rate_a, x.rate_b), 0, 1),
-        width: Math.abs(along(x.rate_b, 0, 1) - along(x.rate_a, 0, 1)),
         cls: x.rate_b > x.rate_a ? 'better' : x.rate_b < x.rate_a ? 'worse' : 'no_difference',
         text: `${pct(x.rate_a)} → ${pct(x.rate_b)} (${points(x.difference)} points)`,
       })),
@@ -181,7 +178,6 @@ export class ComparisonComponent {
         : (s.pass_rate?.point ?? null);
     const a = value(k.a),
       b = value(k.b);
-    const ax = this.valueAxis();
     const verdict = k.verdict ?? 'none';
     const fmt = (x: number | null) => (x == null ? '-' : scores ? String(x) : pct(x));
     return {
@@ -195,11 +191,8 @@ export class ComparisonComponent {
       p: pText(k.p_value, k.p_value_method),
       decide: k.times_to_decide_message,
       values: `${fmt(a)} → ${fmt(b)}`,
-      a: a == null ? null : along(a, ax.min, ax.max),
-      b: b == null ? null : along(b, ax.min, ax.max),
-      linkLeft: a == null || b == null ? 0 : along(Math.min(a, b), ax.min, ax.max),
-      linkWidth:
-        a == null || b == null ? 0 : Math.abs(along(b, ax.min, ax.max) - along(a, ax.min, ax.max)),
+      a,
+      b,
       diff: k.difference,
       effect: k.effect ?? null,
       diffText:

@@ -16,7 +16,7 @@ import { RelTimeComponent } from '../shared/rel-time.component';
   standalone: true,
   imports: [FormsModule, RelTimeComponent],
   templateUrl: './test-types.component.html',
-  styleUrls: ['../shared/page.css', './test-types.component.css'],
+  styleUrls: ['../shared/page.css', '../shared/catalog.css', './test-types.component.css'],
 })
 export class TestTypesComponent implements OnInit {
   store = inject(TestTypesStore);

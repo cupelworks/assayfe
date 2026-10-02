@@ -475,7 +475,13 @@ export interface StatisticalTest {
   applies_to: 'every_check' | 'scored_checks' | 'judge_checks';
   verdicts: string[];
   parameters: StatisticalTestParameter[];
-  floor: { kind: 'exact' | 'rule_of_thumb' | 'none'; formula: string | null; explanation: string };
+  floor: {
+    kind: 'exact' | 'rule_of_thumb' | 'none';
+    formula: string | null;
+    explanation: string;
+    /** Worked sizes, e.g. {target: 0.9, confidence: 0.95, times: 29}; keys vary by test. */
+    examples: Record<string, number>[];
+  };
   recommended_times: number | null;
   method: string;
 }

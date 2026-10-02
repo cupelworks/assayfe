@@ -132,7 +132,15 @@
   } @else if (b.result) {
     <section class="cell">
       <div class="row-head">
-        <h2>Checks</h2>
+        <span class="head-with-link">
+          <h2>Checks</h2>
+          <a
+            class="read-link"
+            routerLink="/statistical-tests"
+            [fragment]="isScores() ? 'chart-scores' : 'chart-range'"
+            >How to read these charts →</a
+          >
+        </span>
         <div class="chips">
           @for (f of filters(); track f.key) {
             <button type="button" class="chip-btn" (click)="filter.set(f.key)">

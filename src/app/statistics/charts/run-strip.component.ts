@@ -54,11 +54,13 @@ export function pointText(p: SeriesPoint): string {
 })
 export class RunStripComponent {
   series = input.required<SeriesPoint[]>();
-  scope = input.required<StatsScope>();
+  /** Null draws an example: the squares link nowhere. */
+  scope = input<StatsScope | null>(null);
   testId = input<string | null>(null);
   columns = computed(() => Math.max(1, Math.min(this.series().length, 50)));
   text = pointText;
   link(p: SeriesPoint) {
-    return runLink(this.scope(), p, this.testId());
+    const s = this.scope();
+    return s ? runLink(s, p, this.testId()) : null;
   }
 }

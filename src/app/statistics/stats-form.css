@@ -21,7 +21,7 @@
 }
 .q {
   display: grid;
-  grid-template-columns: 16px minmax(0, 1fr);
+  grid-template-columns: 16px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: start;
   padding: 10px 0;

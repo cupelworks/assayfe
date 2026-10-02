@@ -23,6 +23,7 @@ import { DialogComponent } from '../shared/dialog/dialog.component';
 import { ChevronComponent } from '../shared/chevron.component';
 import { NumberInputDirective, parseDecimal } from '../shared/number';
 import { ParamFieldComponent } from './param-field.component';
+import { TestChoiceComponent } from './test-choice.component';
 import { paramRows, paramValues, problems, typedFrom } from './stats-params';
 import { ruleText } from './stats-format';
 
@@ -49,6 +50,7 @@ export interface BatchPreset {
     FormsModule,
     NumberInputDirective,
     ParamFieldComponent,
+    TestChoiceComponent,
   ],
   templateUrl: './run-stats-dialog.component.html',
   styleUrls: ['../shared/page.css', './stats-form.css', './run-stats-dialog.component.css'],
