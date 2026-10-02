@@ -172,9 +172,9 @@ export class ChartGuideComponent {
     },
   ];
   batchMarks = [
-    { key: 'Passed', text: 'Every check proven to reach the target.' },
-    { key: 'Failed', text: 'At least one check proven to fall short.' },
-    { key: 'Inconclusive', text: 'Finished; not enough to prove either way.' },
+    { key: 'Passed', text: 'Every check reaches the target.' },
+    { key: 'Failed', text: 'At least one check falls short.' },
+    { key: 'Inconclusive', text: 'Finished, but too few runs to tell either way.' },
     { key: 'Incomplete', text: 'Stopped before every run ran.' },
     {
       key: 'NotRan',
@@ -182,8 +182,8 @@ export class ChartGuideComponent {
     },
   ];
   checkMarks = [
-    { key: 'pass', text: 'Proven at or above the target.' },
-    { key: 'fail', text: 'Proven below it.' },
+    { key: 'pass', text: 'At or above the target.' },
+    { key: 'fail', text: 'Below it.' },
     { key: 'inconclusive', text: 'The target is inside the range.' },
     { key: 'none', text: 'Too few values to decide: none, or fewer than the test needs.' },
   ];
@@ -191,6 +191,6 @@ export class ChartGuideComponent {
     { key: 'better', text: 'B met it more often, beyond chance.' },
     { key: 'worse', text: 'B met it less often, beyond chance.' },
     { key: 'no_difference', text: 'None this size can see.' },
-    { key: 'no_worse', text: 'At most the margin worse, proven.' },
+    { key: 'no_worse', text: 'At most the margin worse, beyond chance.' },
   ];
 }

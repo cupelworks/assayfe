@@ -126,7 +126,7 @@
       <h2>Results</h2>
       <p class="muted" style="max-width: 720px">
         Verdicts appear when every run has finished. Until then they would change with each run, and
-        stopping on a good streak would make a pass look proven when it isn’t.
+        stopping on a good streak could turn luck into a pass.
       </p>
     </section>
   } @else if (b.result) {
@@ -156,7 +156,7 @@
         <span class="label">Evaluated</span>
         <div>
           @if (isScores()) {
-            <span class="label">Average · bounds at {{ pct(b.parameters['confidence']) }}</span>
+            <span class="label">Average · its range</span>
           } @else {
             <span class="label">Met rate · its range</span>
             <div class="ticks">

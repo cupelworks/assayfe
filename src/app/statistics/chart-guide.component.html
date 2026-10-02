@@ -11,8 +11,8 @@
   <div>
     <h3>The verdict and its range</h3>
     <p class="sub">
-      One row per check, on a batch's page. Here a 90% target at 95% confidence, three checks after
-      29 times.
+      One row per check, on a batch's page. Here three checks after 29 times, against a 90% target,
+      95% sure.
     </p>
     <div class="rows">
       <span></span><span></span>
@@ -57,8 +57,8 @@
     <div class="item">
       <span class="no">2</span>
       <p>
-        <strong>The range</strong> is where the real rate can be, at the confidence you chose. It is
-        the arithmetic the verdict used, so the two never disagree.
+        <strong>The range</strong> is where the real rate can be, 95% sure (you choose how sure when
+        you start a batch). The verdict is decided on this range, so the two never disagree.
       </p>
     </div>
     <div class="item">
@@ -150,9 +150,8 @@
       to 83%), the same miss late barely moves it (time 21).
     </p>
     <p>
-      <strong>An early streak proves nothing.</strong> The verdict uses every time, which is why a
-      running batch shows no verdict: stopping on a good start would make a pass look proven when it
-      isn't.
+      <strong>An early streak can be luck.</strong> The verdict uses every time, which is why a
+      running batch shows no verdict: stopping after a good start could turn luck into a pass.
     </p>
   </div>
 </section>
@@ -191,7 +190,8 @@
     <div class="item">
       <span class="no">3</span>
       <p>
-        <strong>The average</strong> with the bounds its verdict used: 0.367, at least 0.336 at 95%.
+        <strong>The average</strong> and its range, which the verdict was decided on: 0.367, at
+        least 0.336 (95% sure).
       </p>
     </div>
     <div class="item">
@@ -201,12 +201,10 @@
     <div class="rule">
       <div class="label">Reading it</div>
       <div class="r">
-        <assay-mark of="pass" />Bounds entirely on the passing side of the line: Passed.
+        <assay-mark of="pass" />The whole range on the passing side of the line: Passed.
       </div>
-      <div class="r">
-        <assay-mark of="inconclusive" />The line between the bounds: Inconclusive.
-      </div>
-      <div class="r"><assay-mark of="fail" />Bounds entirely on the other side: Failed.</div>
+      <div class="r"><assay-mark of="inconclusive" />The line inside the range: Inconclusive.</div>
+      <div class="r"><assay-mark of="fail" />The whole range on the other side: Failed.</div>
       <div class="r">
         <assay-mark of="none" />Too few scores to decide: No verdict - the row says why.
       </div>
@@ -271,8 +269,8 @@
     <div class="item">
       <span class="no">2</span>
       <p>
-        <strong>B − A</strong>: the change in points, and the range it can be in at 95% - the
-        arithmetic the verdict used.
+        <strong>B − A</strong>: the change in points, and the range it can be in (95% sure). The
+        verdict is decided on this range.
       </p>
     </div>
     <div class="item">

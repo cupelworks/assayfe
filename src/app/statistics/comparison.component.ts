@@ -81,7 +81,7 @@ export class ComparisonComponent {
   });
   conf = computed(() => {
     const x = this.c()?.parameters['confidence'];
-    return x != null ? `${pct(x)} confidence` : '';
+    return x != null ? `${pct(x)} sure` : '';
   });
   /** Every check's row; the quiet ones folded unless shown. */
   rows = computed(() => {

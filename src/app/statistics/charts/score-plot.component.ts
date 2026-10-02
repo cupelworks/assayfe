@@ -65,7 +65,7 @@ import { runLink } from '../stats-format';
           }
           Average
         </span>
-        <span class="small">with the bounds its verdict used</span>
+        <span class="small">with the range its verdict was decided on</span>
       </div>
       <div class="v">
         @if (avg(); as a) {

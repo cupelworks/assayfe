@@ -370,10 +370,10 @@
   <h2>Running with statistics</h2>
   <p class="section-lead">
     One run is a signal; a verdict needs many. "Run with statistics…" on a test, a test set or a
-    test plan runs it many times as one batch, then a statistical test decides each check at the
-    confidence you chose. Each time is a full run, paid for like any other - the dialog shows how
-    many runs, application calls and judge calls before anything is created, and what each verdict
-    will take at that size.
+    test plan runs it many times as one batch, then a statistical test decides each check, 95% sure
+    unless you choose otherwise. Each time is a full run, paid for like any other - the dialog shows
+    how many runs, application calls and judge calls before anything is created, and what each
+    verdict will take at that size.
   </p>
   <div class="status-grid" style="margin-bottom: 16px">
     <div class="status">
@@ -386,18 +386,18 @@
     </div>
     <div class="status">
       <div class="label"><assay-mark of="Passed" />Passed</div>
-      <div class="small">Every check is proven to reach the target.</div>
+      <div class="small">Every check reaches the target.</div>
     </div>
     <div class="status">
       <div class="label"><assay-mark of="Failed" />Failed</div>
-      <div class="small">At least one check is proven to fall short.</div>
+      <div class="small">At least one check falls short.</div>
     </div>
     <div class="status">
       <div class="label"><assay-mark of="Inconclusive" />Inconclusive</div>
       <div class="small">
-        Every run finished, but there isn't enough to prove it either way. A new, larger batch would
-        likely settle it - the result says about how large, or that it would take more than a batch
-        can run.
+        Every run finished, but there weren't enough runs to tell either way. A new, larger batch
+        would likely settle it - the result says about how large, or that it would take more than a
+        batch can run.
       </div>
     </div>
     <div class="status">
@@ -410,9 +410,9 @@
     </div>
   </div>
   <p>
-    <strong>What a verdict says.</strong> "Passes at least 90% of the time, at 95% confidence": the
-    runs leave a range the real pass rate can be in. The check is Passed when the whole range is
-    above the target, Failed when it's below, Inconclusive when the target is inside it. A run stays
+    <strong>What a verdict says.</strong> "It passes at least 9 times in 10 (95% sure)": the runs
+    leave a range the real pass rate can be in. The check is Passed when the whole range is above
+    the target, Failed when it's below, Inconclusive when the target is inside it. A run stays
     Green, Amber or Red; only a batch is Passed or Failed.
   </p>
   <p>
@@ -459,9 +459,9 @@
     <div class="guard">
       <div class="q">?</div>
       <div class="a">
-        <strong>Every run passed - why is the batch Inconclusive?</strong> Too few runs to prove the
-        target. At 90% and 95% confidence it takes 29 passes out of 29: 28 out of 28 is still
-        consistent with a check that passes less than 90% of the time. The dialog shows the minimum
+        <strong>Every run passed - why is the batch Inconclusive?</strong> Too few runs to be sure.
+        With a 90% target, 95% sure, it takes 29 passes out of 29: a check that passes only 9 times
+        in 10 would still pass 28 in a row more than 1 time in 20. The dialog shows the minimum
         before you start, and offers one spare time in case a run is Not Ran.
       </div>
     </div>

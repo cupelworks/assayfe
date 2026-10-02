@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { StatisticalEngine, StatisticalTest } from '../api/models';
 import { StatisticalTestsStore } from '../api/statistics-api.service';
 import { StatusMarkComponent, markLabel } from '../shared/status-mark.component';
+import { ChevronComponent } from '../shared/chevron.component';
 import { ChartGuideComponent, CHART_SECTIONS, chartAnchor } from './chart-guide.component';
 import { shownValue } from './stats-params';
 import { pct } from './stats-format';
@@ -44,7 +45,7 @@ const CHARTS: Record<StatisticalEngine, string[]> = {
 /** The worked examples' columns, by key; shares of 1 read as percentages. */
 const EXAMPLE_COLUMNS: Record<string, string> = {
   target: 'Target',
-  confidence: 'Confidence',
+  confidence: 'How sure',
   rate_a: 'A',
   rate_b: 'B',
   margin: 'Margin',
@@ -83,7 +84,7 @@ function floorTag(t: StatisticalTest): string {
 @Component({
   selector: 'assay-statistical-tests',
   standalone: true,
-  imports: [RouterLink, StatusMarkComponent, ChartGuideComponent],
+  imports: [RouterLink, StatusMarkComponent, ChevronComponent, ChartGuideComponent],
   templateUrl: './statistical-tests.component.html',
   styleUrls: ['../shared/page.css', '../shared/catalog.css', './statistical-tests.component.css'],
 })
@@ -93,6 +94,8 @@ export class StatisticalTestsComponent {
   markLabel = markLabel;
   kind = signal<Kind | null>(null);
   openId = signal<string | null>(null);
+  /** The open card whose "How is this calculated?" is open - closed again on another card. */
+  calcOpenId = signal<string | null>(null);
 
   tiles = computed(() =>
     KINDS.map((k) => ({ ...k, n: this.store.items().filter((t) => t.kind === k.key).length })),
@@ -122,6 +125,9 @@ export class StatisticalTestsComponent {
   }
   toggle(id: string) {
     this.openId.set(this.openId() === id ? null : id);
+  }
+  toggleCalc(id: string) {
+    this.calcOpenId.set(this.calcOpenId() === id ? null : id);
   }
   /** Scroll to a test's card (opening it) or a guide section, once the page has rendered it. */
   scrollTo(id: string) {
@@ -159,6 +165,7 @@ export class StatisticalTestsComponent {
         };
       }),
       method: t.method,
+      calcOpen: this.calcOpenId() === t.id,
       charts: (CHARTS[t.engine] ?? [])
         .map((id) => CHART_SECTIONS.find((s) => s.id === id))
         .filter((s) => !!s)

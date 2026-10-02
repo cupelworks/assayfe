@@ -85,7 +85,7 @@ export function ruleText(r: GateRule, what = 'met'): string {
         : `Passed when ${what} at least ${r.pass_at_least} of ${r.times} times`;
   const fail =
     r.fail_at_most == null
-      ? 'Failed can’t be proven at this size'
+      ? 'Can’t be Failed at this size'
       : `Failed when ${what} ${r.fail_at_most} times or fewer`;
   const mid =
     r.pass_at_least != null && r.fail_at_most != null && r.pass_at_least - r.fail_at_most > 1

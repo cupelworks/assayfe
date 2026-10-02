@@ -25,7 +25,7 @@ import { NumberInputDirective, parseDecimal } from '../shared/number';
 import { ParamFieldComponent } from './param-field.component';
 import { TestChoiceComponent } from './test-choice.component';
 import { paramRows, paramValues, problems, typedFrom } from './stats-params';
-import { ruleText } from './stats-format';
+import { pct, ruleText } from './stats-format';
 
 /** What "Run again" starts from: the batch's own test, parameters and size. */
 export interface BatchPreset {
@@ -149,10 +149,11 @@ export class RunStatsDialogComponent {
       const gate = e.engine === 'binomial_gate';
       return `${gate ? 'Each check' : 'Each judge check'}: ${ruleText(r, gate ? 'met' : 'in agreement')}${notRan}`;
     }
+    const sure = this.params()?.['confidence'];
     return (
-      'Each scored check is Passed when its average score is proven on the passing side of its ' +
-      'threshold, Failed when proven on the other side, Inconclusive otherwise. Every run still ' +
-      `evaluates all ${e.checks_total} checks.`
+      'Each scored check is Passed when its average score is on the passing side of its threshold' +
+      `${sure != null ? ` (${pct(sure)} sure)` : ''}, Failed when it’s on the other side, and ` +
+      `Inconclusive when the runs can’t tell. Every run still evaluates all ${e.checks_total} checks.`
     );
   });
   /** Why Start is disabled, one phrase each - the dialog's footer lists them. */

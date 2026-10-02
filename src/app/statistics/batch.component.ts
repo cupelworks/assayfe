@@ -34,9 +34,9 @@ const FILTERS: { key: Filter; label: string }[] = [
 ];
 /** The verdict tile's one line, per outcome. */
 const OUTCOME_LINE: Record<string, string> = {
-  Passed: 'Every check is proven to reach the target.',
-  Failed: 'One check proven to fall short fails the batch.',
-  Inconclusive: 'Every run finished, but not enough to prove it either way.',
+  Passed: 'Every check reaches the target.',
+  Failed: 'One check that falls short fails the batch.',
+  Inconclusive: 'Every run finished, but there weren’t enough runs to tell either way.',
   NotRan: 'No check could be decided: every run Not Ran, or every check errored.',
 };
 
@@ -115,16 +115,14 @@ export class BatchComponent {
       return `Running: ${p.times_done} of ${p.times_requested} times done.`;
     return b.summary ?? b.result?.summary ?? markLabel(b.status);
   });
-  /** "29 times · 95% confidence", and when it ran - the scope is in the crumbs above. */
+  /** "29 times · 95% sure", and when it ran - the scope is in the crumbs above. */
   facts = computed(() => {
     const b = this.batch();
     if (!b) return null;
     const conf = b.parameters['confidence'];
     const ended = b.completed_at ?? b.stopped_at;
     return {
-      line: [timesText(b), conf != null ? `${pct(conf)} confidence` : null]
-        .filter(Boolean)
-        .join(' · '),
+      line: [timesText(b), conf != null ? `${pct(conf)} sure` : null].filter(Boolean).join(' · '),
       when: absTime(b.created_at) + (ended ? ` · took ${took(b.created_at, ended)}` : ''),
     };
   });
@@ -434,7 +432,7 @@ export class BatchComponent {
       // average): their verdict compared the score to the threshold directly.
       decidedOn:
         interval && interval.lower !== interval.upper
-          ? `The verdict was decided on this range, at ${pct(interval.level)} confidence.`
+          ? `The verdict was decided on this range (${pct(interval.level)} sure).`
           : null,
       rule: s?.rule
         ? `At ${s.rule.times} times: ${ruleText(s.rule, b.engine === 'judge_stability' ? 'in agreement' : 'met')}`

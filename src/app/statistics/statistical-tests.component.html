@@ -116,8 +116,6 @@
                     }
                   </ul>
                 </dd>
-                <dt>Method</dt>
-                <dd>{{ t.method }}</dd>
                 @if (t.charts.length) {
                   <dt>Its charts</dt>
                   <dd class="chart-links">
@@ -128,6 +126,21 @@
                     }
                   </dd>
                 }
+                <!-- The method is the statistician's wording: there for whoever asks for it. -->
+                <dt aria-hidden="true"></dt>
+                <dd>
+                  <button
+                    type="button"
+                    class="adv-toggle"
+                    [attr.aria-expanded]="t.calcOpen"
+                    (click)="toggleCalc(t.id)"
+                  >
+                    How is this calculated? <assay-chevron [open]="t.calcOpen" />
+                  </button>
+                  @if (t.calcOpen) {
+                    <p class="calc">{{ t.method }}</p>
+                  }
+                </dd>
               }
             </dl>
             <button type="button" class="more" [attr.aria-expanded]="t.open" (click)="toggle(t.id)">
