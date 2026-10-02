@@ -72,7 +72,7 @@
       <div class="r"><assay-mark of="pass" />The whole range right of the line: Passed.</div>
       <div class="r">
         <assay-mark of="inconclusive" />The line inside the range: Inconclusive - the row says how
-        large a new batch would settle it.
+        large a new batch would likely settle it, or that it would take more than a batch can run.
       </div>
       <div class="r"><assay-mark of="fail" />The whole range left of the line: Failed.</div>
     </div>
@@ -108,7 +108,8 @@
       <span class="no">3</span>
       <p>
         <strong>Grey</strong>: no value - the check couldn't run (no judge chosen, say), or the run
-        was Not Ran. It counts neither way: the sample is the green and red squares.
+        was Not Ran. It counts neither way: the sample is the green and red squares. A check with no
+        green or red square gets no verdict; when that's every check, the batch is Not Ran.
       </p>
     </div>
     <p class="small">On a batch's page each square opens its run, to see what was answered then.</p>
@@ -208,6 +209,10 @@
         <assay-mark of="inconclusive" />The line between the bounds: Inconclusive.
       </div>
       <div class="r"><assay-mark of="fail" />Bounds entirely on the other side: Failed.</div>
+      <div class="r">
+        <assay-mark of="none" />Fewer scores than the t-test's minimum (10): no verdict, stopped or
+        not.
+      </div>
     </div>
     <p class="small">
       An average can pass while single answers miss: here 8 of 30 scored under 0.3. To ask how often

@@ -38,7 +38,7 @@ const OUTCOME_LINE: Record<string, string> = {
   Passed: 'Every check is proven to reach the target.',
   Failed: 'One check proven to fall short fails the batch.',
   Inconclusive: 'Every run finished, but not enough to prove it either way.',
-  NotRan: 'Nothing could be evaluated in any run.',
+  NotRan: 'No check could be decided: every run Not Ran, or every check errored.',
 };
 
 const verdictKey = (c: CheckResult) => c.statistic?.verdict ?? 'none';

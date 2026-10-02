@@ -176,13 +176,16 @@ export class ChartGuideComponent {
     { key: 'Failed', text: 'At least one check proven to fall short.' },
     { key: 'Inconclusive', text: 'Finished; not enough to prove either way.' },
     { key: 'Incomplete', text: 'Stopped before every run ran.' },
-    { key: 'NotRan', text: 'Nothing could be evaluated.' },
+    {
+      key: 'NotRan',
+      text: 'No check could be decided: every run Not Ran, or every check errored.',
+    },
   ];
   checkMarks = [
     { key: 'pass', text: 'Proven at or above the target.' },
     { key: 'fail', text: 'Proven below it.' },
     { key: 'inconclusive', text: 'The target is inside the range.' },
-    { key: 'none', text: 'No time gave it a value.' },
+    { key: 'none', text: 'Too few values to decide: none, or fewer than the test needs.' },
   ];
   compareMarks = [
     { key: 'better', text: 'B met it more often, beyond chance.' },
