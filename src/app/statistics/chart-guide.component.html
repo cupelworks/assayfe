@@ -163,8 +163,8 @@
   <div>
     <h3>Scores</h3>
     <p class="sub">
-      A scored check (ROUGE, BLEU, …) under the t-test, on its own scale. Here ROUGE-L Recall,
-      threshold 0.3, 30 times.
+      A check with a score (ROUGE, BLEU, …), on its own scale. Here ROUGE-L Recall, threshold 0.3,
+      30 times.
     </p>
     <assay-score-plot
       [series]="scoreSeries"
@@ -193,7 +193,7 @@
     <div class="item">
       <span class="no">3</span>
       <p>
-        <strong>The average</strong> with the bounds the t-test used: 0.367, at least 0.336 at 95%.
+        <strong>The average</strong> with the bounds its verdict used: 0.367, at least 0.336 at 95%.
       </p>
     </div>
     <div class="item">
@@ -210,8 +210,7 @@
       </div>
       <div class="r"><assay-mark of="fail" />Bounds entirely on the other side: Failed.</div>
       <div class="r">
-        <assay-mark of="none" />Fewer scores than the t-test's minimum (10): no verdict, stopped or
-        not.
+        <assay-mark of="none" />Too few scores to decide: No verdict - the row says why.
       </div>
     </div>
   </div>
