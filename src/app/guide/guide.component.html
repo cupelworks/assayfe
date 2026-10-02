@@ -336,7 +336,7 @@
     </div>
     <div class="status">
       <div class="label"><span class="dot" style="background: var(--color-accent)"></span>Red</div>
-      <div class="small">Every check was evaluated, and none was met.</div>
+      <div class="small">No check was met in this run.</div>
     </div>
     <div class="status">
       <div class="label">
@@ -358,10 +358,11 @@
     shows the evaluated output and labels which of the two it was.
   </p>
   <p>
-    <strong>One check that can't evaluate doesn't sink the run.</strong> If a single check can't
-    evaluate - a regex pattern that won't compile, say - only that check counts as not met, with the
-    reason as its detail, and the rest still run. The run then usually lands on Amber, not Not Ran.
-    Not Ran is reserved for nothing being checkable at all.
+    <strong>One check that can't evaluate doesn't sink the run.</strong> If a single check can't run
+    - no judge chosen for a judge check, say, or a judge that timed out - the run's page shows it as
+    "couldn't run", with the reason, and the rest still run. In the run's outcome it counts as not
+    met, so the run usually lands on Amber, not Not Ran. Not Ran is reserved for nothing being
+    checkable at all.
   </p>
 </section>
 
