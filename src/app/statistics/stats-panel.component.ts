@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, input, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BatchSummary, ComparisonSummary, StatsScopeRef } from '../api/models';
-import { StatisticsApiService } from '../api/statistics-api.service';
+import { StatisticalTestsStore, StatisticsApiService } from '../api/statistics-api.service';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
@@ -32,6 +32,7 @@ export class StatsPanelComponent {
   /** Bump to reload, e.g. after a batch was started from the page. */
   version = input(0);
   private api = inject(StatisticsApiService);
+  private tests = inject(StatisticalTestsStore);
   markLabel = markLabel;
   page = new Paged<BatchSummary>((o, l) => this.api.batchesPage(this.scope(), o, l), 5, errText);
   comparisons = new Paged<ComparisonSummary>(
@@ -45,7 +46,7 @@ export class StatsPanelComponent {
       const verdicts = b.verdicts;
       return {
         b,
-        question: question(b.statistical_test, b.parameters),
+        question: question(b.engine, b.parameters, this.tests.byId().get(b.statistical_test)?.name),
         size: timesText(b),
         running: isInFlight(b.status),
         donePct: p.times_requested ? Math.round((p.times_done / p.times_requested) * 100) : 0,
@@ -58,6 +59,7 @@ export class StatsPanelComponent {
   );
   private inFlight = computed(() => this.page.items().some((b) => isInFlight(b.status)));
   constructor() {
+    this.tests.load();
     effect(() => {
       this.scope();
       this.version();

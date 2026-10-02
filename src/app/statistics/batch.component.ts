@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Batch, CheckResult, Comparison, EntryResult, RunCounts } from '../api/models';
-import { StatisticsApiService } from '../api/statistics-api.service';
+import { StatisticalTestsStore, StatisticsApiService } from '../api/statistics-api.service';
 import { STATUS, absTime, errText, isInFlight } from '../shared/format';
 import { pollWhile } from '../shared/poll';
 import { StatusMarkComponent, markLabel } from '../shared/status-mark.component';
@@ -80,6 +80,7 @@ const runsLine = (runs: RunCounts) =>
 export class BatchComponent {
   id = input.required<string>();
   private api = inject(StatisticsApiService);
+  private tests = inject(StatisticalTestsStore);
   private router = inject(Router);
   markLabel = markLabel;
   pct = pct;
@@ -103,7 +104,7 @@ export class BatchComponent {
   kicker = computed(() => {
     const b = this.batch();
     return b
-      ? `Statistics batch · ${question(b.statistical_test, b.parameters)}`
+      ? `Statistics batch · ${question(b.engine, b.parameters, this.testName())}`
       : 'Statistics batch';
   });
   headline = computed(() => {
@@ -202,7 +203,12 @@ export class BatchComponent {
       strip: e.strip ?? [],
     }));
   });
-  isScores = computed(() => this.batch()?.statistical_test === 'one_sample_t');
+  isScores = computed(() => this.batch()?.engine === 'one_sample_t');
+  /** The catalogue row's name, for an engine with no short question. */
+  private testName = computed(() => {
+    const b = this.batch();
+    return b ? (this.tests.byId().get(b.statistical_test)?.name ?? '') : '';
+  });
   /** The rate axis every pass-rate row shares: from 50% - or lower, when a range reaches lower. */
   axisMin = computed(() => {
     const lows = this.allChecks()
@@ -276,6 +282,7 @@ export class BatchComponent {
   });
 
   constructor() {
+    this.tests.load();
     effect(() => {
       this.id();
       untracked(() => {
@@ -368,7 +375,7 @@ export class BatchComponent {
     const v = verdictKey(c);
     const series = c.series ?? [];
     const interval = s?.interval ?? null;
-    const scored = b.statistical_test === 'one_sample_t';
+    const scored = b.engine === 'one_sample_t';
     // A scored check is drawn on its own scale; a rate on the axis every rate row shares.
     const scale = scored
       ? {
@@ -425,7 +432,7 @@ export class BatchComponent {
       reason: s?.reason ?? c.reason ?? '',
       method: interval ? intervalText(interval) : null,
       rule: s?.rule
-        ? `At ${s.rule.times} times: ${ruleText(s.rule, b.statistical_test === 'judge_stability' ? 'in agreement' : 'met')}`
+        ? `At ${s.rule.times} times: ${ruleText(s.rule, b.engine === 'judge_stability' ? 'in agreement' : 'met')}`
         : null,
       tLine:
         s?.df != null

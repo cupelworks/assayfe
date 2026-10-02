@@ -68,7 +68,7 @@ export class ComparisonComponent {
   });
   /** Scores (mean, or median for ranks) rather than pass rates. */
   private onScores = computed(() =>
-    ['mean_scores', 'score_ranks'].includes(this.c()?.statistical_test ?? ''),
+    ['mean_scores', 'score_ranks'].includes(this.c()?.engine ?? ''),
   );
   sides = computed(() => {
     const c = this.c();
@@ -177,7 +177,7 @@ export class ComparisonComponent {
     const scores = this.onScores();
     const value = (s: { pass_rate: any; scores?: ScoreSummary | null }) =>
       scores
-        ? ((c.statistical_test === 'score_ranks' ? s.scores?.median : s.scores?.mean) ?? null)
+        ? ((c.engine === 'score_ranks' ? s.scores?.median : s.scores?.mean) ?? null)
         : (s.pass_rate?.point ?? null);
     const a = value(k.a),
       b = value(k.b);

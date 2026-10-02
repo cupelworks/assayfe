@@ -64,7 +64,14 @@ export class RunStatsDialogComponent {
 
   private api = inject(StatisticsApiService);
   store = inject(StatisticalTestsStore);
-  choice = signal<StatisticalTestName>('binomial_gate');
+  /** The test picked; '' until one is - then the catalogue's first that can run here. */
+  private picked = signal<StatisticalTestName>('');
+  choice = computed(() => {
+    const list = this.store.batchTests();
+    const can = (id: string) => !this.unavailable()[id];
+    if (this.picked() && can(this.picked())) return this.picked();
+    return list.find((t) => can(t.id))?.id ?? '';
+  });
   /** Every parameter as typed, per test (`<test>:<key>`), in the units shown. */
   typed = signal<Record<string, string>>({});
   /** null: the API's default size. */
@@ -136,8 +143,8 @@ export class RunStatsDialogComponent {
     const r = e.rule;
     const notRan =
       ' A run that is Not Ran doesn’t count: the rule applies to the times that were evaluated.';
-    if (r && (e.statistical_test === 'binomial_gate' || e.statistical_test === 'judge_stability')) {
-      const gate = e.statistical_test === 'binomial_gate';
+    if (r && (e.engine === 'binomial_gate' || e.engine === 'judge_stability')) {
+      const gate = e.engine === 'binomial_gate';
       return `${gate ? 'Each check' : 'Each judge check'}: ${ruleText(r, gate ? 'met' : 'in agreement')}${notRan}`;
     }
     return (
@@ -173,10 +180,10 @@ export class RunStatsDialogComponent {
     // A preset (Run again) starts from the batch's own question, parameters and size.
     effect(() => {
       const p = this.preset();
-      const t = this.store.byId().get(p?.statistical_test ?? 'binomial_gate');
+      const t = p ? this.store.byId().get(p.statistical_test) : undefined;
       if (!p || !t) return;
       untracked(() => {
-        this.choice.set(p.statistical_test);
+        this.picked.set(p.statistical_test);
         this.typed.update((all) => ({ ...all, ...typedFrom(t, p.parameters) }));
         this.timesText.set(String(p.times));
       });
@@ -208,7 +215,7 @@ export class RunStatsDialogComponent {
 
   pick(t: StatisticalTestName) {
     if (this.unavailable()[t]) return;
-    this.choice.set(t);
+    this.picked.set(t);
     // Each test has its own floor: the size follows its default again.
     this.timesText.set(null);
   }
@@ -223,15 +230,9 @@ export class RunStatsDialogComponent {
     for (const t of tests) {
       this.api.estimate({ ...scope, statistical_test: t.id }).subscribe({
         next: () => this.unavailable.update((u) => ({ ...u, [t.id]: null })),
-        error: (e) => {
-          const reason = problems(e)['test'] ?? null;
-          this.unavailable.update((u) => ({ ...u, [t.id]: reason }));
-          // The chosen test can't run here: the first one that isn't known not to.
-          if (reason && this.choice() === t.id) {
-            const next = tests.find((x) => x.id !== t.id && !this.unavailable()[x.id]);
-            if (next) this.pick(next.id);
-          }
-        },
+        // The reason it can't run here; the choice then moves to one that can.
+        error: (e) =>
+          this.unavailable.update((u) => ({ ...u, [t.id]: problems(e)['test'] ?? null })),
       });
     }
   }

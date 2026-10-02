@@ -49,7 +49,9 @@ export class CompareDialogComponent {
   timesText = timesText;
   others = signal<BatchSummary[] | null>(null);
   baseline = signal<string | null>(null);
-  choice = signal<StatisticalTestName>('pass_rates');
+  /** The test picked; '' until one is - then the catalogue's first that applies. */
+  private picked = signal<StatisticalTestName>('');
+  choice = computed(() => this.picked() || this.tests().find((q) => !q.off)?.t.id || '');
   typed = signal<Record<string, string>>({});
   note = signal('');
   adv = signal(false);
@@ -61,7 +63,7 @@ export class CompareDialogComponent {
     this.store.comparisonTests().map((t) => {
       // Pairing needs entries: a test has only itself.
       const reason =
-        t.id === 'paired_entries' && this.batch().scope.kind === 'test'
+        t.engine === 'paired_entries' && this.batch().scope.kind === 'test'
           ? 'Needs a set or a plan: there are no entries to pair in a single test.'
           : null;
       return { t, off: !!reason, reason };
@@ -98,7 +100,7 @@ export class CompareDialogComponent {
   }
 
   pick(t: StatisticalTestName) {
-    this.choice.set(t);
+    this.picked.set(t);
     this.apiProblems.set({});
   }
   setParam(key: string, text: string) {

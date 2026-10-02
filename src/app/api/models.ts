@@ -438,7 +438,9 @@ export interface WorkerHealth {
 
 // Statistics - "Run with statistics": a test, set or plan run many times as one batch, and a
 // statistical test's verdict per check over those runs (see docs/statistics in the API repo).
-export type StatisticalTestName =
+/** The arithmetic in code a statistical test runs - a fixed set. Branch on this, never on a
+ *  test's id: the catalogue is a table, and several tests can share one engine. */
+export type StatisticalEngine =
   | 'binomial_gate'
   | 'one_sample_t'
   | 'judge_stability'
@@ -447,6 +449,8 @@ export type StatisticalTestName =
   | 'mean_scores'
   | 'score_ranks'
   | 'paired_entries';
+/** A catalogue row's id (`GET /statistics/tests`): what to send as `statistical_test`. */
+export type StatisticalTestName = string;
 /** `rate` and `level` are shares of 1 (0.9 = 90%); `share` is a share of a check's score range. */
 export interface StatisticalTestParameter {
   key: string;
@@ -460,6 +464,9 @@ export interface StatisticalTestParameter {
 export interface StatisticalTest {
   id: StatisticalTestName;
   name: string;
+  engine: StatisticalEngine;
+  /** The engine's own constants for this row (the t-test's floor and recommended size). */
+  engine_settings: Record<string, unknown>;
   /** `batch`: decides a batch's checks; `comparison`: compares two batches. */
   kind: 'batch' | 'comparison';
   wave: number;
@@ -529,6 +536,7 @@ export interface EntryPlan {
 export interface Estimate {
   scope: StatsScope;
   statistical_test: StatisticalTestName;
+  engine: StatisticalEngine;
   parameters: Record<string, number>;
   floor: number;
   floor_explanation: string;
@@ -707,6 +715,8 @@ export interface BatchSummary {
   id: string;
   scope: StatsScope;
   statistical_test: StatisticalTestName;
+  /** The arithmetic the row named when the batch was created - kept if the row changes. */
+  engine: StatisticalEngine;
   parameters: Record<string, number>;
   note: string | null;
   status: BatchStatus;
@@ -801,6 +811,7 @@ export interface ComparisonSummary {
   id: string;
   scope: StatsScope;
   statistical_test: StatisticalTestName;
+  engine: StatisticalEngine;
   parameters: Record<string, number>;
   note: string | null;
   batch_a: ComparedBatch;

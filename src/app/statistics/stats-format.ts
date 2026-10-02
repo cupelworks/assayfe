@@ -2,7 +2,7 @@ import {
   BatchSummary,
   GateRule,
   Interval,
-  StatisticalTestName,
+  StatisticalEngine,
   StatsScope,
   StatsScopeKind,
   StatsScopeRef,
@@ -20,9 +20,14 @@ export function points(x: number): string {
   return v > 0 ? `+${v}` : `${v}`;
 }
 
-/** The question a batch answers, short: the kicker of its page and its line in lists. */
-export function question(test: StatisticalTestName, params: Record<string, number>): string {
-  switch (test) {
+/** The question a batch answers, short: the kicker of its page and its line in lists - by its
+ *  engine; `name` (the catalogue row's) for an engine with no short question. */
+export function question(
+  engine: StatisticalEngine,
+  params: Record<string, number>,
+  name = '',
+): string {
+  switch (engine) {
     case 'binomial_gate':
       return `Passes at least ${pct(params['target'])} of the time?`;
     case 'judge_stability':
@@ -30,7 +35,7 @@ export function question(test: StatisticalTestName, params: Record<string, numbe
     case 'one_sample_t':
       return 'Is the average score on the passing side of the threshold?';
     default:
-      return test;
+      return name || engine;
   }
 }
 
