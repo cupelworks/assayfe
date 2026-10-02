@@ -60,19 +60,19 @@
   <p>
     Each type belongs to a category, and some require a reference - an
     <code>expected_output</code> to compare against - and can't score a test that doesn't have one.
-    Others take their own configuration instead, or as well: a numeric threshold the score has to
-    clear, or a custom rubric for an LLM-as-judge type to grade against. A test can't be saved until
-    every assigned type's required setup - reference or otherwise - is actually filled in. Inactive
-    types stay visible for history but can no longer be newly assigned.
+    Others take their own configuration instead, or as well: a numeric threshold the score is
+    checked against, or a custom rubric for an LLM-as-judge type to grade against. A test can't be
+    saved until every assigned type's required setup - reference or otherwise - is actually filled
+    in. Inactive types stay visible for history but can no longer be newly assigned.
   </p>
   <p>
     What a result looks like depends on the category. <strong>Deterministic</strong> checks are met
     or not - there's no score, only whether the answer matched. <strong>NLP metrics</strong> produce
     a score on the metric's own scale (0 to 1 for most, 0 to 100 for BLEU, -1 to 1 for cosine
-    similarity) and are met when it clears the threshold you set. <strong>LLM judges</strong> decide
-    whether the answer meets the rubric, with a written rationale. Each type's card in the catalogue
-    shows which engine scores it, its settings, and - for a threshold-scored type - its range and
-    when the score meets it.
+    similarity) and are met when the score meets the threshold you set.
+    <strong>LLM judges</strong> decide whether the answer meets the rubric, with a written
+    rationale. Each type's card in the catalogue shows which engine scores it, its settings, and -
+    for a threshold-scored type - its range and when the score meets it.
   </p>
   <div class="callout">
     See the full <a routerLink="/test-types">test types catalogue</a> for the current list of
