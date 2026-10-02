@@ -1,0 +1,196 @@
+@if (place(); as pl) {
+  <div class="crumbs">
+    <a [routerLink]="pl.list">{{ pl.label }}</a
+    ><span>/</span><a [routerLink]="pl.link">{{ c()!.scope.name }}</a
+    ><span>/</span><span class="cur">Comparison</span>
+  </div>
+} @else {
+  <div class="crumbs"><span class="cur">Comparison</span></div>
+}
+@if (loadError(); as e) {
+  <div class="msg msg-err">{{ e }}</div>
+}
+@if (c(); as cmp) {
+  <div class="hero">
+    <div>
+      <div class="kicker">Comparison · {{ testName() }}</div>
+      <h1>{{ cmp.summary }}</h1>
+    </div>
+    <div class="hero-side">
+      <p class="hero-note">
+        {{ cmp.scope.name }} · {{ conf() }}.<br />Compared {{ absTime(cmp.created_at) }}.
+      </p>
+      @if (cmp.note) {
+        <p class="hero-note note">“{{ cmp.note }}”</p>
+      }
+    </div>
+  </div>
+
+  <section class="ab">
+    @for (s of sides(); track s.role) {
+      <div class="side">
+        <div class="label">{{ s.role }}</div>
+        <div class="side-top">
+          <span class="st"><assay-mark [of]="s.b.status" />{{ markLabel(s.b.status) }}</span>
+          <span class="muted">{{ s.when }} · {{ s.b.times_requested }} times</span>
+        </div>
+        @if (s.b.note) {
+          <div class="side-note">“{{ s.b.note }}”</div>
+        }
+        <a class="plain small" [routerLink]="s.link">Open the batch →</a>
+      </div>
+    }
+  </section>
+
+  <section class="stats">
+    @for (t of tiles(); track t.key) {
+      <div class="stat">
+        <div class="label"><assay-mark [of]="t.key" />{{ t.label }}</div>
+        <div class="mid num">{{ t.n }}</div>
+      </div>
+    }
+  </section>
+
+  @if (paired(); as p) {
+    <section class="cell cell-b">
+      <div class="row-head">
+        <h2>Paired by entry</h2>
+        <span class="verdict-inline"
+          ><assay-mark [of]="p.verdict ?? 'none'" />{{ markLabel(p.verdict ?? 'none') }}</span
+        >
+      </div>
+      <p class="muted reason">{{ p.reason }}</p>
+      <p class="small">
+        {{ p.p }}{{ p.wilcoxon ? ' · ' + p.wilcoxon : '' }} · {{ p.n_pairs }} pairs
+      </p>
+      <div class="pairs">
+        @for (x of p.pairs; track x.name + x.label) {
+          <div class="pair-name">
+            {{ x.label }}<span class="small">{{ x.name }}</span>
+          </div>
+          <div class="dumb">
+            <i class="link" [style.left.%]="x.left" [style.width.%]="x.width"></i>
+            <i class="a" [style.left.%]="x.a"></i>
+            <assay-mark class="b" [of]="x.cls" [style.left.%]="x.b" />
+          </div>
+          <div class="small num">{{ x.text }}</div>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="cell">
+    <div class="cols th">
+      <span class="label">Check</span>
+      <div>
+        <span class="label">{{ valueAxis().pct ? 'Pass rate' : 'Score' }} · A → B</span>
+        <div class="ticks">
+          @for (t of valueAxis().ticks; track $index; let first = $first, last = $last) {
+            <span
+              [style.left.%]="((t - valueAxis().min) / (valueAxis().max - valueAxis().min)) * 100"
+              [class.first]="first"
+              [class.last]="last"
+              >{{
+                valueAxis().pct ? (t * 100 | number: '1.0-0') + '%' : (t | number: '1.0-2')
+              }}</span
+            >
+          }
+        </div>
+      </div>
+      <div>
+        <span class="label">B − A · its range</span>
+        <div class="ticks">
+          @for (t of diffAxis().ticks; track $index; let first = $first, last = $last) {
+            <span
+              [style.left.%]="((t - diffAxis().min) / (diffAxis().max - diffAxis().min)) * 100"
+              [class.first]="first"
+              [class.last]="last"
+              >{{ diffAxis().scores ? (t | number: '1.0-2') : (t * 100 | number: '1.0-0') }}</span
+            >
+          }
+        </div>
+      </div>
+      <span class="label">Verdict</span>
+    </div>
+    @for (r of shownRows(); track r.key) {
+      <div class="cols row">
+        <div class="check">
+          <span class="t">{{ r.label }}</span>
+          <span class="s">{{ r.entry ?? r.type ?? '' }}</span>
+        </div>
+        <div>
+          <div class="dumb">
+            <i class="link" [style.left.%]="r.linkLeft" [style.width.%]="r.linkWidth"></i>
+            @if (r.a != null) {
+              <i class="a" [style.left.%]="r.a" title="A"></i>
+            }
+            @if (r.b != null) {
+              <assay-mark class="b" [of]="r.verdict" [style.left.%]="r.b" />
+            }
+          </div>
+          <div class="small num">{{ r.values }}</div>
+        </div>
+        <div>
+          @if (r.diff) {
+            <assay-range-chart
+              [min]="diffAxis().min"
+              [max]="diffAxis().max"
+              [lower]="r.diff.lower"
+              [upper]="r.diff.upper"
+              [point]="r.diff.point"
+              [line]="cmp.parameters['margin'] != null ? -cmp.parameters['margin'] : 0"
+              [mark]="r.verdict"
+              [ticks]="[0]"
+            />
+          } @else if (r.effect != null) {
+            <assay-range-chart
+              [min]="0"
+              [max]="1"
+              [point]="r.effect"
+              [line]="0.5"
+              [mark]="r.verdict"
+            />
+          }
+          <div class="small num">{{ r.diffText }}</div>
+        </div>
+        <div class="verdict">
+          <span class="w"><assay-mark [of]="r.verdict" />{{ r.word }}</span>
+          <span class="small">{{ r.reason }}</span>
+          @if (r.p) {
+            <span class="small">{{ r.p }}</span>
+          }
+          @if (r.decide) {
+            <span class="small">{{ r.decide }}</span>
+          }
+        </div>
+      </div>
+    }
+    @if (foldable()) {
+      <button type="button" class="fold" (click)="showQuiet.set(!showQuiet())">
+        {{
+          showQuiet()
+            ? 'Show only the differences ↑'
+            : 'Show the ' +
+              quietCount() +
+              ' with ' +
+              (cmp.statistical_test === 'no_worse' ? 'no worse' : 'no real difference') +
+              ' ↓'
+        }}
+      </button>
+    }
+    @if (cmp.result.unmatched.length) {
+      <div class="unmatched">
+        <div class="label">In one batch only - not compared</div>
+        @for (u of cmp.result.unmatched; track $index) {
+          <div class="small">
+            <span class="strong">{{ u.label ?? u.name }}</span>
+            @if (u.label) {
+              · {{ u.name }}
+            }
+            - only in {{ u.only_in === 'a' ? 'A, the baseline' : 'B, the change' }}
+          </div>
+        }
+      </div>
+    }
+  </section>
+}

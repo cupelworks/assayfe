@@ -5,7 +5,9 @@ import { Router, RouterLink } from '@angular/router';
 import { TestsApiService } from '../api/tests-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
-import { StandaloneRun, TestCase, TestCaseBody } from '../api/models';
+import { Batch, StandaloneRun, TestCase, TestCaseBody } from '../api/models';
+import { RunStatsDialogComponent } from '../statistics/run-stats-dialog.component';
+import { StatsPanelComponent } from '../statistics/stats-panel.component';
 import {
   short,
   isInFlight,
@@ -33,6 +35,8 @@ import { pollWhile } from '../shared/poll';
     PagerComponent,
     RelTimeComponent,
     CopyButtonComponent,
+    RunStatsDialogComponent,
+    StatsPanelComponent,
   ],
   templateUrl: './test-detail.component.html',
   styleUrls: ['../shared/page.css'],
@@ -49,13 +53,15 @@ export class TestDetailComponent {
   statusColor = statusColor;
   statusLabel = statusLabel;
   test = signal<TestCase | null>(null);
+  /** The runs started from this page - a statistics batch's are on the batch's page. */
   runsPage = new Paged<StandaloneRun>(
-    (o, l) => this.runsApi.standaloneRunsPage(this.id(), o, l),
+    (o, l) => this.runsApi.standaloneRunsPage(this.id(), o, l, 'none'),
     10,
     errText,
   );
   runs = this.runsPage.items;
-  dlg = signal<null | 'edit' | 'delete' | 'clear-output'>(null);
+  dlg = signal<null | 'edit' | 'delete' | 'clear-output' | 'stats'>(null);
+  statsScope = computed(() => ({ test_id: this.id() }));
   /** Busy flag, dialog error and page banner for this page's API actions - see shared/action-runner.ts. */
   act = new ActionRunner({
     inDialog: () => !!this.dlg(),
@@ -130,5 +136,10 @@ export class TestDetailComponent {
       ok: (r) => `Enqueued standalone run ${short(r.id)} - pending.`,
       then: () => this.load(),
     });
+  }
+  /** A batch was started from the dialog: its page shows it running. */
+  openBatch(b: Batch) {
+    this.dlg.set(null);
+    this.router.navigate(['/statistics/batches', b.id]);
   }
 }

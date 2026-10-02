@@ -1,0 +1,191 @@
+<assay-dialog
+  [kicker]="kicker()"
+  title="Run with statistics"
+  [wide]="true"
+  [primaryLabel]="primaryLabel()"
+  [primaryDisabled]="primaryDisabled()"
+  [blockers]="blockers()"
+  (primary)="start()"
+  (close)="closed.emit()"
+>
+  <p class="intro">
+    One run proves nothing about an application that answers differently every time. This runs the
+    {{ noun() }} many times and lets statistics decide, check by check. Nothing is created until you
+    start it.
+  </p>
+
+  <div class="field">
+    <div class="flabel" id="sp-q">What do you want to know?</div>
+    <div class="qs" role="radiogroup" aria-labelledby="sp-q">
+      @for (q of tests(); track q.t.id) {
+        <label class="q" [class.on]="q.t.id === choice()" [class.off]="q.off">
+          <input
+            type="radio"
+            name="stats-question"
+            [checked]="q.t.id === choice()"
+            [disabled]="q.off"
+            (change)="pick(q.t.id)"
+          />
+          <span class="q-text">
+            <span class="q-name">{{ q.t.name }}</span>
+            <span class="small">{{ q.reason ?? q.t.question }}</span>
+          </span>
+        </label>
+      }
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="col">
+      @for (r of mainParams(); track r.p.key) {
+        <assay-param-field [row]="r" (changed)="setParam(r.p.key, $event)" />
+      } @empty {
+        <div class="field">
+          <label>Threshold</label>
+          <div class="plain-line">Each check’s own, as set on it.</div>
+        </div>
+      }
+    </div>
+    <div class="col">
+      <div class="field">
+        <label for="sp-times"
+          >How many times <span class="hint">- the whole {{ noun() }}, each time</span></label
+        >
+        <div class="with-unit">
+          <input
+            id="sp-times"
+            class="input num"
+            [class.invalid]="timesIssue() || apiProblems()['times']"
+            assayNumber="numeric"
+            [ngModel]="shownTimes()"
+            (ngModelChange)="setTimes($event)"
+          /><span class="unit">times</span>
+        </div>
+        <div class="chips">
+          @for (s of suggestions(); track s.times) {
+            <button type="button" class="chip-btn" (click)="setTimes(s.times + '')">
+              <span class="tag" [class.tag-accent]="s.on" [class.tag-outline]="!s.on">{{
+                s.label
+              }}</span>
+            </button>
+          }
+        </div>
+        @if (timesIssue() ?? apiProblems()['times']; as issue) {
+          <div class="err">{{ issue }}</div>
+        } @else if (estimate(); as e) {
+          <div class="hint-line">{{ e.floor_explanation }}</div>
+        }
+      </div>
+    </div>
+  </div>
+
+  @if (advParams().length) {
+    <div>
+      <button
+        type="button"
+        class="adv-toggle"
+        [attr.aria-expanded]="adv()"
+        (click)="adv.set(!adv())"
+      >
+        Advanced <assay-chevron [open]="adv()" />
+      </button>
+      @if (adv()) {
+        <div class="two adv">
+          @for (r of advParams(); track r.p.key) {
+            <assay-param-field [row]="r" (changed)="setParam(r.p.key, $event)" />
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (estimate(); as e) {
+    <div class="takes" [class.stale]="estimating()">
+      <div class="label">What it takes</div>
+      {{ takes() }}
+    </div>
+
+    <div class="tiles" [class.stale]="estimating()">
+      <div class="tile">
+        <span class="label">Runs</span><span class="val num">{{ e.runs_total }}</span>
+        <span class="small"
+          >{{ e.times }} times × {{ e.runs_per_time }} run{{
+            e.runs_per_time === 1 ? '' : 's'
+          }}</span
+        >
+      </div>
+      <div class="tile">
+        <span class="label">Application calls</span
+        ><span class="val num">{{ e.calls.application.total }}</span>
+        <span class="small">{{
+          e.calls.application.per_time
+            ? e.calls.application.per_time + ' each time: one per run without a recorded answer'
+            : 'Recorded answers: the application isn’t called'
+        }}</span>
+      </div>
+      <div class="tile">
+        <span class="label">Judge calls</span><span class="val num">{{ e.calls.judge.total }}</span>
+        <span class="small">{{
+          e.calls.judge.per_time
+            ? e.calls.judge.per_time + ' each time · paid'
+            : 'No judge checks here'
+        }}</span>
+      </div>
+      <div class="tile">
+        <span class="label">Verdicts on</span><span class="val num">{{ e.checks_applicable }}</span>
+        <span class="small"
+          >of {{ e.checks_total }} check{{ e.checks_total === 1 ? '' : 's'
+          }}{{ e.entries.length > 1 ? ' in ' + e.entries.length + ' entries' : '' }}</span
+        >
+      </div>
+    </div>
+    <p class="cost">
+      Each time is a full run of the {{ noun() }}, paid for like any run.
+      @if (skipped().length; as n) {
+        <button
+          type="button"
+          class="adv-toggle inline"
+          [attr.aria-expanded]="showChecks()"
+          (click)="showChecks.set(!showChecks())"
+        >
+          {{ n }} check{{ n === 1 ? '' : 's' }} get no verdict
+          <assay-chevron [open]="showChecks()" />
+        </button>
+      }
+    </p>
+    @if (showChecks()) {
+      <ul class="skipped">
+        @for (c of skipped(); track c.entry + c.label) {
+          <li>
+            <span class="strong">{{ c.label }}</span>
+            @if (e.entries.length > 1) {
+              <span class="muted"> · {{ c.entry }}</span>
+            }
+            @if (c.reason) {
+              <span class="muted"> - {{ c.reason }}</span>
+            }
+          </li>
+        }
+      </ul>
+    }
+    @for (w of e.warnings; track w.code) {
+      <div class="warn">{{ w.message }}</div>
+    }
+  } @else if (estimating()) {
+    <div class="small">Estimating…</div>
+  }
+
+  <div class="field">
+    <label for="sp-note">Note <span class="hint">- optional</span></label>
+    <textarea
+      id="sp-note"
+      class="input note"
+      rows="2"
+      maxlength="500"
+      [ngModel]="note()"
+      (ngModelChange)="note.set($event)"
+      placeholder="What’s different this time, e.g. prompt v2: shorter answers"
+    ></textarea>
+    <div class="hint-line">Shown in the batch list and when comparing two batches.</div>
+  </div>
+</assay-dialog>

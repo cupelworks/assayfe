@@ -1,0 +1,110 @@
+<assay-dialog
+  kicker="Compare this batch against…"
+  title="Compare two batches"
+  [wide]="true"
+  [primaryLabel]="saving() ? 'Comparing…' : 'Compare'"
+  [primaryDisabled]="saving() || !baseline() || blockers().length > 0"
+  [blockers]="blockers()"
+  (primary)="compare()"
+  (close)="closed.emit()"
+>
+  <p class="intro">
+    Did your change help? A is the baseline, the batch from before the change; B is the change: this
+    batch. Both must be of the same {{ noun() }}, with the same frozen content.
+  </p>
+
+  <div class="field">
+    <div class="flabel" id="cmp-a">A, the baseline</div>
+    @if (others(); as list) {
+      @if (list.length) {
+        <div class="qs" role="radiogroup" aria-labelledby="cmp-a">
+          @for (o of list; track o.id) {
+            <label class="q" [class.on]="baseline() === o.id">
+              <input
+                type="radio"
+                name="cmp-baseline"
+                [checked]="baseline() === o.id"
+                (change)="baseline.set(o.id)"
+              />
+              <span class="q-text">
+                <span class="q-name row-line"
+                  ><assay-mark [of]="o.status" />{{ markLabel(o.status) }} ·
+                  {{ absTime(o.created_at) }} · {{ timesText(o) }}</span
+                >
+                <span class="small">{{ o.note || o.summary || '' }}</span>
+              </span>
+            </label>
+          }
+        </div>
+      } @else {
+        <div class="plain-line">
+          No other finished batch of this {{ noun() }} yet: run one before and one after your
+          change.
+        </div>
+      }
+    } @else {
+      <div class="small">Loading the batches…</div>
+    }
+  </div>
+
+  <div class="field">
+    <div class="flabel" id="cmp-test">How to compare</div>
+    <div class="qs" role="radiogroup" aria-labelledby="cmp-test">
+      @for (q of tests(); track q.t.id) {
+        <label class="q" [class.on]="q.t.id === choice()" [class.off]="q.off">
+          <input
+            type="radio"
+            name="cmp-test"
+            [checked]="q.t.id === choice()"
+            [disabled]="q.off"
+            (change)="pick(q.t.id)"
+          />
+          <span class="q-text">
+            <span class="q-name">{{ q.t.name }}</span>
+            <span class="small">{{ q.reason ?? q.t.question }}</span>
+          </span>
+        </label>
+      }
+    </div>
+  </div>
+
+  @if (mainParams().length) {
+    <div class="two">
+      @for (r of mainParams(); track r.p.key) {
+        <assay-param-field [row]="r" (changed)="setParam(r.p.key, $event)" />
+      }
+    </div>
+  }
+  @if (advParams().length) {
+    <div>
+      <button
+        type="button"
+        class="adv-toggle"
+        [attr.aria-expanded]="adv()"
+        (click)="adv.set(!adv())"
+      >
+        Advanced <assay-chevron [open]="adv()" />
+      </button>
+      @if (adv()) {
+        <div class="two" style="margin-top: 8px">
+          @for (r of advParams(); track r.p.key) {
+            <assay-param-field [row]="r" (changed)="setParam(r.p.key, $event)" />
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <div class="field">
+    <label for="cmp-note">Note <span class="hint">- optional</span></label>
+    <textarea
+      id="cmp-note"
+      class="input note"
+      rows="2"
+      maxlength="500"
+      [ngModel]="note()"
+      (ngModelChange)="note.set($event)"
+      placeholder="What changed between the two, e.g. the shorter system prompt"
+    ></textarea>
+  </div>
+</assay-dialog>

@@ -5,7 +5,9 @@ import { forkJoin, map } from 'rxjs';
 import { TestPlansApiService } from '../api/test-plans-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
-import { TestPlanEntry } from '../api/models';
+import { Batch, TestPlanEntry } from '../api/models';
+import { RunStatsDialogComponent } from '../statistics/run-stats-dialog.component';
+import { StatsPanelComponent } from '../statistics/stats-panel.component';
 import { short, errText } from '../shared/format';
 import { NameDialogComponent } from '../shared/dialog/name-dialog.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
@@ -15,7 +17,7 @@ import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { Paged } from '../shared/paged';
 
-type Dlg = null | 'rename' | 'delete' | 'link' | 'unlink';
+type Dlg = null | 'rename' | 'delete' | 'link' | 'unlink' | 'stats';
 
 @Component({
   selector: 'assay-test-plan-detail',
@@ -28,6 +30,8 @@ type Dlg = null | 'rename' | 'delete' | 'link' | 'unlink';
     ExecutionsPanelComponent,
     PagerComponent,
     RelTimeComponent,
+    RunStatsDialogComponent,
+    StatsPanelComponent,
   ],
   templateUrl: './test-plan-detail.component.html',
   styleUrls: ['../shared/page.css'],
@@ -68,7 +72,11 @@ export class TestPlanDetailComponent {
   meta = computed(() => this.store.parent('test-plans', this.id()));
   name = computed(() => this.meta()?.name ?? short(this.id()));
   execs = computed(() => this.store.byParent('test-plans', this.id()));
-  hasRuns = computed(() => this.execs().length > 0);
+  /** Every execution of the plan, a statistics batch's included - the store's sample leaves
+   *  those out, and one is enough to block deleting the plan. */
+  allExecutions = signal(0);
+  hasRuns = computed(() => this.execs().length > 0 || this.allExecutions() > 0);
+  statsScope = computed(() => ({ test_plan_id: this.id() }));
   linkedTotal = this.page.total;
   pickRows = computed<PickRow[]>(() => {
     const linked = new Set(this.links().map((l) => l.test_set.id));
@@ -102,6 +110,9 @@ export class TestPlanDetailComponent {
   }
   load() {
     this.page.reset();
+    this.runsApi
+      .executionsPage('test-plans', this.id(), 0, 0)
+      .subscribe({ next: (p) => this.allExecutions.set(p.total), error: () => {} });
   }
   open(d: Dlg, l?: TestPlanEntry) {
     this.act.err.set(null);
@@ -118,7 +129,7 @@ export class TestPlanDetailComponent {
     forkJoin(
       sets.map((s) =>
         this.runsApi
-          .executionsPage('test-sets', s.id, 0, 0)
+          .executionsPage('test-sets', s.id, 0, 0, 'none')
           .pipe(map((p) => [s.id, p.total] as [string, number])),
       ),
     ).subscribe((pairs) => this.pickExecCounts.set(Object.fromEntries(pairs)));
@@ -154,5 +165,10 @@ export class TestPlanDetailComponent {
     this.act.run(this.runsApi.replay('test-plans', this.id(), execId), {
       ok: (r) => `Enqueued ${r.run_count} pending runs (replay of ${short(execId)}).`,
     });
+  }
+  /** A batch was started from the dialog: its page shows it running. */
+  openBatch(b: Batch) {
+    this.dlg.set(null);
+    this.router.navigate(['/statistics/batches', b.id]);
   }
 }

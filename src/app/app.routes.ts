@@ -15,6 +15,8 @@ import { StandaloneRunDetailComponent } from './runs/standalone-run-detail.compo
 import { TestTypesComponent } from './test-types/test-types.component';
 import { GuideComponent } from './guide/guide.component';
 import { SettingsComponent } from './settings/settings.component';
+import { BatchComponent } from './statistics/batch.component';
+import { ComparisonComponent } from './statistics/comparison.component';
 
 // Route data keys map onto component inputs via withComponentInputBinding().
 export const routes: Routes = [
@@ -35,6 +37,8 @@ export const routes: Routes = [
       { path: 'test-plans/:id', component: TestPlanDetailComponent },
       { path: ':kind/:id/executions/:execId', component: ExecutionComponent },
       { path: ':kind/:id/executions/:execId/runs/:runId', component: RunDetailComponent },
+      { path: 'statistics/batches/:id', component: BatchComponent },
+      { path: 'statistics/comparisons/:id', component: ComparisonComponent },
       { path: 'test-types', component: TestTypesComponent },
       { path: 'guide', component: GuideComponent },
       { path: 'settings', component: SettingsComponent },

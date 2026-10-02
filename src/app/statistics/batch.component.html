@@ -1,0 +1,335 @@
+@if (place(); as pl) {
+  <div class="crumbs">
+    <a [routerLink]="pl.list">{{ pl.label }}</a
+    ><span>/</span><a [routerLink]="pl.link">{{ batch()!.scope.name }}</a
+    ><span>/</span><span class="cur">Statistics batch</span>
+  </div>
+} @else {
+  <div class="crumbs"><span class="cur">Statistics batch</span></div>
+}
+@if (loadError(); as e) {
+  <div class="msg msg-err">{{ e }}</div>
+}
+@if (batch(); as b) {
+  <div class="hero">
+    <div>
+      <div class="kicker">{{ kicker() }}</div>
+      <h1>{{ headline() }}</h1>
+    </div>
+    <div class="hero-side">
+      @if (facts(); as f) {
+        <p class="hero-note">{{ f.line }}.<br />{{ f.when }}.</p>
+      }
+      @if (b.note) {
+        <p class="hero-note note">“{{ b.note }}”</p>
+      }
+      @if (!inFlight()) {
+        <div class="hero-actions">
+          <button class="btn btn-secondary" (click)="dlg.set('compare')">Compare with…</button>
+          <button class="btn btn-primary" (click)="dlg.set('again')">Run again…</button>
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (inFlight()) {
+    @if (progress(); as p) {
+      <section class="stats">
+        <div class="stat">
+          <div class="label">Status</div>
+          <div class="mid with-mark">
+            <assay-mark [of]="b.status" size="lg" />{{ markLabel(b.status) }}
+          </div>
+          <div class="small">No verdicts until every run has finished.</div>
+        </div>
+        <div class="stat">
+          <div class="label">Done</div>
+          <div class="mid num">{{ p.times }}</div>
+          <div class="prog"><i [style.width.%]="p.donePct"></i></div>
+          <div class="small">{{ p.runs }}</div>
+        </div>
+        <div class="stat">
+          <div class="label">Spent so far</div>
+          <div class="mid num">{{ p.spent }} <span class="unit">calls</span></div>
+          <div class="small">{{ p.spentLine }}</div>
+        </div>
+        <div class="stat">
+          <div class="label">Stop</div>
+          @if (!confirmingStop()) {
+            <div>
+              <button class="btn btn-secondary" (click)="confirmingStop.set(true)">
+                Stop the batch
+              </button>
+            </div>
+            <div class="small">{{ p.stopLine }}</div>
+          } @else {
+            <div class="confirm">
+              <button class="btn btn-primary" [disabled]="stopping()" (click)="stop()">
+                {{ stopping() ? 'Stopping…' : 'Stop now' }}
+              </button>
+              <button class="btn btn-ghost" (click)="confirmingStop.set(false)">
+                Keep running
+              </button>
+            </div>
+            <div class="small">It becomes Incomplete. What has run is kept.</div>
+          }
+          @if (stopError(); as e) {
+            <div class="small err">{{ e }}</div>
+          }
+        </div>
+      </section>
+    }
+  } @else if (outcome(); as o) {
+    <section class="stats">
+      <div class="stat">
+        <div class="label">Verdict</div>
+        <div class="mid with-mark">
+          <assay-mark [of]="b.status" size="lg" />{{ markLabel(b.status) }}
+        </div>
+        <div class="small">{{ o.line }}</div>
+      </div>
+      <div class="stat">
+        <div class="label">Checks</div>
+        <div class="stack">
+          @for (s of o.stack; track s.key) {
+            <assay-mark class="seg" [of]="s.key" [style.flex]="s.n" />
+          }
+        </div>
+        <div class="small">{{ o.checks }}</div>
+      </div>
+      <div class="stat">
+        <div class="label">Runs</div>
+        <div class="mid num">{{ o.runs }}</div>
+        <div class="small">{{ o.runsLine }}</div>
+      </div>
+      <div class="stat">
+        <div class="label">Spent</div>
+        <div class="mid num">{{ o.app }} <span class="unit">application calls</span></div>
+        <div class="small">{{ o.judge }} judge call{{ o.judge === 1 ? '' : 's' }}</div>
+      </div>
+    </section>
+  }
+
+  @if (grid().length) {
+    <section class="cell cell-b">
+      <div class="row-head"><h2>Runs</h2></div>
+      <assay-runs-grid [rows]="grid()" [scope]="b.scope" />
+      <p class="small grid-note">
+        A row per {{ b.scope.kind === 'test' ? 'test' : 'entry' }}, a square per time, each opening
+        its run.
+      </p>
+    </section>
+  }
+
+  @if (inFlight()) {
+    <section class="cell">
+      <h2>Results</h2>
+      <p class="muted" style="max-width: 720px">
+        Verdicts appear when every run has finished. Until then they would change with each run, and
+        stopping on a good streak would make a pass look proven when it isn’t.
+      </p>
+    </section>
+  } @else if (b.result) {
+    <section class="cell">
+      <div class="row-head">
+        <h2>Checks</h2>
+        <div class="chips">
+          @for (f of filters(); track f.key) {
+            <button type="button" class="chip-btn" (click)="filter.set(f.key)">
+              <span class="tag" [class.tag-accent]="f.on" [class.tag-outline]="!f.on">{{
+                f.label
+              }}</span>
+            </button>
+          }
+        </div>
+      </div>
+      <div class="cols th">
+        <span class="label">Check</span>
+        <span class="label">Evaluated</span>
+        <div>
+          @if (isScores()) {
+            <span class="label">Average · bounds at {{ pct(b.parameters['confidence']) }}</span>
+          } @else {
+            <span class="label">Met rate · its range</span>
+            <div class="ticks">
+              @for (t of axisTicks(); track t; let first = $first, last = $last) {
+                <span
+                  [style.left.%]="((t - axisMin()) / (1 - axisMin())) * 100"
+                  [class.first]="first"
+                  [class.last]="last"
+                  >{{ pct(t) }}</span
+                >
+              }
+            </div>
+          }
+        </div>
+        <span class="label">The {{ b.progress.times_requested }} times</span>
+        <span class="label">Verdict</span>
+      </div>
+      @for (e of entries(); track e.key) {
+        @if (multiEntry()) {
+          <div class="ent">
+            <span class="ent-name">{{ e.name }}</span>
+            @if (e.sub && b.scope.kind === 'test_plan') {
+              <span class="small">{{ e.sub }}</span>
+            }
+            <span class="small">{{ e.summary }}</span>
+            @if (e.link) {
+              <a class="btn btn-ghost btn-sm ent-link" [routerLink]="e.link">Test →</a>
+            }
+          </div>
+        }
+        @for (c of e.checks; track c.key) {
+          <div class="cols row">
+            <button
+              type="button"
+              class="cname"
+              [class.open]="c.open"
+              [attr.aria-expanded]="c.open"
+              (click)="toggle(c.key)"
+            >
+              <span class="t">{{ c.label }}</span>
+              @if (c.type) {
+                <span class="s">{{ c.type }}</span>
+              }
+            </button>
+            <span class="num ev"
+              >{{ c.evaluated }}
+              @if (c.apart) {
+                <span class="small">{{ c.apart }}</span>
+              }
+            </span>
+            <div>
+              <assay-range-chart
+                [min]="c.chart.min"
+                [max]="c.chart.max"
+                [lower]="c.chart.lower"
+                [upper]="c.chart.upper"
+                [point]="c.chart.point"
+                [line]="c.chart.line"
+                [mark]="c.verdict"
+                [ticks]="c.ticks"
+                [labels]="c.labels"
+              />
+            </div>
+            <assay-run-strip [series]="c.series" [scope]="b.scope" [testId]="c.testId" />
+            <div class="verdict">
+              <span class="w"><assay-mark [of]="c.verdict" />{{ c.word }}</span>
+              <span class="small">{{ c.line }}</span>
+            </div>
+            @if (c.open) {
+              <div class="detail">
+                <div>
+                  @if (isScores() && c.threshold != null) {
+                    <assay-score-plot
+                      [series]="c.series"
+                      [scores]="c.scores"
+                      [interval]="c.interval"
+                      [verdict]="c.verdict"
+                      [threshold]="c.threshold"
+                      [comparison]="c.comparison"
+                      [min]="c.chart.min"
+                      [max]="c.chart.max"
+                      [scope]="b.scope"
+                      [testId]="c.testId"
+                    />
+                  } @else {
+                    <div class="label" style="margin-bottom: 6px">
+                      Met rate as the times added up
+                    </div>
+                    <assay-rate-trend
+                      [series]="c.series"
+                      [target]="c.target"
+                      [targetLabel]="pct(c.target) + ' target'"
+                    />
+                  }
+                </div>
+                <div class="facts">
+                  <p>{{ c.reason }}</p>
+                  @if (c.rule) {
+                    <p class="small">{{ c.rule }}</p>
+                  }
+                  @if (c.misses.length && !isScores()) {
+                    <div>
+                      <div class="label">Not met in times - each opens its run</div>
+                      <div class="runs">
+                        @for (m of c.misses; track m.index) {
+                          <a [routerLink]="m.link">{{ m.index }}</a>
+                        }
+                      </div>
+                    </div>
+                  }
+                  @if (c.errors) {
+                    <div>
+                      <div class="label">Without a value</div>
+                      <div class="small">{{ c.errors }}</div>
+                      <div class="runs">
+                        @for (m of c.errorPoints; track m.index) {
+                          <a [routerLink]="m.link" [title]="m.title">{{ m.index }}</a>
+                        }
+                      </div>
+                    </div>
+                  }
+                  @if (c.method) {
+                    <p class="small">{{ c.method }}: the same arithmetic as the verdict.</p>
+                  }
+                  @if (c.tLine) {
+                    <p class="small">{{ c.tLine }}</p>
+                  }
+                  @if (c.pLine) {
+                    <p class="small">{{ c.pLine }}</p>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+        @for (s of e.skipped; track s.label) {
+          <div class="skip small">
+            <span class="strong">{{ s.label }}</span> - not tested by this batch{{
+              s.reason ? ': ' + s.reason : ''
+            }}
+          </div>
+        }
+      }
+    </section>
+
+    @if (failures(); as fb) {
+      <section class="cell cell-t">
+        <div class="row-head">
+          <h2>{{ fb.title }}</h2>
+        </div>
+        <p class="muted" style="max-width: 720px; margin-top: 0">{{ fb.reason }}</p>
+        <div class="fail-rows">
+          @for (r of fb.rows; track r.name) {
+            <div class="fail-name">
+              {{ r.name }}
+              @if (r.test_set_name && b.scope.kind === 'test_plan') {
+                <span class="small">{{ r.test_set_name }}</span>
+              }
+            </div>
+            <div class="fail-bar">
+              <i class="pass" [style.width.%]="r.passW"></i
+              ><i class="fail" [style.width.%]="r.failW"></i>
+            </div>
+            <div class="small num">{{ r.failed }} failed · {{ r.passed }} passed</div>
+          }
+        </div>
+      </section>
+    }
+  }
+
+  @if (dlg() === 'again' && place(); as pl) {
+    <assay-run-stats-dialog
+      [scope]="pl.ref"
+      [kicker]="pl.label.slice(0, -1) + ' · ' + b.scope.name"
+      [noun]="pl.noun"
+      [preset]="preset()"
+      (created)="opened($event)"
+      (closed)="dlg.set(null)"
+    />
+  }
+  @if (dlg() === 'compare') {
+    <assay-compare-dialog [batch]="b" (created)="compared($event)" (closed)="dlg.set(null)" />
+  }
+}

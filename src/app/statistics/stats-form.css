@@ -1,0 +1,118 @@
+/* The form bits both statistics dialogs and their parameter fields share. */
+.intro {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-neutral-600);
+  max-width: 680px;
+  text-wrap: pretty;
+}
+.flabel {
+  font-size: 12px;
+  margin-bottom: 5px;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+.hint {
+  color: var(--color-neutral-500);
+  font-size: 12px;
+}
+/* The questions: a ruled list, one radio row each. */
+.qs {
+  border-top: 2px solid var(--color-divider);
+}
+.q {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-divider);
+  cursor: pointer;
+}
+.q input {
+  margin: 4px 0 0;
+  accent-color: var(--color-accent);
+}
+.q-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.q-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+.q.on .q-name {
+  color: var(--color-accent);
+}
+.q.off {
+  cursor: not-allowed;
+}
+.q.off .q-name {
+  color: var(--color-neutral-500);
+}
+.two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 32px;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.with-unit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.input.num {
+  max-width: 120px;
+  font-variant-numeric: tabular-nums;
+}
+.invalid {
+  border-color: var(--color-accent);
+}
+.chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.hint-line,
+.plain-line {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--color-neutral-500);
+  text-wrap: pretty;
+}
+.plain-line {
+  font-size: 14px;
+  color: var(--color-text);
+}
+.err {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--color-accent-700);
+}
+.warn {
+  padding: 10px 14px;
+  background: var(--color-accent-100);
+  color: var(--color-accent-800);
+  font-size: 13px;
+}
+.input.note {
+  resize: vertical;
+  font-family: inherit;
+}
+.unit {
+  font-size: 13px;
+  color: var(--color-neutral-600);
+}
+.row-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}

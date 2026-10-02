@@ -10,6 +10,14 @@
     <button class="btn btn-ghost" (click)="act.err.set(null); dlg.set('delete')">Delete</button>
     <button class="btn btn-secondary" (click)="act.err.set(null); dlg.set('edit')">Edit</button>
     <button
+      class="btn btn-secondary"
+      (click)="dlg.set('stats')"
+      [disabled]="!canRun()"
+      [title]="canRun() ? '' : 'Assign at least one test type first'"
+    >
+      Run with statistics…
+    </button>
+    <button
       class="btn btn-primary"
       (click)="run()"
       [disabled]="act.busy() || !canRun()"
@@ -50,6 +58,7 @@
       />
     </div>
     <div class="cell">
+      <assay-stats-panel [scope]="statsScope()" noun="test" />
       <div class="row-head" style="margin-bottom: 8px">
         <h2>Standalone runs</h2>
         <span class="small">{{ runsPage.total() }} total</span>
@@ -87,6 +96,15 @@
       />
     </div>
   </section>
+}
+@if (dlg() === 'stats') {
+  <assay-run-stats-dialog
+    [scope]="statsScope()"
+    [kicker]="'Test · ' + name()"
+    noun="test"
+    (created)="openBatch($event)"
+    (closed)="dlg.set(null)"
+  />
 }
 @if (dlg() === 'edit') {
   <assay-test-form-dialog

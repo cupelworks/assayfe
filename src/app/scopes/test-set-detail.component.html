@@ -17,6 +17,9 @@
       Delete
     </button>
     <button class="btn btn-secondary" (click)="open('add')">Add tests</button>
+    <button class="btn btn-secondary" (click)="open('stats')" [disabled]="!page.total()">
+      Run with statistics…
+    </button>
     <button class="btn btn-primary" (click)="runLive()" [disabled]="act.busy() || !page.total()">
       {{ act.busy() ? 'Working…' : 'Run live' }}
     </button>
@@ -118,6 +121,7 @@
     />
   </div>
   <div class="cell">
+    <assay-stats-panel [scope]="statsScope()" noun="set" [version]="version()" />
     <assay-executions-panel
       kind="test-sets"
       [id]="id()"
@@ -129,6 +133,15 @@
 </section>
 
 @switch (dlg()) {
+  @case ('stats') {
+    <assay-run-stats-dialog
+      [scope]="statsScope()"
+      [kicker]="'Test set · ' + name()"
+      noun="set"
+      (created)="openBatch($event)"
+      (closed)="dlg.set(null)"
+    />
+  }
   @case ('rename') {
     <assay-name-dialog
       [kicker]="name()"

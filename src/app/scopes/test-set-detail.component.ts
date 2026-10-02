@@ -3,11 +3,14 @@ import { TypeTagsComponent } from '../shared/type-tags.component';
 import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
 import { ActionRunner } from '../shared/action-runner';
 import { Router, RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { TestSetsApiService } from '../api/test-sets-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
-import { TestCaseBody, TestSetEntry } from '../api/models';
+import { Batch, TestCaseBody, TestSetEntry } from '../api/models';
+import { StatisticsApiService } from '../api/statistics-api.service';
+import { RunStatsDialogComponent } from '../statistics/run-stats-dialog.component';
+import { StatsPanelComponent } from '../statistics/stats-panel.component';
 import { rel, short, errText, displayName } from '../shared/format';
 import { NameDialogComponent } from '../shared/dialog/name-dialog.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
@@ -17,7 +20,7 @@ import { ExecutionsPanelComponent } from './executions-panel.component';
 import { PagerComponent } from '../shared/pager.component';
 import { Paged } from '../shared/paged';
 
-type Dlg = null | 'rename' | 'delete' | 'add' | 'unlink' | 'deleteEntries' | 'editEntry';
+type Dlg = null | 'rename' | 'delete' | 'add' | 'unlink' | 'deleteEntries' | 'editEntry' | 'stats';
 
 import { Selection } from '../shared/selection';
 
@@ -33,6 +36,8 @@ import { Selection } from '../shared/selection';
     TestFormDialogComponent,
     ExecutionsPanelComponent,
     PagerComponent,
+    RunStatsDialogComponent,
+    StatsPanelComponent,
   ],
   templateUrl: './test-set-detail.component.html',
   styleUrls: ['../shared/page.css'],
@@ -41,6 +46,7 @@ export class TestSetDetailComponent {
   id = input.required<string>();
   testSetsApi = inject(TestSetsApiService);
   runsApi = inject(RunsApiService);
+  statsApi = inject(StatisticsApiService);
   store = inject(CatalogStore);
   router = inject(Router);
   rel = rel;
@@ -71,7 +77,9 @@ export class TestSetDetailComponent {
   meta = computed(() => this.store.parent('test-sets', this.id()));
   name = computed(() => this.meta()?.name ?? short(this.id()));
   execs = computed(() => this.store.byParent('test-sets', this.id()));
-  hasRuns = computed(() => this.execs().length > 0);
+  /** Any run at all - a statistics batch's included, which the store's sample leaves out. */
+  hasRuns = computed(() => this.execs().length > 0 || this.frozenEntryIds().size > 0);
+  statsScope = computed(() => ({ test_set_id: this.id() }));
   /** Entry ids with at least one run against them, i.e. frozen for good - there's no field on
    *  the entry itself for this (the API has no `frozen`/`has_runs` flag), so it's derived by
    *  fetching every run of every execution *of this set* (scoped via RunsApiService.executions(),
@@ -121,14 +129,34 @@ export class TestSetDetailComponent {
     this.page.reload();
   }
   loadFrozenEntries() {
-    this.runsApi.executions('test-sets', this.id()).subscribe((execs) => {
-      if (!execs.length) {
-        this.frozenEntryIds.set(new Set());
-        return;
-      }
-      forkJoin(
-        execs.map((e) => this.runsApi.executionRuns('test-sets', this.id(), e.id)),
-      ).subscribe((runsPerExec) => {
+    // The ordinary executions, and one of each statistics batch's: every time of a batch runs
+    // the same entries, so its first execution names them all.
+    const batchExecs = this.statsApi.batchesPage(this.statsScope(), 0, 100).pipe(
+      switchMap((p) =>
+        p.items.length
+          ? forkJoin(
+              p.items.map((b) =>
+                this.runsApi.executionsPage('test-sets', this.id(), 0, 1, b.id).pipe(
+                  map((x) => x.items),
+                  catchError(() => of([])),
+                ),
+              ),
+            )
+          : of([]),
+      ),
+      map((lists) => lists.flat()),
+      catchError(() => of([])),
+    );
+    forkJoin([this.runsApi.executions('test-sets', this.id(), 'none'), batchExecs])
+      .pipe(
+        map(([own, batches]) => [...own, ...batches]),
+        switchMap((execs) =>
+          execs.length
+            ? forkJoin(execs.map((e) => this.runsApi.executionRuns('test-sets', this.id(), e.id)))
+            : of([]),
+        ),
+      )
+      .subscribe((runsPerExec) => {
         const ids = new Set<string>();
         for (const runs of runsPerExec) {
           for (const r of runs) {
@@ -137,7 +165,6 @@ export class TestSetDetailComponent {
         }
         this.frozenEntryIds.set(ids);
       });
-    });
   }
   open(d: Dlg, entry?: TestSetEntry) {
     this.act.err.set(null);
@@ -186,5 +213,10 @@ export class TestSetDetailComponent {
     this.act.run(this.runsApi.replay('test-sets', this.id(), execId), {
       ok: (r) => `Enqueued ${r.run_count} pending runs (replay of ${short(execId)}).`,
     });
+  }
+  /** A batch was started from the dialog: its page shows it running. */
+  openBatch(b: Batch) {
+    this.dlg.set(null);
+    this.router.navigate(['/statistics/batches', b.id]);
   }
 }
