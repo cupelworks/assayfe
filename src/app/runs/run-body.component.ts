@@ -42,6 +42,11 @@ import { ClampDirective } from '../shared/clamp.directive';
               <span class="dot lg" [style.background]="statusColor(r.status)"></span
               >{{ statusLabel(r.status) }}
             </div>
+            @if (r.batch_id) {
+              <a class="plain small batch-link" [routerLink]="['/statistics/batches', r.batch_id]"
+                >Time {{ r.batch_index }} of a statistics batch →</a
+              >
+            }
             <div
               class="muted"
               [title]="
@@ -72,12 +77,19 @@ import { ClampDirective } from '../shared/clamp.directive';
                   <span
                     class="dot"
                     [style.background]="
-                      s.passed ? 'var(--color-status-green)' : 'var(--color-accent)'
+                      s.errored
+                        ? 'var(--color-neutral-800)'
+                        : s.passed
+                          ? 'var(--color-status-green)'
+                          : 'var(--color-accent)'
                     "
                   ></span>
                   {{ s.name }}
                   @if (s.type) {
                     <span class="tag tag-neutral type-tag">{{ s.type }}</span>
+                  }
+                  @if (s.errored) {
+                    <span class="tag tag-outline type-tag">couldn’t run</span>
                   }
                 </div>
                 <!-- The score beside the name, its bar, then the reason. -->
@@ -295,11 +307,10 @@ export class RunBodyComponent {
     }
     return rows;
   }
-  /** Failures first - what needs attention is at the top - then passes, each group in the API's
-   *  order (by check name). */
-  results = computed(() =>
-    [...this.resultRows()].sort((a, b) => Number(a.passed) - Number(b.passed)),
-  );
+  /** What needs attention at the top - a check that couldn't run, then one not met - then what
+   *  was met, each group in the API's order (by check name). */
+  results = computed(() => [...this.resultRows()].sort((a, b) => this.rank(a) - this.rank(b)));
+  private rank = (r: { errored: boolean; passed: boolean }) => (r.errored ? 0 : r.passed ? 2 : 1);
   private resultRows = computed(() =>
     Object.entries(this.run()?.results ?? {}).map(([name, r]) => this.resultRow(name, r)),
   );
@@ -309,6 +320,8 @@ export class RunBodyComponent {
       // The check's type beside its name, when the name isn't simply the type's.
       type: r.test_type && r.test_type !== name ? r.test_type : null,
       passed: r.passed,
+      // The check itself couldn't run (no judge, an engine missing): an error, not a miss.
+      errored: !!r.errored,
       // 4 decimals - the precision the backend keeps and quotes in a miss's detail ("0.3704 is
       // below the threshold 0.5"), so the number beside the bar matches it.
       valueText: r.score != null ? r.score.toFixed(4) : null,
@@ -382,7 +395,12 @@ export class RunBodyComponent {
     const r = this.results();
     if (!r.length) return null;
     const passed = r.filter((x) => x.passed).length;
-    return `${passed} of ${r.length} check${r.length === 1 ? '' : 's'} met`;
+    const errored = r.filter((x) => x.errored).length;
+    const evaluated = r.length - errored;
+    return (
+      `${passed} of ${evaluated} check${evaluated === 1 ? '' : 's'} met` +
+      (errored ? ` · ${errored} couldn’t run` : '')
+    );
   });
   fields = computed(() => {
     const c = this.content();

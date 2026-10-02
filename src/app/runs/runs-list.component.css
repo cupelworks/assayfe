@@ -4,7 +4,6 @@
   flex-wrap: wrap;
   margin: 16px 0 24px;
 }
-.chip-btn {
-  all: unset;
-  cursor: pointer;
+.batch-note {
+  margin: -12px 0 20px;
 }

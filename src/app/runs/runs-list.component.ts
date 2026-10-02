@@ -57,7 +57,8 @@ export class RunsListComponent {
     return label ? `${label} runs` : 'All runs';
   });
   page = new Paged<AnyRunMetadata>(
-    (o, l) => this.runsApi.latestRunsPage(o, l, this.status(), this.origin()),
+    // A statistics batch's runs are on its own page: here, the runs started one at a time.
+    (o, l) => this.runsApi.latestRunsPage(o, l, this.status(), this.origin(), 'none'),
     25,
   );
   runs = this.page.items;

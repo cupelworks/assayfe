@@ -106,7 +106,8 @@ export class CatalogStore {
 
   loadExecutions() {
     this.executionsLoading.set(true);
-    this.runsApi.latestExecutions(EXECUTIONS_SAMPLE_LIMIT).subscribe((executions) => {
+    // Ordinary executions only: one statistics batch alone would fill the sample.
+    this.runsApi.latestExecutions(EXECUTIONS_SAMPLE_LIMIT, 'none').subscribe((executions) => {
       this.rawExecutions.set(executions);
       this.executionsLoading.set(false);
     });
@@ -114,7 +115,7 @@ export class CatalogStore {
 
   loadRunStatus() {
     this.runsLoading.set(true);
-    this.runsApi.latestRuns(RUN_STATUS_SAMPLE_LIMIT).subscribe((runs) => {
+    this.runsApi.latestRuns(RUN_STATUS_SAMPLE_LIMIT, 'none').subscribe((runs) => {
       this.recentRuns.set(runs);
       this.runsLoading.set(false);
     });

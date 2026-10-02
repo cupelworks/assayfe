@@ -270,6 +270,16 @@ figcaption {
   outline-offset: 2px;
 }
 
+/* A filter or preset chip: a .tag (tag-accent when on, tag-outline when off) inside a bare button. */
+.chip-btn {
+  all: unset;
+  cursor: pointer;
+}
+.chip-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 /* - forms - */
 .field > label {
   display: block;

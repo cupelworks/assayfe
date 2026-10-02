@@ -104,7 +104,8 @@ export class ExecutionsPanelComponent {
   private api = inject(RunsApiService);
   short = short;
   page = new Paged<ExecutionMetadata>(
-    (o, l) => this.api.executionsPage(this.kind(), this.id(), o, l),
+    // A statistics batch's executions are on its own page - dozens of them would bury these.
+    (o, l) => this.api.executionsPage(this.kind(), this.id(), o, l, 'none'),
     10,
     errText,
   );

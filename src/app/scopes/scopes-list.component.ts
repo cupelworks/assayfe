@@ -97,7 +97,7 @@ export class ScopesListComponent {
       forkJoin(
         items.map((s) =>
           this.runsApi
-            .executionsPage(k, s.id, 0, 0)
+            .executionsPage(k, s.id, 0, 0, 'none')
             .pipe(map((p) => [s.id, p.total] as [string, number])),
         ),
       ).subscribe((pairs) => this.execCounts.set(Object.fromEntries(pairs)));

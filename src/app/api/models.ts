@@ -1,4 +1,4 @@
-// Mirrors components.schemas in Assay's OpenAPI (v0.10.0).
+// Mirrors components.schemas in Assay's OpenAPI (v0.11.0).
 export interface Ref {
   id: string;
 }
@@ -28,6 +28,10 @@ export interface TestTypeResult {
    *  label). Null only on results written before labels existed. */
   test_type?: string | null;
   passed: boolean;
+  /** True when the check itself couldn't run (a judge timeout, no judge chosen, an engine not
+   *  installed): `detail` says why, and it's an error, not a check that wasn't met. False on
+   *  results from before the flag existed. */
+  errored?: boolean;
   score: number | null;
   detail: string | null;
   /** The part of the reply this check read; null = the default answer. */
@@ -158,6 +162,10 @@ export interface ExecutionMetadata {
   id: string;
   created_at: string;
   run_count: number;
+  /** The statistics batch that made it, and which time of the batch it was (from 1); null
+   *  outside a batch. */
+  batch_id?: string | null;
+  batch_index?: number | null;
   replayed_execution_id: Ref | null;
   test_set_id?: Ref;
   test_plan_id?: Ref;
@@ -166,6 +174,10 @@ export interface RunMetadata {
   id: string;
   created_at: string;
   status: TestStatus;
+  /** The statistics batch that made it, and which time of the batch it was (from 1); null
+   *  outside a batch. */
+  batch_id?: string | null;
+  batch_index?: number | null;
   test_set_entry_id?: Ref;
   test_case_id?: Ref;
 }
@@ -207,6 +219,10 @@ export interface StandaloneRun {
   id: string;
   created_at: string;
   status: TestStatus;
+  /** The statistics batch that made it, and which time of the batch it was (from 1); null
+   *  outside a batch. */
+  batch_id?: string | null;
+  batch_index?: number | null;
   test_case_id: Ref;
 }
 /** Since 0.9.5: carries a frozen copy of the test as it was when the run was created (taken at
@@ -223,6 +239,10 @@ export interface AnyRunMetadata {
   status: TestStatus;
   created_at: string;
   origin: RunOrigin;
+  /** The statistics batch that made it, and which time of the batch it was (from 1); null
+   *  outside a batch. */
+  batch_id?: string | null;
+  batch_index?: number | null;
   test_case_id?: Ref | null;
   test_set_entry_id?: Ref | null;
   test_set_execution_id?: Ref | null;
@@ -239,6 +259,10 @@ export interface AnyExecutionMetadata {
   created_at: string;
   origin: ExecutionOrigin;
   run_count: number;
+  /** The statistics batch that made it, and which time of the batch it was (from 1); null
+   *  outside a batch. */
+  batch_id?: string | null;
+  batch_index?: number | null;
   test_set_id?: Ref | null;
   replayed_test_set_execution_id?: Ref | null;
   test_plan_id?: Ref | null;
@@ -410,4 +434,380 @@ export interface WorkerHealth {
   version: string;
   code_fingerprint: string;
   checked_at: string;
+}
+
+// Statistics - "Run with statistics": a test, set or plan run many times as one batch, and a
+// statistical test's verdict per check over those runs (see docs/statistics in the API repo).
+export type StatisticalTestName =
+  | 'binomial_gate'
+  | 'one_sample_t'
+  | 'judge_stability'
+  | 'pass_rates'
+  | 'no_worse'
+  | 'mean_scores'
+  | 'score_ranks'
+  | 'paired_entries';
+/** `rate` and `level` are shares of 1 (0.9 = 90%); `share` is a share of a check's score range. */
+export interface StatisticalTestParameter {
+  key: string;
+  label: string;
+  kind: 'rate' | 'level' | 'share';
+  default: number;
+  min: number;
+  max: number;
+  hint: string;
+}
+export interface StatisticalTest {
+  id: StatisticalTestName;
+  name: string;
+  /** `batch`: decides a batch's checks; `comparison`: compares two batches. */
+  kind: 'batch' | 'comparison';
+  wave: number;
+  question: string;
+  reads: 'pass_fail' | 'scores';
+  applies_to: 'every_check' | 'scored_checks' | 'judge_checks';
+  verdicts: string[];
+  parameters: StatisticalTestParameter[];
+  floor: { kind: 'exact' | 'rule_of_thumb' | 'none'; formula: string | null; explanation: string };
+  recommended_times: number | null;
+  method: string;
+}
+export interface StatisticalTestCatalogue {
+  items: StatisticalTest[];
+  max_times: number;
+  max_runs: number;
+}
+export type StatsScopeKind = 'test' | 'test_set' | 'test_plan';
+export interface StatsScope {
+  kind: StatsScopeKind;
+  id: string;
+  name: string;
+}
+/** What a batch runs: exactly one of the three. */
+export interface StatsScopeRef {
+  test_id?: string;
+  test_set_id?: string;
+  test_plan_id?: string;
+}
+export interface EstimateRequest extends StatsScopeRef {
+  statistical_test: StatisticalTestName;
+  parameters?: Record<string, number>;
+  /** Omitted: the default suggestion. */
+  times?: number | null;
+}
+export interface BatchRequest extends EstimateRequest {
+  /** What this batch is of, up to 500 characters. */
+  note?: string | null;
+}
+/** The gate's rule at `times`: Passed from `pass_at_least` met, Failed up to `fail_at_most`. */
+export interface GateRule {
+  times: number;
+  pass_at_least: number | null;
+  fail_at_most: number | null;
+}
+export interface SizeSuggestion {
+  times: number;
+  kind: 'floor' | 'absorbs_not_ran' | 'allows_one_miss' | 'detects_difference' | 'recommended';
+  label: string;
+  default: boolean;
+}
+export interface CheckPlan {
+  label: string;
+  test_type: string;
+  applies: boolean;
+  reason: string | null;
+}
+export interface EntryPlan {
+  entry_id: string | null;
+  test_id: string;
+  test_set_id: string | null;
+  test_set_name: string | null;
+  name: string;
+  recorded_answer: boolean;
+  checks: CheckPlan[];
+}
+export interface Estimate {
+  scope: StatsScope;
+  statistical_test: StatisticalTestName;
+  parameters: Record<string, number>;
+  floor: number;
+  floor_explanation: string;
+  suggestions: SizeSuggestion[];
+  times: number;
+  rule: GateRule | null;
+  runs_per_time: number;
+  runs_total: number;
+  calls: {
+    application: { per_time: number; total: number };
+    judge: { per_time: number; total: number };
+  };
+  checks_total: number;
+  checks_applicable: number;
+  entries: EntryPlan[];
+  /** `code` is stable (for an icon); `message` is shown as it is. */
+  warnings: { code: string; message: string }[];
+}
+export type BatchStatus =
+  'Pending' | 'Running' | 'Passed' | 'Failed' | 'Inconclusive' | 'Incomplete' | 'NotRan';
+export type RunCounts = Partial<Record<TestStatus, number>>;
+export interface BatchCallCount {
+  planned: number;
+  finished: number;
+  in_flight: number;
+}
+export interface StripPoint {
+  index: number;
+  run_id: string;
+  execution_id: string | null;
+  status: TestStatus;
+}
+/** One entry's runs while the batch is still going: statuses only, never a verdict. Every time
+ *  is there from the start (Pending cells first), in the order the result's entries will have. */
+export interface LiveEntry {
+  /** Null for a standalone test. */
+  entry_id: string | null;
+  test_id: string;
+  test_set_id: string | null;
+  test_set_name: string | null;
+  name: string;
+  runs: RunCounts;
+  strip: StripPoint[];
+}
+export interface BatchProgress {
+  times_requested: number;
+  /** Times with every run finished - cancelled ones included. */
+  times_done: number;
+  runs_total: number;
+  /** Every finished run, cancelled ones included: runs_done - runs_cancelled actually ran. */
+  runs_done: number;
+  runs: RunCounts;
+  runs_cancelled: number;
+  times_cancelled: number;
+  calls: { application: BatchCallCount; judge: BatchCallCount };
+  /** The runs grid while Pending/Running; null in lists, with ?series=false and once the
+   *  result is stored (then it's the result's entries' strips). */
+  entries?: LiveEntry[] | null;
+}
+/** Every interval says what it is. `sides: 'one'`: each bound is one-sided at `level`. */
+export interface Interval {
+  lower: number | null;
+  point: number | null;
+  upper: number | null;
+  method: 'exact' | 'wilson' | 't' | 'newcombe';
+  level: number;
+  sides: 'one' | 'two';
+}
+/** `evaluated` (= passed + failed) is the sample; errored and Not Ran runs are counted apart. */
+export interface CheckCounts {
+  evaluated: number;
+  passed: number;
+  failed: number;
+  errored: number;
+  not_ran: number;
+}
+export interface ScoreSummary {
+  n: number;
+  mean: number;
+  sd: number | null;
+  min: number;
+  max: number;
+  p10: number;
+  p25: number;
+  median: number;
+  p75: number;
+  p90: number;
+}
+export type CheckVerdict = 'pass' | 'fail' | 'inconclusive';
+export interface Statistic {
+  /** Null: no verdict could be drawn - `reason` says why. */
+  verdict: CheckVerdict | null;
+  reason: string;
+  n: number;
+  /** The interval the verdict used: whiskers that can't contradict it. */
+  interval: Interval | null;
+  p_value_pass: number | null;
+  p_value_fail: number | null;
+  rule: GateRule | null;
+  t?: number | null;
+  df?: number | null;
+  standard_error?: number | null;
+  /** When inconclusive: the size of a new batch that would likely settle it. */
+  times_to_decide: number | null;
+  times_to_decide_message: string | null;
+}
+/** One time of the batch, in order. Null values mean no value (errored / Not Ran), never 0. */
+export interface SeriesPoint {
+  index: number;
+  run_id: string;
+  execution_id: string | null;
+  status: TestStatus;
+  passed: boolean | null;
+  score: number | null;
+  error: string | null;
+}
+export interface CheckResult {
+  label: string;
+  test_type: string;
+  applies: boolean;
+  reason: string | null;
+  /** The check's own score range - a scored check's axis. */
+  scale: { min: number | null; max: number | null } | null;
+  threshold: number | null;
+  /** `gte`: at or above the threshold passes; `lte`: at or below. */
+  comparison: string | null;
+  /** The gate's (or judge stability's) target. */
+  target: number | null;
+  counts: CheckCounts;
+  /** Under the gate it is the verdict's interval (exact, one-sided); otherwise Wilson. */
+  pass_rate: Interval | null;
+  agreement?: Interval | null;
+  scores: ScoreSummary | null;
+  statistic: Statistic | null;
+  series: SeriesPoint[] | null;
+}
+export interface EntryResult {
+  entry_id: string | null;
+  test_id: string | null;
+  test_set_id: string | null;
+  test_set_name: string | null;
+  name: string;
+  recorded_answer: boolean;
+  runs: RunCounts;
+  checks: CheckResult[];
+  /** The entry's row of the runs grid; null with ?series=false. */
+  strip: StripPoint[] | null;
+}
+/** Whether failures concentrate in some entries (sets and plans): a bar per entry. */
+export interface FailuresByEntry {
+  verdict: 'concentrated' | 'no_evidence' | null;
+  reason: string;
+  chi_square: number | null;
+  df: number | null;
+  p_value: number | null;
+  approximate: boolean;
+  entries: {
+    entry_id: string | null;
+    name: string;
+    test_set_name: string | null;
+    passed: number;
+    failed: number;
+  }[];
+}
+export interface BatchResult {
+  computed_at: string;
+  checks_total: number;
+  checks_applicable: number;
+  /** Applicable checks by verdict: pass, fail, inconclusive and none (no verdict drawn). */
+  verdicts: Record<string, number>;
+  summary: string;
+  entries: EntryResult[];
+  failures_by_entry?: FailuresByEntry | null;
+}
+export interface BatchSummary {
+  id: string;
+  scope: StatsScope;
+  statistical_test: StatisticalTestName;
+  parameters: Record<string, number>;
+  note: string | null;
+  status: BatchStatus;
+  floor: number;
+  progress: BatchProgress;
+  /** The header sentence; null while the batch runs. */
+  summary: string | null;
+  created_at: string;
+  stopped_at: string | null;
+  completed_at: string | null;
+  /** Checks by verdict (pass, fail, inconclusive, none) once finished; null while it runs. */
+  verdicts?: Record<string, number> | null;
+}
+/** `result` is null while the batch runs, by design: no verdicts until every run has finished. */
+export interface Batch extends BatchSummary {
+  result: BatchResult | null;
+}
+export interface ComparisonRequest {
+  /** The baseline. */
+  batch_a: string;
+  /** The change. */
+  batch_b: string;
+  statistical_test?: StatisticalTestName;
+  parameters?: Record<string, number>;
+  note?: string | null;
+}
+export interface ComparedBatch {
+  id: string;
+  note: string | null;
+  status: BatchStatus;
+  statistical_test: StatisticalTestName;
+  times_requested: number;
+  created_at: string;
+}
+export type ComparisonVerdict = 'better' | 'worse' | 'no_difference' | 'no_worse' | 'inconclusive';
+export interface ComparisonSide {
+  counts: CheckCounts;
+  pass_rate: Interval | null;
+  scores?: ScoreSummary | null;
+  series: SeriesPoint[] | null;
+}
+export interface CheckComparison {
+  label: string;
+  test_type: string;
+  a: ComparisonSide;
+  b: ComparisonSide;
+  /** B - A with its interval; null for score ranks (see `effect`). */
+  difference: Interval | null;
+  /** Score ranks: the chance a B score beats an A score. */
+  effect?: number | null;
+  verdict: ComparisonVerdict | null;
+  reason: string;
+  p_value: number | null;
+  p_value_method: string | null;
+  times_to_decide: number | null;
+  times_to_decide_message: string | null;
+}
+export interface EntryComparison {
+  entry_id: string | null;
+  test_id: string | null;
+  test_set_name: string | null;
+  name: string;
+  checks: CheckComparison[];
+}
+/** Paired by entry: one verdict for the whole scope, over each entry's check A → B. */
+export interface PairedComparison {
+  n_pairs: number;
+  pairs: {
+    entry_id: string | null;
+    name: string;
+    label: string;
+    rate_a: number;
+    rate_b: number;
+    difference: number;
+  }[];
+  difference: Interval | null;
+  verdict: ComparisonVerdict | null;
+  reason: string;
+  p_value: number | null;
+  p_value_wilcoxon: number | null;
+  wilcoxon_method: string | null;
+}
+export interface ComparisonResult {
+  verdicts: Record<string, number>;
+  summary: string;
+  entries: EntryComparison[];
+  /** Entries or checks only one batch has. */
+  unmatched: { entry_id: string | null; name: string; label: string | null; only_in: 'a' | 'b' }[];
+  paired?: PairedComparison | null;
+}
+export interface ComparisonSummary {
+  id: string;
+  scope: StatsScope;
+  statistical_test: StatisticalTestName;
+  parameters: Record<string, number>;
+  note: string | null;
+  batch_a: ComparedBatch;
+  batch_b: ComparedBatch;
+  summary: string;
+  created_at: string;
+}
+export interface Comparison extends ComparisonSummary {
+  result: ComparisonResult;
 }
