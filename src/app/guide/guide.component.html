@@ -365,6 +365,61 @@
   </p>
 </section>
 
+<section class="cell cell-b">
+  <h2>Running with statistics</h2>
+  <p class="section-lead">
+    One run is a signal; a verdict needs many. "Run with statistics…" on a test, a test set or a
+    test plan runs it many times as one batch, then a statistical test decides each check at the
+    confidence you chose. Each time is a full run, paid for like any other - the dialog shows how
+    many runs, application calls and judge calls before anything is created, and what each verdict
+    will take at that size.
+  </p>
+  <div class="status-grid" style="margin-bottom: 16px">
+    <div class="status">
+      <div class="label"><assay-mark of="Pending" />Pending</div>
+      <div class="small">Created, no run started yet.</div>
+    </div>
+    <div class="status">
+      <div class="label"><assay-mark of="Running" />Running</div>
+      <div class="small">Runs going. No verdicts until every run has finished.</div>
+    </div>
+    <div class="status">
+      <div class="label"><assay-mark of="Passed" />Passed</div>
+      <div class="small">Every check is proven to reach the target.</div>
+    </div>
+    <div class="status">
+      <div class="label"><assay-mark of="Failed" />Failed</div>
+      <div class="small">At least one check is proven to fall short.</div>
+    </div>
+    <div class="status">
+      <div class="label"><assay-mark of="Inconclusive" />Inconclusive</div>
+      <div class="small">
+        Every run finished, but there isn't enough to prove it either way. A new, larger batch would
+        settle it - the result says about how large.
+      </div>
+    </div>
+    <div class="status">
+      <div class="label"><assay-mark of="Incomplete" />Incomplete</div>
+      <div class="small">Stopped before every run ran. What ran is kept.</div>
+    </div>
+    <div class="status">
+      <div class="label"><assay-mark of="NotRan" />Not Ran</div>
+      <div class="small">Nothing could be evaluated in any run.</div>
+    </div>
+  </div>
+  <p>
+    <strong>What a verdict says.</strong> "Passes at least 90% of the time, at 95% confidence": the
+    runs leave a range the real pass rate can be in. The check is Passed when the whole range is
+    above the target, Failed when it's below, Inconclusive when the target is inside it. A run stays
+    Green, Amber or Red; only a batch is Passed or Failed.
+  </p>
+  <p>
+    <strong>Did my change help?</strong> Run a batch before the change and one after, then "Compare
+    with…" on the second: check by check, B is better, worse, or shows no real difference at this
+    size.
+  </p>
+</section>
+
 <section class="cell">
   <h2>Guardrails you'll bump into</h2>
   <p class="section-lead">Short answers to the "why won't it let me do that?" moments.</p>
@@ -393,6 +448,15 @@
         recorded model output, so each run asks the application under test live and scores whatever
         it answers that time. Record a model output on the test if you want every run to judge the
         same fixed answer.
+      </div>
+    </div>
+    <div class="guard">
+      <div class="q">?</div>
+      <div class="a">
+        <strong>Every run passed - why is the batch Inconclusive?</strong> Too few runs to prove the
+        target. At 90% and 95% confidence it takes 29 passes out of 29: 28 out of 28 is still
+        consistent with a check that passes less than 90% of the time. The dialog shows the minimum
+        before you start, and offers one spare time in case a run is Not Ran.
       </div>
     </div>
     <div class="guard">
