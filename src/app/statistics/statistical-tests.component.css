@@ -63,10 +63,6 @@
   border-bottom: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
   font-variant-numeric: tabular-nums;
 }
-.formula {
-  margin-top: 8px;
-  font-size: 12px;
-}
 .params {
   margin: 0;
   padding: 0;

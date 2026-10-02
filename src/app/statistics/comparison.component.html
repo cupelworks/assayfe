@@ -60,9 +60,7 @@
         >
       </div>
       <p class="muted reason">{{ p.reason }}</p>
-      <p class="small">
-        {{ p.p }}{{ p.wilcoxon ? ' · ' + p.wilcoxon : '' }} · {{ p.n_pairs }} pairs
-      </p>
+      <p class="small">{{ p.n_pairs }} pairs</p>
       <div class="pairs">
         @for (x of p.pairs; track x.name + x.label) {
           <div class="pair-name">
@@ -158,9 +156,6 @@
         <div class="verdict">
           <span class="w"><assay-mark [of]="r.verdict" />{{ r.word }}</span>
           <span class="small">{{ r.reason }}</span>
-          @if (r.p) {
-            <span class="small">{{ r.p }}</span>
-          }
           @if (r.decide) {
             <span class="small">{{ r.decide }}</span>
           }

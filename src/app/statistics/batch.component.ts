@@ -13,7 +13,6 @@ import { ScorePlotComponent } from './charts/score-plot.component';
 import { RunStatsDialogComponent, BatchPreset } from './run-stats-dialog.component';
 import { CompareDialogComponent } from './compare-dialog.component';
 import {
-  intervalText,
   pct,
   question,
   ruleText,
@@ -430,24 +429,16 @@ export class BatchComponent {
       scores: c.scores,
       interval,
       reason: s?.reason ?? c.reason ?? '',
-      method: interval ? intervalText(interval) : null,
+      // The maths behind the range (its method, t, p-values) stays in the API: the page says
+      // in words what the range is for. Scores that never vary have no range (both bounds at the
+      // average): their verdict compared the score to the threshold directly.
+      decidedOn:
+        interval && interval.lower !== interval.upper
+          ? `The verdict was decided on this range, at ${pct(interval.level)} confidence.`
+          : null,
       rule: s?.rule
         ? `At ${s.rule.times} times: ${ruleText(s.rule, b.engine === 'judge_stability' ? 'in agreement' : 'met')}`
         : null,
-      tLine:
-        s?.df != null
-          ? [
-              s.t != null ? `t = ${s.t}` : null,
-              `${s.df} degrees of freedom`,
-              s.standard_error != null ? `standard error ${s.standard_error}` : null,
-            ]
-              .filter(Boolean)
-              .join(' · ')
-          : null,
-      pLine:
-        s?.p_value_pass != null || s?.p_value_fail != null
-          ? `p = ${s?.p_value_pass ?? '-'} for “it passes”, ${s?.p_value_fail ?? '-'} for “it fails”`
-          : null,
       misses: misses.map((p) => ({ index: p.index, link: runLink(b.scope, p, e.test_id) })),
       errors: errors.length
         ? `${errors.length} time${errors.length === 1 ? '' : 's'} without a value${

@@ -46,7 +46,9 @@ import { runLink } from '../stats-format';
           }
           Spread
         </span>
-        <span class="small">box: the middle half · lines: 10th to 90th percentile</span>
+        <span class="small"
+          >box: the middle half of the scores · line: all but the lowest and highest tenth</span
+        >
       </div>
       <div class="v">
         @if (box(); as b) {

@@ -3,7 +3,6 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { StatisticalEngine, StatisticalTest } from '../api/models';
 import { StatisticalTestsStore } from '../api/statistics-api.service';
-import { engineSettingsLabel } from '../api/test-types.store';
 import { StatusMarkComponent, markLabel } from '../shared/status-mark.component';
 import { ChartGuideComponent, CHART_SECTIONS, chartAnchor } from './chart-guide.component';
 import { shownValue } from './stats-params';
@@ -145,7 +144,6 @@ export class StatisticalTestsComponent {
       verdicts: t.verdicts,
       open: this.openId() === t.id,
       floor: t.floor.explanation,
-      formula: t.floor.formula,
       examples: keys.length
         ? {
             head: keys.map((k) => EXAMPLE_COLUMNS[k] ?? k),
@@ -161,8 +159,6 @@ export class StatisticalTestsComponent {
         };
       }),
       method: t.method,
-      engine: t.engine,
-      settings: engineSettingsLabel(t.engine_settings),
       charts: (CHARTS[t.engine] ?? [])
         .map((id) => CHART_SECTIONS.find((s) => s.id === id))
         .filter((s) => !!s)

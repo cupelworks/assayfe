@@ -1,7 +1,6 @@
 import {
   BatchSummary,
   GateRule,
-  Interval,
   StatisticalEngine,
   StatsScope,
   StatsScopeKind,
@@ -46,17 +45,6 @@ export function timesText(b: Pick<BatchSummary, 'status' | 'progress'>): string 
   return b.status === 'Incomplete'
     ? `stopped at ${ran} of ${p.times_requested} times`
     : `${p.times_requested} time${p.times_requested === 1 ? '' : 's'}`;
-}
-
-const METHOD: Record<Interval['method'], string> = {
-  exact: 'Exact (Clopper–Pearson) bounds',
-  wilson: 'Wilson interval',
-  t: "Student's t bounds",
-  newcombe: "Newcombe's score interval",
-};
-/** What an interval is: "Exact (Clopper–Pearson) bounds, each one-sided at 95%". */
-export function intervalText(i: Interval): string {
-  return `${METHOD[i.method]}, ${i.sides === 'one' ? 'each one-sided' : 'two-sided'} at ${pct(i.level)}`;
 }
 
 /** A scope's place in the app: its list (for crumbs) and its page. */

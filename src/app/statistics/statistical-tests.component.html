@@ -103,9 +103,6 @@
                       </tbody>
                     </table>
                   }
-                  @if (t.formula) {
-                    <div class="mono formula">{{ t.formula }}</div>
-                  }
                 </dd>
                 <dt>Parameters</dt>
                 <dd>
@@ -121,13 +118,6 @@
                 </dd>
                 <dt>Method</dt>
                 <dd>{{ t.method }}</dd>
-                <dt>Engine</dt>
-                <dd>
-                  <span class="mono">{{ t.engine }}</span>
-                  @if (t.settings) {
-                    <span class="small"> · {{ t.settings }}</span>
-                  }
-                </dd>
                 @if (t.charts.length) {
                   <dt>Its charts</dt>
                   <dd class="chart-links">

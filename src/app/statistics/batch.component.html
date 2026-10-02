@@ -278,14 +278,8 @@
                       </div>
                     </div>
                   }
-                  @if (c.method) {
-                    <p class="small">{{ c.method }}: the same arithmetic as the verdict.</p>
-                  }
-                  @if (c.tLine) {
-                    <p class="small">{{ c.tLine }}</p>
-                  }
-                  @if (c.pLine) {
-                    <p class="small">{{ c.pLine }}</p>
+                  @if (c.decidedOn) {
+                    <p class="small">{{ c.decidedOn }}</p>
                   }
                 </div>
               </div>

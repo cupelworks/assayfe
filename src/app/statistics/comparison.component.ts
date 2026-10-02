@@ -9,20 +9,6 @@ import { RangeChartComponent } from './charts/range-chart.component';
 import { DumbbellComponent } from './charts/dumbbell.component';
 import { pct, points, scopeLink, scopePlace } from './stats-format';
 
-/** How each p-value was computed, as the caption names it. */
-const P_METHOD: Record<string, string> = {
-  fisher_exact: 'Fisher’s exact test',
-  chi_square: 'chi-square',
-  welch_t: 'Welch’s t-test',
-  mann_whitney: 'Mann–Whitney',
-  paired_t: 'paired t-test',
-  wilcoxon: 'Wilcoxon signed-rank',
-};
-const pMethod = (m: string | null) => (m ? (P_METHOD[m] ?? m.replace(/_/g, ' ')) : '');
-const pText = (p: number | null, m: string | null) =>
-  p == null
-    ? ''
-    : `${p < 0.001 ? 'p < 0.001' : `p = ${p.toFixed(3)}`}${m ? ` · ${pMethod(m)}` : ''}`;
 /** The verdicts worth reading first: what got worse, then what changed, then the rest. */
 const ORDER: Record<string, number> = {
   worse: 0,
@@ -143,11 +129,6 @@ export class ComparisonComponent {
     if (!p) return null;
     return {
       ...p,
-      p: pText(p.p_value, 'paired_t'),
-      wilcoxon:
-        p.p_value_wilcoxon != null
-          ? pText(p.p_value_wilcoxon, p.wilcoxon_method ?? 'wilcoxon')
-          : '',
       pairs: p.pairs.map((x) => ({
         ...x,
         cls: x.rate_b > x.rate_a ? 'better' : x.rate_b < x.rate_a ? 'worse' : 'no_difference',
@@ -188,7 +169,6 @@ export class ComparisonComponent {
       verdict,
       word: markLabel(verdict),
       reason: k.reason,
-      p: pText(k.p_value, k.p_value_method),
       decide: k.times_to_decide_message,
       values: `${fmt(a)} → ${fmt(b)}`,
       a,
