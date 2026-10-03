@@ -162,14 +162,18 @@ export function timesRun(p: BatchSummary['progress']): number {
 }
 
 /** "29 times", or how far a stopped batch got: "stopped at 12 of 29 times"; until there's an
- *  answer, "up to 750 times" while it runs, then "143 of up to 750 times". */
+ *  answer, "up to 750 times" while it runs, then "143 of up to 750 times" when it stopped early,
+ *  or "750 times, the most it could run". */
 export function timesText(b: Pick<BatchSummary, 'status' | 'progress'>): string {
   const p = b.progress;
   const ran = timesRun(p);
   if (p.waves) {
     const max = p.times_requested;
     if (b.status === 'Incomplete') return `stopped at ${ran} of up to ${max} times`;
-    return p.waves.closed ? `${ran} of up to ${max} times` : `up to ${max} times`;
+    if (!p.waves.closed) return `up to ${max} times`;
+    return p.waves.stopped_early
+      ? `${ran} of up to ${max} times`
+      : `${ran} times, the most it could run`;
   }
   return b.status === 'Incomplete'
     ? `stopped at ${ran} of ${p.times_requested} times`
