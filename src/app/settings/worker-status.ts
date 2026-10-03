@@ -32,5 +32,13 @@ export const WORKER_STATUS: Record<
   },
 };
 
+/** Each status as a run's mark: ready green, a restart amber, no worker or no broker red. */
+export const WORKER_MARK: Record<WorkerHealthStatus, string> = {
+  ready: 'Green',
+  outdated: 'Amber',
+  no_worker: 'Red',
+  broker_unreachable: 'Red',
+};
+
 /** Workers the user has to restart - the ones the API reports a problem for. */
 export const workersToRestart = (h: WorkerHealth) => h.workers.filter((w) => w.problem != null);

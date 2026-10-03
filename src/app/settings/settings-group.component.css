@@ -1,100 +1,220 @@
-/* One settings group's form: each field is a ruled block with its label on top - the label
-   carries the environment variable the field falls back to while nothing is saved from the UI.
-   The section frame itself is settings-section.css. */
-.row-head .tools {
-  gap: 10px;
-}
-.unsaved {
-  font-size: 12px;
-}
-.lock {
-  border: 0;
-  margin: 0;
-  padding: 0;
-  min-width: 0;
-}
-.fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px 32px;
-}
-.field {
+/* Under the section's title, in view while the form scrolls: with changes, how many and which,
+   then Save changes in red and Discard in words; without, "Nothing to save."; Reset, quiet. */
+.rail {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+}
+.acts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 6px;
-  min-width: 0;
-  border-top: 1px solid var(--color-divider);
-  padding-top: 12px;
+  margin-top: 28px;
 }
-.field.wide {
-  grid-column: span 2;
-}
-.env {
-  margin-left: auto;
+.unsaved {
   font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+.which {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-neutral-800);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: 6px;
+}
+.row .btn {
+  min-height: 44px;
+  padding: 0 20px;
+}
+.calm {
+  margin: 28px 0 0;
+  font-size: 13px;
+  color: var(--color-neutral-600);
+}
+.rail .quiet {
+  margin-top: 10px;
+}
+.msg {
+  margin-bottom: 16px;
+}
+
+/* The form on six of the body's nine columns - fields as lines, as the dialogs' (styles.css's
+   .lfield), two to a row, the wide ones across; Test connection beside it, on three. */
+.fields {
+  grid-column: 1 / 7;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 24px;
+  row-gap: 30px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.fields .full {
+  grid-column: 1 / -1;
+}
+/* A field's caption: its name - optional, changed - and the variable it falls back to. */
+.lbl {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.opt {
+  margin-left: 6px;
+  font-weight: 400;
   letter-spacing: 0;
   text-transform: none;
   color: var(--color-neutral-500);
-  overflow-wrap: anywhere;
 }
-.sel {
-  width: 220px;
+.chg {
+  margin-left: 8px;
+  color: var(--color-accent);
 }
-.num {
-  width: 120px;
+.env {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-neutral-500);
+  white-space: nowrap;
 }
-.ta {
-  min-height: 110px;
-  resize: vertical;
+.lfield .invalid {
+  border-bottom-color: var(--color-accent);
+}
+/* A number with its unit after it: "60 seconds per call". */
+.unitw {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+.lfield .unitw input {
+  width: 88px;
+  font-variant-numeric: tabular-nums;
+}
+.unitw span {
+  padding-bottom: 9px;
+  font-size: 13px;
+  color: var(--color-neutral-600);
+}
+/* A header: its name, its value, Remove. */
+.hrow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+  column-gap: 16px;
+  align-items: end;
+}
+.lfield .go {
+  align-self: flex-start;
+}
+
+/* Test connection: under a black rule, what it does, the input, Test - then what came back. */
+.tc {
+  grid-column: 7 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-text);
+  min-width: 0;
+}
+.tc h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.tc p {
+  margin: 0;
   font-size: 13px;
   line-height: 1.5;
+  color: var(--color-neutral-800);
+  text-wrap: pretty;
 }
-.inline {
+.tc .key {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
+}
+.tc .lfield {
+  align-self: stretch;
+  margin-top: 8px;
+}
+/* Its Test, as the app's secondary button. */
+.tc .btn {
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 0 20px;
+}
+/* What the test brought back: how it went, as a run's mark and word, its code and time, the
+   answer. */
+.result {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--color-text) 25%, transparent);
+}
+.result .head {
   display: flex;
   align-items: center;
   gap: 10px;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
-.hrow {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.hrow .input {
-  flex: 1;
-}
-.hrow .key {
-  flex: none;
-  width: 220px;
-}
-.invalid {
-  border-color: var(--color-accent);
-}
-/* .tag is inline-flex, which drops the space between the text and the time element - put it back. */
-.tag.with-time {
-  gap: 0.3em;
-}
-.err {
-  font-size: 12px;
-  color: var(--color-accent-700);
-}
-.foot {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 28px;
-  border-top: 1px solid var(--color-divider);
-  padding-top: 16px;
-}
-/* A failed call with no reply has no latency tile - the status takes the whole row. */
-.check .status:only-child {
-  grid-column: span 2;
-}
-/* A line about the saved settings (the judge's API-key note). */
-.note {
+.result .meta {
+  margin-top: 2px;
   font-size: 13px;
-  margin: 0;
+  color: var(--color-neutral-600);
+  font-variant-numeric: tabular-nums;
 }
-/* "- optional" after a label: sentence case, like the dialogs' "- optional". */
-.opt {
-  text-transform: none;
-  letter-spacing: 0;
+.result .cap {
+  margin-top: 14px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-neutral-600);
+}
+.result pre {
+  margin: 6px 0 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--color-text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 960px) {
+  .acts,
+  .calm {
+    margin-top: 16px;
+  }
+  .fields,
+  .tc {
+    grid-column: 1 / -1;
+  }
+  .fields {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 28px;
+  }
+  .tc {
+    margin-top: 32px;
+  }
+  .hrow {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 8px;
+  }
 }

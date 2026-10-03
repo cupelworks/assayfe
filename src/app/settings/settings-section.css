@@ -1,45 +1,39 @@
-/* A Settings section: content (2/3) | side panel (1/3) on the shared `.main` grid, like
-   Overview's main + Run status. Shared by the editable groups and the worker status. */
-.group {
-  border-bottom: 2px solid var(--color-divider);
-  scroll-margin-top: 16px;
-}
-.title {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.row-head {
-  margin-bottom: 8px;
-}
+/* What Settings' sections share - its page, its two editable
+   groups, its workers: each on the Guide's section, laid on the body's nine columns. */
+
+/* What a section is about, across the body, before what it holds. */
 .intro {
+  grid-column: 1 / -1;
+  margin: 0 0 32px;
   max-width: 760px;
-  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--color-neutral-800);
+  text-wrap: pretty;
 }
-.cell > .intro {
-  margin-bottom: 28px;
+/* Across the body: a message, a table, how it stands. */
+.wide {
+  grid-column: 1 / -1;
 }
-/* The side panel: Test connection, the worker Status. */
-.check {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-.check h2 {
-  margin-bottom: 8px;
-}
-.check .intro {
-  margin: 0;
-}
-.check .status-grid {
-  margin-top: -4px;
-}
-/* A block of text as sent by the API - a check's answer or error, the broker's error. */
-.answer {
-  font-size: 14px;
-  white-space: pre-wrap;
+/* What went wrong, in red, where it went wrong. */
+.err {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-accent);
   overflow-wrap: anywhere;
-  padding: 10px 12px;
-  background: var(--color-surface);
+}
+p.err {
+  margin: 0 0 16px;
+}
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+}
+/* A worker's state, an operation's value: as a run's word with its mark. */
+.st {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--color-text);
 }

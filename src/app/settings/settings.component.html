@@ -1,56 +1,42 @@
-<div class="hero">
-  <div>
-    <div class="kicker">Settings</div>
-    <h1>What Assay tests,<br />and who judges it.</h1>
-  </div>
-  <p class="hero-note">Changes apply from the next run. Past runs keep what they scored.</p>
-</div>
+<div class="g-wrap">
+  <assay-guide-head
+    kicker="Settings"
+    title="What Assay tests, and who judges it"
+    lede="The application Assay asks for answers, the model that grades them, and what runs it all. A change applies from the next run; past runs keep what they scored."
+    navLabel="The settings"
+    [sections]="sections()"
+    [across]="4"
+  />
 
-<!-- One tile per section, four across like Overview's counts; each jumps to its section. -->
-<section class="stats strip">
-  @for (t of tiles(); track t.id) {
-    <button type="button" class="stat plain tile" (click)="jump(t.id)">
-      <div class="label">
-        @if (t.dot) {
-          <span class="dot" [style.background]="t.dot"></span>
-        }
-        {{ t.label }}
-      </div>
-      <div class="value" [class.mono]="t.mono">{{ t.value }}</div>
-      <div class="small tile-foot">
-        <span>{{ t.detail }}</span
-        ><span class="go">{{ t.go }} ↓</span>
-      </div>
-    </button>
-  }
-</section>
+  <assay-settings-group
+    [section]="sections()[0]"
+    [config]="target"
+    (loaded)="saved.target.set($event)"
+  />
+  <assay-settings-group
+    [section]="sections()[1]"
+    [config]="judge"
+    [context]="{ targetUrl: targetUrl() }"
+    (loaded)="saved.judge.set($event)"
+  />
+  <assay-worker-status [section]="sections()[2]" (loaded)="workers.set($event)" />
 
-<assay-settings-group [config]="target" (loaded)="saved.target.set($event)" />
-<assay-settings-group
-  [config]="judge"
-  [context]="{ targetUrl: targetUrl() }"
-  (loaded)="saved.judge.set($event)"
-/>
-<assay-worker-status (loaded)="workers.set($event)" />
-
-<section class="ops-section" id="settings-operations">
-  <div class="cell row-head">
-    <div class="title">
-      <h2>Operations</h2>
-      <span class="tag tag-neutral">Read-only</span>
-    </div>
-    <p class="hero-note">
-      Read once when a process starts; changing one means restarting the API and/or the worker.
-      Connection strings are never shown - they can embed credentials.
+  <assay-guide-section [section]="sections()[3]" sub="Read-only · read once when a process starts">
+    <p class="intro">
+      Changing one means restarting the API and/or the worker. Connection strings are never shown -
+      they can embed credentials.
     </p>
-  </div>
-  <div class="ops">
-    @for (o of operations; track o.label) {
-      <div class="op">
-        <div class="label">{{ o.label }}</div>
-        <div class="value" [class.mono]="o.mono">{{ o.value }}</div>
-        <div class="small">{{ o.hint }}</div>
-      </div>
-    }
-  </div>
-</section>
+    <assay-catalog-table class="wide" label="Operations" [columns]="opColumns">
+      @for (o of operations; track o.label) {
+        <assay-catalog-row [name]="o.label" [expandable]="false">
+          <assay-catalog-cell caption="Value"
+            ><span [class.mono]="o.mono">{{ o.value }}</span></assay-catalog-cell
+          >
+          <assay-catalog-cell caption="What it is"
+            ><span class="muted">{{ o.hint }}</span></assay-catalog-cell
+          >
+        </assay-catalog-row>
+      }
+    </assay-catalog-table>
+  </assay-guide-section>
+</div>

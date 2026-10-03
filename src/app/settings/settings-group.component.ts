@@ -2,8 +2,11 @@ import { Component, OnInit, computed, inject, input, output, signal } from '@ang
 import { FormsModule } from '@angular/forms';
 import { SettingsApiService } from '../api/settings-api.service';
 import { SettingsSource } from '../api/models';
-import { errText, fieldErrors, statusColor } from '../shared/format';
-import { RelTimeComponent } from '../shared/rel-time.component';
+import { errText, fieldErrors, listed, rel } from '../shared/format';
+import { StatusMarkComponent } from '../shared/status-mark.component';
+import { GuideSectionComponent } from '../shared/guide/guide-section.component';
+import { GuideSection } from '../shared/guide/guide-sections';
+import { BannerComponent } from '../shared/work/banner.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
 import { ActionRunner } from '../shared/action-runner';
 import { NumberInputDirective } from '../shared/number';
@@ -31,12 +34,26 @@ type Draft = Record<string, any>;
 @Component({
   selector: 'assay-settings-group',
   standalone: true,
-  imports: [FormsModule, RelTimeComponent, ConfirmDialogComponent, NumberInputDirective],
+  imports: [
+    FormsModule,
+    GuideSectionComponent,
+    StatusMarkComponent,
+    BannerComponent,
+    ConfirmDialogComponent,
+    NumberInputDirective,
+  ],
   templateUrl: './settings-group.component.html',
-  styleUrls: ['../shared/page.css', './settings-section.css', './settings-group.component.css'],
+  styleUrls: [
+    '../shared/guide/head-aside.css',
+    '../shared/work/work.css',
+    './settings-section.css',
+    './settings-group.component.css',
+  ],
 })
 export class SettingsGroupComponent implements OnInit {
   config = input.required<SettingsGroupConfig>();
+  /** Its place on the page: its number and title, its link in the head's index. */
+  section = input.required<GuideSection>();
   /** What the page knows about the other groups, for this group's `warnings`. */
   context = input<SettingsContext>({ targetUrl: null });
   /** The saved settings, on every load, save and reset - the page's summary strip shows them. */
@@ -76,6 +93,35 @@ export class SettingsGroupComponent implements OnInit {
     const n = value ? Object.keys(changedFields(spec.fields, value, s)).length : 0;
     return n === 1 ? '1 unsaved change' : n ? `${n} unsaved changes` : 'Unsaved changes';
   });
+  /** Under its title: where its values come from now - "Saved in Assay · 9 h ago". */
+  sourceLine = computed(() => {
+    const s = this.saved();
+    if (!s) return null;
+    return s.source === 'database'
+      ? `Saved in Assay · ${rel(s.updated_at)}`
+      : "From the server's environment";
+  });
+  /** The fields that differ from what's saved - "Changed" beside each; none while the draft can't
+   *  be read yet (half-typed JSON). */
+  changed = computed<Record<string, boolean>>(() => {
+    const d = this.draft();
+    const s = this.saved();
+    if (!d || !s || !this.dirty()) return {};
+    const spec = this.config().draft;
+    const { value } = spec.parseDraft(d);
+    if (!value) return {};
+    return Object.fromEntries(
+      Object.keys(changedFields(spec.fields, value, s)).map((k) => [k, true]),
+    );
+  });
+  /** By Save, which they are: "Timeout and Retries". */
+  changedLabels = computed(() =>
+    listed(
+      this.config()
+        .fields.filter((f) => this.changed()[f.key])
+        .map((f) => f.label),
+    ),
+  );
   note = computed(() => {
     const s = this.saved();
     const note = this.config().note;
@@ -214,9 +260,8 @@ export class SettingsGroupComponent implements OnInit {
   canCheck = computed(
     () => !this.runner.busy() && (!this.config().check.needsInput || !!this.checkInput().trim()),
   );
-  /** A check's state as a run status dot - the colours the rest of the app uses. */
-  dotColor = statusColor;
-  ms = (latency: number) => `${Math.round(latency)} ms`;
+  /** "2.5 s" - how long the call took. */
+  secs = (latency: number) => `${(latency / 1000).toFixed(1)} s`;
   /** API messages read "must be …" - shown under their field, so capitalise the first letter. */
   cap = (m: string) => m.charAt(0).toUpperCase() + m.slice(1);
   controlId = (key: string) => `setting-${this.config().group}-${key}`;

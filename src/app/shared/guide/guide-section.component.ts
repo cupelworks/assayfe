@@ -5,7 +5,9 @@ import { GuideSection } from './guide-sections';
  * A section of a guide page, on the 12-column grid: its red number and title in columns 1-3 (and
  * under the title, optionally, what it holds - "15 types"), then what it says in 4-12 - a
  * nine-column grid its content is laid on, with `guide.css`'s classes (`g-lead`, `g-text`,
- * `g-wide`, `g-note`), which the page includes for the content it projects.
+ * `g-wide`, `g-note`), which the page includes for the content it projects. What it puts under
+ * the title (`sectionRail` - Settings' Save and Discard) stays in view while the body scrolls, given
+ * the class `sticky-rail`.
  */
 @Component({
   selector: 'assay-guide-section',
@@ -22,6 +24,7 @@ import { GuideSection } from './guide-sections';
       @if (sub(); as holds) {
         <div class="sub">{{ holds }}</div>
       }
+      <ng-content select="[sectionRail]" />
     </div>
     <div class="body"><ng-content /></div>
   `,
@@ -35,6 +38,13 @@ import { GuideSection } from './guide-sections';
     }
     .rail {
       grid-column: 1 / 4;
+    }
+    /* What to do with the section (Settings' Save and Discard) under its title, in view while
+       its body scrolls. */
+    :host(.sticky-rail) .rail {
+      align-self: start;
+      position: sticky;
+      top: 24px;
     }
     .num {
       display: block;
@@ -77,6 +87,9 @@ import { GuideSection } from './guide-sections';
       }
       .rail {
         margin-bottom: 24px;
+      }
+      :host(.sticky-rail) .rail {
+        position: static;
       }
       .num {
         font-size: 48px;

@@ -22,8 +22,11 @@ export interface SettingsGroupConfig {
     intro: string;
     /** Whether the check sends a test input (target) or asks a fixed question (judge). */
     needsInput: boolean;
-    /** What it calls, for the status lines: "Calling the judge…". */
+    /** What it calls, for the status lines: "Calling the judge…" - and Test's full name, "Test
+     *  the connection to the judge". */
     subject: string;
+    /** What a test costs, when it does: the judge's call is paid. */
+    cost?: string;
   };
   /** Mistakes the page can spot on its own while you type, by field - shown like an error but
    *  never blocking Save (the API decides what's valid). Gets the form's values and what the
@@ -31,7 +34,7 @@ export interface SettingsGroupConfig {
   warnings?: (draft: Record<string, any>, context: SettingsContext) => Record<string, string>;
   /** A line in the Test connection cell about the saved settings, or null. */
   note?: (saved: any) => string | null;
-  /** The group's tile in the page's summary strip: the headline value and one line under it. */
+  /** The group in the page's index: what it holds now, and a line under it. */
   summary: (saved: any) => SettingsSummary;
 }
 
@@ -102,6 +105,7 @@ export const JUDGE_GROUP: SettingsGroupConfig = {
       "so it's also how you find out whether the API key is set there.",
     needsInput: false,
     subject: 'the judge',
+    cost: 'One short call to the judge, paid like any other.',
   },
   // The API can't know whether the key is set - it's read on the worker, a different process -
   // so the page says where it's read from and points at the check instead of claiming either way.
@@ -110,7 +114,7 @@ export const JUDGE_GROUP: SettingsGroupConfig = {
       ? 'No judge configured: judge checks are not met in runs, with that reason, until you ' +
         'choose a provider and model.'
       : `API key: read from ${s.api_key_variable ?? 'the provider’s standard variable'} on the ` +
-        'worker (its environment or .env). Use Test connection to confirm it is set there.',
+        'worker (its environment or .env). Press Test to confirm it is set there.',
   // The judge pointed at the application under test - a URL pasted into the wrong group.
   warnings: (d, ctx): Record<string, string> =>
     sameUrl(d['url'], ctx.targetUrl)

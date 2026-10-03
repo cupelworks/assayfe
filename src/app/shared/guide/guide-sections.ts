@@ -4,6 +4,12 @@ export interface GuideSection {
   no: string;
   label: string;
   id: string;
+  /** What the section holds now, under its label in the head's index (Settings: "localhost:8001/
+   *  chat") - with a status's mark before it ("■ Ready") and a line under it. */
+  value?: string;
+  mono?: boolean;
+  mark?: string | null;
+  detail?: string;
 }
 
 /**

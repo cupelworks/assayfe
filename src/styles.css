@@ -465,6 +465,27 @@ textarea.input {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 14px;
 }
+/* A choice on a line, as a field is: its value, a small arrow at the line's end. */
+.lfield select {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 24px 7px 0;
+  border-bottom: 1px solid var(--color-divider);
+  background: transparent
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.5 3.5 5 7l3.5-3.5' fill='none' stroke='%237d7979' stroke-width='1.6'/%3E%3C/svg%3E")
+    right 2px center / 10px no-repeat;
+  font-family: inherit;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--color-text);
+  cursor: pointer;
+}
+.lfield select:focus {
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--color-accent);
+}
 .lfield-help {
   font-size: 12px;
   line-height: 1.45;

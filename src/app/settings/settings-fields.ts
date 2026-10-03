@@ -186,29 +186,39 @@ export interface ReadOnlySetting {
  *  what is running and never edited here. The three connection strings can embed credentials,
  *  so they're shown only as "Configured" - by construction, not by remembering to redact. */
 export const OPERATIONS: ReadOnlySetting[] = [
-  { label: 'API address', value: '127.0.0.1:8000', hint: 'host · port', mono: true },
+  { label: 'API address', value: '127.0.0.1:8000', hint: 'Host · port', mono: true },
   {
     label: 'Allowed origins',
     value: 'http://localhost:4200',
     hint: 'CORS - the front-ends this API answers',
     mono: true,
   },
-  { label: 'Logging', value: 'INFO · text', hint: 'level · format (text or json)', mono: true },
+  { label: 'Logging', value: 'INFO · text', hint: 'Level · format (text or json)', mono: true },
   {
     label: 'Worker DB pool',
     value: '10 + 10 overflow',
-    hint: 'connections the worker may hold',
+    hint: 'Connections the worker may hold',
     mono: true,
   },
   {
     label: 'Reconciliation scan',
     value: 'every 60 min',
-    hint: 're-publishes Pending runs older than 15 min',
+    hint: 'Re-publishes Pending runs older than 15 min',
     mono: true,
   },
-  ...['Database', 'Message broker', 'Result backend'].map((label) => ({
-    label,
+  {
+    label: 'Database',
     value: 'Configured',
-    hint: 'connection URL not shown',
-  })),
+    hint: 'Where Assay keeps everything - datasets, tests, runs and their results',
+  },
+  {
+    label: 'Message broker',
+    value: 'Configured',
+    hint: 'The queue that hands runs and connection tests to the workers',
+  },
+  {
+    label: 'Result backend',
+    value: 'Configured',
+    hint: "Where the workers note whether each job finished or failed - a run's results go to the database",
+  },
 ];

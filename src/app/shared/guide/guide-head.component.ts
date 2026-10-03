@@ -1,6 +1,7 @@
 import { Component, afterNextRender, inject, input } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { BreadcrumbComponent, GuideCrumb } from './breadcrumb.component';
+import { StatusMarkComponent } from '../status-mark.component';
 import { GuideSection } from './guide-sections';
 
 /**
@@ -25,8 +26,8 @@ import { GuideSection } from './guide-sections';
 @Component({
   selector: 'assay-guide-head',
   standalone: true,
-  imports: [RouterLink, BreadcrumbComponent],
-  host: { '[class.one]': "size() === 'one'" },
+  imports: [RouterLink, BreadcrumbComponent, StatusMarkComponent],
+  host: { '[class.one]': "size() === 'one'", '[style.--ixs-across]': 'across()' },
   template: `
     @if (crumbs().length) {
       <assay-breadcrumb class="kicker" [trail]="crumbs()" [here]="kicker() || null" />
@@ -46,8 +47,19 @@ import { GuideSection } from './guide-sections';
         @for (s of sections(); track s.id) {
           <a class="ix" [routerLink]="[]" [fragment]="s.id" (click)="go(s.id)"
             ><b>{{ s.no }}</b
-            ><span>{{ s.label }}</span></a
-          >
+            ><span class="nm">{{ s.label }}</span>
+            @if (s.value) {
+              <span class="val" [class.mono]="s.mono">
+                @if (s.mark) {
+                  <assay-mark [of]="s.mark" size="md" />
+                }
+                {{ s.value }}</span
+              >
+            }
+            @if (s.detail) {
+              <span class="det">{{ s.detail }}</span>
+            }
+          </a>
         }
       </nav>
     }
@@ -130,13 +142,14 @@ import { GuideSection } from './guide-sections';
     .ixs {
       grid-column: 1 / -1;
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(var(--ixs-across, 3), minmax(0, 1fr));
       column-gap: 24px;
       margin-top: 72px;
     }
     .ix {
       display: grid;
       grid-template-columns: 28px minmax(0, 1fr);
+      align-content: start;
       align-items: baseline;
       padding: 12px 0 13px;
       border-top: 1px solid var(--color-divider);
@@ -150,8 +163,35 @@ import { GuideSection } from './guide-sections';
       font-weight: 800;
       font-variant-numeric: tabular-nums;
     }
-    .ix:hover span {
+    .ix:hover .nm {
       color: var(--color-accent);
+    }
+    /* What the section holds now, under its label: big, then a line in small. */
+    .val {
+      grid-column: 2;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      overflow-wrap: anywhere;
+    }
+    .val.mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0;
+    }
+    .det {
+      grid-column: 2;
+      margin-top: 2px;
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.45;
+      color: var(--color-neutral-600);
+      overflow-wrap: anywhere;
     }
     .ix:focus-visible {
       outline: 2px solid var(--color-accent);
@@ -200,6 +240,8 @@ export class GuideHeadComponent {
   /** A numbered link per section; none on a page whose index is its own (the catalogues'). */
   sections = input<GuideSection[]>([]);
   navLabel = input('Sections');
+  /** Section links a row: 3 (the Guide, Charts), 4 (Settings). One on a phone. */
+  across = input(3);
 
   constructor() {
     const fragment = inject(ActivatedRoute).snapshot.fragment;
