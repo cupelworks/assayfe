@@ -1,23 +1,8 @@
-/* The guide on a 12-column grid: each section's number and title (2 columns), its chart (7),
-   how to read it (3). One red line in every chart: what the result is judged against. */
+/* The charts, on the guide's layout (shared/guide): each chart in a section's first six columns,
+   how to read it in the note beside it. One red line in every chart: what the result is judged
+   against. */
 :host {
   display: block;
-  border-top: 2px solid var(--color-divider);
-}
-.wrap {
-  padding-inline: 40px;
-}
-.g12 {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  column-gap: 24px;
-}
-.cap {
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-neutral-600);
 }
 .small {
   font-size: 12px;
@@ -39,133 +24,22 @@
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
-
-/* The head: title, what the guide is, the red line's key, a link per section. */
-.head {
-  padding: 48px 0 40px;
-  row-gap: 28px;
-}
-.kicker {
-  grid-column: 1 / -1;
-}
-.title {
-  grid-column: 1 / span 9;
-  margin: 0;
-  font-size: 46px;
-  font-weight: 800;
-  line-height: 1.04;
-  letter-spacing: -0.025em;
-  text-wrap: balance;
-}
-.lede {
-  grid-column: 10 / span 3;
-  margin: 0;
-  font-size: 13px;
-  color: var(--color-neutral-600);
-  align-self: end;
-  text-wrap: pretty;
-}
-.key {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  font-size: 13px;
-  padding-top: 16px;
-  border-top: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
-}
-.key i {
-  display: block;
-  flex: none;
-  width: 32px;
-  height: 2px;
-  background: var(--color-accent);
-}
-.toc {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 0 24px;
-}
-.toc a {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-height: 56px;
-  padding-top: 10px;
-  border-top: 2px solid var(--color-text);
-  color: var(--color-text);
-  text-decoration: none;
-}
-.toc b {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  color: var(--color-accent);
-  font-variant-numeric: tabular-nums;
-}
-.toc span {
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.3;
-}
-.toc a:hover span {
-  color: var(--color-accent);
-}
-.toc a:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+.scroll {
+  overflow-x: auto;
 }
 
-/* A section. */
-.sec .g12 {
-  padding: 40px 0 56px;
-  border-top: 2px solid var(--color-divider);
-}
-.rail {
-  grid-column: 1 / span 2;
-}
-.secno {
-  font-size: 56px;
-  font-weight: 800;
-  line-height: 0.9;
-  letter-spacing: -0.04em;
-  font-variant-numeric: tabular-nums;
-  margin-bottom: 20px;
-}
-.rail h3 {
-  font-size: 21px;
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.015em;
-  margin: 0 0 10px;
-}
-.rail p {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--color-neutral-600);
-  text-wrap: pretty;
-}
-.chart {
-  grid-column: 3 / span 7;
-  min-width: 0;
-  padding-top: 8px;
-}
+/* How to read a chart: its parts, numbered, then a rule and how a verdict reads off it. */
 .notes {
-  grid-column: 10 / span 3;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding-top: 8px;
-  font-size: 14px;
-  min-width: 0;
+  gap: 12px;
 }
 .notes p {
   margin: 0;
   text-wrap: pretty;
 }
-.part {
+.part,
+.reading .r {
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr);
   gap: 8px;
@@ -176,16 +50,7 @@
   flex-direction: column;
   gap: 8px;
   padding-top: 12px;
-  border-top: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
-}
-.reading .r {
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
-  gap: 8px;
-  align-items: baseline;
-}
-.scroll {
-  overflow-x: auto;
+  border-top: 1px solid color-mix(in srgb, var(--color-text) 25%, transparent);
 }
 
 /* A table of charts: a head with its scale, then rows whose charts fill their height, so the
@@ -199,7 +64,7 @@
   padding-bottom: 8px;
   border-bottom: 2px solid var(--color-text);
 }
-.hd .cap .n {
+.hd .g-cap .n {
   margin-right: 6px;
 }
 .right {
@@ -289,20 +154,22 @@
   font-weight: 800;
   color: var(--color-text);
 }
+/* 01: check, met, the range, the verdict. */
 .rr {
   display: grid;
-  grid-template-columns: minmax(0, 190px) 56px minmax(0, 1fr) max-content;
-  column-gap: 20px;
-  min-width: 640px;
+  grid-template-columns: minmax(0, 170px) 56px minmax(0, 1fr) minmax(112px, max-content);
+  column-gap: 16px;
+  min-width: 560px;
 }
+/* 06: check, A → B, B − A, the verdict. */
 .cg {
   display: grid;
-  grid-template-columns: minmax(0, 170px) minmax(0, 1fr) minmax(0, 1fr) max-content;
-  column-gap: 20px;
-  min-width: 620px;
+  grid-template-columns: minmax(0, 150px) minmax(0, 1fr) minmax(0, 1fr) minmax(112px, max-content);
+  column-gap: 16px;
+  min-width: 560px;
 }
 
-/* The strip, bigger than beside a check, its times numbered on the same columns. */
+/* 02: the strip, bigger than beside a check, its times numbered on the same columns. */
 .strip-box {
   max-width: 692px;
   min-width: 460px;
@@ -342,7 +209,7 @@
 .tally .fig {
   font-size: 36px;
 }
-.tally .cap {
+.tally .g-cap {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -359,11 +226,17 @@
 .sw.x {
   background: var(--color-accent);
 }
+/* 03 and 05: the runs grid and the scores keep their width, and scroll sideways in a narrower
+   column. The grid's last time's number, centred over its square, reaches a few px past it when
+   the squares are narrow: room for it, so the grid doesn't scroll for it. */
 .wide {
-  min-width: 640px;
+  min-width: 560px;
+}
+.grid-box {
+  padding-right: 6px;
 }
 
-/* The marks, three columns. */
+/* 07: the marks, three columns. */
 .marks3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -386,32 +259,7 @@
   font-weight: 600;
 }
 
-@media (max-width: 900px) {
-  .wrap {
-    padding-inline: 16px;
-  }
-  .g12 {
-    grid-template-columns: minmax(0, 1fr);
-    row-gap: 24px;
-  }
-  .title,
-  .lede,
-  .rail,
-  .chart,
-  .notes {
-    grid-column: 1 / -1;
-  }
-  .title {
-    font-size: 32px;
-  }
-  .toc {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px 16px;
-  }
-  .secno {
-    font-size: 44px;
-    margin-bottom: 12px;
-  }
+@media (max-width: 960px) {
   .marks3 {
     grid-template-columns: minmax(0, 1fr);
   }

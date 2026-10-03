@@ -1,27 +1,17 @@
 import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { Interval, ScoreSummary, SeriesPoint, StripPoint, TestStatus } from '../api/models';
 import { StatusMarkComponent, markLabel } from '../shared/status-mark.component';
-import { RangeChartComponent, along } from './charts/range-chart.component';
-import { RunStripComponent } from './charts/run-strip.component';
-import { RunsGridComponent, GridRow } from './charts/runs-grid.component';
-import { RateTrendComponent } from './charts/rate-trend.component';
-import { ScorePlotComponent } from './charts/score-plot.component';
-import { DumbbellComponent } from './charts/dumbbell.component';
-import { diffCaption, pct } from './stats-format';
-
-/** The guide's sections, in order - what the Statistical tests cards and the result pages link to. */
-export const CHART_SECTIONS = [
-  { id: 'range', label: 'The verdict and its range' },
-  { id: 'strip', label: 'The times, as a strip' },
-  { id: 'grid', label: 'The runs grid' },
-  { id: 'trend', label: 'The met rate over time' },
-  { id: 'scores', label: 'Scores' },
-  { id: 'compare', label: 'A against B' },
-  { id: 'marks', label: 'The marks' },
-] as const;
-/** A section's element id: `/statistical-tests#chart-range` lands on it. */
-export const chartAnchor = (id: string) => `chart-${id}`;
+import { GuideHeadComponent } from '../shared/guide/guide-head.component';
+import { GuideSectionComponent } from '../shared/guide/guide-section.component';
+import { numbered } from '../shared/guide/guide-sections';
+import { CHART_ANCHOR, CHART_SECTIONS } from './chart-sections';
+import { RangeChartComponent, along } from '../statistics/charts/range-chart.component';
+import { RunStripComponent } from '../statistics/charts/run-strip.component';
+import { RunsGridComponent, GridRow } from '../statistics/charts/runs-grid.component';
+import { RateTrendComponent } from '../statistics/charts/rate-trend.component';
+import { ScorePlotComponent } from '../statistics/charts/score-plot.component';
+import { DumbbellComponent } from '../statistics/charts/dumbbell.component';
+import { diffCaption, pct } from '../statistics/stats-format';
 
 // The examples: what a batch and a comparison would show, with the bounds the API computes
 // (exact one-sided at 95% for a 90% target; Newcombe for B − A) - drawn by the app's own charts.
@@ -65,15 +55,17 @@ const COMPARE: [string, number, number, number, number, number, string][] = [
 ];
 
 /**
- * "How to read the charts": each chart a batch's or a comparison's page draws, drawn here by the
- * same components with example data, its parts numbered, and how a verdict reads off it. Static -
- * it explains the charts, so it needs nothing from the API.
+ * Charts - "How to read the charts", laid out like the Guide (`shared/guide`): each chart a batch's
+ * or a comparison's page draws, drawn here by the same components with example data, its parts
+ * numbered, and beside it how a verdict reads off it. Static - it explains the charts, so it needs
+ * nothing from the API.
  */
 @Component({
-  selector: 'assay-chart-guide',
+  selector: 'assay-charts',
   standalone: true,
   imports: [
-    RouterLink,
+    GuideHeadComponent,
+    GuideSectionComponent,
     StatusMarkComponent,
     RangeChartComponent,
     RunStripComponent,
@@ -82,14 +74,12 @@ const COMPARE: [string, number, number, number, number, number, string][] = [
     ScorePlotComponent,
     DumbbellComponent,
   ],
-  templateUrl: './chart-guide.component.html',
-  styleUrls: ['../shared/page.css', './chart-guide.component.css'],
+  templateUrl: './charts.component.html',
+  styleUrls: ['../shared/guide/guide.css', './charts.component.css'],
 })
-export class ChartGuideComponent {
-  anchor = chartAnchor;
+export class ChartsComponent {
   markLabel = markLabel;
-  /** The sections, numbered: the row of links under the guide's title, and each section's number. */
-  sections = CHART_SECTIONS.map((s, i) => ({ ...s, no: String(i + 1).padStart(2, '0') }));
+  sections = numbered(CHART_ANCHOR, CHART_SECTIONS);
   rateTicks = [0.5, 0.6, 0.7, 0.8, 0.9, 1];
   gate = [
     {
@@ -185,35 +175,42 @@ export class ChartGuideComponent {
     vals: `${pct(a)} → ${pct(b)}`,
     cap: diffCaption(d, lo, hi, false),
   }));
-  batchMarks = [
-    { key: 'Passed', text: 'Every check reaches the target.' },
-    { key: 'Failed', text: 'At least one check falls short.' },
-    { key: 'Inconclusive', text: 'Finished, but too few runs to tell either way.' },
-    { key: 'Incomplete', text: 'Stopped before every run ran.' },
+  /** The marks, a column each: a batch's, a check's in a batch, a comparison's. */
+  markGroups = [
     {
-      key: 'NotRan',
-      text: 'No check could be decided: every run Not Ran, or every check errored.',
+      title: 'A batch',
+      marks: [
+        { key: 'Passed', text: 'Every check reaches the target.' },
+        { key: 'Failed', text: 'At least one check falls short.' },
+        { key: 'Inconclusive', text: 'Finished, but too few runs to tell either way.' },
+        { key: 'Incomplete', text: 'Stopped before every run ran.' },
+        {
+          key: 'NotRan',
+          text: 'No check could be decided: every run Not Ran, or every check errored.',
+        },
+        {
+          key: 'Done',
+          text: 'A trial finished: it shows how each check behaves, and gives no verdict.',
+        },
+      ],
     },
     {
-      key: 'Done',
-      text: 'A trial finished: it shows how each check behaves, and gives no verdict.',
+      title: 'A check in a batch',
+      marks: [
+        { key: 'pass', text: 'At or above the target.' },
+        { key: 'fail', text: 'Below it.' },
+        { key: 'inconclusive', text: 'The target is inside the range.' },
+        { key: 'none', text: 'Too few values to decide: none, or fewer than the test needs.' },
+      ],
     },
-  ];
-  checkMarks = [
-    { key: 'pass', text: 'At or above the target.' },
-    { key: 'fail', text: 'Below it.' },
-    { key: 'inconclusive', text: 'The target is inside the range.' },
-    { key: 'none', text: 'Too few values to decide: none, or fewer than the test needs.' },
-  ];
-  /** A link in the row under the title: to its section, also when the fragment is already the
-   *  route's (the router wouldn't scroll again). */
-  go(id: string) {
-    setTimeout(() => document.getElementById(chartAnchor(id))?.scrollIntoView());
-  }
-  compareMarks = [
-    { key: 'better', text: 'B met it more often, beyond chance.' },
-    { key: 'worse', text: 'B met it less often, beyond chance.' },
-    { key: 'no_difference', text: 'None this size can see.' },
-    { key: 'no_worse', text: 'At most the margin worse, beyond chance.' },
+    {
+      title: 'A comparison',
+      marks: [
+        { key: 'better', text: 'B met it more often, beyond chance.' },
+        { key: 'worse', text: 'B met it less often, beyond chance.' },
+        { key: 'no_difference', text: 'None this size can see.' },
+        { key: 'no_worse', text: 'At most the margin worse, beyond chance.' },
+      ],
+    },
   ];
 }

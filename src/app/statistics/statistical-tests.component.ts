@@ -5,7 +5,7 @@ import { StatisticalEngine, StatisticalTest } from '../api/models';
 import { StatisticalTestsStore } from '../api/statistics-api.service';
 import { StatusMarkComponent, markLabel } from '../shared/status-mark.component';
 import { ChevronComponent } from '../shared/chevron.component';
-import { ChartGuideComponent, CHART_SECTIONS, chartAnchor } from './chart-guide.component';
+import { CHART_SECTIONS, chartAnchor } from '../charts/chart-sections';
 import { shownValue } from './stats-params';
 import { pct, runsInWaves } from './stats-format';
 
@@ -31,7 +31,7 @@ const APPLIES: Record<StatisticalTest['applies_to'], string> = {
   scored_checks: 'scored checks',
   judge_checks: 'judge checks',
 };
-/** The charts each engine's results are read on - the guide's sections. */
+/** The charts each engine's results are read on - the Charts page's sections. */
 const CHARTS: Record<StatisticalEngine, string[]> = {
   binomial_gate: ['range', 'strip', 'trend', 'grid'],
   judge_stability: ['range', 'strip', 'grid'],
@@ -83,14 +83,14 @@ function floorTag(t: StatisticalTest): string {
 /**
  * The statistical tests a batch can run or two batches can be compared with - the API's catalogue,
  * a table like the check types - each with its question, the verdicts it gives, how many times it
- * needs (with the API's worked examples), its parameters and method; then how to read the charts
- * their results are drawn with. A link with a test's id as its fragment opens that card (the run
- * dialog's "About this test"); `#charts` and `#chart-<section>` land on the guide.
+ * needs (with the API's worked examples), its parameters and method, and links to the Charts page's
+ * sections its results are read on. A link with a test's id as its fragment opens that card (the
+ * compare dialog's "About this test").
  */
 @Component({
   selector: 'assay-statistical-tests',
   standalone: true,
-  imports: [RouterLink, StatusMarkComponent, ChevronComponent, ChartGuideComponent],
+  imports: [RouterLink, StatusMarkComponent, ChevronComponent],
   templateUrl: './statistical-tests.component.html',
   styleUrls: ['../shared/page.css', '../shared/catalog.css', './statistical-tests.component.css'],
 })
@@ -118,7 +118,7 @@ export class StatisticalTestsComponent {
 
   constructor() {
     this.store.load();
-    // A link's fragment, once the catalogue is in: open that test's card, or land on the guide.
+    // A link's fragment, once the catalogue is in: open that test's card.
     effect(() => {
       const f = this.fragment();
       if (!f || !this.store.items().length) return;
@@ -135,12 +135,11 @@ export class StatisticalTestsComponent {
   toggleCalc(id: string) {
     this.calcOpenId.set(this.calcOpenId() === id ? null : id);
   }
-  /** Scroll to a test's card (opening it) or a guide section, once the page has rendered it. */
+  /** Open a test's card and scroll to it, once the page has rendered it. */
   scrollTo(id: string) {
-    if (this.store.byId().has(id)) {
-      this.kind.set(null);
-      this.openId.set(id);
-    }
+    if (!this.store.byId().has(id)) return;
+    this.kind.set(null);
+    this.openId.set(id);
     setTimeout(() => document.getElementById(id)?.scrollIntoView());
   }
 

@@ -1,37 +1,14 @@
-@let s1 = sections[0];
-@let s2 = sections[1];
-@let s3 = sections[2];
-@let s4 = sections[3];
-@let s5 = sections[4];
-@let s6 = sections[5];
-@let s7 = sections[6];
-@let s8 = sections[7];
-@let s9 = sections[8];
-<div class="wrap">
-  <header class="g12 top">
-    <div class="kicker all">Guide</div>
-    <h1 class="h1">How Assay works</h1>
-    <p class="lede">
-      The mental model behind datasets, tests, test sets, test plans and runs - and why the app
-      behaves the way it does.
-    </p>
-    <nav class="ixs all" aria-label="Sections">
-      @for (s of sections; track s.id) {
-        <a class="ix" [routerLink]="[]" [fragment]="s.id" (click)="go(s.id)"
-          ><b>{{ s.no }}</b
-          ><span>{{ s.label }}</span></a
-        >
-      }
-    </nav>
-  </header>
+<div class="g-wrap">
+  <assay-guide-head
+    kicker="Guide"
+    title="How Assay works"
+    lede="The mental model behind datasets, tests, test sets, test plans and runs - and why the app behaves the way it does."
+    [sections]="sections"
+  />
 
-  <section class="sec g12" [id]="s1.id">
-    <div class="rail">
-      <span class="secn">{{ s1.no }}</span>
-      <h2 class="title">{{ s1.label }}</h2>
-    </div>
-    <div class="gcontent">
-      <p class="lead">
+  <assay-guide-section [section]="sections[0]">
+    <div class="g-wide">
+      <p class="g-lead">
         Four concepts, each built on the one before it. Everything else in the app is a view onto
         these.
       </p>
@@ -74,19 +51,15 @@
         </div>
       </div>
     </div>
-  </section>
+  </assay-guide-section>
 
-  <section class="sec g12" [id]="s2.id">
-    <div class="rail">
-      <span class="secn">{{ s2.no }}</span>
-      <h2 class="title">{{ s2.label }}</h2>
-    </div>
-    <div class="gtext">
-      <p class="lead">
+  <assay-guide-section [section]="sections[1]">
+    <div class="g-text">
+      <p class="g-lead">
         The evaluation strategies a test is scored with - assigned per test, not fixed. A test with
         none assigned can't be run.
       </p>
-      <p class="p">
+      <p class="g-p">
         Each type belongs to a category, and some require a reference - an
         <code>expected_output</code> to compare against - and can't score a test that doesn't have
         one. Others take their own configuration instead, or as well: a numeric threshold the score
@@ -96,21 +69,21 @@
         assigned.
       </p>
     </div>
-    <aside class="note">
-      <span class="cap">The catalogue</span>
+    <aside class="g-note">
+      <span class="g-cap">The catalogue</span>
       <p>
         The current list of categories, costs, limitations, scoring engines and what each one is
         best for - each type's card shows which engine scores it, its settings, and, for a
         threshold-scored type, its range and when the score meets it.
       </p>
-      <a class="go" routerLink="/test-types">Test types →</a>
+      <a class="g-go" routerLink="/test-types">Test types →</a>
     </aside>
-    <div class="gcontent">
+    <div class="g-wide">
       <div class="tbl" role="table" aria-label="What a result looks like, by category">
         <div class="tr t3 h" role="row">
-          <span class="cap" role="columnheader">Category</span
-          ><span class="cap" role="columnheader">What a result is</span
-          ><span class="cap" role="columnheader">Met when</span>
+          <span class="g-cap" role="columnheader">Category</span
+          ><span class="g-cap" role="columnheader">What a result is</span
+          ><span class="g-cap" role="columnheader">Met when</span>
         </div>
         <div class="tr t3" role="row">
           <span class="rh" role="cell">Deterministic</span
@@ -132,15 +105,11 @@
         </div>
       </div>
     </div>
-  </section>
+  </assay-guide-section>
 
-  <section class="sec g12" [id]="s3.id">
-    <div class="rail">
-      <span class="secn">{{ s3.no }}</span>
-      <h2 class="title">{{ s3.label }}</h2>
-    </div>
-    <div class="gcontent">
-      <p class="lead wide-lead">
+  <assay-guide-section [section]="sections[2]">
+    <div class="g-wide">
+      <p class="g-lead">
         The one rule the whole app is built around: once a run exists against something, that
         something stops changing. This is what makes a past run's record trustworthy months later.
       </p>
@@ -176,33 +145,29 @@
         </div>
       </div>
     </div>
-    <aside class="note after-body">
-      <span class="cap">Still possible</span>
+    <aside class="g-note g-gap">
+      <span class="g-cap">Still possible</span>
       <p>
         A frozen entry can still be <b>unlinked</b> from its set (it keeps its content and run
         history, it just leaves the set's membership) or <b>deleted</b> along with the whole set -
         but its content itself never changes again.
       </p>
     </aside>
-  </section>
+  </assay-guide-section>
 
-  <section class="sec g12" [id]="s4.id">
-    <div class="rail">
-      <span class="secn">{{ s4.no }}</span>
-      <h2 class="title">{{ s4.label }}</h2>
-    </div>
-    <div class="gcontent">
-      <p class="lead wide-lead">
+  <assay-guide-section [section]="sections[3]">
+    <div class="g-wide">
+      <p class="g-lead">
         Every run is created one of these three ways. That choice decides what the run reads, and
         whether it can be replayed later.
       </p>
       <div class="scroll">
         <div class="tbl" role="table" aria-label="What each way of running reads">
           <div class="tr t4 h" role="row">
-            <span class="cap" role="columnheader">Run</span
-            ><span class="cap" role="columnheader">Standalone</span
-            ><span class="cap" role="columnheader">Live</span
-            ><span class="cap" role="columnheader">Replay</span>
+            <span class="g-cap" role="columnheader">Run</span
+            ><span class="g-cap" role="columnheader">Standalone</span
+            ><span class="g-cap" role="columnheader">Live</span
+            ><span class="g-cap" role="columnheader">Replay</span>
           </div>
           <div class="tr t4" role="row">
             <span class="rh" role="cell">A test</span
@@ -231,15 +196,11 @@
         </div>
       </div>
     </div>
-  </section>
+  </assay-guide-section>
 
-  <section class="sec g12" [id]="s5.id">
-    <div class="rail">
-      <span class="secn">{{ s5.no }}</span>
-      <h2 class="title">{{ s5.label }}</h2>
-    </div>
-    <div class="gcontent">
-      <p class="lead">
+  <assay-guide-section [section]="sections[4]">
+    <div class="g-wide">
+      <p class="g-lead">
         The building blocks above, combined into the three flows you'll actually use.
       </p>
       <div class="wfs">
@@ -338,19 +299,15 @@
         </div>
       </div>
     </div>
-  </section>
+  </assay-guide-section>
 
-  <section class="sec g12" [id]="s6.id">
-    <div class="rail">
-      <span class="secn">{{ s6.no }}</span>
-      <h2 class="title">{{ s6.label }}</h2>
-    </div>
-    <div class="gtext">
-      <p class="lead">
+  <assay-guide-section [section]="sections[5]">
+    <div class="g-text">
+      <p class="g-lead">
         A plan's connection to a test set is a pointer, not a snapshot - and that pointer never
         freezes.
       </p>
-      <p class="p">
+      <p class="g-p">
         You can link or unlink test sets to a plan at any time, even after the plan has been run -
         this is the one relationship in the app that's exempt from the freeze rule above. What still
         freezes, exactly as before, is the content each linked set's entries ran against. So
@@ -358,22 +315,18 @@
         whichever entries it actually used, no matter how the plan's membership changes afterward.
       </p>
     </div>
-    <aside class="note">
-      <span class="cap">Nothing is lost</span>
+    <aside class="g-note">
+      <span class="g-cap">Nothing is lost</span>
       <p>
         Unlinking a test set from a plan - or an entry from a set - never deletes anything or breaks
         a past run's record. It only changes what a <em>future</em> live run will fan out over.
       </p>
     </aside>
-  </section>
+  </assay-guide-section>
 
-  <section class="sec g12" [id]="s7.id">
-    <div class="rail">
-      <span class="secn">{{ s7.no }}</span>
-      <h2 class="title">{{ s7.label }}</h2>
-    </div>
-    <div class="gcontent">
-      <p class="lead wide-lead">
+  <assay-guide-section [section]="sections[6]">
+    <div class="g-wide">
+      <p class="g-lead">
         Every run moves through the same two lifecycle states, then lands on one of four outcomes -
         a summary of how each check did in that run, not just "did it finish." An outcome is what
         happened once: a GenAI application can answer differently each time, so one run is a signal,
@@ -381,7 +334,7 @@
       </p>
       <div class="marks">
         <div class="mgrp">
-          <span class="cap">While it runs</span>
+          <span class="g-cap">While it runs</span>
           <div class="mr">
             <assay-mark of="Pending" size="md" /><b>Pending</b
             ><span>Created, not yet picked up.</span>
@@ -391,7 +344,7 @@
           </div>
         </div>
         <div class="mgrp">
-          <span class="cap">How it ended</span>
+          <span class="g-cap">How it ended</span>
           <div class="mr">
             <assay-mark of="Green" size="md" /><b>Green</b
             ><span>Every check was met in this run.</span>
@@ -415,15 +368,15 @@
         </div>
       </div>
     </div>
-    <div class="gtext">
-      <p class="p spaced">
+    <div class="g-text">
+      <p class="g-p g-gap">
         <b>What was actually scored.</b> Every finished run records the exact answer its checks
         judged - the <em>evaluated output</em>. If the test had a recorded model output, that's what
         was scored. If it had none, the run asked the application under test and scored its live
         reply - which is why two runs of the same test can legitimately differ. The run's detail
         page shows the evaluated output and labels which of the two it was.
       </p>
-      <p class="p">
+      <p class="g-p">
         <b>One check that can't evaluate doesn't sink the run.</b> If a single check can't run - no
         judge chosen for a judge check, say, or a judge that timed out - the run's page shows it as
         "couldn't run", with the reason, and the rest still run. In the run's outcome it counts as
@@ -431,15 +384,11 @@
         being checkable at all.
       </p>
     </div>
-  </section>
+  </assay-guide-section>
 
-  <section class="sec g12" [id]="s8.id">
-    <div class="rail">
-      <span class="secn">{{ s8.no }}</span>
-      <h2 class="title">{{ s8.label }}</h2>
-    </div>
-    <div class="gcontent">
-      <p class="lead wide-lead">
+  <assay-guide-section [section]="sections[7]">
+    <div class="g-wide">
+      <p class="g-lead">
         One run is a signal; a verdict needs many. "Run with statistics" on a test, a test set or a
         test plan runs it many times as one batch, then a statistical test decides each check, 95%
         sure unless you choose otherwise. Each time is a full run, paid for like any other - the
@@ -448,7 +397,7 @@
       </p>
       <div class="marks">
         <div class="mgrp">
-          <span class="cap">A batch, while it runs</span>
+          <span class="g-cap">A batch, while it runs</span>
           <div class="mr">
             <assay-mark of="Pending" size="md" /><b>Pending</b
             ><span>Created, no run started yet.</span>
@@ -467,7 +416,7 @@
           </div>
         </div>
         <div class="mgrp">
-          <span class="cap">Its verdict</span>
+          <span class="g-cap">Its verdict</span>
           <div class="mr">
             <assay-mark of="Passed" size="md" /><b>Passed</b
             ><span>Every check reaches the target.</span>
@@ -491,8 +440,8 @@
         </div>
       </div>
     </div>
-    <div class="gtext">
-      <p class="p spaced">
+    <div class="g-text">
+      <p class="g-p g-gap">
         <b>What a verdict says.</b> "It passes at least 9 times in 10 (95% sure)": the runs leave a
         range the real pass rate can be in. The check is Passed when the whole range is above the
         target, Failed when it's below, Inconclusive when the target is inside it. A run stays
@@ -517,28 +466,25 @@
           <div class="axis"><span>0%</span><span>50%</span><span>100%</span></div>
         </div>
       </figure>
-      <p class="p spaced">
+      <p class="g-p g-gap">
         <b>Did my change help?</b> Run a batch before the change and one after, then "Compare with…"
         on the second: check by check, B is better, worse, or shows no clear difference at this
         size.
       </p>
     </div>
-    <aside class="note after-body">
-      <span class="cap">Statistical tests</span>
+    <aside class="g-note g-gap">
+      <span class="g-cap">Statistical tests</span>
       <p>
         Every statistical test - what it asks, how many times it needs - and how to read the charts.
       </p>
-      <a class="go" routerLink="/statistical-tests">Statistical tests →</a>
+      <a class="g-go" routerLink="/statistical-tests">Statistical tests →</a>
+      <a class="g-go" routerLink="/charts">Charts →</a>
     </aside>
-  </section>
+  </assay-guide-section>
 
-  <section class="sec g12" [id]="s9.id">
-    <div class="rail">
-      <span class="secn">{{ s9.no }}</span>
-      <h2 class="title">{{ s9.label }}</h2>
-    </div>
-    <div class="gcontent">
-      <p class="lead">Short answers to the "why won't it let me do that?" moments.</p>
+  <assay-guide-section [section]="sections[8]">
+    <div class="g-wide">
+      <p class="g-lead">Short answers to the "why won't it let me do that?" moments.</p>
       <div class="faq">
         <div class="qa">
           <span class="qn">09.1</span>
@@ -647,5 +593,5 @@
         </div>
       </div>
     </div>
-  </section>
+  </assay-guide-section>
 </div>

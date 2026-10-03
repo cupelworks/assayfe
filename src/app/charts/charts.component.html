@@ -1,46 +1,25 @@
-<div class="wrap">
-  <div class="g12 head">
-    <div class="kicker">How to read the charts</div>
-    <h2 class="title">Each chart shows a result next to the line it's judged against.</h2>
-    <p class="lede">
-      Drawn here by the same charts a batch's and a comparison's pages use. Each part is numbered;
-      beside each chart, how a verdict reads off it.
-    </p>
-    <div class="key">
-      <i></i
-      ><span
-        >Red is always the line a result is judged against: the target, the check's threshold, or 0
-        for no change.</span
-      >
-    </div>
-    <nav class="toc" aria-label="The charts">
-      @for (s of sections; track s.id) {
-        <a [routerLink]="[]" [fragment]="anchor(s.id)" (click)="go(s.id)"
-          ><b>{{ s.no }}</b
-          ><span>{{ s.label }}</span></a
-        >
-      }
-    </nav>
-  </div>
-</div>
+<div class="g-wrap">
+  <assay-guide-head
+    kicker="Guide"
+    title="How to read the charts"
+    lede="Each chart shows a result next to the line it's judged against. Drawn here by the same charts a batch's and a comparison's pages use: each part is numbered, and beside each chart is how a verdict reads off it."
+    key="Red is always the line a result is judged against: the target, the check's threshold, or 0 for no change."
+    navLabel="The charts"
+    [sections]="sections"
+  />
 
-<section class="wrap sec" [id]="anchor('range')">
-  <div class="g12">
-    <div class="rail">
-      <div class="secno">01</div>
-      <h3>The verdict and its range</h3>
-      <p>
-        One row per check, on a batch's page. Here three checks after 29 times, against a 90%
-        target, 95% sure.
-      </p>
-    </div>
-    <div class="chart">
+  <assay-guide-section [section]="sections[0]">
+    <p class="g-lead">
+      One row per check, on a batch's page. Here three checks after 29 times, against a 90% target,
+      95% sure.
+    </p>
+    <div class="g-text g-gap">
       <div class="scroll">
         <div class="rr">
-          <div class="hd"><span class="cap">Check</span></div>
-          <div class="hd right"><span class="cap">Met</span></div>
+          <div class="hd"><span class="g-cap">Check</span></div>
+          <div class="hd right"><span class="g-cap">Met</span></div>
           <div class="hd">
-            <span class="cap">Met rate · its range</span>
+            <span class="g-cap">Met rate · its range</span>
             <span class="callout" style="left: 80%; top: 0">3</span>
             <div class="scale">
               <span style="left: 0%">50%</span><span class="ax-mid" style="left: 20%">60</span
@@ -50,7 +29,7 @@
               ><span class="ax-end" style="left: 100%">100</span>
             </div>
           </div>
-          <div class="hd"><span class="cap">Verdict</span></div>
+          <div class="hd"><span class="g-cap">Verdict</span></div>
           @for (r of gate; track r.name; let i = $index) {
             <div class="tc">
               <span class="nm">{{ r.name }}</span
@@ -85,7 +64,8 @@
         </div>
       </div>
     </div>
-    <div class="notes">
+    <aside class="g-note g-gap notes">
+      <span class="g-cap">The parts</span>
       <div class="part">
         <span class="n">1</span>
         <p><strong>The point</strong> is the met rate the batch saw: 26 of 28 is 93%.</p>
@@ -102,7 +82,7 @@
         <p><strong>The red line</strong> is the target.</p>
       </div>
       <div class="reading">
-        <span class="cap">Reading it</span>
+        <span class="g-cap">Reading it</span>
         <div class="r">
           <assay-mark of="pass" size="md" /><span>The whole range right of the line: Passed.</span>
         </div>
@@ -120,18 +100,12 @@
         Every row of a batch shares the axis; it starts at 50% unless a range reaches lower. 29 of
         29 is just enough at 90% - 28 of 28 isn't: its range starts at 89.9%.
       </p>
-    </div>
-  </div>
-</section>
+    </aside>
+  </assay-guide-section>
 
-<section class="wrap sec" [id]="anchor('strip')">
-  <div class="g12">
-    <div class="rail">
-      <div class="secno">02</div>
-      <h3>The times, as a strip</h3>
-      <p>Beside each check: one square per time, in order. This check ran 29 times.</p>
-    </div>
-    <div class="chart">
+  <assay-guide-section [section]="sections[1]">
+    <p class="g-lead">Beside each check: one square per time, in order. This check ran 29 times.</p>
+    <div class="g-text g-gap">
       <div class="scroll">
         <div class="strip-box">
           <div class="s29">
@@ -150,19 +124,20 @@
       <div class="tally">
         <div>
           <span class="fig">{{ stripTally.met }}</span
-          ><span class="cap"><i class="sw m"></i>Met</span>
+          ><span class="g-cap"><i class="sw m"></i>Met</span>
         </div>
         <div>
           <span class="fig">{{ stripTally.notMet }}</span
-          ><span class="cap"><i class="sw x"></i>Not met</span>
+          ><span class="g-cap"><i class="sw x"></i>Not met</span>
         </div>
         <div>
           <span class="fig">{{ stripTally.none }}</span
-          ><span class="cap"><i class="sw"></i>No value</span>
+          ><span class="g-cap"><i class="sw"></i>No value</span>
         </div>
       </div>
     </div>
-    <div class="notes">
+    <aside class="g-note g-gap notes">
+      <span class="g-cap">The parts</span>
       <div class="part">
         <span class="n">1</span>
         <p><strong>Green</strong>: met that time.</p>
@@ -183,21 +158,18 @@
       <p class="small">
         On a batch's page each square opens its run, to see what was answered then.
       </p>
-    </div>
-  </div>
-</section>
+    </aside>
+  </assay-guide-section>
 
-<section class="wrap sec" [id]="anchor('grid')">
-  <div class="g12">
-    <div class="rail">
-      <div class="secno">03</div>
-      <h3>The runs grid</h3>
-      <p>At the top of a batch's page: a row per entry (or the one test), a square per time.</p>
+  <assay-guide-section [section]="sections[2]">
+    <p class="g-lead">
+      At the top of a batch's page: a row per entry (or the one test), a square per time.
+    </p>
+    <div class="g-text g-gap">
+      <div class="scroll grid-box"><assay-runs-grid class="wide" [rows]="grid" /></div>
     </div>
-    <div class="chart">
-      <div class="scroll"><assay-runs-grid class="wide" [rows]="grid" /></div>
-    </div>
-    <div class="notes">
+    <aside class="g-note g-gap notes">
+      <span class="g-cap">Reading it</span>
       <p>
         Each square is <strong>one run's own status</strong>: Green when every check was met in it,
         Amber when some were, Red when none was, Not Ran when nothing could be evaluated.
@@ -210,21 +182,16 @@
         A column of Amber across every entry points at one bad time - an outage, say; a row of it,
         at one entry.
       </p>
-    </div>
-  </div>
-</section>
+    </aside>
+  </assay-guide-section>
 
-<section class="wrap sec" [id]="anchor('trend')">
-  <div class="g12">
-    <div class="rail">
-      <div class="secno">04</div>
-      <h3>The met rate over time</h3>
-      <p>Open a check on a batch's page. The same 26 of 28 as above.</p>
-    </div>
-    <div class="chart">
+  <assay-guide-section [section]="sections[3]">
+    <p class="g-lead">Open a check on a batch's page. The same 26 of 28 as above.</p>
+    <div class="g-text g-gap">
       <assay-rate-trend [series]="series" [target]="0.9" targetLabel="90% target" />
     </div>
-    <div class="notes">
+    <aside class="g-note g-gap notes">
+      <span class="g-cap">Reading it</span>
       <p>
         The line is the met rate after each time: one miss early on swings it a lot (time 6: from
         100% to 83%), the same miss late barely moves it (time 21).
@@ -233,35 +200,33 @@
         <strong>An early streak can be luck.</strong> The verdict uses every time, which is why a
         running batch shows no verdict: stopping after a good start could turn luck into a pass.
       </p>
-    </div>
-  </div>
-</section>
+    </aside>
+  </assay-guide-section>
 
-<section class="wrap sec" [id]="anchor('scores')">
-  <div class="g12">
-    <div class="rail">
-      <div class="secno">05</div>
-      <h3>Scores</h3>
-      <p>
-        A check with a score, on its own scale. Here, a check met when its score is 0.3 or more,
-        over 30 times.
-      </p>
+  <assay-guide-section [section]="sections[4]">
+    <p class="g-lead">
+      A check with a score, on its own scale. Here, a check met when its score is 0.3 or more, over
+      30 times.
+    </p>
+    <div class="g-text g-gap">
+      <div class="scroll">
+        <assay-score-plot
+          class="wide"
+          [series]="scoreSeries"
+          [scores]="scores"
+          [interval]="scoreInterval"
+          verdict="pass"
+          [threshold]="0.3"
+          comparison="gte"
+          [min]="0"
+          [max]="1"
+          [numbered]="true"
+          [showRuns]="false"
+        />
+      </div>
     </div>
-    <div class="chart">
-      <assay-score-plot
-        [series]="scoreSeries"
-        [scores]="scores"
-        [interval]="scoreInterval"
-        verdict="pass"
-        [threshold]="0.3"
-        comparison="gte"
-        [min]="0"
-        [max]="1"
-        [numbered]="true"
-        [showRuns]="false"
-      />
-    </div>
-    <div class="notes">
+    <aside class="g-note g-gap notes">
+      <span class="g-cap">The parts</span>
       <div class="part">
         <span class="n">1</span>
         <p>
@@ -287,7 +252,7 @@
         <p><strong>The red line</strong> is the check's own threshold.</p>
       </div>
       <div class="reading">
-        <span class="cap">Reading it</span>
+        <span class="g-cap">Reading it</span>
         <div class="r">
           <assay-mark of="pass" size="md" /><span
             >The whole range on the passing side of the line: Passed.</span
@@ -307,36 +272,32 @@
           >
         </div>
       </div>
-    </div>
-  </div>
-</section>
+    </aside>
+  </assay-guide-section>
 
-<section class="wrap sec" [id]="anchor('compare')">
-  <div class="g12">
-    <div class="rail">
-      <div class="secno">06</div>
-      <h3>A against B</h3>
-      <p>A comparison's page: A is the baseline, B the change. 29 times each, pass rates.</p>
-    </div>
-    <div class="chart">
+  <assay-guide-section [section]="sections[5]">
+    <p class="g-lead">
+      A comparison's page: A is the baseline, B the change. 29 times each, pass rates.
+    </p>
+    <div class="g-text g-gap">
       <div class="scroll">
         <div class="cg">
-          <div class="hd"><span class="cap">Check</span></div>
+          <div class="hd"><span class="g-cap">Check</span></div>
           <div class="hd">
-            <span class="cap"><span class="n">1</span>Pass rate · A → B</span>
+            <span class="g-cap"><span class="n">1</span>Pass rate · A&nbsp;→&nbsp;B</span>
             <div class="scale">
               <span style="left: 0%">0%</span><span class="ax-mid" style="left: 50%">50</span
               ><span class="ax-end" style="left: 100%">100</span>
             </div>
           </div>
           <div class="hd">
-            <span class="cap"><span class="n">2</span>B − A · its range</span>
+            <span class="g-cap"><span class="n">2</span>B&nbsp;−&nbsp;A · its&nbsp;range</span>
             <div class="scale">
               <span style="left: 0%">−60</span><span class="ax-mid red" style="left: 50%">0</span
               ><span class="ax-end" style="left: 100%">+60 points</span>
             </div>
           </div>
-          <div class="hd"><span class="cap">Verdict</span></div>
+          <div class="hd"><span class="g-cap">Verdict</span></div>
           @for (r of compare; track r.name; let i = $index) {
             <div class="tc">
               <span class="nm">{{ r.name }}</span>
@@ -374,7 +335,8 @@
         </div>
       </div>
     </div>
-    <div class="notes">
+    <aside class="g-note g-gap notes">
+      <span class="g-cap">The parts</span>
       <div class="part">
         <span class="n">1</span>
         <p>
@@ -394,7 +356,7 @@
         <p><strong>The line at 0</strong>: no change.</p>
       </div>
       <div class="reading">
-        <span class="cap">Reading it</span>
+        <span class="g-cap">Reading it</span>
         <div class="r">
           <assay-mark of="better" size="md" /><span>The whole range right of 0: Better.</span>
         </div>
@@ -411,51 +373,30 @@
       <p class="small">
         "No worse than A" moves the line to −margin: the whole range right of it is No worse.
       </p>
-    </div>
-  </div>
-</section>
+    </aside>
+  </assay-guide-section>
 
-<section class="wrap sec" [id]="anchor('marks')">
-  <div class="g12">
-    <div class="rail">
-      <div class="secno">07</div>
-      <h3>The marks</h3>
-      <p>
-        One square per word, the same everywhere: in lists, on a batch's page, beside each check.
-      </p>
-    </div>
-    <div class="chart">
+  <assay-guide-section [section]="sections[6]">
+    <p class="g-lead">
+      One square per word, the same everywhere: in lists, on a batch's page, beside each check.
+    </p>
+    <div class="g-text g-gap">
       <div class="marks3">
-        <div>
-          <div class="cap mhead">A batch</div>
-          @for (m of batchMarks; track m.key) {
-            <div class="mrow">
-              <assay-mark [of]="m.key" size="md" /><span class="mw">{{ markLabel(m.key) }}</span
-              ><span></span><span class="small">{{ m.text }}</span>
-            </div>
-          }
-        </div>
-        <div>
-          <div class="cap mhead">A check in a batch</div>
-          @for (m of checkMarks; track m.key) {
-            <div class="mrow">
-              <assay-mark [of]="m.key" size="md" /><span class="mw">{{ markLabel(m.key) }}</span
-              ><span></span><span class="small">{{ m.text }}</span>
-            </div>
-          }
-        </div>
-        <div>
-          <div class="cap mhead">A comparison</div>
-          @for (m of compareMarks; track m.key) {
-            <div class="mrow">
-              <assay-mark [of]="m.key" size="md" /><span class="mw">{{ markLabel(m.key) }}</span
-              ><span></span><span class="small">{{ m.text }}</span>
-            </div>
-          }
-        </div>
+        @for (g of markGroups; track g.title) {
+          <div>
+            <div class="g-cap mhead">{{ g.title }}</div>
+            @for (m of g.marks; track m.key) {
+              <div class="mrow">
+                <assay-mark [of]="m.key" size="md" /><span class="mw">{{ markLabel(m.key) }}</span
+                ><span></span><span class="small">{{ m.text }}</span>
+              </div>
+            }
+          </div>
+        }
       </div>
     </div>
-    <div class="notes">
+    <aside class="g-note g-gap notes">
+      <span class="g-cap">Why these shapes</span>
       <p>
         <strong>Inconclusive is hollow</strong> because it isn't a warning: 28 passes out of 28 is
         Inconclusive at 90% only for lack of runs.
@@ -472,6 +413,6 @@
         A run keeps its own words - Green, Amber, Red. Passed and Failed are said only of a batch
         and its checks.
       </p>
-    </div>
-  </div>
-</section>
+    </aside>
+  </assay-guide-section>
+</div>

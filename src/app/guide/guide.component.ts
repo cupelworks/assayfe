@@ -1,8 +1,11 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { StatusMarkComponent } from '../shared/status-mark.component';
+import { GuideHeadComponent } from '../shared/guide/guide-head.component';
+import { GuideSectionComponent } from '../shared/guide/guide-section.component';
+import { numbered } from '../shared/guide/guide-sections';
 
-/** The Guide's sections, in order: the contents list under the title and each section's id. */
+/** The Guide's sections, in order: the contents under the title; each one's id is `guide-<its number>`. */
 const SECTIONS = [
   'The building blocks',
   'Test types',
@@ -16,26 +19,17 @@ const SECTIONS = [
 ];
 
 /**
- * "How Assay works", on the app's 12-column grid like the chart guide: a numbered list of the
- * sections under the title, then each section - its red number and title in the first three
- * columns, what it says in the rest, a note under a red rule in the last three. Static: no API
- * calls.
+ * "How Assay works", laid out like Charts (`shared/guide`): a numbered list of the sections under
+ * the title, then each section - its red number and title in the first three columns, what it says
+ * in the rest, a note under a red rule in the last three. Static: no API calls.
  */
 @Component({
   selector: 'assay-guide',
   standalone: true,
-  imports: [RouterLink, StatusMarkComponent],
+  imports: [RouterLink, StatusMarkComponent, GuideHeadComponent, GuideSectionComponent],
   templateUrl: './guide.component.html',
-  styleUrls: ['../shared/page.css', './guide.component.css'],
+  styleUrls: ['../shared/page.css', '../shared/guide/guide.css', './guide.component.css'],
 })
 export class GuideComponent {
-  sections = SECTIONS.map((label, i) => {
-    const no = String(i + 1).padStart(2, '0');
-    return { no, label, id: `guide-${no}` };
-  });
-  /** A link in the contents: to its section, also when the fragment is already the route's (the
-   *  router wouldn't scroll again). */
-  go(id: string) {
-    setTimeout(() => document.getElementById(id)?.scrollIntoView());
-  }
+  sections = numbered('guide-', SECTIONS);
 }

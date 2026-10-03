@@ -22,13 +22,13 @@
       <div class="small go">{{ kind() === k.key ? 'Showing only these' : 'Show only →' }}</div>
     </button>
   }
-  <a class="stat cat" [routerLink]="[]" fragment="charts" (click)="scrollTo('charts')">
+  <a class="stat cat" routerLink="/charts">
     <div class="label">How to read the charts</div>
     <div class="small blurb">
       The range, the strip, the runs grid, the met rate over time, scores, A against B - what each
       shows, and how a verdict reads off it.
     </div>
-    <div class="small go">Read below ↓</div>
+    <div class="small go">Open →</div>
   </a>
   <div class="stat legend">
     <div class="label">Reading a card</div>
@@ -123,9 +123,7 @@
                   <dt>Its charts</dt>
                   <dd class="chart-links">
                     @for (c of t.charts; track c.anchor) {
-                      <a [routerLink]="[]" [fragment]="c.anchor" (click)="scrollTo(c.anchor)"
-                        >{{ c.label }} →</a
-                      >
+                      <a routerLink="/charts" [fragment]="c.anchor">{{ c.label }} →</a>
                     }
                   </dd>
                 }
@@ -155,5 +153,3 @@
     </div>
   }
 </section>
-
-<assay-chart-guide id="charts" />

@@ -14,6 +14,7 @@ import { RunDetailComponent } from './runs/run-detail.component';
 import { StandaloneRunDetailComponent } from './runs/standalone-run-detail.component';
 import { TestTypesComponent } from './test-types/test-types.component';
 import { GuideComponent } from './guide/guide.component';
+import { ChartsComponent } from './charts/charts.component';
 import { SettingsComponent } from './settings/settings.component';
 import { BatchComponent } from './statistics/batch.component';
 import { ComparisonComponent } from './statistics/comparison.component';
@@ -58,6 +59,7 @@ export const routes: Routes = [
       { path: 'statistics/comparisons/:id', component: ComparisonComponent },
       { path: 'test-types', component: TestTypesComponent },
       { path: 'statistical-tests', component: StatisticalTestsComponent },
+      { path: 'charts', component: ChartsComponent },
       { path: 'guide', component: GuideComponent },
       { path: 'settings', component: SettingsComponent },
       { path: '**', redirectTo: '' },
