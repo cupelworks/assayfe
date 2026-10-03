@@ -53,10 +53,11 @@ export class TestDetailComponent {
   statusColor = statusColor;
   statusLabel = statusLabel;
   test = signal<TestCase | null>(null);
-  /** The runs started from this page - a statistics batch's are on the batch's page. */
+  /** The runs started from this page - a statistics batch's are on the batch's page. Five a
+   *  page, as the statistics list beside them. */
   runsPage = new Paged<StandaloneRun>(
     (o, l) => this.runsApi.standaloneRunsPage(this.id(), o, l, 'none'),
-    10,
+    5,
     errText,
   );
   runs = this.runsPage.items;

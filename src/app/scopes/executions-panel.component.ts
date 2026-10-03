@@ -105,8 +105,9 @@ export class ExecutionsPanelComponent {
   short = short;
   page = new Paged<ExecutionMetadata>(
     // A statistics batch's executions are on its own page - dozens of them would bury these.
+    // Five a page, as the statistics list beside them.
     (o, l) => this.api.executionsPage(this.kind(), this.id(), o, l, 'none'),
-    10,
+    5,
     errText,
   );
   /** Status breakdown per visible execution (e.g. "3 Green · 1 Pending") - one extra
