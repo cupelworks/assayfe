@@ -9,8 +9,9 @@ export interface GuideCrumb {
 }
 
 /**
- * The top of a guide page, on the 12-column grid: a red kicker, the title - and beside it, at the
- * right, what the page marks `guideHeadAside` (the Overview: whether runs can start) - the lede, an
+ * The top of a guide page, on the 12-column grid: a red kicker, the title - and beside it, flush
+ * right on the margin, what the page marks `guideHeadAside` (the Overview: whether runs can start;
+ * a work page: what to do) - the lede, an
  * optional key (a red line and what red means), then a numbered link per section (the Guide,
  * Charts) and what the page puts under it, across the grid (the catalogues: their key, their index
  * of sections, a filter; the Overview: its summaries). A link scrolls to its section - also when the fragment is already the
@@ -111,13 +112,18 @@ export interface GuideCrumb {
     :host(.one) .lede {
       margin-top: 28px;
     }
-    /* Beside the title, at the right (columns 9-12), standing on its baseline: what the page
-       adds there (the Overview: whether runs can start). */
+    /* Beside the title, standing on its baseline: what the page adds there (the Overview:
+       whether runs can start; a work page: what to do) - flush right on the right margin, the
+       line the header's right group, a list's count and sort, the pager and the footer end on. */
     .aside {
       grid-column: 9 / -1;
       grid-row: 2;
       align-self: end;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
       padding-bottom: 4px;
+      text-align: right;
     }
     .aside:empty {
       display: none;
@@ -189,10 +195,13 @@ export interface GuideCrumb {
       :host(.one) .h1 {
         font-size: 44px;
       }
+      /* On a phone it stacks under the title, flush left as everything else. */
       .aside {
         grid-row: auto;
+        align-items: flex-start;
         margin-top: 20px;
         padding-bottom: 0;
+        text-align: left;
       }
       .ixs {
         grid-template-columns: minmax(0, 1fr);
