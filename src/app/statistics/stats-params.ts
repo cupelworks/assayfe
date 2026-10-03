@@ -90,7 +90,7 @@ export function problems(e: any): Record<string, string> {
         ? 'test'
         : loc[0] === 'parameters' && loc[1]
           ? `param:${loc[1]}`
-          : ['times', 'note', 'batch_a', 'batch_b'].includes(loc[0])
+          : ['times', 'note', 'batch_a', 'batch_b', 'targets', 'leave_out'].includes(loc[0])
             ? loc[0]
             : 'other';
     out[key] = out[key] ? `${out[key]}; ${x.msg}` : x.msg;

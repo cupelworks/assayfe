@@ -41,6 +41,9 @@ const CHARTS: Record<StatisticalEngine, string[]> = {
   mean_scores: ['compare', 'scores'],
   score_ranks: ['compare', 'scores'],
   paired_entries: ['compare'],
+  trial: ['range', 'strip', 'trend', 'grid'],
+  sequential_gate: ['range', 'strip', 'trend', 'grid'],
+  sequential_judge_stability: ['range', 'strip', 'grid'],
 };
 /** The worked examples' columns, by key; shares of 1 read as percentages. */
 const EXAMPLE_COLUMNS: Record<string, string> = {

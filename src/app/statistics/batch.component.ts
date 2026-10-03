@@ -274,6 +274,8 @@ export class BatchComponent {
           statistical_test: b.statistical_test,
           parameters: b.parameters,
           times: b.progress.times_requested,
+          targets: b.targets,
+          leave_out: b.leave_out,
         }
       : null;
   });

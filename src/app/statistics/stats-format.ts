@@ -1,6 +1,8 @@
 import {
   BatchSummary,
   GateRule,
+  Outlook,
+  SizeSuggestion,
   StatisticalEngine,
   StatsScope,
   StatsScopeKind,
@@ -60,6 +62,59 @@ export function often(rate: number): string {
     }
   }
   return `${pct(rate)} of the time`;
+}
+
+/** A target, short: 0.9 → "9 in 10", 0.85 → "17 in 20", 0.875 → "87.5%". */
+export function inTen(rate: number): string {
+  const o = often(rate);
+  return o.endsWith(' of the time') ? pct(rate) : o.replace(' times in ', ' in ');
+}
+
+/** How sure, as how rarely it's wrong: 0.95 → 20, for "wrong at most 1 time in 20". */
+export function oneIn(confidence: number): number {
+  return confidence >= 1 ? 0 : Math.round(1 / (1 - confidence));
+}
+
+/** An API sentence cut to its first clause - its first sentence, less what follows a dash or a
+ *  colon: "Does each check pass almost every time?", "None of these checks gives a score." */
+export function firstClause(text: string): string {
+  const first = text.match(/^.*?[.?!](?=\s|$)/)?.[0] ?? text;
+  return first.split(/ — |: /)[0].replace(/[.?!]$/, '') + (first.endsWith('?') ? '?' : '.');
+}
+
+/** A chance of an answer, as a whole percent: 0.6624 → "66%". Never "100%" unless certain, never
+ *  "0%" unless impossible. */
+export function chanceText(x: number): string {
+  if (x >= 1) return '100%';
+  if (x > 0 && x < 0.005) return 'under 1%';
+  return `${Math.min(99, Math.round(x * 100))}%`;
+}
+
+/** How each check looks against its target, in words - the API's `outlook`. */
+export const OUTLOOK: Record<Outlook, string> = {
+  likely_pass: 'Likely to pass',
+  likely_fail: 'Likely to fail',
+  too_close: 'Too close to call',
+  unknown: 'Unknown',
+  certain: 'Certain',
+};
+
+/** "no failure allowed", "one failure allowed", "11 failures allowed". */
+export const failuresText = (n: number) =>
+  n === 0 ? 'no failure allowed' : n === 1 ? 'one failure allowed' : `${n} failures allowed`;
+
+/** What a suggested size is for, under its number: from its kind, or the API's own caption (less
+ *  its leading "29 times · ") for a kind this doesn't word. */
+export function sizeWhat(s: SizeSuggestion): string {
+  const fails = s.failures_allowed != null ? failuresText(s.failures_allowed) : null;
+  const own: Partial<Record<SizeSuggestion['kind'], string>> = {
+    floor: 'the minimum',
+    reaches_goal: 'reaches the goal',
+    worth_its_cost: 'the suggested size: within 5 points of the best',
+    best_chance: 'the best any size gets',
+  };
+  const what = own[s.kind] ?? s.label.replace(/^\d+ times? · /, '');
+  return own[s.kind] && fails ? `${what} · ${fails}` : what;
 }
 
 /** The question a batch answers, short: the kicker of its page and its line in lists - by its

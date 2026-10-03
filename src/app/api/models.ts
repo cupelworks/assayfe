@@ -448,7 +448,10 @@ export type StatisticalEngine =
   | 'no_worse'
   | 'mean_scores'
   | 'score_ranks'
-  | 'paired_entries';
+  | 'paired_entries'
+  | 'trial'
+  | 'sequential_gate'
+  | 'sequential_judge_stability';
 /** A catalogue row's id (`GET /statistics/tests`): what to send as `statistical_test`. */
 export type StatisticalTestName = string;
 /** `rate` and `level` are shares of 1 (0.9 = 90%); `share` is a share of a check's score range. */
@@ -502,11 +505,24 @@ export interface StatsScopeRef {
   test_set_id?: string;
   test_plan_id?: string;
 }
+/** A check of the scope: its entry (null for a standalone test) and its label in its test. */
+export interface CheckRef {
+  entry_id: string | null;
+  label: string;
+}
+/** A check with its own target instead of the batch's ("Relevance at 8 in 10"). */
+export interface CheckTarget extends CheckRef {
+  target: number;
+}
 export interface EstimateRequest extends StatsScopeRef {
   statistical_test: StatisticalTestName;
   parameters?: Record<string, number>;
   /** Omitted: the default suggestion. */
   times?: number | null;
+  /** Checks with their own target - for a test with a target. */
+  targets?: CheckTarget[];
+  /** Checks the batch leaves out: its runs skip them, no verdict, no judge call. */
+  leave_out?: CheckRef[];
 }
 export interface BatchRequest extends EstimateRequest {
   /** What this batch is of, up to 500 characters. */
@@ -518,17 +534,95 @@ export interface GateRule {
   pass_at_least: number | null;
   fail_at_most: number | null;
 }
+/** How a batch would most likely end: shares of 1. */
+export interface OutcomeSplit {
+  /** Every check passes. */
+  passed: number;
+  /** No check fails and at least one can't be told. */
+  inconclusive: number;
+  /** At least one check fails. */
+  failed: number;
+}
 export interface SizeSuggestion {
   times: number;
-  kind: 'floor' | 'absorbs_not_ran' | 'allows_one_miss' | 'detects_difference' | 'recommended';
+  /** `reaches_goal`: the default when the goal can be reached; `worth_its_cost`: the default when
+   *  it can't - the smallest size within 5 points of the best; `best_chance`: the best any size
+   *  gets. Without history, the older kinds (floor, absorbs_not_ran, allows_one_miss…). */
+  kind:
+    | 'floor'
+    | 'absorbs_not_ran'
+    | 'allows_one_miss'
+    | 'detects_difference'
+    | 'recommended'
+    | 'reaches_goal'
+    | 'worth_its_cost'
+    | 'best_chance'
+    | 'trial';
   label: string;
   default: boolean;
+  /** The chance that every check gets an answer at this size, from the checks' history (averaged
+   *  over what their rates could be); null when a check has no history. */
+  chance?: number | null;
+  /** Failures a check may have at this size and still pass, at the batch's target. */
+  failures_allowed?: number | null;
+  outcome?: OutcomeSplit | null;
+  /** The check most likely to stay undecided at this size. */
+  likely_undecided?: CheckRef | null;
+}
+/** What earlier runs showed for a check. */
+export interface CheckHistory {
+  /** Runs that gave the check a result (the 200 most recent at most). */
+  runs: number;
+  passed: number;
+  rate: number;
+  /** For a scored check: the scores' average and how much they varied. */
+  mean: number | null;
+  sd: number | null;
+}
+export type Outlook = 'likely_pass' | 'likely_fail' | 'too_close' | 'unknown' | 'certain';
+/** A change that makes the batch's answer more likely or cheaper. `check` names the one check it
+ *  changes; a `leave_out` of several checks together has `checks` instead; `less_sure` is the whole
+ *  batch one step less sure. `times`/`chance`: the size the batch would then default to; `best_*`:
+ *  the most it can get. */
+export interface CheaperOption {
+  kind: 'lower_target' | 'leave_out' | 'less_sure';
+  label: string;
+  check: CheckRef | null;
+  checks?: CheckRef[];
+  target: number | null;
+  confidence: number | null;
+  times: number;
+  chance: number;
+  reaches_goal: boolean;
+  best_chance?: number | null;
+  best_times?: number | null;
+  judge_calls_saved_per_time?: number;
+}
+export interface OddsPoint {
+  times: number;
+  /** The chance that every check gets an answer. */
+  chance: number;
 }
 export interface CheckPlan {
   label: string;
   test_type: string;
   applies: boolean;
   reason: string | null;
+  /** For a test with a target: the check's effective target - the batch's, or its own. */
+  target?: number | null;
+  left_out?: boolean;
+  /** Null when no earlier run gave it a result. */
+  history?: CheckHistory | null;
+  outlook?: Outlook | null;
+  /** The outlook in one sentence, shown as it is. */
+  outlook_reason?: string | null;
+  /** A certain check that has run: the result every run gives. */
+  certain_result?: 'pass' | 'fail' | null;
+  /** The fewest times for a `goal` chance of an answer for this check alone; null when no size
+   *  within one batch reaches it, or without history. */
+  size_needed?: number | null;
+  best_chance?: number | null;
+  cheaper?: CheaperOption[];
 }
 export interface EntryPlan {
   entry_id: string | null;
@@ -560,9 +654,34 @@ export interface Estimate {
   entries: EntryPlan[];
   /** `code` is stable (for an icon); `message` is shown as it is. */
   warnings: { code: string; message: string }[];
+  /** The chance that every check gets an answer the default size aims for (0.9). */
+  goal?: number;
+  /** Whether one batch can reach `goal`; null when a check has no history. */
+  goal_reachable?: boolean | null;
+  best_chance?: number | null;
+  best_times?: number | null;
+  /** The odds in one sentence, shown as it is. */
+  odds_summary?: string | null;
+  /** The check that needs the most runs: the one to act on. */
+  driving_check?: CheckRef | null;
+  /** Chart-ready: the chance at the sizes where one more failure becomes allowed, to the limit. */
+  odds?: OddsPoint[];
+  /** Changes to the whole batch: one step less sure, or several checks left out together. */
+  cheaper?: CheaperOption[];
+  /** Offered when a check has never run: a short batch with no verdict, to plan from. */
+  trial?: TrialOffer | null;
 }
+/** A trial to run first: `statistical_test` and `times` to send, what it costs, and why. */
+export interface TrialOffer {
+  statistical_test: StatisticalTestName;
+  times: number;
+  application_calls: number;
+  judge_calls: number;
+  reason: string;
+}
+/** `Done`: a trial that finished - it gives no verdict. */
 export type BatchStatus =
-  'Pending' | 'Running' | 'Passed' | 'Failed' | 'Inconclusive' | 'Incomplete' | 'NotRan';
+  'Pending' | 'Running' | 'Passed' | 'Failed' | 'Inconclusive' | 'Done' | 'Incomplete' | 'NotRan';
 export type RunCounts = Partial<Record<TestStatus, number>>;
 export interface BatchCallCount {
   planned: number;
@@ -724,6 +843,9 @@ export interface BatchSummary {
   /** The arithmetic the row named when the batch was created - kept if the row changes. */
   engine: StatisticalEngine;
   parameters: Record<string, number>;
+  /** As requested - for "Run again…". */
+  targets?: CheckTarget[];
+  leave_out?: CheckRef[];
   note: string | null;
   status: BatchStatus;
   floor: number;

@@ -4,6 +4,7 @@
   [wide]="true"
   [primaryLabel]="primaryLabel()"
   [primaryDisabled]="primaryDisabled()"
+  [quiet]="!!trial()"
   [blockers]="blockers()"
   (primary)="start()"
   (close)="closed.emit()"
@@ -14,153 +15,332 @@
     start it.
   </p>
 
-  <div class="field">
-    <div class="flabel" id="sp-q">What do you want to know?</div>
-    <assay-test-choice
-      [items]="tests()"
-      [choice]="choice()"
-      name="stats-question"
-      labelledBy="sp-q"
-      (picked)="pick($event)"
-    />
-  </div>
-
-  <div class="two">
-    <div class="col">
-      @for (r of mainParams(); track r.p.key) {
-        <assay-param-field [row]="r" (changed)="setParam(r.p.key, $event)" />
-      } @empty {
+  <section class="step">
+    <div class="sh">
+      <span class="sn">1</span><span class="st" id="sp-q">What do you want to know?</span>
+    </div>
+    <div class="asks" role="radiogroup" aria-labelledby="sp-q">
+      @for (q of questions(); track q.t.id) {
+        <label class="ask" [class.on]="q.t.id === choice()" [class.off]="q.off" [title]="q.full">
+          <input
+            type="radio"
+            name="sp-question"
+            [checked]="q.t.id === choice()"
+            [disabled]="q.off"
+            (change)="pick(q.t.id)"
+          />
+          <span class="ask-text"
+            ><span class="ask-name">{{ q.t.name }}</span
+            ><span class="small">{{ q.line }}</span></span
+          >
+        </label>
+      }
+    </div>
+    <div class="two params">
+      @if (!hasTargetParam()) {
         <div class="field">
           <label>Threshold</label>
           <div class="plain-line">Each check’s own, as set on it.</div>
         </div>
       }
+      @for (r of mainParams(); track r.p.key) {
+        <assay-param-field
+          [row]="r"
+          [inline]="true"
+          [hint]="paramHint(r)"
+          (changed)="setParam(r.p.key, $event)"
+        />
+      }
     </div>
-    <div class="col">
-      <div class="field">
-        <label for="sp-times"
-          >How many times <span class="hint">- the whole {{ noun() }}, each time</span></label
+    @if (advParams().length) {
+      <div>
+        <button
+          type="button"
+          class="adv-toggle"
+          [attr.aria-expanded]="adv()"
+          (click)="adv.set(!adv())"
         >
-        <div class="with-unit">
-          <input
-            id="sp-times"
-            class="input num"
-            [class.invalid]="timesIssue() || apiProblems()['times']"
-            assayNumber="numeric"
-            [ngModel]="shownTimes()"
-            (ngModelChange)="setTimes($event)"
-          /><span class="unit">times</span>
-        </div>
-        <div class="chips">
-          @for (s of suggestions(); track s.times) {
-            <button type="button" class="chip-btn" (click)="setTimes(s.times + '')">
-              <span class="tag" [class.tag-accent]="s.on" [class.tag-outline]="!s.on">{{
-                s.label
-              }}</span>
+          Advanced <assay-chevron [open]="adv()" />
+        </button>
+        @if (adv()) {
+          <div class="two adv">
+            @for (r of advParams(); track r.p.key) {
+              <assay-param-field [row]="r" [inline]="true" (changed)="setParam(r.p.key, $event)" />
+            }
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  @if (estimate(); as e) {
+    <div class="est" [class.stale]="estimating()">
+      @if (seen().length) {
+        <section class="step">
+          <div class="sh">
+            <span class="sn">2</span><span class="st">What Assay has seen</span
+            ><span class="ss">Each check against its target</span>
+          </div>
+          <div class="seen" [class.with-target]="showTargets()">
+            <span class="th cap">In</span>
+            <span class="th cap">Check</span>
+            <span class="th cap">Its last runs</span>
+            @if (showTargets()) {
+              <span class="th cap">Target</span>
+            }
+            <span class="th cap">Outlook</span>
+            <span class="th cap right">Alone, for {{ goalText() }}</span>
+            @for (r of seen(); track r.key) {
+              <span class="td in"
+                ><input
+                  type="checkbox"
+                  [checked]="r.included"
+                  [attr.aria-label]="'Include ' + r.label + ' in this batch'"
+                  (change)="include(r.ref, $any($event.target).checked)"
+              /></span>
+              <span class="td" [class.out-of]="!r.included"
+                ><span class="cn">{{ r.label }}</span
+                ><span class="small">{{ r.where }}</span></span
+              >
+              <span class="td num" [class.out-of]="!r.included">{{ r.seen }}</span>
+              @if (showTargets()) {
+                <span class="td" [class.out-of]="!r.included">
+                  @if (r.target != null && r.included) {
+                    <select
+                      class="tgt"
+                      [class.own]="r.own"
+                      [attr.aria-label]="'Target for ' + r.label"
+                      (change)="setTarget(r.ref, $any($event.target).value)"
+                    >
+                      <option value="" [selected]="!r.own">{{ r.batchText }}</option>
+                      @for (o of r.options; track o.value) {
+                        <option [value]="o.value" [selected]="r.own && +o.value === r.target">
+                          {{ o.text }} - its own
+                        </option>
+                      }
+                    </select>
+                  }
+                </span>
+              }
+              <span class="td out" [class.out-of]="!r.included">
+                <span class="ow">
+                  @if (r.mark) {
+                    <assay-mark [of]="r.mark" size="md" />
+                  }
+                  {{ r.word }}</span
+                >
+                <span class="small">{{ r.line }}</span>
+                @if (r.drives) {
+                  <span class="drive">Drives the size</span>
+                }
+              </span>
+              <span class="td size" [class.out-of]="!r.included"
+                ><span class="fig">{{ r.size }}</span
+                ><span class="small">{{ r.sizeCap }}</span></span
+              >
+            }
+          </div>
+          @if (goal(); as g) {
+            @if (!g.out && g.text) {
+              <p class="summary">{{ g.text }}</p>
+            }
+          }
+        </section>
+      }
+
+      @if (goal(); as g) {
+        @if (g.out) {
+          <section class="short" role="status">
+            <div>
+              <span class="fig">{{ g.best }}</span>
+              <span class="small">at best, whatever the size</span>
+            </div>
+            <div>
+              <div class="ot">The goal is out of reach</div>
+              <p>{{ g.text }}</p>
+            </div>
+          </section>
+        }
+      }
+
+      @if (trial(); as tr) {
+        <section class="step">
+          <div class="sh">
+            <span class="sn">3</span><span class="st">Try them first</span
+            ><span class="ss">{{ tr.lead }}</span>
+          </div>
+          <div class="box">
+            <div>
+              <div class="ot">{{ tr.title }}</div>
+              <div class="small">{{ tr.line }}</div>
+            </div>
+            <button
+              type="button"
+              class="btn btn-primary go"
+              [disabled]="starting()"
+              (click)="runTrial()"
+            >
+              Run {{ tr.t.times }} times first
             </button>
+          </div>
+        </section>
+      }
+
+      @if (cheaper().length) {
+        <section class="step">
+          <div class="sh">
+            <span class="sn">{{ nCheaper() }}</span
+            ><span class="st">Get closer to the goal</span
+            ><span class="ss">{{ cheaperLead() }}</span>
+          </div>
+          <div class="cheap">
+            @for (c of cheaper(); track c.title) {
+              <div class="opt" [class.reach]="c.reach">
+                <span class="ot">{{ c.title }}</span>
+                <span class="small">{{ c.line }}</span>
+                <span class="ofig"
+                  ><span class="fig">{{ c.fig }}</span
+                  ><span class="small">{{ c.cap }}</span></span
+                >
+                <span class="note" [class.reach]="c.reach">{{ c.note }}</span>
+                <button type="button" class="btn btn-ghost btn-sm use" (click)="use(c.o)">
+                  Use this
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <section class="step">
+        <div class="sh">
+          <span class="sn">{{ nSizes() }}</span
+          ><span class="st" id="sp-n">How many times</span
+          ><span class="ss"
+            >The whole {{ noun() }}, each time
+            @if (e.goal != null) {
+              · goal: a {{ goalText() }} chance that every check gets an answer
+            }
+          </span>
+        </div>
+        <div class="sizes" [class.no-chart]="!chart()">
+          <div role="radiogroup" aria-labelledby="sp-n">
+            @for (s of sizes(); track s.times; let first = $first) {
+              <label class="so" [class.on]="s.on" [class.first]="first">
+                <input type="radio" name="sp-size" [checked]="s.on" (change)="pickSize(s.times)" />
+                <span class="what"
+                  ><span class="st2">{{ s.times }} times</span
+                  ><span class="small">{{ s.what }}</span></span
+                >
+                <span class="ch"
+                  ><span class="fig">{{ s.chance }}</span
+                  ><span class="small">{{ s.chanceCap }}</span></span
+                >
+                <span class="calls"
+                  ><b>{{ s.app }}</b> application<br /><b>{{ s.judge }}</b> judge calls</span
+                >
+              </label>
+            }
+            <label class="so" [class.on]="otherSize()" for="sp-times">
+              <input type="radio" name="sp-size" [checked]="otherSize()" tabindex="-1" />
+              <span class="what other"
+                ><span class="st2">Another size</span>
+                <span class="with-unit"
+                  ><input
+                    id="sp-times"
+                    class="input num"
+                    [class.invalid]="timesIssue() || apiProblems()['times']"
+                    assayNumber="numeric"
+                    [ngModel]="customShown()"
+                    (ngModelChange)="typeTimes($event)"
+                  /><span class="unit">times</span></span
+                ></span
+              >
+            </label>
+          </div>
+          @if (chart(); as c) {
+            <figure class="chart">
+              <div class="cap">Chance that every check gets an answer</div>
+              <assay-odds-chart
+                [odds]="c.odds"
+                [goal]="c.goal"
+                [picked]="c.picked"
+                [best]="c.best"
+                [appPerTime]="c.app"
+                [judgePerTime]="c.judge"
+              />
+            </figure>
+          } @else if (noChart()) {
+            <div class="nochart">{{ noChart() }}</div>
           }
         </div>
         @if (timesIssue() ?? apiProblems()['times']; as issue) {
           <div class="err">{{ issue }}</div>
-        } @else if (estimate(); as e) {
+        } @else {
           <div class="hint-line">{{ e.floor_explanation }}</div>
         }
-      </div>
-    </div>
-  </div>
-
-  @if (advParams().length) {
-    <div>
-      <button
-        type="button"
-        class="adv-toggle"
-        [attr.aria-expanded]="adv()"
-        (click)="adv.set(!adv())"
-      >
-        Advanced <assay-chevron [open]="adv()" />
-      </button>
-      @if (adv()) {
-        <div class="two adv">
-          @for (r of advParams(); track r.p.key) {
-            <assay-param-field [row]="r" (changed)="setParam(r.p.key, $event)" />
-          }
+        <div class="takes">
+          <div class="label">What it takes</div>
+          {{ takes() }}
         </div>
-      }
-    </div>
-  }
+      </section>
 
-  @if (estimate(); as e) {
-    <div class="takes" [class.stale]="estimating()">
-      <div class="label">What it takes</div>
-      {{ takes() }}
-    </div>
-
-    <div class="tiles" [class.stale]="estimating()">
-      <div class="tile">
-        <span class="label">Runs</span><span class="val num">{{ e.runs_total }}</span>
-        <span class="small"
-          >{{ e.times }} times × {{ e.runs_per_time }} run{{
-            e.runs_per_time === 1 ? '' : 's'
-          }}</span
-        >
-      </div>
-      <div class="tile">
-        <span class="label">Application calls</span
-        ><span class="val num">{{ e.calls.application.total }}</span>
-        <span class="small">{{
-          e.calls.application.per_time
-            ? e.calls.application.per_time + ' each time: one per run without a recorded answer'
-            : 'Recorded answers: the application isn’t called'
-        }}</span>
-      </div>
-      <div class="tile">
-        <span class="label">Judge calls</span><span class="val num">{{ e.calls.judge.total }}</span>
-        <span class="small">{{
-          e.calls.judge.per_time
-            ? e.calls.judge.per_time + ' each time · paid'
-            : 'No judge checks here'
-        }}</span>
-      </div>
-      <div class="tile">
-        <span class="label">Verdicts on</span><span class="val num">{{ e.checks_applicable }}</span>
-        <span class="small"
-          >of {{ e.checks_total }} check{{ e.checks_total === 1 ? '' : 's'
-          }}{{ e.entries.length > 1 ? ' in ' + e.entries.length + ' entries' : '' }}</span
-        >
-      </div>
-    </div>
-    <p class="cost">
-      Each time is a full run of the {{ noun() }}, paid for like any run.
-      @if (skipped().length; as n) {
-        <button
-          type="button"
-          class="adv-toggle inline"
-          [attr.aria-expanded]="showChecks()"
-          (click)="showChecks.set(!showChecks())"
-        >
-          {{ n }} check{{ n === 1 ? '' : 's' }} get no verdict
-          <assay-chevron [open]="showChecks()" />
-        </button>
+      @if (outcome(); as o) {
+        <section class="step">
+          <div class="sh">
+            <span class="sn">{{ nSizes() + 1 }}</span
+            ><span class="st">What will probably happen</span
+            ><span class="ss">At {{ e.times }} times</span>
+          </div>
+          <p class="oc">{{ o.text }}</p>
+          @if (o.bars.length) {
+            <div class="bar" role="img" [attr.aria-label]="o.text">
+              @for (b of o.bars; track b.cls) {
+                <i [class]="b.cls" [style.width.%]="b.w"></i>
+              }
+            </div>
+            <div class="legend">
+              @for (b of o.bars; track b.cls) {
+                <span><i [class]="b.cls"></i>{{ b.label }}</span>
+              }
+            </div>
+          }
+        </section>
       }
-    </p>
-    @if (showChecks()) {
-      <ul class="skipped">
-        @for (c of skipped(); track c.entry + c.label) {
-          <li>
-            <span class="strong">{{ c.label }}</span>
-            @if (e.entries.length > 1) {
-              <span class="muted"> · {{ c.entry }}</span>
-            }
-            @if (c.reason) {
-              <span class="muted"> - {{ c.reason }}</span>
-            }
-          </li>
+
+      <p class="cost">
+        {{ cost() }} · Each time is a full run of the {{ noun() }}, paid for like any run.
+        @if (skipped().length; as n) {
+          <button
+            type="button"
+            class="adv-toggle inline"
+            [attr.aria-expanded]="showChecks()"
+            (click)="showChecks.set(!showChecks())"
+          >
+            {{ n }} more check{{ n === 1 ? '' : 's' }} get no verdict
+            <assay-chevron [open]="showChecks()" />
+          </button>
         }
-      </ul>
-    }
-    @for (w of e.warnings; track w.code) {
-      <div class="warn">{{ w.message }}</div>
-    }
+      </p>
+      @if (showChecks()) {
+        <ul class="skipped">
+          @for (c of skipped(); track c.entry + c.label) {
+            <li>
+              <span class="strong">{{ c.label }}</span>
+              @if (e.entries.length > 1) {
+                <span class="muted"> · {{ c.entry }}</span>
+              }
+              @if (c.reason) {
+                <span class="muted"> - {{ c.reason }}</span>
+              }
+            </li>
+          }
+        </ul>
+      }
+      @for (w of e.warnings; track w.code) {
+        <div class="warn">{{ w.message }}</div>
+      }
+    </div>
   } @else if (estimating()) {
     <div class="small">Estimating…</div>
   }
