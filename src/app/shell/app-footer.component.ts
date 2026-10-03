@@ -78,5 +78,5 @@ import { ArrowOutComponent } from '../shared/arrow-out.component';
 export class AppFooterComponent {
   docs = inject(ASSAY_API_BASE).replace(/\/$/, '') + '/docs';
   /** The API version this front end is built against. */
-  version = '1.1.0';
+  version = '1.2.0';
 }

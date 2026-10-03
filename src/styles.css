@@ -69,6 +69,10 @@
   --shadow-lg: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
 }
 
+/* The scrollbar's room is kept while a dialog locks the page, so nothing shifts sideways. */
+html {
+  scrollbar-gutter: stable;
+}
 body {
   background: var(--color-bg);
   color: var(--color-text);
@@ -409,6 +413,62 @@ textarea.input {
 .seg-opt:has(input:focus-visible) {
   outline: 2px solid var(--color-accent);
   outline-offset: -2px;
+}
+
+/* - line fields - the work's dialogs: a label in small capitals over a line, not a box (as the
+   lists' filter line); a help line under it. */
+.lfield {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.lfield > label,
+.lfield > .lfield-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-neutral-600);
+}
+.lfield input,
+.lfield textarea {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 0 7px;
+  border-bottom: 1px solid var(--color-divider);
+  font-family: inherit;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--color-text);
+  caret-color: var(--color-accent);
+  cursor: text;
+  overflow-wrap: anywhere;
+}
+.lfield textarea {
+  min-height: 52px;
+  font-size: 15px;
+  white-space: pre-wrap;
+  resize: vertical;
+}
+.lfield input:focus,
+.lfield textarea:focus {
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--color-accent);
+}
+.lfield input::placeholder,
+.lfield textarea::placeholder {
+  color: var(--color-neutral-500);
+}
+.lfield .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 14px;
+}
+.lfield-help {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-neutral-600);
 }
 
 /* - cards - */

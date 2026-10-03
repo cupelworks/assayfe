@@ -13,21 +13,6 @@ export const RUNS_ENDED = ['Green', 'Amber', 'Red', 'NotRan'];
 const UNDER_WAY = ['Running', 'Pending'];
 
 /**
- * The newest item of each key, in the list's order - the latest verdict, run or comparison of each
- * test, set or plan, from a list that comes newest first - and how many items had that key.
- */
-export function firstOfEach<T>(items: T[], key: (item: T) => string) {
-  const firsts = new Map<string, { item: T; count: number }>();
-  for (const item of items) {
-    const k = key(item);
-    const seen = firsts.get(k);
-    if (seen) seen.count++;
-    else firsts.set(k, { item, count: 1 });
-  }
-  return [...firsts.values()];
-}
-
-/**
  * A summary's tally of statuses: each status in `ended`, then Running and Pending, counted in
  * `statuses`; a row leads where `link` says, or nowhere yet.
  */

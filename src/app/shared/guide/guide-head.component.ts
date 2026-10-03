@@ -2,6 +2,12 @@ import { Component, afterNextRender, inject, input } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { GuideSection } from './guide-sections';
 
+/** The way back from a page of one thing: its list ("Tests"), in the kicker. */
+export interface GuideCrumb {
+  label: string;
+  link: string;
+}
+
 /**
  * The top of a guide page, on the 12-column grid: a red kicker, the title - and beside it, at the
  * right, what the page marks `guideHeadAside` (the Overview: whether runs can start) - the lede, an
@@ -12,13 +18,25 @@ import { GuideSection } from './guide-sections';
  * names (`/charts#chart-scores`), else at its top: the router neither scrolls to anchors nor back
  * to the top in this app, so a link from far down another page would otherwise land far down this
  * one.
+ *
+ * A page of one thing (a test, a set, a dataset) leads its kicker with the way back to its list
+ * (`crumb`: "Tests / Test"), and its title is a name - `size="one"` sets it smaller, as names run
+ * long.
  */
 @Component({
   selector: 'assay-guide-head',
   standalone: true,
   imports: [RouterLink],
+  host: { '[class.one]': "size() === 'one'" },
   template: `
-    <div class="kicker">{{ kicker() }}</div>
+    @if (crumb(); as c) {
+      <nav class="kicker crumb" aria-label="Where it is">
+        <a [routerLink]="c.link">{{ c.label }}</a
+        ><span aria-hidden="true">/</span>{{ kicker() }}
+      </nav>
+    } @else {
+      <div class="kicker">{{ kicker() }}</div>
+    }
     <h1 class="h1">{{ title() }}</h1>
     <div class="aside"><ng-content select="[guideHeadAside]" /></div>
     <p class="lede">{{ lede() }}</p>
@@ -61,6 +79,37 @@ import { GuideSection } from './guide-sections';
       font-weight: 800;
       letter-spacing: -0.04em;
       line-height: 0.92;
+    }
+    .crumb {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .crumb a {
+      color: var(--color-accent);
+      text-decoration: none;
+    }
+    .crumb a:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .crumb a:focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+    .crumb span {
+      color: var(--color-neutral-600);
+    }
+    /* A name, not a page's title: smaller, balanced over its lines. */
+    :host(.one) .h1 {
+      font-size: 72px;
+      letter-spacing: -0.035em;
+      line-height: 0.95;
+      text-wrap: balance;
+      overflow-wrap: anywhere;
+    }
+    :host(.one) .lede {
+      margin-top: 28px;
     }
     /* Beside the title, at the right (columns 9-12), standing on its baseline: what the page
        adds there (the Overview: whether runs can start). */
@@ -137,6 +186,9 @@ import { GuideSection } from './guide-sections';
       .h1 {
         font-size: 60px;
       }
+      :host(.one) .h1 {
+        font-size: 44px;
+      }
       .aside {
         grid-row: auto;
         margin-top: 20px;
@@ -155,6 +207,10 @@ export class GuideHeadComponent {
   lede = input.required<string>();
   /** What the red line means, beside a red line - for a page whose pictures draw one. */
   key = input<string | null>(null);
+  /** A page of one thing: the way back to its list, before the kicker. */
+  crumb = input<GuideCrumb | null>(null);
+  /** `one`: the title is a thing's name - smaller than a list's. */
+  size = input<'list' | 'one'>('list');
   /** A numbered link per section; none on a page whose index is its own (the catalogues'). */
   sections = input<GuideSection[]>([]);
   navLabel = input('Sections');

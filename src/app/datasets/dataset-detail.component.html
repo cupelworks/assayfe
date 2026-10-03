@@ -1,106 +1,111 @@
-<div class="crumbs">
-  <a routerLink="/datasets">Datasets</a><span>/</span><span class="cur">{{ name() }}</span>
-</div>
-<div class="hero">
-  <div>
-    <div class="kicker">Dataset</div>
-    <h1>{{ name() }}</h1>
-  </div>
-  <div class="hero-actions">
-    <button class="btn btn-ghost" (click)="open('rename')">Rename</button>
-    <button class="btn btn-ghost" (click)="open('delete')">Delete</button>
-    <button class="btn btn-secondary" (click)="open('replace')">Replace rows</button>
-    <button class="btn btn-secondary" (click)="open('addRows')">Add rows</button>
-    <button class="btn btn-primary" (click)="open('toTests')" [disabled]="!total()">
-      Create tests from rows
-    </button>
-  </div>
-</div>
-@if (act.msg(); as m) {
-  <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
-}
-<section class="cell">
-  <div class="row-head">
-    <h2>Rows</h2>
-    <div class="tools">
-      @if (selection.ids().length) {
-        <button class="btn btn-ghost btn-sm" (click)="open('deleteRows')">
-          Delete {{ selection.ids().length }} selected
-        </button>
-      }
-      <span class="small">{{ pageLabel() }}</span>
+<div class="g-wrap">
+  <assay-guide-head
+    size="one"
+    kicker="Dataset"
+    [crumb]="{ label: 'Datasets', link: '/datasets' }"
+    [title]="name()"
+    [lede]="lede()"
+  >
+    <div class="page-aside" guideHeadAside>
+      <button type="button" class="btn btn-primary" [disabled]="!total()" (click)="makeTests(null)">
+        Make tests from rows
+      </button>
+      <assay-quiet-actions [actions]="quiet" (act)="quietAct($event)" />
     </div>
-  </div>
-  <table class="table">
-    <colgroup>
-      <col style="width: 36px" />
-      <col style="width: 90px" />
-      <col />
-      <col />
-      <col />
-      <col style="width: 70px" />
-    </colgroup>
-    <thead>
-      <tr>
-        <th>
-          <input
-            type="checkbox"
-            class="chk"
-            [checked]="selection.allChecked()"
-            (change)="selection.toggleAll()"
-          />
-        </th>
-        <th>Row</th>
-        <th>Prompt</th>
-        <th>Expected output</th>
-        <th>Model output</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (r of rows(); track r.id) {
-        <tr>
-          <td>
-            <input
-              type="checkbox"
-              class="chk"
-              [checked]="selection.ids().includes(r.id)"
-              (change)="selection.toggle(r.id)"
-            />
-          </td>
-          <td class="muted num">{{ short(r.id) }}</td>
-          <td class="top">
-            <div class="clamp">{{ r.row_info.prompt }}</div>
-          </td>
-          <td class="top muted">
-            <div class="clamp">{{ r.row_info.expected_output }}</div>
-          </td>
-          <td class="top muted">
-            <div class="clamp">{{ r.row_info.model_output }}</div>
-          </td>
-          <td><button class="btn btn-ghost btn-sm" (click)="open('editRow', r)">Edit</button></td>
-        </tr>
-      } @empty {
-        <tr>
-          <td colspan="6" class="empty">No rows yet.</td>
-        </tr>
+    <assay-catalog-key [items]="rowKey" />
+  </assay-guide-head>
+
+  <assay-banner [msg]="act.msg()" />
+
+  <assay-guide-section
+    [section]="sections[0]"
+    sub="Tick some to make tests from them, or to delete them"
+  >
+    <assay-smart-filter
+      class="rows-find"
+      caption="Find a row"
+      label="Find a row"
+      placeholder="Words in a prompt or an answer"
+      [shown]="shownText()"
+      [(query)]="filter.query"
+      [(words)]="filter.kept"
+    />
+    <assay-catalog-table
+      class="rows"
+      label="Rows"
+      selectAll="Select every row shown"
+      [columns]="columns"
+      [selection]="selection"
+      [empty]="rowsEmpty()"
+    >
+      @for (r of shown(); track r.row.id) {
+        <assay-catalog-row
+          [name]="r.row.row_info.prompt"
+          [tags]="[{ text: 'Row ' + r.no }]"
+          [expandable]="false"
+          [selection]="selection"
+          [rowId]="r.row.id"
+        >
+          <assay-catalog-cell caption="Expected output"
+            ><span class="clamp">{{ r.row.row_info.expected_output }}</span></assay-catalog-cell
+          >
+          <assay-catalog-cell caption="Model output"
+            ><span class="clamp muted">{{ r.row.row_info.model_output }}</span></assay-catalog-cell
+          >
+          <assay-catalog-cell caption="">
+            <button
+              type="button"
+              class="row-act"
+              [attr.aria-label]="'Edit row ' + r.no"
+              (click)="edit(r)"
+            >
+              Edit
+            </button>
+          </assay-catalog-cell>
+        </assay-catalog-row>
       }
-    </tbody>
-  </table>
-  <assay-pager
-    [total]="total()"
-    [offset]="offset()"
-    [limit]="limit()"
-    (offsetChange)="go($event)"
-    (limitChange)="size($event)"
+    </assay-catalog-table>
+    <assay-pager
+      [total]="total()"
+      [offset]="offset()"
+      [limit]="limit()"
+      (offsetChange)="go($event)"
+      (limitChange)="size($event)"
+    />
+  </assay-guide-section>
+
+  <assay-guide-section [section]="sections[1]" sub="Each from one of its rows">
+    <assay-catalog-table
+      label="Tests made from it"
+      [columns]="madeColumns"
+      empty="Which tests were made from it can't be shown yet."
+    />
+    <p class="note">
+      <b>A test keeps its own copy of the row it was made from.</b> Editing a row here doesn't
+      change its tests. Replacing or deleting the row doesn't either: its tests just stop showing
+      which row they came from.
+    </p>
+    <div class="ends">
+      <a class="go" routerLink="/tests">See them in Tests →</a>
+    </div>
+  </assay-guide-section>
+</div>
+
+@if (selection.ids().length) {
+  <assay-bulk-bar
+    label="With the selected rows"
+    [count]="selection.ids().length"
+    [actions]="bulkActions()"
+    (act)="bulk($event)"
+    (clear)="selection.clear()"
   />
-</section>
+}
 
 @switch (dlg()) {
   @case ('rename') {
     <assay-name-dialog
       [kicker]="name()"
-      title="Rename dataset"
+      title="Rename the dataset"
       submitLabel="Rename"
       [initial]="name()"
       [busy]="act.busy()"
@@ -114,14 +119,37 @@
       [kicker]="name()"
       title="Delete this dataset?"
       [body]="
-        'Removes the dataset and all ' +
+        'It goes for good, with its ' +
         total() +
-        ' rows. Tests created from it keep their content but lose the row link.'
+        (total() === 1 ? ' row' : ' rows') +
+        '. The tests made from it keep their content; they just stop showing which row they came from.'
       "
-      confirmLabel="Delete dataset"
+      confirmLabel="Delete the dataset"
       [busy]="act.busy()"
       [error]="act.err()"
       (confirm)="remove()"
+      (closed)="dlg.set(null)"
+    />
+  }
+  @case ('addRows') {
+    <assay-rows-dialog
+      mode="add"
+      [kicker]="name()"
+      [total]="total()"
+      [busy]="act.busy()"
+      [error]="act.err()"
+      (confirm)="addRows($event)"
+      (closed)="dlg.set(null)"
+    />
+  }
+  @case ('replace') {
+    <assay-rows-dialog
+      mode="replace"
+      [kicker]="name()"
+      [total]="total()"
+      [busy]="act.busy()"
+      [error]="act.err()"
+      (confirm)="replaceRows($event)"
       (closed)="dlg.set(null)"
     />
   }
@@ -130,142 +158,42 @@
       [kicker]="name()"
       [title]="
         'Delete ' +
-        selection.ids().length +
-        ' row' +
-        (selection.ids().length === 1 ? '' : 's') +
+        (selection.ids().length === 1 ? '1 row' : selection.ids().length + ' rows') +
         '?'
       "
-      body="Tests referencing these rows are unlinked (dataset_row_id set to null), not deleted."
-      confirmLabel="Delete rows"
+      body="The rows go for good; the tests made from them keep their content. Deleting can't be undone."
+      confirmLabel="Delete"
       [busy]="act.busy()"
       [error]="act.err()"
       (confirm)="deleteRows()"
       (closed)="dlg.set(null)"
-    />
-  }
-  @case ('addRows') {
-    <assay-dialog
-      [kicker]="name()"
-      title="Add rows"
-      [wide]="true"
-      [primaryLabel]="act.busy() ? 'Adding…' : 'Add ' + (parsedCount() || '') + ' rows'"
-      [primaryDisabled]="!parsedCount() || !!parseError() || act.busy()"
-      [error]="act.err() ?? parseError()"
-      (primary)="addRows()"
-      (close)="dlg.set(null)"
     >
-      <p class="muted" style="margin: 0">
-        Paste JSONL - one object per line with <code>prompt</code>, <code>expected_output</code>,
-        <code>model_output</code>.
-      </p>
-      <textarea
-        class="input mono"
-        rows="12"
-        [ngModel]="jsonl()"
-        (ngModelChange)="jsonl.set($event)"
-        placeholder='{"prompt":"…","expected_output":"…","model_output":"…"}'
-        autofocus
-      ></textarea>
-    </assay-dialog>
-  }
-  @case ('replace') {
-    <assay-dialog
-      [kicker]="name()"
-      title="Replace all rows"
-      [wide]="true"
-      [primaryLabel]="act.busy() ? 'Replacing…' : 'Replace with ' + (parsedCount() || '') + ' rows'"
-      [primaryDisabled]="!parsedCount() || !!parseError() || act.busy()"
-      [danger]="true"
-      [error]="act.err() ?? parseError()"
-      (primary)="replaceRows()"
-      (close)="dlg.set(null)"
-    >
-      <p class="muted" style="margin: 0">
-        <strong>Deletes all {{ total() }} existing rows</strong> and inserts these instead -
-        transactional, all or nothing.
-      </p>
-      <textarea
-        class="input mono"
-        rows="12"
-        [ngModel]="jsonl()"
-        (ngModelChange)="jsonl.set($event)"
-        placeholder='{"prompt":"…","expected_output":"…","model_output":"…"}'
-        autofocus
-      ></textarea>
-    </assay-dialog>
+      <assay-named-list caption="Deleted" [items]="tickedNames()" />
+    </assay-confirm-dialog>
   }
   @case ('editRow') {
-    <assay-dialog
-      [kicker]="name()"
-      [title]="'Edit row ' + short(editing()?.id)"
-      [wide]="true"
-      [primaryLabel]="act.busy() ? 'Saving…' : 'Save row'"
-      [primaryDisabled]="act.busy()"
-      [error]="act.err()"
-      (primary)="saveRow()"
-      (close)="dlg.set(null)"
-    >
-      <div class="field">
-        <label>Prompt</label
-        ><textarea
-          class="input ta"
-          rows="4"
-          [ngModel]="draft().prompt"
-          (ngModelChange)="setDraft('prompt', $event)"
-          autofocus
-        ></textarea>
-      </div>
-      <div class="two">
-        <div class="field">
-          <label>Expected output</label
-          ><textarea
-            class="input ta"
-            rows="4"
-            [ngModel]="draft().expected_output"
-            (ngModelChange)="setDraft('expected_output', $event)"
-          ></textarea>
-        </div>
-        <div class="field">
-          <label>Model output</label
-          ><textarea
-            class="input ta"
-            rows="4"
-            [ngModel]="draft().model_output"
-            (ngModelChange)="setDraft('model_output', $event)"
-          ></textarea>
-        </div>
-      </div>
-    </assay-dialog>
+    @if (editing(); as e) {
+      <assay-edit-row-dialog
+        [kicker]="name()"
+        [row]="e.row"
+        [no]="e.no"
+        [busy]="act.busy()"
+        [error]="act.err()"
+        (confirm)="saveRow($event)"
+        (closed)="dlg.set(null)"
+      />
+    }
   }
   @case ('toTests') {
-    <assay-dialog
+    <assay-make-tests-dialog
       [kicker]="name()"
-      title="Create tests from rows"
-      [wide]="true"
-      [primaryLabel]="act.busy() ? 'Creating…' : 'Create ' + total() + ' tests'"
-      [primaryDisabled]="act.busy() || configIssues().length > 0"
+      [rows]="making()"
+      [allRows]="allRows()"
+      [total]="total()"
+      [busy]="act.busy()"
       [error]="act.err()"
-      [blockers]="configIssues()"
-      (primary)="toTests()"
-      (close)="dlg.set(null)"
-    >
-      <p class="muted" style="margin: 0">
-        Every row becomes a live test (prompt → input, expected → expected output, model output
-        copied). All share the checks you set here; leave empty to assign them later.
-      </p>
-      <div class="field">
-        <assay-checks-table
-          [(checks)]="batchChecks"
-          [hasReference]="null"
-          hint="every test created from the rows gets these"
-        />
-        @if (referenceTypesInBatch().length) {
-          <div class="note-info">
-            Needs a non-empty expected output: {{ referenceTypesInBatch().join(', ') }} - rows
-            missing one will fail to convert (checked and rejected per row on create).
-          </div>
-        }
-      </div>
-    </assay-dialog>
+      (confirm)="toTests($event)"
+      (closed)="dlg.set(null)"
+    />
   }
 }

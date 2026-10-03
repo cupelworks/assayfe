@@ -8,6 +8,8 @@ import {
   StatsScopeKind,
   StatsScopeRef,
 } from '../api/models';
+import { isInFlight } from '../shared/format';
+import { markLabel } from '../shared/status-mark.component';
 
 /** 0.9019 → "90.2%", 1 → "100%": a share of 1 as a percentage, to one decimal when it has one. */
 export function pct(x: number | null | undefined): string {
@@ -186,6 +188,20 @@ export function batchProgress(p: BatchSummary['progress']) {
   return {
     donePct: p.times_requested ? Math.round((p.times_done / p.times_requested) * 100) : 0,
     line: `${p.times_done} of ${p.waves ? 'up to ' : ''}${p.times_requested} times done · ${p.runs_done} of ${p.runs_total} runs`,
+  };
+}
+
+/**
+ * A batch's verdict as a list's row says it: its word ("Failed") and the rest of the API's
+ * sentence ("the check fell short of the goal.") - or, while it runs, how far it got.
+ */
+export function verdictLine(b: BatchSummary) {
+  const label = markLabel(b.status);
+  const sentence = (isInFlight(b.status) ? batchProgress(b.progress).line : b.summary) ?? '';
+  // The API's sentence leads with the verdict ("Failed: …"), which the row shows in bold.
+  return {
+    label,
+    text: sentence.startsWith(label + ': ') ? sentence.slice(label.length + 2) : sentence,
   };
 }
 

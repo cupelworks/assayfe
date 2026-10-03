@@ -1,4 +1,4 @@
-// Mirrors components.schemas in Assay's OpenAPI (v1.1.0).
+// Mirrors components.schemas in Assay's OpenAPI (v1.2.0).
 export interface Ref {
   id: string;
 }

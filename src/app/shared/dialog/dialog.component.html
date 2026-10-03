@@ -1,10 +1,18 @@
-<div class="dialog-backdrop wrap" (click)="close.emit()" (keydown.escape)="close.emit()">
+<div
+  class="dialog-backdrop wrap"
+  (click)="close.emit()"
+  (keydown.escape)="close.emit()"
+  (wheel)="stopOutside($event)"
+  (touchmove)="stopOutside($event)"
+>
   <div
     class="dialog box"
     [class.wide]="wide()"
+    [class.danger]="danger()"
     (click)="$event.stopPropagation()"
     role="dialog"
     aria-modal="true"
+    [attr.aria-label]="title()"
   >
     <div class="head">
       @if (kicker()) {
@@ -17,21 +25,18 @@
       <div class="err">{{ e }}</div>
     }
     <div class="dialog-actions foot">
+      <button class="btn btn-primary" (click)="primary.emit()" [disabled]="primaryDisabled()">
+        {{ primaryLabel() }}
+      </button>
+      <button type="button" class="cancel" (click)="close.emit()">Cancel</button>
       @if (blockers().length; as n) {
         <div class="blockers" role="status">
           <span class="strong">{{ n }} {{ n === 1 ? 'thing' : 'things' }} to fix:</span>
           {{ blockersText() }}
         </div>
+      } @else {
+        <span class="esc" aria-hidden="true">Esc</span>
       }
-      <button
-        class="btn btn-primary"
-        [class.danger]="danger()"
-        (click)="primary.emit()"
-        [disabled]="primaryDisabled()"
-      >
-        {{ primaryLabel() }}
-      </button>
-      <button class="btn btn-ghost" (click)="close.emit()">Cancel</button>
     </div>
   </div>
 </div>

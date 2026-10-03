@@ -1,11 +1,15 @@
 import { Component, input, model } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { StatusMarkComponent } from '../status-mark.component';
 
 /** A tile of a catalogue's index: one of its sections - numbered as the section is - how many it
- *  holds, and what they are. */
+ *  holds, and what they are. A work list's tile is a status instead (the latest verdict): its mark
+ *  where the number goes, or a dash (`dash`) for "Not yet". */
 export interface CatalogIndexItem {
   key: string;
-  no: string;
+  no?: string;
+  mark?: string;
+  dash?: boolean;
   label: string;
   count: number;
   blurb: string;
@@ -19,31 +23,46 @@ export interface CatalogIndexLink {
 }
 
 /**
- * A catalogue's index, under its title: a tile per section, three across, each a rule, its number
- * and label, a big count, its blurb and "Show only →". A tile shows only its section (`selected`,
- * two-way); clicked again, everything again. The selected tile's rule turns thick and red. An
- * optional last tile leads to another page.
+ * A catalogue's index, under its title: a tile per section, three across (or `across`), each a
+ * rule, its number (or mark) and label, a big count, its blurb and "Show only →". A tile shows
+ * only its section (`selected`, two-way); clicked again, everything again. The selected tile's
+ * rule turns thick and red. A tile with none can't be chosen ("None to show"). An optional last
+ * tile leads to another page; an optional `note` under the tiles says where the counts come from.
  */
 @Component({
   selector: 'assay-catalog-index',
   standalone: true,
-  imports: [RouterLink],
-  host: { role: 'navigation', '[attr.aria-label]': 'label()' },
+  imports: [RouterLink, StatusMarkComponent],
+  host: {
+    role: 'navigation',
+    '[attr.aria-label]': 'label()',
+    '[style.--across]': 'across()',
+    '[style.--phone-across]': 'across() >= 4 ? 2 : 1',
+  },
   template: `
     @for (i of items(); track i.key) {
       @let on = selected() === i.key;
+      @let none = i.count === 0;
       <button
         type="button"
         class="tile"
         [class.on]="on"
+        [class.none]="none"
         [attr.aria-pressed]="on"
+        [disabled]="none"
         (click)="selected.set(on ? null : i.key)"
       >
-        <span class="no">{{ i.no }}</span>
+        @if (i.mark) {
+          <span class="no mc"><assay-mark [of]="i.mark" size="md" /></span>
+        } @else if (i.dash) {
+          <span class="no mc"><i class="dash"></i></span>
+        } @else {
+          <span class="no">{{ i.no }}</span>
+        }
         <span class="lb">{{ i.label }}</span>
         <span class="ct">{{ i.count }}</span>
         <span class="bl">{{ i.blurb }}</span>
-        <span class="ac">{{ on ? selectedText() : 'Show only →' }}</span>
+        <span class="ac">{{ none ? 'None to show' : on ? selectedText() : 'Show only →' }}</span>
       </button>
     }
     @if (link(); as l) {
@@ -56,11 +75,14 @@ export interface CatalogIndexLink {
         <span class="ac">{{ l.text }}</span>
       </a>
     }
+    @if (note(); as n) {
+      <p class="note">{{ n }}</p>
+    }
   `,
   styles: `
     :host {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(var(--across, 3), minmax(0, 1fr));
       column-gap: 24px;
       margin-top: 64px;
     }
@@ -92,9 +114,22 @@ export interface CatalogIndexLink {
       height: 14px;
       margin-top: 4px;
     }
+    /* A status tile's mark (or dash), level with its label. */
+    .mc {
+      display: flex;
+      align-items: center;
+      height: 23px;
+    }
+    .dash {
+      display: block;
+      width: 10px;
+      height: 2px;
+      background: var(--color-neutral-500);
+    }
     .lb {
       font-size: 15px;
       font-weight: 600;
+      line-height: 23px;
     }
     .ct {
       margin-top: 8px;
@@ -127,13 +162,30 @@ export interface CatalogIndexLink {
     .tile.on .ac {
       color: var(--color-text);
     }
+    .tile.none {
+      cursor: default;
+    }
+    .tile.none .ct,
+    .tile.none .ac {
+      color: var(--color-neutral-500);
+    }
+    .tile.none:hover .lb {
+      color: var(--color-text);
+    }
+    .note {
+      grid-column: 1 / -1;
+      margin: 4px 0 0;
+      font-size: 12px;
+      color: var(--color-neutral-600);
+    }
     .tile:focus-visible {
       outline: 2px solid var(--color-accent);
       outline-offset: 4px;
     }
     @media (max-width: 960px) {
       :host {
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: repeat(var(--phone-across, 1), minmax(0, 1fr));
+        row-gap: 16px;
         margin-top: 48px;
       }
       .ct {
@@ -149,4 +201,9 @@ export class CatalogIndexComponent {
   selectedText = input('Showing only these');
   link = input<CatalogIndexLink | null>(null);
   label = input('Sections');
+  /** Tiles a row: 3 (a catalogue's sections), 4 (a work list's verdicts). On a phone, one a row -
+   *  two for four. */
+  across = input(3);
+  /** Under the tiles, small: where the counts come from, when they're a sample. */
+  note = input<string | null>(null);
 }

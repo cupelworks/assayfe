@@ -1,124 +1,166 @@
-<div class="hero">
-  <div>
-    <div class="kicker">Work</div>
-    <h1>Tests</h1>
-  </div>
-  <div class="hero-actions">
-    <button class="btn btn-primary" (click)="act.err.set(null); dlg.set('new')">New test</button>
-  </div>
-</div>
-@if (act.msg(); as m) {
-  <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
-}
-<section class="cell">
-  <div class="toolbar">
-    <input
-      class="input"
-      placeholder="Filter…"
-      [ngModel]="filter.query()"
-      (ngModelChange)="filter.query.set($event)"
+<div class="g-wrap">
+  <assay-guide-head
+    kicker="Work"
+    title="Tests"
+    lede="A question for your application, what a good answer says, and the checks that decide it."
+  >
+    <div class="page-aside" guideHeadAside>
+      <button type="button" class="btn btn-primary" (click)="open('new')">New test</button>
+      <a class="go" routerLink="/datasets">Make tests from a dataset →</a>
+    </div>
+    <assay-catalog-index
+      label="Show only one latest verdict"
+      selectedText="Showing only these"
+      [items]="tiles()"
+      [across]="4"
+      [note]="tilesNote()"
+      [selected]="tile()"
+      (selectedChange)="pickTile($event)"
     />
-    @if (selection.ids().length) {
-      <button class="btn btn-ghost btn-sm" (click)="act.err.set(null); dlg.set('delete')">
-        Delete {{ selection.ids().length }} selected
-      </button>
-    }
-    <span class="small">{{
-      filter.query() ? rows().length + ' shown on this page' : page.total() + ' total'
-    }}</span>
-  </div>
-  <table class="table">
-    <colgroup>
-      <col style="width: 36px" />
-      <col style="width: 26%" />
-      <col />
-      <col style="width: 26%" />
-    </colgroup>
-    <thead>
-      <tr>
-        <th>
-          <input
-            type="checkbox"
-            class="chk"
-            [checked]="selection.allChecked()"
-            (change)="selection.toggleAll()"
-          />
-        </th>
-        <th>Test</th>
-        <th>Input</th>
-        <th>Test types</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (t of rows(); track t.id) {
-        <tr>
-          <td>
-            <input
-              type="checkbox"
-              class="chk"
-              [checked]="selection.ids().includes(t.id)"
-              (change)="selection.toggle(t.id)"
-            />
-          </td>
-          <td class="strong">
-            <a class="plain arrow" [routerLink]="['/tests', t.id]">{{
-              displayName(t.name, t.id)
-            }}</a>
-          </td>
-          <td class="muted ellip" style="width: auto">{{ t.input }}</td>
-          <td>
-            @if (t.test_type_assignments?.length) {
-              <assay-type-tags [assignments]="t.test_type_assignments" />
-            } @else {
-              <span class="small"
-                >none - <a class="plain" routerLink="/test-types">pick a type</a></span
-              >
+  </assay-guide-head>
+
+  <assay-banner [msg]="act.msg()" />
+
+  <assay-smart-filter
+    label="Filter the tests"
+    placeholder="Names, inputs, checks - or type verdict, run, check…"
+    itemsLabel="Tests"
+    [facets]="facets()"
+    [items]="items()"
+    [shown]="shownText()"
+    [sortOptions]="sortOptions"
+    [(query)]="filter.query"
+    [(words)]="filter.kept"
+    [(chosen)]="choice"
+    [(sort)]="sort"
+    (opened)="facetOpened($event)"
+  />
+
+  <assay-catalog-table
+    class="list"
+    label="Tests"
+    selectAll="Select every test shown"
+    [columns]="columns"
+    [selection]="selection"
+    [empty]="emptyText()"
+  >
+    @for (t of rows(); track t.id) {
+      @let v = latest.verdicts()[t.id];
+      @let r = latest.runs()[t.id];
+      <assay-catalog-row
+        [name]="displayName(t.name, t.id)"
+        [link]="['/tests', t.id]"
+        [tags]="t.model_output != null ? recordedTag : []"
+        [expandable]="false"
+        [selection]="selection"
+        [rowId]="t.id"
+      >
+        <assay-catalog-cell caption="Input"
+          ><span class="clamp">{{ t.input }}</span></assay-catalog-cell
+        >
+        <assay-catalog-cell caption="Checks">
+          <span class="chk-tags">
+            @for (c of checkTags(t); track c.text) {
+              <assay-catalog-tag [tag]="c" />
+            } @empty {
+              <span class="muted">None yet</span>
             }
-          </td>
-        </tr>
-      } @empty {
-        @if (!page.loading()) {
-          <tr>
-            <td colspan="4" class="empty">
-              @if (filter.query()) {
-                <assay-filter-miss noun="test" [filter]="filter" [page]="page" />
-              } @else {
-                No tests yet. Create one, or generate them from a dataset.
-              }
-            </td>
-          </tr>
-        }
-      }
-    </tbody>
-  </table>
+          </span>
+        </assay-catalog-cell>
+        <assay-catalog-cell caption="Latest verdict">
+          <assay-latest-status
+            [loading]="v === undefined"
+            [of]="v?.status ?? null"
+            [at]="v?.created_at ?? null"
+            none="Not yet"
+            noneWhen="never run with statistics"
+          />
+        </assay-catalog-cell>
+        <assay-catalog-cell caption="Latest run">
+          <assay-latest-status
+            [loading]="r === undefined"
+            [of]="r?.status ?? null"
+            [at]="r?.at ?? null"
+            none="Never run"
+          />
+        </assay-catalog-cell>
+      </assay-catalog-row>
+    }
+  </assay-catalog-table>
   <assay-pager
     [total]="page.total()"
     [offset]="page.offset()"
     [limit]="page.limit()"
-    (offsetChange)="page.go($event)"
-    (limitChange)="page.size($event)"
+    (offsetChange)="go($event)"
+    (limitChange)="size($event)"
   />
-</section>
-@if (dlg() === 'new') {
-  <assay-test-form-dialog
-    kicker="Tests"
-    [busy]="act.busy()"
-    [error]="act.err()"
-    (confirm)="create($event)"
-    (closed)="dlg.set(null)"
+</div>
+
+@if (selection.ids().length) {
+  <assay-bulk-bar
+    label="With the selected tests"
+    [count]="selection.ids().length"
+    [actions]="bulkActions"
+    (act)="bulk($event)"
+    (clear)="selection.clear()"
   />
 }
-@if (dlg() === 'delete') {
-  <assay-confirm-dialog
-    kicker="Tests"
-    [title]="
-      'Delete ' + selection.ids().length + ' test' + (selection.ids().length === 1 ? '' : 's') + '?'
-    "
-    body="Blocked (409) if any test is still in a test set or has runs - unlink or clean those up first."
-    confirmLabel="Delete tests"
-    [busy]="act.busy()"
-    [error]="act.err()"
-    (confirm)="remove()"
-    (closed)="dlg.set(null)"
-  />
+
+@switch (dlg()) {
+  @case ('new') {
+    <assay-test-form-dialog
+      kicker="Tests"
+      [busy]="act.busy()"
+      [error]="act.err()"
+      (confirm)="create($event)"
+      (closed)="dlg.set(null)"
+    />
+  }
+  @case ('add') {
+    <assay-pick-dialog
+      kicker="Tests"
+      [title]="
+        'Add ' +
+        selection.ids().length +
+        (selection.ids().length === 1 ? ' test' : ' tests') +
+        ' to a test set'
+      "
+      noun="test sets"
+      placeholder="Names…"
+      emptyText="No test sets yet."
+      [rows]="setRows()"
+      [submitLabel]="addLabel"
+      [busy]="act.busy()"
+      [error]="act.err()"
+      (confirm)="addToSets($event)"
+      (closed)="dlg.set(null)"
+    />
+  }
+  @case ('delete') {
+    @let d = deletable();
+    <assay-confirm-dialog
+      kicker="Tests"
+      [title]="deleteTitle()"
+      [body]="deleteBody()"
+      [confirmLabel]="deleteLabel()"
+      [blocked]="!d?.go?.length"
+      [busy]="act.busy()"
+      [error]="act.err()"
+      (confirm)="remove()"
+      (closed)="dlg.set(null)"
+    >
+      @if (d) {
+        @if (d.go.length) {
+          <assay-named-list caption="Deleted" [items]="d.go" />
+        }
+        @if (d.kept.length) {
+          <assay-named-list
+            caption="Kept - their runs or copies need them"
+            [items]="d.kept"
+            [kept]="true"
+          />
+        }
+      }
+    </assay-confirm-dialog>
+  }
 }

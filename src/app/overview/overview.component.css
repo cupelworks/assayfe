@@ -11,38 +11,9 @@ b {
   font-weight: 700;
   color: var(--color-text);
 }
-.prog {
-  max-width: 280px;
-  margin-top: 10px;
-}
 /* A comparison's sentence, over two of the table's columns. */
 .wide {
   grid-column: span 2;
-}
-/* Run again ↗, under a Failed or Inconclusive verdict: red, as a link on to another page, in a new
-   tab (the global .new-tab: the arrow leans out, "Opens in a new tab" under it). */
-.again {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: fit-content;
-  min-height: 32px;
-  margin-top: 2px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-accent);
-  text-decoration: none;
-}
-.again:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-}
-.num {
-  color: var(--color-text);
-  font-variant-numeric: tabular-nums;
-}
-.when {
-  color: var(--color-neutral-600);
 }
 @media (max-width: 960px) {
   .sums {

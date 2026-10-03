@@ -1,0 +1,265 @@
+/* The work's pages (Overview, Tests, Test sets, Test plans, Datasets and the page of each): what
+   they project into the Guide's head and sections - each page includes it, with guide.css. */
+
+/* Beside the title: the one thing to do in red, a link on in red words, the quiet rest. */
+.page-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.page-aside .btn {
+  min-height: 44px;
+  padding: 0 20px;
+}
+/* A link on to another page, or a thing to do, in red words: "Run with statistics ↗",
+   "Open the batch →", "Add tests…". */
+.go {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: inherit;
+  color: var(--color-accent);
+  text-decoration: none;
+  cursor: pointer;
+}
+.go:hover:not(:disabled) {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.go:disabled {
+  color: var(--color-neutral-500);
+  cursor: default;
+}
+.go:focus-visible,
+.again:focus-visible,
+.row-act:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+/* A pager under a section's table: across its body. */
+assay-pager {
+  grid-column: 1 / -1;
+}
+/* In a dialog: a caption over what it acts on, and a quoted answer. */
+.dcap {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-neutral-600);
+}
+.quote {
+  margin: 0;
+  padding: 2px 0 2px 14px;
+  border-left: 2px solid color-mix(in srgb, var(--color-text) 25%, transparent);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-neutral-900);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+/* A section's own find line (a dataset's rows): across its body, over its table. */
+assay-smart-filter.rows-find {
+  grid-column: 1 / -1;
+  margin-bottom: 24px;
+  padding-top: 0;
+  border-top: 0;
+}
+/* A work list's table, under its filter. */
+assay-catalog-table.list {
+  margin-top: 32px;
+}
+/* Under a table: its links on, in a row. */
+.ends {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 28px;
+  margin-top: 12px;
+}
+/* How it stands, under the top: its latest verdict and its latest run, side by side. */
+.now {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 24px;
+  margin-top: 56px;
+}
+/* What a thing is: a caption in small capitals beside each value. */
+.defs {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 7fr);
+  column-gap: 24px;
+  margin: 0;
+}
+.defs dt {
+  padding: 16px 0 14px;
+  border-top: 1px solid color-mix(in srgb, var(--color-text) 25%, transparent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-neutral-600);
+}
+.defs dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 20px;
+  margin: 0;
+  padding: 12px 0 14px;
+  border-top: 1px solid color-mix(in srgb, var(--color-text) 25%, transparent);
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.defs dd.none {
+  font-size: 15px;
+  color: var(--color-neutral-600);
+}
+.defs dd .val {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+/* A table's title inside a section: "Checks". */
+.h3 {
+  grid-column: 1 / -1;
+  margin: 40px 0 14px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+/* A note under a red rule: what a thing does that isn't obvious. */
+.note {
+  grid-column: 1 / 7;
+  max-width: 640px;
+  margin: 20px 0 0;
+  padding-top: 12px;
+  border-top: 2px solid var(--color-accent);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--color-neutral-900);
+  text-wrap: pretty;
+}
+.note b {
+  font-weight: 700;
+  color: var(--color-text);
+}
+/* How a list's things get in, at its foot. */
+.note.hint {
+  margin: 40px 0;
+}
+/* With none yet: said once, with the way to get one. */
+.none-yet {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 18px 0 20px;
+  border-top: 1px solid var(--color-text);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text) 25%, transparent);
+}
+.none-yet b {
+  display: block;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.none-yet span {
+  display: block;
+  max-width: 620px;
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--color-neutral-800);
+}
+/* A row's own quiet action, at its right: "Edit", "Remove", "Replay". */
+.row-act {
+  all: unset;
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-neutral-800);
+  cursor: pointer;
+}
+.row-act:hover:not(:disabled) {
+  color: var(--color-accent);
+}
+.row-act:disabled {
+  color: var(--color-neutral-500);
+  cursor: default;
+}
+/* A cell's lead in ink: a verdict's first word, a comparison's question. */
+.lead {
+  font-weight: 700;
+  color: var(--color-text);
+}
+.num {
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+.when,
+.muted {
+  color: var(--color-neutral-600);
+}
+.clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.chk-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+/* Run again ↗, under a Failed or Inconclusive verdict: red, as a link on to another page, in a new
+   tab (the global .new-tab: the arrow leans out, "Opens in a new tab" under it). */
+.again {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  min-height: 32px;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.prog {
+  max-width: 280px;
+  margin-top: 10px;
+}
+@media (max-width: 960px) {
+  .now {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 32px;
+    margin-top: 40px;
+  }
+  .defs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .defs dd {
+    padding-top: 0;
+    border-top: 0;
+  }
+  .note {
+    grid-column: 1 / -1;
+  }
+}

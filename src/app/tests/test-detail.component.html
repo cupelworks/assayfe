@@ -1,141 +1,218 @@
-<div class="crumbs">
-  <a routerLink="/tests">Tests</a><span>/</span><span class="cur">{{ name() }}</span>
-</div>
-<div class="hero">
-  <div>
-    <div class="kicker">Test</div>
-    <h1>{{ name() }}</h1>
-  </div>
-  <div class="hero-actions">
-    <button class="btn btn-ghost" (click)="act.err.set(null); dlg.set('delete')">Delete</button>
-    <button class="btn btn-secondary" (click)="act.err.set(null); dlg.set('edit')">Edit</button>
-    @if (canRun()) {
-      <a
-        class="btn btn-secondary new-tab"
-        routerLink="run-with-statistics"
-        target="_blank"
-        rel="noopener"
-        aria-label="Run with statistics, opens in a new tab"
-        >Run with statistics<assay-arrow-out
-      /></a>
-    } @else {
-      <button class="btn btn-secondary" disabled title="Assign at least one test type first">
-        Run with statistics<assay-arrow-out />
+<div class="g-wrap">
+  <assay-guide-head
+    size="one"
+    kicker="Test"
+    [crumb]="{ label: 'Tests', link: '/tests' }"
+    [title]="name()"
+    [lede]="lede()"
+  >
+    <div class="page-aside" guideHeadAside>
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="run()"
+        [disabled]="act.busy() || !canRun()"
+      >
+        {{ act.busy() ? 'Starting…' : 'Run once' }}
       </button>
-    }
-    <button
-      class="btn btn-primary"
-      (click)="run()"
-      [disabled]="act.busy() || !canRun()"
-      [title]="canRun() ? '' : 'Assign at least one test type first'"
-    >
-      {{ act.busy() ? 'Enqueuing…' : 'Run standalone' }}
-    </button>
-  </div>
-</div>
-@if (act.msg(); as m) {
-  <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
-}
-@if (test(); as t) {
-  <section class="split">
-    <div class="cell cell-r" style="display: flex; flex-direction: column; gap: 20px">
-      @for (f of fields(); track f.label) {
-        <div class="field-ro">
-          <div class="label">
-            {{ f.label }}
-            @if (f.clearable) {
-              <button
-                type="button"
-                class="btn btn-ghost btn-sm"
-                [disabled]="act.busy()"
-                (click)="act.err.set(null); dlg.set('clear-output')"
-              >
-                Clear
-              </button>
-            }
-          </div>
-          <div class="body">{{ f.value }}</div>
-        </div>
+      @if (canRun()) {
+        <a
+          class="go new-tab"
+          routerLink="run-with-statistics"
+          target="_blank"
+          rel="noopener"
+          aria-label="Run with statistics, opens in a new tab"
+          >Run with statistics<assay-arrow-out
+        /></a>
+      } @else {
+        <button type="button" class="go" disabled>Run with statistics<assay-arrow-out /></button>
       }
-      <!-- The test first (input, expected, model output), then what checks it. -->
+      <assay-quiet-actions [actions]="quiet()" [why]="why()" (act)="quietAct($event)" />
+    </div>
+    <div class="now">
+      <assay-latest-verdict [batch]="verdicts.newest()" [canRun]="canRun()" />
+      @if (latestRun(); as r) {
+        <assay-state-block
+          caption="Latest run"
+          [of]="r.status"
+          [say]="runSays(r.status)"
+          [facts]="runFacts()"
+        >
+          <a class="go" [routerLink]="['/tests', id(), 'runs', r.id]">Open the run →</a>
+        </assay-state-block>
+      } @else if (runs.loading()) {
+        <assay-state-block caption="Latest run" word="…" />
+      } @else {
+        <assay-state-block
+          caption="Latest run"
+          word="Never run"
+          say="Run it once to see how it answers."
+        />
+      }
+    </div>
+  </assay-guide-head>
+
+  <assay-banner [msg]="act.msg()" />
+
+  @if (test(); as t) {
+    <assay-guide-section [section]="sections[0]" sub="What it asks, and what decides it">
+      <dl class="defs">
+        <dt>Input</dt>
+        <dd>{{ t.input }}</dd>
+        <dt>Expected output</dt>
+        @if (t.expected_output) {
+          <dd>{{ t.expected_output }}</dd>
+        } @else {
+          <dd class="none">None</dd>
+        }
+        <dt>Recorded answer</dt>
+        @if (t.model_output != null) {
+          <dd>
+            <span class="val">{{ t.model_output }}</span
+            ><button
+              type="button"
+              class="row-act"
+              [disabled]="act.busy()"
+              (click)="open('clear-output')"
+            >
+              Clear
+            </button>
+          </dd>
+        } @else {
+          <dd class="none">None: each run asks your application.</dd>
+        }
+      </dl>
+      <h3 class="h3">Checks</h3>
       <assay-checks-view
         [assignments]="t.test_type_assignments"
-        empty="No checks - this test can't be run until one is added."
+        empty="No checks yet, so it can't run - Edit adds them."
       />
-    </div>
-    <div class="cell">
-      <assay-stats-panel [scope]="statsScope()" noun="test" />
-      <div class="row-head" style="margin-bottom: 8px">
-        <h2>Standalone runs</h2>
-        <span class="small">{{ runsPage.total() }} total</span>
-      </div>
-      <p class="hero-note" style="margin-bottom: 20px">
-        Ad-hoc runs against the live test - no live/replay concept; each reads the test as it is
-        now.
-      </p>
-      @for (r of runs(); track r.id) {
-        <div class="exec">
-          <div class="exec-main">
-            <a class="plain" [routerLink]="['/tests', id(), 'runs', r.id]">
-              <span class="st"
-                ><span class="dot" [style.background]="statusColor(r.status)"></span
-                >{{ statusLabel(r.status) }}</span
-              >
-            </a>
-            <span class="muted small">
-              <assay-copy-button [value]="r.id" [label]="short(r.id)" />
-              · <assay-rel-time [iso]="r.created_at" />
-            </span>
-          </div>
-        </div>
-      } @empty {
-        @if (!runsPage.loading()) {
-          <div class="exec empty">Never run.</div>
-        }
+    </assay-guide-section>
+  }
+
+  <assay-guide-section [section]="sections[1]" sub="Its batches, newest first">
+    <assay-verdicts-table
+      #verdicts
+      [scope]="statsScope()"
+      [version]="version()"
+      empty="Never run with statistics. Run with statistics runs it many times, so a verdict can be given."
+    />
+  </assay-guide-section>
+
+  <assay-guide-section [section]="sections[2]" sub="On its own, one answer each">
+    <assay-catalog-table label="Its runs" [columns]="runColumns" [empty]="runsEmpty()">
+      @for (r of runs.items(); track r.id) {
+        <assay-catalog-row
+          [name]="statusLabel(r.status)"
+          [mark]="r.status"
+          [link]="['/tests', id(), 'runs', r.id]"
+          [expandable]="false"
+        >
+          <assay-catalog-cell caption="How it went">{{ runSays(r.status) }}</assay-catalog-cell>
+          <assay-catalog-cell caption="When"
+            ><span class="when"><assay-rel-time [iso]="r.created_at" /></span
+          ></assay-catalog-cell>
+        </assay-catalog-row>
       }
-      <assay-pager
-        [total]="runsPage.total()"
-        [offset]="runsPage.offset()"
-        [limit]="runsPage.limit()"
-        (offsetChange)="runsPage.go($event)"
-        (limitChange)="runsPage.size($event)"
-      />
+    </assay-catalog-table>
+    <assay-pager
+      [total]="runs.total()"
+      [offset]="runs.offset()"
+      [limit]="runs.limit()"
+      (offsetChange)="runs.go($event)"
+      (limitChange)="runs.size($event)"
+    />
+  </assay-guide-section>
+
+  <assay-guide-section [section]="sections[3]" sub="The sets that hold a copy of it">
+    <assay-catalog-table
+      label="The test sets that hold a copy of it"
+      [columns]="setColumns"
+      [empty]="sets()?.length ? null : setsEmpty()"
+    >
+      @for (s of sets() ?? []; track s.set.id) {
+        <assay-catalog-row
+          [name]="s.set.name"
+          [link]="['/test-sets', s.set.id]"
+          [expandable]="false"
+        >
+          <assay-catalog-cell caption="Holds">{{
+            counted(s.set.entry_count ?? 0, 'test')
+          }}</assay-catalog-cell>
+          <assay-catalog-cell caption="Its copy"
+            ><span [class.muted]="s.same">{{
+              s.same ? 'Same as the test' : 'Differs from the test now'
+            }}</span></assay-catalog-cell
+          >
+        </assay-catalog-row>
+      }
+    </assay-catalog-table>
+    <p class="note">
+      <b>A test set keeps its own copy of the test, made when it was added.</b> Editing the test
+      here leaves those copies as they are. To bring a change into a set, unlink its copy there and
+      add the test again.
+    </p>
+    <div class="ends">
+      <button type="button" class="go" (click)="open('add')">Add to a test set…</button>
     </div>
-  </section>
-}
-@if (dlg() === 'edit') {
-  <assay-test-form-dialog
-    [kicker]="name()"
-    title="Edit test"
-    submitLabel="Save changes"
-    [initial]="test()"
-    [busy]="act.busy()"
-    [error]="act.err()"
-    (confirm)="save($event)"
-    (closed)="dlg.set(null)"
-  />
-}
-@if (dlg() === 'clear-output') {
-  <assay-confirm-dialog
-    [kicker]="name()"
-    title="Clear the recorded answer?"
-    body="Removes this test's model output. From then on, its runs ask the application under test for an answer instead. Past runs keep the answer they scored."
-    confirmLabel="Clear"
-    [busy]="act.busy()"
-    [error]="act.err()"
-    (confirm)="clearModelOutput()"
-    (closed)="dlg.set(null)"
-  />
-}
-@if (dlg() === 'delete') {
-  <assay-confirm-dialog
-    [kicker]="name()"
-    title="Delete this test?"
-    body="Blocked (409) while it is in a test set or has runs."
-    confirmLabel="Delete test"
-    [busy]="act.busy()"
-    [error]="act.err()"
-    (confirm)="remove()"
-    (closed)="dlg.set(null)"
-  />
+  </assay-guide-section>
+</div>
+
+@switch (dlg()) {
+  @case ('edit') {
+    <assay-test-form-dialog
+      [kicker]="name()"
+      title="Edit test"
+      submitLabel="Save changes"
+      [initial]="test()"
+      [busy]="act.busy()"
+      [error]="act.err()"
+      (confirm)="save($event)"
+      (closed)="dlg.set(null)"
+    />
+  }
+  @case ('clear-output') {
+    <assay-confirm-dialog
+      [kicker]="name()"
+      title="Clear the recorded answer?"
+      body="From then on, its runs ask your application for an answer. Past runs keep the answer they scored."
+      confirmLabel="Clear the answer"
+      [danger]="false"
+      [busy]="act.busy()"
+      [error]="act.err()"
+      (confirm)="clearAnswer()"
+      (closed)="dlg.set(null)"
+    >
+      <div>
+        <span class="dcap">The answer it scores now</span>
+        <p class="quote">{{ test()?.model_output }}</p>
+      </div>
+    </assay-confirm-dialog>
+  }
+  @case ('delete') {
+    <assay-confirm-dialog
+      [kicker]="name()"
+      title="Delete this test?"
+      body="It goes for good, with its checks. Deleting can't be undone."
+      confirmLabel="Delete the test"
+      [busy]="act.busy()"
+      [error]="act.err()"
+      (confirm)="remove()"
+      (closed)="dlg.set(null)"
+    />
+  }
+  @case ('add') {
+    <assay-pick-dialog
+      [kicker]="name()"
+      title="Add to a test set"
+      noun="test sets"
+      emptyText="No test sets yet."
+      [rows]="setRows()"
+      [submitLabel]="addLabel"
+      [busy]="act.busy()"
+      [error]="act.err()"
+      (confirm)="addToSets($event)"
+      (closed)="dlg.set(null)"
+    />
+  }
 }

@@ -1,4 +1,4 @@
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 
 /**
  * A text-filter query signal + substring match over one item at a time - the `filter` signal +
@@ -13,9 +13,27 @@ import { signal } from '@angular/core';
  */
 export class TextFilter<T> {
   query = signal('');
+  /** Words kept as a token (the smart filter's Enter), looked for as well as the query. */
+  kept = signal<string | null>(null);
+  /** Every word looked for, lower case: the kept words and the query. */
+  terms = computed(() =>
+    [this.kept(), this.query()].map((t) => (t ?? '').trim().toLowerCase()).filter(Boolean),
+  );
+  /** What it's looking for, as typed - for "No test matches …". */
+  text = computed(() =>
+    [this.kept(), this.query()]
+      .map((t) => (t ?? '').trim())
+      .filter(Boolean)
+      .join('" and "'),
+  );
   constructor(private searchOf: (item: T) => string) {}
   apply(items: T[]): T[] {
-    const f = this.query().toLowerCase();
-    return f ? items.filter((x) => this.searchOf(x).toLowerCase().includes(f)) : items;
+    const terms = this.terms();
+    return terms.length
+      ? items.filter((x) => {
+          const text = this.searchOf(x).toLowerCase();
+          return terms.every((t) => text.includes(t));
+        })
+      : items;
   }
 }

@@ -15,7 +15,6 @@ import {
   untitled,
 } from '../shared/format';
 import { pollWhile, whenTabShown } from '../shared/poll';
-import { markLabel } from '../shared/status-mark.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { GuideSectionComponent } from '../shared/guide/guide-section.component';
 import { GuideGoComponent } from '../shared/guide/guide-go.component';
@@ -34,15 +33,10 @@ import {
   runAgainLink,
   scopePlace,
   timesRun,
+  verdictLine,
 } from '../statistics/stats-format';
-import {
-  BATCH_SAMPLE,
-  LATEST,
-  RUNS_ENDED,
-  VERDICTS_ENDED,
-  firstOfEach,
-  tallyParts,
-} from './overview';
+import { BATCH_SAMPLE, LATEST, RUNS_ENDED, VERDICTS_ENDED, tallyParts } from './overview';
+import { firstOfEach } from '../api/latest';
 
 /** A row of 02: the latest run of a test, or execution of a set or plan. */
 interface LatestRun {
@@ -88,7 +82,7 @@ interface LatestRun {
     ArrowOutComponent,
   ],
   templateUrl: './overview.component.html',
-  styleUrls: ['../shared/guide/guide.css', './overview.component.css'],
+  styleUrls: ['../shared/guide/guide.css', '../shared/work/work.css', './overview.component.css'],
 })
 export class OverviewComponent {
   private statsApi = inject(StatisticsApiService);
@@ -161,15 +155,11 @@ export class OverviewComponent {
     firstOfEach(this.batches.items(), (b) => b.scope.kind + b.scope.id)
       .slice(0, LATEST)
       .map(({ item: b, count }) => {
-        const label = markLabel(b.status);
         const running = isInFlight(b.status);
         const progress = running ? batchProgress(b.progress) : null;
-        const sentence = progress?.line ?? b.summary ?? '';
         return {
           b,
-          label,
-          // The API's sentence leads with the verdict ("Failed: …"), which shows in bold.
-          text: sentence.startsWith(label + ': ') ? sentence.slice(label.length + 2) : sentence,
+          ...verdictLine(b),
           progress,
           link: ['/statistics/batches', b.id],
           tags: [

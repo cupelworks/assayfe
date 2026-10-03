@@ -1,81 +1,77 @@
-<div class="cv">
-  <div class="cv-head">
-    <span class="label">Checks</span>
-    @if (total()) {
-      <span class="small">{{ total() }} check{{ total() === 1 ? '' : 's' }}</span>
-    }
-  </div>
-  @if (total()) {
-    <div class="cv-table">
-      <!-- The same headings as the checks form. -->
-      <div class="cols th">
-        <span class="label">Type</span><span class="label">Name</span
-        ><span class="label">Settings</span>
-      </div>
-      @for (r of shown(); track r.key) {
-        <div class="cols row" [class.group-start]="r.first">
-          <span class="label type">{{ r.first ? r.type : '' }}</span>
-          <span class="name-cell">
-            <span class="name">{{ r.name }}</span>
-            @if (r.path; as p) {
-              <span class="reads"
-                >reads <span class="mono">{{ p }}</span></span
-              >
-            }
-          </span>
-          <span class="settings">
-            @if (isText(r.settings)) {
-              <span class="muted">{{ r.settings }}</span>
-            } @else {
-              <!-- One setting per line, wrapping; a value longer than two lines (a JSON block, six) folds. -->
-              @for (p of r.settings; track p.label) {
-                @if (p.block) {
-                  <span class="k">{{ p.label }}:</span>
-                  <pre
-                    class="json"
-                    [class.folded]="!isOpen(r.key, p.label)"
-                    [assayClamp]="!isOpen(r.key, p.label)"
-                    #fold="clamp"
-                    >{{ p.value }}</pre>
-                  <ng-container
-                    *ngTemplateOutlet="more; context: { fold, key: r.key, label: p.label }"
-                  />
-                } @else {
-                  <span
-                    class="setting"
-                    [class.clamp]="!isOpen(r.key, p.label)"
-                    [assayClamp]="!isOpen(r.key, p.label)"
-                    #fold="clamp"
-                  >
-                    <span class="k">{{ p.label }}{{ p.value ? ':' : '' }}</span>
-                    @if (p.value) {
-                      <span [class.mono]="p.mono">{{ p.value }}</span>
-                    }
-                  </span>
-                  <ng-container
-                    *ngTemplateOutlet="more; context: { fold, key: r.key, label: p.label }"
-                  />
-                }
+@if (total()) {
+  <div class="cv" role="table" aria-label="Checks">
+    <div class="cols th" role="row">
+      <span role="columnheader">Check</span><span role="columnheader">Kind</span
+      ><span role="columnheader">Settings</span><span role="columnheader">Reads</span>
+    </div>
+    @for (r of shown(); track r.key) {
+      <div class="cols row" role="row">
+        <span class="name-cell" role="cell">
+          <span class="name">{{ r.name }}</span>
+          @if (r.name !== r.type) {
+            <span class="type">{{ r.type }}</span>
+          }
+        </span>
+        <span class="kind" role="cell">{{ r.kind }}</span>
+        <span class="settings" role="cell">
+          @if (isText(r.settings)) {
+            <span class="muted">{{ r.settings }}</span>
+          } @else {
+            <!-- One setting per line, wrapping; a value longer than two lines (a JSON block, six) folds. -->
+            @for (p of r.settings; track p.label) {
+              @if (p.block) {
+                <span class="k">{{ p.label }}:</span>
+                <pre
+                  class="json"
+                  [class.folded]="!isOpen(r.key, p.label)"
+                  [assayClamp]="!isOpen(r.key, p.label)"
+                  #fold="clamp"
+                  >{{ p.value }}</pre>
+                <ng-container
+                  *ngTemplateOutlet="more; context: { fold, key: r.key, label: p.label }"
+                />
+              } @else {
+                <span
+                  class="setting"
+                  [class.clamp]="!isOpen(r.key, p.label)"
+                  [assayClamp]="!isOpen(r.key, p.label)"
+                  #fold="clamp"
+                >
+                  <span class="k">{{ p.label }}{{ p.value ? ':' : '' }}</span>
+                  @if (p.value) {
+                    <span [class.mono]="p.mono">{{ p.value }}</span>
+                  }
+                </span>
+                <ng-container
+                  *ngTemplateOutlet="more; context: { fold, key: r.key, label: p.label }"
+                />
               }
             }
-          </span>
-        </div>
-      }
-    </div>
-    @if (total() > first) {
-      <button type="button" class="btn btn-ghost btn-sm more" (click)="expanded.set(!expanded())">
-        {{ expanded() ? 'Show fewer ↑' : 'Show all ' + total() + ' checks ↓' }}
-      </button>
+          }
+        </span>
+        <span class="reads" role="cell">
+          @if (r.path; as p) {
+            <span class="mono">{{ p }}</span>
+          } @else {
+            The whole answer
+          }
+        </span>
+      </div>
     }
-  } @else {
-    <div class="small">{{ empty() }}</div>
+  </div>
+  @if (total() > first) {
+    <button type="button" class="all" (click)="expanded.set(!expanded())">
+      {{ expanded() ? 'Show fewer ↑' : 'Show all ' + total() + ' checks ↓' }}
+    </button>
   }
-</div>
+} @else {
+  <p class="empty">{{ empty() }}</p>
+}
 
 <!-- "More ↓" only when the fold really hides something; "Less ↑" once opened. -->
 <ng-template #more let-fold="fold" let-key="key" let-label="label">
   @if (fold.overflows() || isOpen(key, label)) {
-    <button type="button" class="toggle small" (click)="toggle(key, label)">
+    <button type="button" class="toggle" (click)="toggle(key, label)">
       {{ isOpen(key, label) ? 'Less ↑' : 'More ↓' }}
     </button>
   }

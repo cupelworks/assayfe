@@ -1,169 +1,181 @@
-import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
-import { ActionRunner } from '../shared/action-runner';
-import { Router, RouterLink } from '@angular/router';
-import { forkJoin, map } from 'rxjs';
+import { Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { catchError, map, of } from 'rxjs';
 import { TestPlansApiService } from '../api/test-plans-api.service';
-import { RunsApiService } from '../api/runs-api.service';
-import { CatalogStore } from '../api/catalog.store';
+import { LatestByRow } from '../api/latest';
 import { TestPlanEntry } from '../api/models';
-import { StatsPanelComponent } from '../statistics/stats-panel.component';
-import { short, errText } from '../shared/format';
+import { Paged } from '../shared/paged';
+import { counted, errText } from '../shared/format';
+import { PagerComponent } from '../shared/pager.component';
+import { ArrowOutComponent } from '../shared/arrow-out.component';
+import { GuideHeadComponent } from '../shared/guide/guide-head.component';
+import { GuideSectionComponent } from '../shared/guide/guide-section.component';
+import { CATALOG, CatalogColumn } from '../shared/catalog';
+import { QuietAction, QuietActionsComponent } from '../shared/work/quiet-actions.component';
+import { BannerComponent } from '../shared/work/banner.component';
+import { LatestStatusComponent } from '../shared/work/latest-status.component';
+import { inWords } from '../shared/work/sentences';
 import { NameDialogComponent } from '../shared/dialog/name-dialog.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
 import { PickDialogComponent, PickRow } from '../shared/dialog/pick-dialog.component';
-import { ExecutionsPanelComponent } from './executions-panel.component';
-import { PagerComponent } from '../shared/pager.component';
-import { RelTimeComponent } from '../shared/rel-time.component';
-import { Paged } from '../shared/paged';
-import { ArrowOutComponent } from '../shared/arrow-out.component';
+import { VerdictsTableComponent } from '../statistics/verdicts-table.component';
+import { LatestVerdictComponent } from '../statistics/latest-verdict.component';
+import { ExecutionsTableComponent } from './executions-table.component';
+import { LatestRunComponent } from './latest-run.component';
+import { ScopePage, scopeSections } from './scope-page';
 
-type Dlg = null | 'rename' | 'delete' | 'link' | 'unlink';
+type Dlg = 'rename' | 'delete' | 'link' | 'unlink';
 
+/**
+ * A test plan's page, on the Guide's layout - as a set's: its top (Run live, Run with statistics ↗,
+ * Link test sets · Rename · Delete - Delete pale once it has run), its latest verdict and latest
+ * run, then 01 the sets it links - each with its tests and its own latest run, and Remove - 02 its
+ * batches, 03 its runs.
+ */
 @Component({
   selector: 'assay-test-plan-detail',
   standalone: true,
   imports: [
-    ArrowOutComponent,
     RouterLink,
+    ArrowOutComponent,
+    GuideHeadComponent,
+    GuideSectionComponent,
+    CATALOG,
+    QuietActionsComponent,
+    BannerComponent,
+    LatestStatusComponent,
+    PagerComponent,
     NameDialogComponent,
     ConfirmDialogComponent,
     PickDialogComponent,
-    ExecutionsPanelComponent,
-    PagerComponent,
-    RelTimeComponent,
-    StatsPanelComponent,
+    VerdictsTableComponent,
+    LatestVerdictComponent,
+    ExecutionsTableComponent,
+    LatestRunComponent,
   ],
   templateUrl: './test-plan-detail.component.html',
-  styleUrls: ['../shared/page.css'],
+  styleUrls: ['../shared/guide/guide.css', '../shared/work/work.css'],
 })
-export class TestPlanDetailComponent {
-  id = input.required<string>();
-  testPlansApi = inject(TestPlansApiService);
-  runsApi = inject(RunsApiService);
-  store = inject(CatalogStore);
-  router = inject(Router);
-  short = short;
+export class TestPlanDetailComponent extends ScopePage<Dlg> {
+  readonly kind = 'test-plans' as const;
+  readonly one = 'test plan';
+  private plansApi = inject(TestPlansApiService);
+  sections = scopeSections('Test sets');
+  counted = counted;
+
   page = new Paged<TestPlanEntry>(
-    (o, l) => this.testPlansApi.testPlanEntries(this.id(), o, l),
+    (o, l) => this.plansApi.testPlanEntries(this.id(), o, l),
     25,
     errText,
   );
-  links = this.page.items;
-  version = signal(0);
-  /** True execution count per test set, for pickRows below - loaded fresh each time the "Link
-   *  test sets" dialog opens (see open()), not eagerly, since it's only ever shown there.
-   *  Deliberately not CatalogStore.executions (capped, recency-biased - see
-   *  scopes-list.component.ts's identical comment for why that can't give an accurate count).
-   *  limit=0: the API returns items: [] plus the real `total`, nothing but the count itself
-   *  is ever transferred. */
-  pickExecCounts = signal<Record<string, number>>({});
+  /** Every run of it, a statistics batch's included - one is enough to keep it from being
+   *  deleted. */
+  allRuns = signal<number | null>(null);
+  hasRuns = computed(() => !!this.allRuns());
+  setRuns = new LatestByRow(
+    () => 'test-sets',
+    () => this.page.items().map((l) => l.test_set.id),
+    { runs: true },
+  );
   unlinkTarget = signal<TestPlanEntry | null>(null);
-  dlg = signal<Dlg>(null);
-  /** Busy flag, dialog error and page banner for this page's API actions - see shared/action-runner.ts. */
-  act = new ActionRunner({
-    inDialog: () => !!this.dlg(),
-    done: () => {
-      this.dlg.set(null);
-      this.page.reload();
-      this.version.update((v) => v + 1);
-      this.store.load();
-    },
+
+  lede = computed(() => {
+    const sets = this.page.total();
+    if (!sets) return 'No test sets linked yet: link some, then run it.';
+    const tests = this.page.items().reduce((n, l) => n + (l.test_set.entry_count ?? 0), 0);
+    const known = this.page.items().length === sets;
+    const what = sets === 1 ? 'Runs one test set' : `Runs ${inWords(sets)} test sets together`;
+    return (
+      `${what}${known ? `, ${counted(tests, 'test')} in all` : ''}. ` +
+      'It links the sets themselves, so each run takes their tests as they are then.'
+    );
   });
-  meta = computed(() => this.store.parent('test-plans', this.id()));
-  name = computed(() => this.meta()?.name ?? short(this.id()));
-  execs = computed(() => this.store.byParent('test-plans', this.id()));
-  /** Every execution of the plan, a statistics batch's included - the store's sample leaves
-   *  those out, and one is enough to block deleting the plan. */
-  allExecutions = signal(0);
-  hasRuns = computed(() => this.execs().length > 0 || this.allExecutions() > 0);
-  statsScope = computed(() => ({ test_plan_id: this.id() }));
-  linkedTotal = this.page.total;
-  pickRows = computed<PickRow[]>(() => {
-    const linked = new Set(this.links().map((l) => l.test_set.id));
-    const counts = this.pickExecCounts();
-    return this.store.sets().map((s) => {
-      const n = counts[s.id];
-      const execLabel = n === undefined ? '…' : `${n} execution${n === 1 ? '' : 's'}`;
-      return {
-        id: s.id,
-        name: s.name,
-        meta: linked.has(s.id) ? 'already linked' : execLabel,
-        disabled: linked.has(s.id),
-      };
-    });
+  canRun = computed(() => this.page.total() > 0);
+  quiet = computed<QuietAction[]>(() => [
+    { key: 'link', label: 'Link test sets' },
+    { key: 'rename', label: 'Rename' },
+    { key: 'delete', label: 'Delete', disabled: this.hasRuns() },
+  ]);
+  why = computed(
+    () =>
+      [
+        this.meta() && !this.page.loading() && !this.canRun()
+          ? 'It needs a test set before it can run.'
+          : '',
+        this.hasRuns() ? "It can't be deleted once it has run." : '',
+      ]
+        .filter(Boolean)
+        .join(' ') || null,
+  );
+
+  columns: CatalogColumn[] = [
+    { label: 'Test set', width: 3.4 },
+    { label: 'Tests', width: 1 },
+    { label: 'Its latest run', width: 3 },
+    { label: '', width: 1 },
+  ];
+  linksEmpty = computed(() =>
+    this.page.loading() || this.page.items().length
+      ? null
+      : 'No test sets linked - Link test sets adds them. Run live needs at least one.',
+  );
+  /** Sets to link: one it links already can't be linked again (the API's rule). */
+  setRows = computed<PickRow[]>(() => {
+    const linked = new Set(this.page.items().map((l) => l.test_set.id));
+    return this.store.sets().map((s) => ({
+      id: s.id,
+      name: s.name,
+      sub: counted(s.entry_count ?? 0, 'test'),
+      meta: linked.has(s.id) ? 'Linked' : '',
+      disabled: linked.has(s.id),
+    }));
   });
-  pickLabel = (n: number) => `Link ${n || ''} test set${n === 1 ? '' : 's'}`;
+  linkLabel = (n: number) => (n ? `Link ${counted(n, 'test set')}` : 'Link test sets');
 
   constructor() {
-    // sets: "Link test sets" picker's set list. plans: this plan's own name (store.parent).
-    // executions: hasRuns guard only now - pickRows' own execution counts come from
-    // pickExecCounts (loaded per-set on demand, see open()), not this global sample.
+    super();
     this.store.loadSets();
-    this.store.loadPlans();
-    this.store.loadExecutions();
-    effect(() => {
-      this.id();
-      // untracked: load() -> page.reset() reads page's own offset()/limit() signals - see
-      // scopes-list.component.ts's identical comment.
-      untracked(() => this.load());
-    });
   }
-  load() {
-    this.page.reset();
+
+  reload() {
+    this.page.reload();
     this.runsApi
       .executionsPage('test-plans', this.id(), 0, 0)
-      .subscribe({ next: (p) => this.allExecutions.set(p.total), error: () => {} });
+      .pipe(
+        map((p) => p.total),
+        catchError(() => of(null)),
+      )
+      .subscribe((n) => this.allRuns.set(n));
   }
-  open(d: Dlg, l?: TestPlanEntry) {
-    this.act.err.set(null);
-    if (l) this.unlinkTarget.set(l);
-    if (d === 'link') this.loadPickExecCounts();
-    this.dlg.set(d);
+  protected fetchMeta() {
+    return this.plansApi.testPlan(this.id());
   }
-  private loadPickExecCounts() {
-    const sets = this.store.sets();
-    if (!sets.length) {
-      this.pickExecCounts.set({});
-      return;
-    }
-    forkJoin(
-      sets.map((s) =>
-        this.runsApi
-          .executionsPage('test-sets', s.id, 0, 0, 'none')
-          .pipe(map((p) => [s.id, p.total] as [string, number])),
-      ),
-    ).subscribe((pairs) => this.pickExecCounts.set(Object.fromEntries(pairs)));
+  protected renamed(name: string) {
+    return this.plansApi.renameTestPlan(this.id(), name);
   }
-  rename(n: string) {
-    this.act.run(this.testPlansApi.renameTestPlan(this.id(), n), {
-      ok: () => `Renamed to “${n}”.`,
-    });
+  protected deleted() {
+    return this.plansApi.deleteTestPlan(this.id());
   }
-  remove() {
-    this.act.run(this.testPlansApi.deleteTestPlan(this.id()), {
-      ok: () => 'Test plan deleted.',
-      then: () => this.router.navigate(['/test-plans']),
-    });
+
+  quietAct(key: string) {
+    if (key === 'link' || key === 'rename' || key === 'delete') this.open(key);
+  }
+  askRemove(l: TestPlanEntry) {
+    this.unlinkTarget.set(l);
+    this.open('unlink');
+  }
+  removeBody(l: TestPlanEntry) {
+    return `Only the link goes. The set, its ${counted(l.test_set.entry_count ?? 0, 'test')} and the plan's past runs stay. Link it again any time.`;
   }
   link(ids: string[]) {
-    this.act.run(this.testPlansApi.linkSetsToPlan(this.id(), ids), {
-      ok: () => `Linked ${ids.length} test set${ids.length === 1 ? '' : 's'}.`,
+    this.act.run(this.plansApi.linkSetsToPlan(this.id(), ids), {
+      ok: () => `Linked ${counted(ids.length, 'test set')}.`,
     });
   }
   unlink() {
     const s = this.unlinkTarget()!.test_set;
-    this.act.run(this.testPlansApi.unlinkSetsFromPlan(this.id(), [s.id]), {
-      ok: () => `Removed “${s.name}” from this plan.`,
-    });
-  }
-  runLive() {
-    this.act.run(this.runsApi.runLive('test-plans', this.id()), {
-      ok: (r) => `Enqueued ${r.run_count} pending runs.`,
-    });
-  }
-  replay(execId: string) {
-    this.act.run(this.runsApi.replay('test-plans', this.id(), execId), {
-      ok: (r) => `Enqueued ${r.run_count} pending runs (replay of ${short(execId)}).`,
+    this.act.run(this.plansApi.unlinkSetsFromPlan(this.id(), [s.id]), {
+      ok: () => `Removed “${s.name}” from the plan - the set stays.`,
     });
   }
 }

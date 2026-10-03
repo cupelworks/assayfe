@@ -27,6 +27,11 @@ export function absTime(iso?: string | null) {
   if (!iso) return '';
   return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 }
+/** A day, for a sentence: "24 Sep" (in the reader's own order). */
+export function shortDate(iso?: string | null) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+}
 /** Best-effort clipboard write - false (never throws) if the Clipboard API is unavailable or
  *  permission is denied, so a caller can skip its "Copied" feedback rather than show it falsely. */
 export async function copyText(text: string): Promise<boolean> {

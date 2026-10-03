@@ -1,4 +1,5 @@
 import { Component, computed, input } from '@angular/core';
+import { Selection } from '../selection';
 
 /** A column of a catalogue table: its heading, and its share of the width (`fr`). */
 export interface CatalogColumn {
@@ -10,7 +11,8 @@ export interface CatalogColumn {
  * A catalogue's ruled table, across a section's body, as the Guide's tables are: the headings over
  * a black rule, then the rows given to it (`<assay-catalog-row>`), which take its columns
  * (`--catalog-cols`) - or, when it has none, what `empty` says. On a phone the headings go, and
- * each cell names its column itself.
+ * each cell names its column itself. Given a `selection`, a column of checkboxes leads it - the
+ * heading's ticks every row shown, each row's its own (the row takes the same `selection`).
  */
 @Component({
   selector: 'assay-catalog-table',
@@ -22,6 +24,16 @@ export interface CatalogColumn {
   },
   template: `
     <div class="h" role="row">
+      @if (selection(); as sel) {
+        <span class="chkc" role="columnheader"
+          ><input
+            type="checkbox"
+            class="chk"
+            [attr.aria-label]="selectAll()"
+            [checked]="sel.allChecked()"
+            (change)="sel.toggleAll()"
+        /></span>
+      }
       @for (c of columns(); track c.label) {
         <span role="columnheader">{{ c.label }}</span>
       }
@@ -43,6 +55,13 @@ export interface CatalogColumn {
       column-gap: 24px;
       padding-bottom: 10px;
       border-bottom: 1px solid var(--color-text);
+    }
+    .chk {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: var(--color-accent);
+      cursor: pointer;
     }
     .h span {
       font-size: 11px;
@@ -70,9 +89,15 @@ export class CatalogTableComponent {
   columns = input.required<CatalogColumn[]>();
   /** What the table says when it has no rows. */
   empty = input<string | null>(null);
-  cols = computed(() =>
-    this.columns()
-      .map((c) => `minmax(0, ${c.width}fr)`)
-      .join(' '),
+  /** The ticked rows, when rows can be ticked - see shared/selection.ts. */
+  selection = input<Selection | null>(null);
+  /** The heading checkbox's label: "Select every test shown". */
+  selectAll = input('Select every one shown');
+  cols = computed(
+    () =>
+      (this.selection() ? '28px ' : '') +
+      this.columns()
+        .map((c) => `minmax(0, ${c.width}fr)`)
+        .join(' '),
   );
 }

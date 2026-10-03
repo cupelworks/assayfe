@@ -1,62 +1,49 @@
-<div class="hero">
-  <div>
-    <div class="kicker">Work</div>
-    <h1>Datasets</h1>
-  </div>
-  <div class="hero-actions">
-    <button class="btn btn-primary" (click)="dialog.set(true)">Import from JSONL</button>
-  </div>
-</div>
-@if (act.msg(); as m) {
-  <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
-}
-<section class="cell">
-  <div class="toolbar">
-    <input
-      class="input"
-      placeholder="Filter…"
-      [ngModel]="filter.query()"
-      (ngModelChange)="filter.query.set($event)"
-    /><span class="small">{{
-      filter.query() ? rows().length + ' shown on this page' : page.total() + ' total'
-    }}</span>
-  </div>
-  <table class="table">
-    <colgroup>
-      <col />
-      <col style="width: 200px" />
-    </colgroup>
-    <thead>
-      <tr>
-        <th>Dataset</th>
-        <th class="sortable" (click)="sort.toggle()">
-          Created<span class="sort-arrow">{{ sort.dir() === 'desc' ? ' ↓' : ' ↑' }}</span>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (d of rows(); track d.id) {
-        <tr>
-          <td class="strong">
-            <a class="plain arrow" [routerLink]="['/datasets', d.id]">{{ d.name }}</a>
-          </td>
-          <td class="muted"><assay-rel-time [iso]="d.created_at" /></td>
-        </tr>
-      } @empty {
-        @if (!page.loading()) {
-          <tr>
-            <td colspan="2" class="empty">
-              @if (filter.query()) {
-                <assay-filter-miss noun="dataset" [filter]="filter" [page]="page" />
-              } @else {
-                No datasets. Import a <code>.jsonl</code> file to start.
-              }
-            </td>
-          </tr>
-        }
-      }
-    </tbody>
-  </table>
+<div class="g-wrap">
+  <assay-guide-head
+    kicker="Work"
+    title="Datasets"
+    lede="Questions with the answers they should get, to make tests from - a test for each row."
+  >
+    <div class="page-aside" guideHeadAside>
+      <button type="button" class="btn btn-primary" (click)="act.err.set(null); dialog.set(true)">
+        Import a dataset
+      </button>
+    </div>
+    <assay-catalog-key [items]="rowKey" />
+  </assay-guide-head>
+
+  <assay-banner [msg]="act.msg()" />
+
+  <assay-smart-filter
+    label="Filter the datasets"
+    placeholder="Names and prompts - or type rows, used, created…"
+    itemsLabel="Datasets"
+    [facets]="facets()"
+    [items]="items()"
+    [shown]="shownText()"
+    [sortOptions]="sortOptions"
+    [(query)]="filter.query"
+    [(words)]="filter.kept"
+    [(chosen)]="choice"
+    [(sort)]="sort"
+  />
+
+  <assay-catalog-table class="list" label="Datasets" [columns]="columns" [empty]="emptyText()">
+    @for (d of rows(); track d.id) {
+      @let r = rowsOf()[d.id];
+      <assay-catalog-row [name]="d.name" [link]="['/datasets', d.id]" [expandable]="false">
+        <assay-catalog-cell caption="Rows"
+          ><span class="num">{{ r ? r.total : '…' }}</span></assay-catalog-cell
+        >
+        <assay-catalog-cell caption="Its first prompt"
+          ><span class="clamp">{{ r ? (r.first ?? 'No rows yet') : '…' }}</span></assay-catalog-cell
+        >
+        <assay-catalog-cell caption="Created"
+          ><span class="when"><assay-rel-time [iso]="d.created_at" /></span
+        ></assay-catalog-cell>
+      </assay-catalog-row>
+    }
+  </assay-catalog-table>
   <assay-pager
     [total]="page.total()"
     [offset]="page.offset()"
@@ -64,42 +51,18 @@
     (offsetChange)="page.go($event)"
     (limitChange)="page.size($event)"
   />
-</section>
+  <p class="note hint">
+    <b>A dataset is a file on the server</b>, one JSON object a line - each with its prompt,
+    expected output and model output. Import it by its path; then, on its page, make a test from
+    every row at once.
+  </p>
+</div>
+
 @if (dialog()) {
-  <assay-dialog
-    kicker="Datasets"
-    title="Import dataset"
-    [primaryLabel]="act.busy() ? 'Importing…' : 'Import'"
-    [primaryDisabled]="!path().trim() || !name().trim() || act.busy()"
+  <assay-import-dataset-dialog
+    [busy]="act.busy()"
     [error]="act.err()"
-    (primary)="import()"
-    (close)="dialog.set(false)"
-  >
-    <p class="muted" style="margin: 0">
-      Loads a <code>.jsonl</code> file from the server's filesystem. Each line needs
-      <code>prompt</code>, <code>expected_output</code> and <code>model_output</code>; the whole
-      file is rejected if any line is invalid.
-    </p>
-    <div class="field">
-      <label for="ds-name">Dataset name</label
-      ><input
-        id="ds-name"
-        class="input"
-        [ngModel]="name()"
-        (ngModelChange)="name.set($event)"
-        placeholder="Support tickets - EN"
-        autofocus
-      />
-    </div>
-    <div class="field">
-      <label for="ds-path">Path on server</label
-      ><input
-        id="ds-path"
-        class="input"
-        [ngModel]="path()"
-        (ngModelChange)="path.set($event)"
-        placeholder="/data/support_en.jsonl"
-      />
-    </div>
-  </assay-dialog>
+    (confirm)="import($event)"
+    (closed)="dialog.set(false)"
+  />
 }
