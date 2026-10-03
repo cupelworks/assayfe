@@ -1,99 +1,50 @@
-/* A card opens with its own button (it holds links); the card itself isn't clickable. */
-.type {
-  cursor: default;
-}
-.type:hover {
-  background: var(--color-surface);
-}
-/* An open card takes two columns with an accent line on top, as in the design: the cards after
-   it fill the rest of the row (at 1440 px, the open card and the other two of its kind share it). */
-.type.open {
-  grid-column: span 2;
-  box-shadow: inset 0 3px 0 var(--color-accent);
-}
-@media (max-width: 700px) {
-  .type.open {
-    grid-column: auto;
-  }
-}
-.more {
-  all: unset;
-  cursor: pointer;
-  align-self: flex-start;
-  margin-top: auto;
-  font-size: 12px;
-  padding: 4px 0;
-  color: var(--color-accent);
-}
-.more:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-}
-.stat.cat {
-  text-decoration: none;
-}
-.marks {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-.mk {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
-}
-.ex {
-  border-collapse: collapse;
-  font-size: 12px;
-  margin-top: 8px;
-}
-.ex th {
-  font-weight: 400;
-  text-align: left;
-  color: var(--color-neutral-600);
-  padding: 3px 16px 3px 0;
-  border-bottom: 1px solid var(--color-divider);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-.ex td {
-  padding: 3px 16px 3px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
-  font-variant-numeric: tabular-nums;
-}
-.calc {
-  margin: 4px 0 0;
-  font-size: 12px;
-  color: var(--color-neutral-600);
-  text-wrap: pretty;
-}
-.params {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* What only the statistical tests have: the verdicts a test gives, with the app's marks; its
+   worked examples, ruled; a parameter's range beside its name; its method, asked for. */
+.answers {
   display: flex;
   flex-direction: column;
+  gap: 4px;
+}
+.answer {
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
 }
-.params .range {
+.ex {
+  margin-top: 12px;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.ex th {
+  padding: 0 20px 6px 0;
+  border-bottom: 1px solid var(--color-text);
+  text-align: left;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-neutral-600);
+}
+.ex td {
+  padding: 5px 20px 5px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
+}
+.range {
   margin-left: 8px;
+  color: var(--color-neutral-600);
+  font-variant-numeric: tabular-nums;
 }
-.params .hint {
+.calc-toggle {
+  margin-top: 18px;
+}
+.calc {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.55;
   color: var(--color-neutral-600);
   text-wrap: pretty;
-}
-.chart-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-}
-.chart-links a {
-  color: var(--color-accent);
-  text-decoration: none;
-  font-size: 12px;
-}
-.chart-links a:hover {
-  text-decoration: underline;
 }

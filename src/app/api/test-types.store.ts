@@ -13,6 +13,8 @@ export const needsReference = (t: TestType) =>
  *  also knows whether the current test already has a reference filled in) - use this where
  *  there's no specific test to check against, e.g. the catalogue page's per-card tag. */
 export const needsSetup = (t: TestType) => t.config_fields.some((f) => f.required);
+/** A type's cost in words, as the catalogue shows it: "very_fast" is "very fast". */
+export const costLabel = (t: TestType) => t.cost.replaceAll('_', ' ');
 /** The fields a type actually needs stored per-assignment - excludes "reference" entries, which
  *  always resolve from the test case's own expected_output and are never written into config. */
 export const assignmentFields = (t: TestType) =>

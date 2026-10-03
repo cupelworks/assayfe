@@ -7,9 +7,9 @@ import { signal } from '@angular/core';
  * matches everything. Composes with `DateSort` rather than folding sorting in too - each is its
  * own small piece: `sort.apply(filter.apply(items))`.
  *
- * Doesn't try to cover the catalogue/picker pages (`test-types.component.ts`,
- * `checks-table.component.ts`'s type picker) - those combine text search with category chips and other
- * criteria in ways that are genuinely per-page, not a variant of this.
+ * The catalogue pages (Test types, Statistical tests) search with it too, beside their own index
+ * of categories or kinds. Doesn't try to cover `checks-table.component.ts`'s type picker, which
+ * combines text search with category chips and other criteria in a way that's its own.
  */
 export class TextFilter<T> {
   query = signal('');

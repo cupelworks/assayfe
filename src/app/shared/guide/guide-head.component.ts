@@ -4,11 +4,13 @@ import { GuideSection } from './guide-sections';
 
 /**
  * The top of a guide page, on the 12-column grid: a red kicker, the title, the lede, an optional
- * key (a red line and what red means), then a numbered link per section. A link scrolls to its
- * section - also when the fragment is already the route's, which the router wouldn't scroll to
- * again. The page opens on the section its fragment names (`/charts#chart-scores`), else at its
- * top: the router neither scrolls to anchors nor back to the top in this app, so a link from far
- * down another page would otherwise land far down this one.
+ * key (a red line and what red means), then a numbered link per section (the Guide, Charts) and
+ * what the page puts under it, across the grid (the catalogues: their key, their index of
+ * sections, a filter). A link scrolls to its section - also when the fragment is already the
+ * route's, which the router wouldn't scroll to again. The page opens on the section its fragment
+ * names (`/charts#chart-scores`), else at its top: the router neither scrolls to anchors nor back
+ * to the top in this app, so a link from far down another page would otherwise land far down this
+ * one.
  */
 @Component({
   selector: 'assay-guide-head',
@@ -23,14 +25,17 @@ import { GuideSection } from './guide-sections';
         <i aria-hidden="true"></i><span>{{ k }}</span>
       </p>
     }
-    <nav class="ixs" [attr.aria-label]="navLabel()">
-      @for (s of sections(); track s.id) {
-        <a class="ix" [routerLink]="[]" [fragment]="s.id" (click)="go(s.id)"
-          ><b>{{ s.no }}</b
-          ><span>{{ s.label }}</span></a
-        >
-      }
-    </nav>
+    @if (sections().length) {
+      <nav class="ixs" [attr.aria-label]="navLabel()">
+        @for (s of sections(); track s.id) {
+          <a class="ix" [routerLink]="[]" [fragment]="s.id" (click)="go(s.id)"
+            ><b>{{ s.no }}</b
+            ><span>{{ s.label }}</span></a
+          >
+        }
+      </nav>
+    }
+    <div class="rest"><ng-content /></div>
   `,
   styles: `
     :host {
@@ -109,6 +114,9 @@ import { GuideSection } from './guide-sections';
       outline: 2px solid var(--color-accent);
       outline-offset: 2px;
     }
+    .rest {
+      grid-column: 1 / -1;
+    }
     @media (max-width: 960px) {
       :host > * {
         grid-column: 1 / -1;
@@ -129,7 +137,8 @@ export class GuideHeadComponent {
   lede = input.required<string>();
   /** What the red line means, beside a red line - for a page whose pictures draw one. */
   key = input<string | null>(null);
-  sections = input.required<GuideSection[]>();
+  /** A numbered link per section; none on a page whose index is its own (the catalogues'). */
+  sections = input<GuideSection[]>([]);
   navLabel = input('Sections');
 
   constructor() {

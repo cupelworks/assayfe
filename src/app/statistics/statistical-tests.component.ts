@@ -5,6 +5,19 @@ import { StatisticalEngine, StatisticalTest } from '../api/models';
 import { StatisticalTestsStore } from '../api/statistics-api.service';
 import { StatusMarkComponent, markLabel } from '../shared/status-mark.component';
 import { ChevronComponent } from '../shared/chevron.component';
+import { GuideHeadComponent } from '../shared/guide/guide-head.component';
+import { GuideSectionComponent } from '../shared/guide/guide-section.component';
+import { numbered } from '../shared/guide/guide-sections';
+import {
+  CATALOG,
+  CatalogColumn,
+  CatalogIndexLink,
+  CatalogKeyItem,
+  CatalogTag,
+} from '../shared/catalog';
+import { OpenOne } from '../shared/open-one';
+import { TextFilter } from '../shared/text-filter';
+import { counted } from '../shared/format';
 import { CHART_SECTIONS, chartAnchor } from '../charts/chart-sections';
 import { shownValue } from './stats-params';
 import { pct, runsInWaves } from './stats-format';
@@ -22,6 +35,29 @@ const KINDS: { key: Kind; label: string; blurb: string }[] = [
     blurb: 'Did a change help? Better, worse, or no clear difference - check by check.',
   },
 ];
+/** The kinds as the page's sections: numbered 01-02, anchored `kind-<key>`. */
+const SECTIONS = numbered(
+  'kind-',
+  KINDS.map((k) => ({ id: k.key, label: k.label })),
+);
+const KEY: CatalogKeyItem[] = [
+  { tag: { text: 'pass / fail' }, text: 'what it reads per run' },
+  { tag: { text: 'scored checks' }, text: 'which checks get a verdict' },
+  { tag: { text: 'from 29 times', look: 'figure' }, text: 'the fewest times, at its defaults' },
+];
+const COLUMNS: CatalogColumn[] = [
+  { label: 'Test', width: 2 },
+  { label: 'What it asks', width: 3.5 },
+  { label: 'Answers', width: 2 },
+  { label: 'Fewest times', width: 1.5 },
+];
+const CHARTS_LINK: CatalogIndexLink = {
+  label: 'How to read the charts',
+  blurb:
+    'The range, the strip, the runs grid, the met rate over time, scores, A against B - what each shows, and how a verdict reads off it.',
+  text: 'Open →',
+  link: '/charts',
+};
 const READS: Record<StatisticalTest['reads'], string> = {
   pass_fail: 'pass / fail',
   scores: 'scores',
@@ -81,44 +117,81 @@ function floorTag(t: StatisticalTest): string {
 }
 
 /**
- * The statistical tests a batch can run or two batches can be compared with - the API's catalogue,
- * a table like the check types - each with its question, the verdicts it gives, how many times it
- * needs (with the API's worked examples), its parameters and method, and links to the Charts page's
- * sections its results are read on. A link with a test's id as its fragment opens that card (the
- * compare dialog's "About this test").
+ * The statistical tests a batch can run or two batches can be compared with - the API's catalogue -
+ * laid out like Test types, on the Guide's layout (`shared/guide`, `shared/catalog`): a key to the
+ * tags, an index of the two kinds - a tile shows only its kind - and a link to Charts, a filter;
+ * then a section per kind, its tests in a ruled table: the question, the verdicts it gives, the
+ * fewest times. A row opens for how many times it needs (with the API's worked examples), its parameters,
+ * the Charts sections its results are read on, and - asked for - its method. A link with a test's
+ * id as its fragment opens that row (the compare dialog's "About this test").
  */
 @Component({
   selector: 'assay-statistical-tests',
   standalone: true,
-  imports: [RouterLink, StatusMarkComponent, ChevronComponent],
+  imports: [
+    RouterLink,
+    StatusMarkComponent,
+    ChevronComponent,
+    GuideHeadComponent,
+    GuideSectionComponent,
+    CATALOG,
+  ],
   templateUrl: './statistical-tests.component.html',
-  styleUrls: ['../shared/page.css', '../shared/catalog.css', './statistical-tests.component.css'],
+  styleUrls: [
+    '../shared/guide/guide.css',
+    '../shared/catalog/catalog.css',
+    './statistical-tests.component.css',
+  ],
 })
 export class StatisticalTestsComponent {
   store = inject(StatisticalTestsStore);
   private fragment = toSignal(inject(ActivatedRoute).fragment, { initialValue: null });
   markLabel = markLabel;
-  kind = signal<Kind | null>(null);
-  openId = signal<string | null>(null);
-  /** The open card whose "How is this calculated?" is open - closed again on another card. */
-  calcOpenId = signal<string | null>(null);
-
-  tiles = computed(() =>
-    KINDS.map((k) => ({ ...k, n: this.store.items().filter((t) => t.kind === k.key).length })),
+  key = KEY;
+  columns = COLUMNS;
+  chartsLink = CHARTS_LINK;
+  kind = signal<string | null>(null);
+  filter = new TextFilter<StatisticalTest>(
+    (t) => `${t.name} ${t.question} ${READS[t.reads]} ${APPLIES[t.applies_to]}`,
   );
-  groups = computed(() =>
-    KINDS.filter((k) => !this.kind() || this.kind() === k.key).map((k) => ({
-      ...k,
-      tests: this.store
-        .items()
-        .filter((t) => t.kind === k.key)
-        .map((t) => this.card(t)),
+  open = new OpenOne();
+  /** The open row whose "How is this calculated?" is open - closed again on another row. */
+  calc = new OpenOne();
+
+  /** A tile per kind, with how many tests it holds. */
+  index = computed(() =>
+    KINDS.map((k, i) => ({
+      key: k.key,
+      no: SECTIONS[i].no,
+      label: k.label,
+      blurb: k.blurb,
+      count: this.store.items().filter((t) => t.kind === k.key).length,
     })),
   );
+  /** The kinds shown - only the selected tile's, when one is - with their tests that pass the
+   *  filter. */
+  groups = computed(() =>
+    KINDS.map((k, i) => ({ k, section: SECTIONS[i] }))
+      .filter(({ k }) => !this.kind() || this.kind() === k.key)
+      .map(({ k, section }) => {
+        const tests = this.filter
+          .apply(this.store.items().filter((t) => t.kind === k.key))
+          .map((t) => this.row(t));
+        return {
+          key: k.key,
+          section,
+          label: k.label,
+          sub: counted(tests.length, 'test'),
+          tests,
+          empty: tests.length ? null : 'No tests of this kind match the filter.',
+        };
+      }),
+  );
+  total = computed(() => this.groups().reduce((n, g) => n + g.tests.length, 0));
 
   constructor() {
     this.store.load();
-    // A link's fragment, once the catalogue is in: open that test's card.
+    // A link's fragment, once the catalogue is in: open that test's row.
     effect(() => {
       const f = this.fragment();
       if (!f || !this.store.items().length) return;
@@ -126,35 +199,28 @@ export class StatisticalTestsComponent {
     });
   }
 
-  toggleKind(k: Kind) {
-    this.kind.set(this.kind() === k ? null : k);
-  }
-  toggle(id: string) {
-    this.openId.set(this.openId() === id ? null : id);
-  }
-  toggleCalc(id: string) {
-    this.calcOpenId.set(this.calcOpenId() === id ? null : id);
-  }
-  /** Open a test's card and scroll to it, once the page has rendered it. */
+  /** Open a test's row and scroll to it, once the page has rendered it. */
   scrollTo(id: string) {
     if (!this.store.byId().has(id)) return;
     this.kind.set(null);
-    this.openId.set(id);
+    this.filter.query.set('');
+    this.open.open(id);
     setTimeout(() => document.getElementById(id)?.scrollIntoView());
   }
 
-  private card(t: StatisticalTest) {
+  private row(t: StatisticalTest) {
     const ex = t.floor.examples;
     const keys = ex.length ? Object.keys(ex[0]) : [];
     return {
       id: t.id,
       name: t.name,
       question: t.question,
-      tags: [READS[t.reads] ?? t.reads, APPLIES[t.applies_to] ?? t.applies_to],
-      floorTag: floorTag(t),
+      tags: [READS[t.reads] ?? t.reads, APPLIES[t.applies_to] ?? t.applies_to].map(
+        (text): CatalogTag => ({ text }),
+      ),
+      floor: { text: floorTag(t), look: 'figure' } as CatalogTag,
       verdicts: t.verdicts,
-      open: this.openId() === t.id,
-      floor: t.floor.explanation,
+      explanation: t.floor.explanation,
       examples: keys.length
         ? {
             head: keys.map((k) => EXAMPLE_COLUMNS[k] ?? k),
@@ -170,7 +236,6 @@ export class StatisticalTestsComponent {
         };
       }),
       method: t.method,
-      calcOpen: this.calcOpenId() === t.id,
       charts: (CHARTS[t.engine] ?? [])
         .map((id) => CHART_SECTIONS.find((s) => s.id === id))
         .filter((s) => !!s)

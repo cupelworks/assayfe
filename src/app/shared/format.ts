@@ -10,6 +10,8 @@ export function rel(iso?: string | null) {
   return `${Math.round(h / 24)} d ago`;
 }
 export const short = (id?: string | null) => String(id ?? '').slice(0, 8);
+/** "1 type", "15 types": a count and its noun, plural unless it's 1. */
+export const counted = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
 /** "Untitled · 1a2b3c4d" - the label for anything nameable that has no name. */
 export const untitled = (id?: string | null) => `Untitled · ${short(id)}`;
 /** A test's (or frozen entry's, or run's) display name: its own name, or `untitled(id)` when the

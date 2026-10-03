@@ -2,10 +2,10 @@ import { Component, input } from '@angular/core';
 import { GuideSection } from './guide-sections';
 
 /**
- * A section of a guide page, on the 12-column grid: its red number and title in columns 1-3,
- * then what it says in 4-12 - a nine-column grid its content is laid on, with `guide.css`'s
- * classes (`g-lead`, `g-text`, `g-wide`, `g-note`), which the page includes for the content it
- * projects.
+ * A section of a guide page, on the 12-column grid: its red number and title in columns 1-3 (and
+ * under the title, optionally, what it holds - "15 types"), then what it says in 4-12 - a
+ * nine-column grid its content is laid on, with `guide.css`'s classes (`g-lead`, `g-text`,
+ * `g-wide`, `g-note`), which the page includes for the content it projects.
  */
 @Component({
   selector: 'assay-guide-section',
@@ -19,6 +19,9 @@ import { GuideSection } from './guide-sections';
     <div class="rail">
       <span class="num" aria-hidden="true">{{ section().no }}</span>
       <h2 class="title" [id]="section().id + '-title'">{{ section().label }}</h2>
+      @if (sub(); as holds) {
+        <div class="sub">{{ holds }}</div>
+      }
     </div>
     <div class="body"><ng-content /></div>
   `,
@@ -50,6 +53,11 @@ import { GuideSection } from './guide-sections';
       line-height: 1.12;
       text-wrap: balance;
     }
+    .sub {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--color-neutral-600);
+    }
     .body {
       grid-column: 4 / 13;
       display: grid;
@@ -67,15 +75,20 @@ import { GuideSection } from './guide-sections';
       .body {
         grid-column: 1 / -1;
       }
+      .rail {
+        margin-bottom: 24px;
+      }
       .num {
         font-size: 48px;
       }
       .title {
-        margin: 10px 0 24px;
+        margin: 10px 0 0;
       }
     }
   `,
 })
 export class GuideSectionComponent {
   section = input.required<GuideSection>();
+  /** What the section holds, under its title: "15 types". */
+  sub = input<string | null>(null);
 }

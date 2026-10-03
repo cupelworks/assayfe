@@ -1,155 +1,120 @@
-<div class="hero">
-  <div>
-    <div class="kicker">Catalog</div>
-    <h1>Statistical tests</h1>
-  </div>
-  <p class="hero-note text-muted">
-    What a batch can ask, how many times it needs, and how to read its answer.
-  </p>
-</div>
+<div class="g-wrap">
+  <assay-guide-head
+    kicker="Catalog"
+    title="Statistical tests"
+    lede="What a batch can ask, how many times it needs, and how to read its answer."
+  >
+    <assay-catalog-key [items]="key" />
+    <assay-catalog-index label="Kinds" [items]="index()" [(selected)]="kind" [link]="chartsLink" />
+    <assay-catalog-filter
+      placeholder="Name, question, what it reads, which checks…"
+      [shown]="total()"
+      [(query)]="filter.query"
+    />
+  </assay-guide-head>
 
-<section class="stats">
-  @for (k of tiles(); track k.key) {
-    <button
-      type="button"
-      class="stat cat"
-      [class.active]="kind() === k.key"
-      (click)="toggleKind(k.key)"
-    >
-      <div class="label">{{ k.label }}</div>
-      <div class="big">{{ k.n }}</div>
-      <div class="small blurb">{{ k.blurb }}</div>
-      <div class="small go">{{ kind() === k.key ? 'Showing only these' : 'Show only →' }}</div>
-    </button>
-  }
-  <a class="stat cat" routerLink="/charts">
-    <div class="label">How to read the charts</div>
-    <div class="small blurb">
-      The range, the strip, the runs grid, the met rate over time, scores, A against B - what each
-      shows, and how a verdict reads off it.
-    </div>
-    <div class="small go">Open →</div>
-  </a>
-  <div class="stat legend">
-    <div class="label">Reading a card</div>
-    <div class="legend-rows">
-      <div>
-        <span class="tag tag-neutral">pass / fail</span
-        ><span class="small">what it reads per run</span>
-      </div>
-      <div>
-        <span class="tag tag-neutral">scored checks</span
-        ><span class="small">which checks get a verdict</span>
-      </div>
-      <div>
-        <span class="tag tag-outline">from 29 times</span
-        ><span class="small">the fewest times, at its defaults</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="cell">
   @if (!store.items().length) {
-    <div class="empty">Loading the catalogue…</div>
-  }
-  @for (g of groups(); track g.key) {
-    <div class="group">
-      <div class="row-head">
-        <h2>{{ g.label }}</h2>
-        <span class="small">{{ g.tests.length }} test{{ g.tests.length === 1 ? '' : 's' }}</span>
-      </div>
-      <div class="grid">
-        @for (t of g.tests; track t.id) {
-          <article class="card type" [id]="t.id" [class.open]="t.open">
-            <div class="type-head">
-              <h3>{{ t.name }}</h3>
-              <div class="tags">
-                @for (tag of t.tags; track tag) {
-                  <span class="tag tag-neutral">{{ tag }}</span>
-                }
-                <span class="tag tag-outline">{{ t.floorTag }}</span>
-              </div>
-            </div>
-            <p class="desc">{{ t.question }}</p>
-            <dl>
-              <dt>Answers</dt>
-              <dd class="marks">
-                @for (v of t.verdicts; track v) {
-                  <span class="mk"><assay-mark [of]="v" />{{ markLabel(v) }}</span>
-                } @empty {
-                  <!-- The trial: no verdict - it ends Done, with what it learned. -->
-                  <span class="mk"><assay-mark of="Done" />Done, with no verdict</span>
-                }
-              </dd>
-              @if (t.open) {
-                <dt>How many times</dt>
-                <dd>
-                  {{ t.floor }}
-                  @if (t.examples; as ex) {
-                    <table class="ex">
-                      <thead>
-                        <tr>
-                          @for (h of ex.head; track $index) {
-                            <th>{{ h }}</th>
-                          }
-                        </tr>
-                      </thead>
-                      <tbody>
-                        @for (r of ex.rows; track $index) {
-                          <tr>
-                            @for (c of r; track $index) {
-                              <td>{{ c }}</td>
+    <p class="cat-loading">Loading the catalogue…</p>
+  } @else {
+    @for (g of groups(); track g.key) {
+      <assay-guide-section [section]="g.section" [sub]="g.sub">
+        <assay-catalog-table [label]="g.label" [columns]="columns" [empty]="g.empty">
+          @for (t of g.tests; track t.id) {
+            <assay-catalog-row
+              [id]="t.id"
+              [name]="t.name"
+              [tags]="t.tags"
+              [open]="open.is(t.id)"
+              (toggle)="open.toggle(t.id)"
+            >
+              <assay-catalog-cell caption="What it asks">{{ t.question }}</assay-catalog-cell>
+              <assay-catalog-cell caption="Answers">
+                <span class="answers">
+                  @for (v of t.verdicts; track v) {
+                    <span class="answer"><assay-mark [of]="v" size="md" />{{ markLabel(v) }}</span>
+                  } @empty {
+                    <!-- The trial: no verdict - it ends Done, with what it learned. -->
+                    <span class="answer"
+                      ><assay-mark of="Done" size="md" />Done, with no verdict</span
+                    >
+                  }
+                </span>
+              </assay-catalog-cell>
+              <assay-catalog-cell caption="Fewest times"
+                ><assay-catalog-tag [tag]="t.floor"
+              /></assay-catalog-cell>
+              @if (open.is(t.id)) {
+                <assay-catalog-details>
+                  <div class="cat-split">
+                    <div class="cat-block">
+                      <span class="cat-cap">How many times</span>
+                      <p>{{ t.explanation }}</p>
+                      @if (t.examples; as ex) {
+                        <table class="ex">
+                          <thead>
+                            <tr>
+                              @for (h of ex.head; track $index) {
+                                <th>{{ h }}</th>
+                              }
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (r of ex.rows; track $index) {
+                              <tr>
+                                @for (c of r; track $index) {
+                                  <td>{{ c }}</td>
+                                }
+                              </tr>
                             }
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  }
-                </dd>
-                <dt>Parameters</dt>
-                <dd>
-                  <ul class="params">
-                    @for (p of t.params; track p.label) {
-                      <li>
-                        <span class="strong">{{ p.label }}</span>
-                        <span class="small range">{{ p.range }}</span>
-                        <div class="small hint">{{ p.hint }}</div>
-                      </li>
-                    }
-                  </ul>
-                </dd>
-                @if (t.charts.length) {
-                  <dt>Its charts</dt>
-                  <dd class="chart-links">
-                    @for (c of t.charts; track c.anchor) {
-                      <a routerLink="/charts" [fragment]="c.anchor">{{ c.label }} →</a>
-                    }
-                  </dd>
-                }
-                <!-- The method is the statistician's wording: there for whoever asks for it. -->
-                <dt aria-hidden="true"></dt>
-                <dd>
-                  <button
-                    type="button"
-                    class="adv-toggle"
-                    [attr.aria-expanded]="t.calcOpen"
-                    (click)="toggleCalc(t.id)"
-                  >
-                    How is this calculated? <assay-chevron [open]="t.calcOpen" />
-                  </button>
-                  @if (t.calcOpen) {
-                    <p class="calc">{{ t.method }}</p>
-                  }
-                </dd>
+                          </tbody>
+                        </table>
+                      }
+                    </div>
+                    <div>
+                      @if (t.params.length) {
+                        <div class="cat-block">
+                          <span class="cat-cap">Parameters</span>
+                          <ul class="cat-list">
+                            @for (p of t.params; track p.label) {
+                              <li>
+                                <b>{{ p.label }}</b
+                                ><span class="range">{{ p.range }}</span>
+                                <div class="cat-sm">{{ p.hint }}</div>
+                              </li>
+                            }
+                          </ul>
+                        </div>
+                      }
+                      @if (t.charts.length) {
+                        <div class="cat-block">
+                          <span class="cat-cap">Its charts</span>
+                          <div class="cat-go">
+                            @for (c of t.charts; track c.anchor) {
+                              <a routerLink="/charts" [fragment]="c.anchor">{{ c.label }} →</a>
+                            }
+                          </div>
+                        </div>
+                      }
+                      <!-- The method is the statistician's wording: there for whoever asks for it. -->
+                      <button
+                        type="button"
+                        class="adv-toggle calc-toggle"
+                        [attr.aria-expanded]="calc.is(t.id)"
+                        (click)="calc.toggle(t.id)"
+                      >
+                        How is this calculated? <assay-chevron [open]="calc.is(t.id)" />
+                      </button>
+                      @if (calc.is(t.id)) {
+                        <p class="calc">{{ t.method }}</p>
+                      }
+                    </div>
+                  </div>
+                </assay-catalog-details>
               }
-            </dl>
-            <button type="button" class="more" [attr.aria-expanded]="t.open" (click)="toggle(t.id)">
-              {{ t.open ? 'Less ↑' : 'More ↓' }}
-            </button>
-          </article>
-        }
-      </div>
-    </div>
+            </assay-catalog-row>
+          }
+        </assay-catalog-table>
+      </assay-guide-section>
+    }
   }
-</section>
+</div>
