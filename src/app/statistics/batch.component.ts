@@ -13,19 +13,19 @@ import { ScorePlotComponent } from './charts/score-plot.component';
 import { CompareDialogComponent } from './compare-dialog.component';
 import {
   BATCH_POLL_MS,
+  endSentence,
   pct,
   question,
   readsScores,
   ruleText,
   runAgainLink,
   runLink,
-  scopeLink,
-  scopePlace,
-  scopeRef,
+  scopeCrumbs,
   timesRun,
   timesText,
 } from './stats-format';
 import { ArrowOutComponent } from '../shared/arrow-out.component';
+import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { ProgressBarComponent } from '../shared/progress-bar.component';
 
 type Filter = 'all' | 'fail' | 'inconclusive' | 'pass' | 'none';
@@ -70,6 +70,7 @@ const runsLine = (runs: RunCounts) =>
   standalone: true,
   imports: [
     ArrowOutComponent,
+    GuideHeadComponent,
     ProgressBarComponent,
     RouterLink,
     StatusMarkComponent,
@@ -81,7 +82,13 @@ const runsLine = (runs: RunCounts) =>
     CompareDialogComponent,
   ],
   templateUrl: './batch.component.html',
-  styleUrls: ['../shared/page.css', './stats-page.css', './batch.component.css'],
+  styleUrls: [
+    '../shared/page.css',
+    '../shared/guide/guide.css',
+    '../shared/guide/head-aside.css',
+    './stats-page.css',
+    './batch.component.css',
+  ],
 })
 export class BatchComponent {
   id = input.required<string>();
@@ -105,15 +112,18 @@ export class BatchComponent {
   timesRun = timesRun;
   inFlight = computed(() => isInFlight(this.status()));
   scope = computed(() => this.batch()?.scope ?? null);
-  place = computed(() => {
+  /** The pages above it: the scope's list, then the scope - "Statistics batch" after them. */
+  crumbs = computed(() => {
     const s = this.scope();
-    return s ? { ...scopePlace(s.kind), link: scopeLink(s), ref: scopeRef(s) } : null;
+    return s ? scopeCrumbs(s) : [];
   });
-  kicker = computed(() => {
-    const b = this.batch();
-    return b
-      ? `Statistics batch · ${question(b.engine, b.parameters, this.testName())}`
-      : 'Statistics batch';
+  /** Under the title: its question, how many times, how sure, when - "Passes at least 9 times in
+   *  10? 25 times · 95% sure. 3 Oct, 10:47 · took 12 min." */
+  lede = computed(() => {
+    const b = this.batch(),
+      f = this.facts();
+    if (!b || !f) return '';
+    return `${endSentence(question(b.engine, b.parameters, this.testName()))} ${f.line}. ${f.when}.`;
   });
   headline = computed(() => {
     const b = this.batch();

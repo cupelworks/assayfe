@@ -42,7 +42,7 @@ import {
     ProgressBarComponent,
     CompareDialogComponent,
   ],
-  styleUrls: ['../shared/work/work.css'],
+  styleUrls: ['../shared/guide/head-aside.css', '../shared/work/work.css'],
   styles: `
     :host {
       display: block;

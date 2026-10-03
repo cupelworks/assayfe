@@ -66,7 +66,11 @@ type Dlg = 'rename' | 'delete' | 'add' | 'unlink' | 'deleteEntries' | 'editEntry
     LatestRunComponent,
   ],
   templateUrl: './test-set-detail.component.html',
-  styleUrls: ['../shared/guide/guide.css', '../shared/work/work.css'],
+  styleUrls: [
+    '../shared/guide/guide.css',
+    '../shared/guide/head-aside.css',
+    '../shared/work/work.css',
+  ],
 })
 export class TestSetDetailComponent extends ScopePage<Dlg> {
   readonly kind = 'test-sets' as const;

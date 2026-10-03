@@ -54,7 +54,11 @@ type Dlg = 'rename' | 'delete' | 'link' | 'unlink';
     LatestRunComponent,
   ],
   templateUrl: './test-plan-detail.component.html',
-  styleUrls: ['../shared/guide/guide.css', '../shared/work/work.css'],
+  styleUrls: [
+    '../shared/guide/guide.css',
+    '../shared/guide/head-aside.css',
+    '../shared/work/work.css',
+  ],
 })
 export class TestPlanDetailComponent extends ScopePage<Dlg> {
   readonly kind = 'test-plans' as const;

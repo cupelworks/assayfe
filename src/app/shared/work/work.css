@@ -1,50 +1,7 @@
 /* The work's pages (Overview, Tests, Test sets, Test plans, Datasets and the page of each): what
-   they project into the Guide's head and sections - each page includes it, with guide.css. */
+   they project into the Guide's head and sections - each page includes it, with guide.css and
+   head-aside.css (what stands beside the title, and the red words). */
 
-/* Beside the title, on the right margin: the one thing to do in red, a link on in red words, the
-   quiet rest - each line flush right. */
-.page-aside {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-  text-align: right;
-}
-.page-aside assay-quiet-actions {
-  align-items: flex-end;
-}
-.page-aside .btn {
-  min-height: 44px;
-  padding: 0 20px;
-}
-/* A link on to another page, or a thing to do, in red words: "Run with statistics ↗",
-   "Open the batch →", "Add tests…". */
-.go {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  width: fit-content;
-  min-height: 32px;
-  padding: 0;
-  border: 0;
-  background: none;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: inherit;
-  color: var(--color-accent);
-  text-decoration: none;
-  cursor: pointer;
-}
-.go:hover:not(:disabled) {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.go:disabled {
-  color: var(--color-neutral-500);
-  cursor: default;
-}
-.go:focus-visible,
 .again:focus-visible,
 .row-act:focus-visible {
   outline: 2px solid var(--color-accent);
@@ -252,12 +209,6 @@ assay-catalog-table.list {
   margin-top: 10px;
 }
 @media (max-width: 960px) {
-  /* On a phone, flush left under the title, as everything else. */
-  .page-aside,
-  .page-aside assay-quiet-actions {
-    align-items: flex-start;
-    text-align: left;
-  }
   .now {
     grid-template-columns: minmax(0, 1fr);
     row-gap: 32px;

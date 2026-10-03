@@ -15,7 +15,7 @@ import { ExecutionRow, whatRan } from './executions-table.component';
   selector: 'assay-latest-run',
   standalone: true,
   imports: [RouterLink, StateBlockComponent],
-  styleUrls: ['../shared/work/work.css'],
+  styleUrls: ['../shared/guide/head-aside.css', '../shared/work/work.css'],
   template: `
     @if (run(); as r) {
       <assay-state-block

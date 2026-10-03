@@ -87,7 +87,11 @@ const COPY = {
     PickDialogComponent,
   ],
   templateUrl: './scopes-list.component.html',
-  styleUrls: ['../shared/guide/guide.css', '../shared/work/work.css'],
+  styleUrls: [
+    '../shared/guide/guide.css',
+    '../shared/guide/head-aside.css',
+    '../shared/work/work.css',
+  ],
 })
 export class ScopesListComponent {
   kind = input.required<Kind>();

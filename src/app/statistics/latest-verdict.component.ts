@@ -18,7 +18,7 @@ import { batchProgress, question, runAgainLink, timesText, verdictLine } from '.
   selector: 'assay-latest-verdict',
   standalone: true,
   imports: [RouterLink, ArrowOutComponent, ProgressBarComponent, StateBlockComponent],
-  styleUrls: ['../shared/work/work.css'],
+  styleUrls: ['../shared/guide/head-aside.css', '../shared/work/work.css'],
   template: `
     @if (v(); as v) {
       <assay-state-block caption="Latest verdict" [of]="v.b.status" [say]="v.say" [facts]="v.facts">

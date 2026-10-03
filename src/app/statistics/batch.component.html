@@ -1,33 +1,16 @@
-@if (place(); as pl) {
-  <div class="crumbs">
-    <a [routerLink]="pl.list">{{ pl.label }}</a
-    ><span>/</span><a [routerLink]="pl.link">{{ batch()!.scope.name }}</a
-    ><span>/</span><span class="cur">Statistics batch</span>
-  </div>
-} @else {
-  <div class="crumbs"><span class="cur">Statistics batch</span></div>
-}
-@if (loadError(); as e) {
-  <div class="msg msg-err">{{ e }}</div>
-}
-@if (batch(); as b) {
-  <div class="hero">
-    <div>
-      <div class="kicker">{{ kicker() }}</div>
-      <h1>{{ headline() }}</h1>
-    </div>
-    <div class="hero-side">
-      @if (facts(); as f) {
-        <p class="hero-note">{{ f.line }}.<br />{{ f.when }}.</p>
-      }
-      @if (b.note) {
-        <p class="hero-note note">“{{ b.note }}”</p>
-      }
-      @if (!inFlight()) {
-        <div class="hero-actions">
-          <button class="btn btn-secondary" (click)="dlg.set('compare')">Compare with…</button>
+<div class="g-wrap head-rule">
+  <assay-guide-head
+    size="one"
+    kicker="Statistics batch"
+    [crumbs]="crumbs()"
+    [title]="headline()"
+    [lede]="lede()"
+  >
+    <div class="page-aside" guideHeadAside>
+      @if (batch(); as b) {
+        @if (!inFlight()) {
           <a
-            class="btn btn-primary new-tab"
+            class="go new-tab"
             [routerLink]="runAgainLink(b.scope)"
             [queryParams]="{ from: b.id }"
             target="_blank"
@@ -35,11 +18,19 @@
             aria-label="Run again, opens in a new tab"
             >Run again<assay-arrow-out
           /></a>
-        </div>
+          <button type="button" class="go" (click)="dlg.set('compare')">Compare with…</button>
+        }
       }
     </div>
-  </div>
-
+    @if (batch()?.note; as n) {
+      <p class="head-note">“{{ n }}”</p>
+    }
+  </assay-guide-head>
+</div>
+@if (loadError(); as e) {
+  <div class="msg msg-err">{{ e }}</div>
+}
+@if (batch(); as b) {
   @if (inFlight()) {
     @if (progress(); as p) {
       <section class="stats">

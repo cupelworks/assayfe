@@ -1,31 +1,20 @@
-@if (place(); as pl) {
-  <div class="crumbs">
-    <a [routerLink]="pl.list">{{ pl.label }}</a
-    ><span>/</span><a [routerLink]="pl.link">{{ c()!.scope.name }}</a
-    ><span>/</span><span class="cur">Comparison</span>
-  </div>
-} @else {
-  <div class="crumbs"><span class="cur">Comparison</span></div>
-}
+<div class="g-wrap head-rule">
+  <assay-guide-head
+    size="one"
+    kicker="Comparison"
+    [crumbs]="crumbs()"
+    [title]="c()?.summary ?? ''"
+    [lede]="lede()"
+  >
+    @if (c()?.note; as n) {
+      <p class="head-note">“{{ n }}”</p>
+    }
+  </assay-guide-head>
+</div>
 @if (loadError(); as e) {
   <div class="msg msg-err">{{ e }}</div>
 }
 @if (c(); as cmp) {
-  <div class="hero">
-    <div>
-      <div class="kicker">Comparison · {{ testName() }}</div>
-      <h1>{{ cmp.summary }}</h1>
-    </div>
-    <div class="hero-side">
-      <p class="hero-note">
-        {{ cmp.scope.name }} · {{ conf() }}.<br />Compared {{ absTime(cmp.created_at) }}.
-      </p>
-      @if (cmp.note) {
-        <p class="hero-note note">“{{ cmp.note }}”</p>
-      }
-    </div>
-  </div>
-
   <section class="ab">
     @for (s of sides(); track s.role) {
       <div class="side">

@@ -56,7 +56,11 @@ type Dlg =
     MakeTestsDialogComponent,
   ],
   templateUrl: './dataset-detail.component.html',
-  styleUrls: ['../shared/guide/guide.css', '../shared/work/work.css'],
+  styleUrls: [
+    '../shared/guide/guide.css',
+    '../shared/guide/head-aside.css',
+    '../shared/work/work.css',
+  ],
 })
 export class DatasetDetailComponent {
   id = input.required<string>();

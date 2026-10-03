@@ -9,6 +9,7 @@ import {
   StatsScopeRef,
 } from '../api/models';
 import { isInFlight } from '../shared/format';
+import { GuideCrumb } from '../shared/guide/breadcrumb.component';
 import { markLabel } from '../shared/status-mark.component';
 
 /** 0.9019 → "90.2%", 1 → "100%": a share of 1 as a percentage, to one decimal when it has one. */
@@ -220,6 +221,15 @@ const SCOPE_PLACES: Record<
 };
 export const scopePlace = (kind: StatsScopeKind) => SCOPE_PLACES[kind];
 export const scopeLink = (s: StatsScope) => [SCOPE_PLACES[s.kind].list, s.id];
+/** The pages above a batch, a comparison or Run with statistics: the scope's list, then the scope
+ *  by its name ("Tests / Password Reset Instructions"). */
+export const scopeCrumbs = (s: StatsScope): GuideCrumb[] => [
+  { label: SCOPE_PLACES[s.kind].label, link: SCOPE_PLACES[s.kind].list },
+  { label: s.name, link: scopeLink(s) },
+];
+/** Words that end a sentence as they are ("…time?"), else with a full stop: a batch's question can
+ *  end in "?", in "Until there's an answer", or be a statistical test's name. */
+export const endSentence = (s: string) => (/[.?!]$/.test(s) ? s : `${s}.`);
 /** "Run again ↗": the scope's Run with statistics page - with `?from=` the batch it starts from. */
 export const runAgainLink = (s: StatsScope) => [
   SCOPE_PLACES[s.kind].list,

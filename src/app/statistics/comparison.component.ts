@@ -7,7 +7,8 @@ import { absTime, errText } from '../shared/format';
 import { StatusMarkComponent, markLabel } from '../shared/status-mark.component';
 import { RangeChartComponent } from './charts/range-chart.component';
 import { DumbbellComponent } from './charts/dumbbell.component';
-import { diffCaption, pct, points, scopeLink, scopePlace, scoreDecimals } from './stats-format';
+import { diffCaption, endSentence, pct, points, scopeCrumbs, scoreDecimals } from './stats-format';
+import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { TestTypesStore, scoreScale } from '../api/test-types.store';
 
 /** The verdicts worth reading first: what got worse, then what changed, then the rest. */
@@ -33,9 +34,21 @@ const halfWidth = (m: number, step: number) => Math.max(step, Math.ceil(m / step
 @Component({
   selector: 'assay-comparison',
   standalone: true,
-  imports: [RouterLink, DecimalPipe, StatusMarkComponent, RangeChartComponent, DumbbellComponent],
+  imports: [
+    RouterLink,
+    DecimalPipe,
+    GuideHeadComponent,
+    StatusMarkComponent,
+    RangeChartComponent,
+    DumbbellComponent,
+  ],
   templateUrl: './comparison.component.html',
-  styleUrls: ['../shared/page.css', './stats-page.css', './comparison.component.css'],
+  styleUrls: [
+    '../shared/page.css',
+    '../shared/guide/guide.css',
+    './stats-page.css',
+    './comparison.component.css',
+  ],
 })
 export class ComparisonComponent {
   id = input.required<string>();
@@ -48,9 +61,21 @@ export class ComparisonComponent {
   c = signal<Comparison | null>(null);
   loadError = signal<string | null>(null);
   showQuiet = signal(false);
-  place = computed(() => {
+  /** The pages above it: the scope's list, then the scope - "Comparison" after them. */
+  crumbs = computed(() => {
     const s = this.c()?.scope;
-    return s ? { ...scopePlace(s.kind), link: scopeLink(s) } : null;
+    return s ? scopeCrumbs(s) : [];
+  });
+  /** Under the title: how it compared, how sure, when - "Is it still as good? 95% sure. Compared
+   *  3 Oct, 10:47." */
+  lede = computed(() => {
+    const c = this.c();
+    if (!c) return '';
+    const name = this.testName(),
+      conf = this.conf();
+    return [name && endSentence(name), conf && `${conf}.`, `Compared ${absTime(c.created_at)}.`]
+      .filter(Boolean)
+      .join(' ');
   });
   testName = computed(() => {
     const c = this.c();

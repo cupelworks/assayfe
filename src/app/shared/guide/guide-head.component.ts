@@ -1,12 +1,7 @@
 import { Component, afterNextRender, inject, input } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { BreadcrumbComponent, GuideCrumb } from './breadcrumb.component';
 import { GuideSection } from './guide-sections';
-
-/** The way back from a page of one thing: its list ("Tests"), in the kicker. */
-export interface GuideCrumb {
-  label: string;
-  link: string;
-}
 
 /**
  * The top of a guide page, on the 12-column grid: a red kicker, the title - and beside it, flush
@@ -20,21 +15,21 @@ export interface GuideCrumb {
  * to the top in this app, so a link from far down another page would otherwise land far down this
  * one.
  *
- * A page of one thing (a test, a set, a dataset) leads its kicker with the way back to its list
- * (`crumb`: "Tests / Test"), and its title is a name - `size="one"` sets it smaller, as names run
+ * A page with pages above it (a test, a set's run, a batch) puts its breadcrumb in the kicker's
+ * place (`crumbs`: "Tests / Password Reset Instructions", then `kicker` - what the page is, when
+ * its title doesn't say it: "Statistics batch"); a page with nothing above it (the Overview, a
+ * list, the Guide, a catalogue, Settings) has the kicker alone, naming its part of the app
+ * ("Work"). A page of one thing's title is a name - `size="one"` sets it smaller, as names run
  * long.
  */
 @Component({
   selector: 'assay-guide-head',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, BreadcrumbComponent],
   host: { '[class.one]': "size() === 'one'" },
   template: `
-    @if (crumb(); as c) {
-      <nav class="kicker crumb" aria-label="Where it is">
-        <a [routerLink]="c.link">{{ c.label }}</a
-        ><span aria-hidden="true">/</span>{{ kicker() }}
-      </nav>
+    @if (crumbs().length) {
+      <assay-breadcrumb class="kicker" [trail]="crumbs()" [here]="kicker() || null" />
     } @else {
       <div class="kicker">{{ kicker() }}</div>
     }
@@ -80,26 +75,6 @@ export interface GuideCrumb {
       font-weight: 800;
       letter-spacing: -0.04em;
       line-height: 0.92;
-    }
-    .crumb {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .crumb a {
-      color: var(--color-accent);
-      text-decoration: none;
-    }
-    .crumb a:hover {
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
-    .crumb a:focus-visible {
-      outline: 2px solid var(--color-accent);
-      outline-offset: 2px;
-    }
-    .crumb span {
-      color: var(--color-neutral-600);
     }
     /* A name, not a page's title: smaller, balanced over its lines. */
     :host(.one) .h1 {
@@ -211,13 +186,15 @@ export interface GuideCrumb {
   `,
 })
 export class GuideHeadComponent {
-  kicker = input.required<string>();
+  /** Its part of the app ("Work") - or, after a breadcrumb, what this page is ("Test"); none when
+   *  its title says it. */
+  kicker = input('');
   title = input.required<string>();
   lede = input.required<string>();
   /** What the red line means, beside a red line - for a page whose pictures draw one. */
   key = input<string | null>(null);
-  /** A page of one thing: the way back to its list, before the kicker. */
-  crumb = input<GuideCrumb | null>(null);
+  /** Each page above this one, by its title, outermost first: its breadcrumb. */
+  crumbs = input<GuideCrumb[]>([]);
   /** `one`: the title is a thing's name - smaller than a list's. */
   size = input<'list' | 'one'>('list');
   /** A numbered link per section; none on a page whose index is its own (the catalogues'). */

@@ -66,7 +66,11 @@ interface Kept extends NamedItem {
     PickDialogComponent,
   ],
   templateUrl: './tests-list.component.html',
-  styleUrls: ['../shared/guide/guide.css', '../shared/work/work.css'],
+  styleUrls: [
+    '../shared/guide/guide.css',
+    '../shared/guide/head-aside.css',
+    '../shared/work/work.css',
+  ],
 })
 export class TestsListComponent {
   store = inject(CatalogStore);

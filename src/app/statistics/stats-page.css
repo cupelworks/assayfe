@@ -1,16 +1,17 @@
-/* What a batch's page and a comparison's page share: the hero's side, the heading with its
-   "How to read" link, the axis ticks under a heading, the verdict cell. */
-.hero-side {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 12px;
+/* What a batch's page and a comparison's page share: the Guide's head, ruled off from the rest of
+   the page as the old head was, with its note under the lede; the heading with its "How to read"
+   link, the axis ticks under a heading, the verdict cell. */
+.head-rule {
+  border-bottom: 2px solid var(--color-divider);
 }
-.hero-side .hero-note {
-  text-align: right;
-}
-.hero-note.note {
+/* The words it was started with, quoted, under the lede. */
+.head-note {
+  margin: 20px 0 0;
+  max-width: 760px;
+  font-size: 15px;
+  line-height: 1.5;
   color: var(--color-text);
+  text-wrap: pretty;
 }
 .head-with-link {
   display: flex;

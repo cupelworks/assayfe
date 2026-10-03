@@ -43,7 +43,11 @@ interface RowsOf {
     ImportDatasetDialogComponent,
   ],
   templateUrl: './datasets-list.component.html',
-  styleUrls: ['../shared/guide/guide.css', '../shared/work/work.css'],
+  styleUrls: [
+    '../shared/guide/guide.css',
+    '../shared/guide/head-aside.css',
+    '../shared/work/work.css',
+  ],
 })
 export class DatasetsListComponent {
   store = inject(CatalogStore);

@@ -196,10 +196,4 @@
   .fail-rows {
     grid-template-columns: minmax(0, 1fr);
   }
-  .hero-side {
-    align-items: flex-start;
-  }
-  .hero-side .hero-note {
-    text-align: left;
-  }
 }

@@ -82,7 +82,12 @@ interface LatestRun {
     ArrowOutComponent,
   ],
   templateUrl: './overview.component.html',
-  styleUrls: ['../shared/guide/guide.css', '../shared/work/work.css', './overview.component.css'],
+  styleUrls: [
+    '../shared/guide/guide.css',
+    '../shared/guide/head-aside.css',
+    '../shared/work/work.css',
+    './overview.component.css',
+  ],
 })
 export class OverviewComponent {
   private statsApi = inject(StatisticsApiService);

@@ -43,7 +43,7 @@ export const whatRan = (e: ExecutionMetadata, kind: Kind) =>
   selector: 'assay-executions-table',
   standalone: true,
   imports: [CATALOG, PagerComponent, RelTimeComponent, StatusCountsComponent],
-  styleUrls: ['../shared/work/work.css'],
+  styleUrls: ['../shared/guide/head-aside.css', '../shared/work/work.css'],
   styles: `
     :host {
       display: block;
