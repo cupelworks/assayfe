@@ -104,14 +104,6 @@
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
-.esc {
-  margin-left: auto;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-neutral-500);
-}
 /* Why the primary is disabled, beside it - never scrolled out of view. At most three lines;
    a longer list scrolls inside, so the footer never grows past the buttons' row. */
 .blockers {
@@ -142,8 +134,5 @@
     flex-wrap: wrap;
     gap: 8px 20px;
     padding: 14px 20px;
-  }
-  .esc {
-    display: none;
   }
 }
