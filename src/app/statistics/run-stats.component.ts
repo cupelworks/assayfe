@@ -64,6 +64,7 @@ interface BatchPreset {
 const SEQUENTIAL: Partial<Record<StatisticalEngine, StatisticalEngine>> = {
   sequential_gate: 'binomial_gate',
   sequential_judge_stability: 'judge_stability',
+  sequential_t: 'one_sample_t',
 };
 /** The engines step 1 offers as questions. */
 const QUESTIONS: StatisticalEngine[] = ['binomial_gate', 'one_sample_t', 'judge_stability'];

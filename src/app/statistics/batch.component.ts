@@ -14,6 +14,7 @@ import { CompareDialogComponent } from './compare-dialog.component';
 import {
   pct,
   question,
+  readsScores,
   ruleText,
   runLink,
   scopeLink,
@@ -211,7 +212,10 @@ export class BatchComponent {
       strip: e.strip ?? [],
     }));
   });
-  isScores = computed(() => this.batch()?.engine === 'one_sample_t');
+  isScores = computed(() => {
+    const e = this.batch()?.engine;
+    return !!e && readsScores(e);
+  });
   /** The catalogue row's name, for an engine with no short question. */
   private testName = computed(() => {
     const b = this.batch();
@@ -369,7 +373,7 @@ export class BatchComponent {
     const v = verdictKey(c);
     const series = c.series ?? [];
     const interval = s?.interval ?? null;
-    const scored = b.engine === 'one_sample_t';
+    const scored = readsScores(b.engine);
     // A scored check is drawn on its own scale; a rate on the axis every rate row shares.
     const scale = scored
       ? {

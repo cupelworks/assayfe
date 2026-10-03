@@ -451,7 +451,8 @@ export type StatisticalEngine =
   | 'paired_entries'
   | 'trial'
   | 'sequential_gate'
-  | 'sequential_judge_stability';
+  | 'sequential_judge_stability'
+  | 'sequential_t';
 /** A catalogue row's id (`GET /statistics/tests`): what to send as `statistical_test`. */
 export type StatisticalTestName = string;
 /** `rate` and `level` are shares of 1 (0.9 = 90%); `share` is a share of a check's score range. */

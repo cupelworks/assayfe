@@ -7,7 +7,7 @@ import { StatusMarkComponent, markLabel } from '../shared/status-mark.component'
 import { ChevronComponent } from '../shared/chevron.component';
 import { ChartGuideComponent, CHART_SECTIONS, chartAnchor } from './chart-guide.component';
 import { shownValue } from './stats-params';
-import { pct } from './stats-format';
+import { pct, runsInWaves } from './stats-format';
 
 type Kind = StatisticalTest['kind'];
 const KINDS: { key: Kind; label: string; blurb: string }[] = [
@@ -44,6 +44,7 @@ const CHARTS: Record<StatisticalEngine, string[]> = {
   trial: ['range', 'strip', 'trend', 'grid'],
   sequential_gate: ['range', 'strip', 'trend', 'grid'],
   sequential_judge_stability: ['range', 'strip', 'grid'],
+  sequential_t: ['scores', 'strip', 'grid'],
 };
 /** The worked examples' columns, by key; shares of 1 read as percentages. */
 const EXAMPLE_COLUMNS: Record<string, string> = {
@@ -64,6 +65,8 @@ const exampleValue = (key: string, v: number) =>
 /** The fewest times at the test's defaults, for its tag: its own floor, else the worked example
  *  at its default parameters, else the size it's comfortable at. */
 function floorTag(t: StatisticalTest): string {
+  // Until there's an answer: its size is the maximum you set; it stops once every check has one.
+  if (runsInWaves(t.engine)) return 'runs in waves';
   if (t.floor.kind === 'none') return 'no minimum';
   const own = t.engine_settings['floor'];
   if (typeof own === 'number') return `from ${own} times`;

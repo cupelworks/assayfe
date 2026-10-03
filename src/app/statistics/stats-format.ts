@@ -119,6 +119,16 @@ export function sizeWhat(s: SizeSuggestion, fixed = false): string {
   return own[s.kind] && fails ? `${what} · ${fails}` : what;
 }
 
+/** The engines that run until there's an answer: in waves, up to a maximum. */
+export const runsInWaves = (engine: StatisticalEngine) =>
+  engine === 'sequential_gate' ||
+  engine === 'sequential_judge_stability' ||
+  engine === 'sequential_t';
+
+/** The engines that judge an average score - at a fixed size, or until there's an answer. */
+export const readsScores = (engine: StatisticalEngine) =>
+  engine === 'one_sample_t' || engine === 'sequential_t';
+
 /** The question a batch answers, short: the kicker of its page and its line in lists - by its
  *  engine; `name` (the catalogue row's) for an engine with no short question. */
 export function question(
@@ -137,6 +147,8 @@ export function question(
       return `Does the judge agree with itself at least ${often(params['target'])}? Until there's an answer`;
     case 'one_sample_t':
       return 'Is the average score on the passing side of the threshold?';
+    case 'sequential_t':
+      return "Is the average score on the passing side of the threshold? Until there's an answer";
     default:
       return name || engine;
   }
