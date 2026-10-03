@@ -26,8 +26,8 @@ export const RECENT_EXECUTIONS_LIMIT = 10;
  * hard requirement driving this number; 50 is a generous-but-cheap default. NOT used for any
  * displayed count anymore - the scopes list's "Executions" column moved to a per-row fetch
  * against the scoped endpoint instead, since this capped, recency-biased sample can never
- * give an accurate count for an arbitrary row (see dev_notes.md's "Scopes list 'Executions'
- * column moved off the global sample" note).
+ * give an accurate count for an arbitrary row (see `docs/basic_ui_implementation/dev_notes.md`
+ * note 12).
  */
 export const EXECUTIONS_SAMPLE_LIMIT = 50;
 /** How many of the newest runs (any origin) feed the "Run status" sample on the overview page. */

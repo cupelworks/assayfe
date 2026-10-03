@@ -9,7 +9,7 @@ import { computed, signal } from '@angular/core';
  *
  * Extracted from three byte-identical copies (tests list, dataset rows, test set entries) - the
  * same rule as DateSort/TextFilter: pulled out at the third copy, not written generically up
- * front. See dev_notes.md.
+ * front. See `docs/improvement_ui/dev_notes.md` note 3.
  */
 export class Selection {
   ids = signal<string[]>([]);
