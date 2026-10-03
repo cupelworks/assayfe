@@ -15,8 +15,8 @@ const VERDICT_ORDER = ['fail', 'inconclusive', 'none', 'pass'];
 
 /**
  * A test's, set's or plan's statistics batches, newest first, and the comparisons made of them -
- * nothing at all until the first batch exists, so the page stays as it was for anyone who never
- * runs with statistics. Polls while a batch is still pending or running.
+ * with none yet, it says so ("Never run with statistics.", "Never compared."), as the runs and
+ * executions lists beside it do. Polls while a batch is still pending or running.
  */
 @Component({
   selector: 'assay-stats-panel',

@@ -1,7 +1,7 @@
 :host {
   display: block;
 }
-/* Space before what follows the panel (the Executions or runs list) - only when it shows. */
+/* Space before what follows the panel (the Executions or runs list). */
 .wrap {
   margin-bottom: 48px;
 }
