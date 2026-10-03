@@ -15,6 +15,7 @@ import { ExecutionsPanelComponent } from './executions-panel.component';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { Paged } from '../shared/paged';
+import { ArrowOutComponent } from '../shared/arrow-out.component';
 
 type Dlg = null | 'rename' | 'delete' | 'link' | 'unlink';
 
@@ -22,6 +23,7 @@ type Dlg = null | 'rename' | 'delete' | 'link' | 'unlink';
   selector: 'assay-test-plan-detail',
   standalone: true,
   imports: [
+    ArrowOutComponent,
     RouterLink,
     NameDialogComponent,
     ConfirmDialogComponent,

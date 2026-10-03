@@ -22,11 +22,13 @@ import { Paged } from '../shared/paged';
 type Dlg = null | 'rename' | 'delete' | 'add' | 'unlink' | 'deleteEntries' | 'editEntry';
 
 import { Selection } from '../shared/selection';
+import { ArrowOutComponent } from '../shared/arrow-out.component';
 
 @Component({
   selector: 'assay-test-set-detail',
   standalone: true,
   imports: [
+    ArrowOutComponent,
     TypeTagsComponent,
     RouterLink,
     NameDialogComponent,

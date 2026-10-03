@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, untracked } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, input, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BatchSummary, ComparisonSummary, StatsScopeRef } from '../api/models';
 import { StatisticalTestsStore, StatisticsApiService } from '../api/statistics-api.service';
@@ -76,5 +76,13 @@ export class StatsPanelComponent {
       },
       3000,
     );
+    // Run with statistics opens in its own tab: back here, the batch started there is listed.
+    const onShow = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (!this.page.loading()) this.page.reload();
+      if (!this.comparisons.loading()) this.comparisons.reload();
+    };
+    document.addEventListener('visibilitychange', onShow);
+    inject(DestroyRef).onDestroy(() => document.removeEventListener('visibilitychange', onShow));
   }
 }

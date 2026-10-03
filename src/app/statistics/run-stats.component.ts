@@ -9,6 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Title } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
 import { Observable, map } from 'rxjs';
 import {
@@ -111,6 +112,7 @@ export class RunStatsComponent {
   from = input<string | undefined>();
 
   private router = inject(Router);
+  private title = inject(Title);
   private testsApi = inject(TestsApiService);
   private setsApi = inject(TestSetsApiService);
   private plansApi = inject(TestPlansApiService);
@@ -732,7 +734,17 @@ export class RunStatsComponent {
 
   constructor() {
     this.store.load();
-    inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));
+    // The page opens in a tab of its own: the tab says which test it's for, so it can be told
+    // from the one it came from; leaving (Start goes to the batch) gives the app's title back.
+    const appTitle = this.title.getTitle();
+    effect(() => {
+      const name = this.scopeName();
+      this.title.setTitle(name ? `Run with statistics · ${name}` : 'Run with statistics');
+    });
+    inject(DestroyRef).onDestroy(() => {
+      clearTimeout(this.timer);
+      this.title.setTitle(appTitle);
+    });
     effect(() => {
       const kind = this.scopeKind();
       const id = this.id();
@@ -938,6 +950,12 @@ export class RunStatsComponent {
         ? { ...req, statistical_test: u.statistical_test, times: u.max_times }
         : { ...req, times: e.times },
     );
+  }
+  /** Cancel closes the tab the page opened in, back to the page it came from. A tab the browser
+   *  won't let a page close (one with its own history) goes to the scope's page instead. */
+  cancel() {
+    window.close();
+    if (!window.closed) this.router.navigate(this.back());
   }
   /** The trial first: its own test and size, the same checks left out. */
   runTrial() {

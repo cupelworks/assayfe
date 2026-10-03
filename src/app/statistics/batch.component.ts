@@ -22,6 +22,7 @@ import {
   timesRun,
   timesText,
 } from './stats-format';
+import { ArrowOutComponent } from '../shared/arrow-out.component';
 
 type Filter = 'all' | 'fail' | 'inconclusive' | 'pass' | 'none';
 /** Failures first, then what's undecided, then what passed - as on a run's page. */
@@ -64,6 +65,7 @@ const runsLine = (runs: RunCounts) =>
   selector: 'assay-batch',
   standalone: true,
   imports: [
+    ArrowOutComponent,
     RouterLink,
     StatusMarkComponent,
     RunsGridComponent,

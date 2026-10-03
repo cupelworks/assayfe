@@ -10,10 +10,17 @@
     <button class="btn btn-ghost" (click)="act.err.set(null); dlg.set('delete')">Delete</button>
     <button class="btn btn-secondary" (click)="act.err.set(null); dlg.set('edit')">Edit</button>
     @if (canRun()) {
-      <a class="btn btn-secondary" routerLink="run-with-statistics">Run with statistics…</a>
+      <a
+        class="btn btn-secondary new-tab"
+        routerLink="run-with-statistics"
+        target="_blank"
+        rel="noopener"
+        aria-label="Run with statistics, opens in a new tab"
+        >Run with statistics<assay-arrow-out
+      /></a>
     } @else {
       <button class="btn btn-secondary" disabled title="Assign at least one test type first">
-        Run with statistics…
+        Run with statistics<assay-arrow-out />
       </button>
     }
     <button

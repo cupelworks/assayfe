@@ -28,11 +28,14 @@
           <button class="btn btn-secondary" (click)="dlg.set('compare')">Compare with…</button>
           @if (place(); as pl) {
             <a
-              class="btn btn-primary"
+              class="btn btn-primary new-tab"
               [routerLink]="[pl.list, b.scope.id, 'run-with-statistics']"
               [queryParams]="{ from: b.id }"
-              >Run again…</a
-            >
+              target="_blank"
+              rel="noopener"
+              aria-label="Run again, opens in a new tab"
+              >Run again<assay-arrow-out
+            /></a>
           }
         </div>
       }

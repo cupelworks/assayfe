@@ -22,11 +22,13 @@ import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { CopyButtonComponent } from '../shared/copy-button.component';
 import { pollWhile } from '../shared/poll';
+import { ArrowOutComponent } from '../shared/arrow-out.component';
 
 @Component({
   selector: 'assay-test-detail',
   standalone: true,
   imports: [
+    ArrowOutComponent,
     ChecksViewComponent,
     RouterLink,
     TestFormDialogComponent,

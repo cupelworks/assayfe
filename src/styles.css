@@ -280,6 +280,38 @@ figcaption {
   outline-offset: 2px;
 }
 
+/* A button that opens a new tab - "Run with statistics ↗": its arrow (<assay-arrow-out>) leans out
+   while it's hovered or focused, and a small ink label under it says where it goes. */
+.new-tab {
+  position: relative;
+}
+.new-tab:hover assay-arrow-out,
+.new-tab:focus-visible assay-arrow-out {
+  transform: translate(2px, -2px);
+}
+.new-tab::after {
+  content: 'Opens in a new tab';
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  padding: 6px 9px;
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.new-tab:hover::after,
+.new-tab:focus-visible::after {
+  opacity: 1;
+  transition-delay: 250ms;
+}
+
 /* - forms - */
 .field > label {
   display: block;
