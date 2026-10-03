@@ -1,48 +1,30 @@
 <div class="page">
-  <header class="nav">
+  <header class="bar">
     <a routerLink="/" class="brand"><span class="brand-mark"></span>Assay</a>
-    <nav class="links">
-      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
-        >Overview</a
-      >
-      <a routerLink="/datasets" routerLinkActive="active">Datasets</a>
-      <a routerLink="/tests" routerLinkActive="active">Tests</a>
-      <a routerLink="/test-sets" routerLinkActive="active">Test sets</a>
-      <a routerLink="/test-plans" routerLinkActive="active">Test plans</a>
-      <a routerLink="/test-types" routerLinkActive="active">Test types</a>
-      <a routerLink="/statistical-tests" routerLinkActive="active">Statistical tests</a>
-      <a routerLink="/charts" routerLinkActive="active">Charts</a>
-      <a routerLink="/guide" routerLinkActive="active">Guide</a>
-    </nav>
-    <div class="conn">
-      <a
-        routerLink="/settings"
-        routerLinkActive="active"
-        class="btn btn-ghost btn-icon gear"
-        aria-label="Settings"
-        title="Settings"
-      >
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
+    <nav class="links" aria-label="Main">
+      @for (l of work; track l.path) {
+        <a
+          class="bar-link"
+          [routerLink]="l.path"
+          routerLinkActive="on"
+          [routerLinkActiveOptions]="{ exact: !!l.exact }"
+          ariaCurrentWhenActive="page"
+          >{{ l.label }}</a
         >
-          <path
-            d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
-          />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
-      </a>
-      <button class="btn btn-ghost btn-sm" (click)="theme.toggle()">
-        {{ theme.isDark() ? 'Light' : 'Dark' }}
-      </button>
+      }
+      <assay-reference-menu />
+    </nav>
+    <div class="util">
+      <a
+        class="bar-link small-caps"
+        routerLink="/settings"
+        routerLinkActive="on"
+        ariaCurrentWhenActive="page"
+        >Settings</a
+      >
+      <assay-theme-switch />
     </div>
+    <assay-app-menu />
   </header>
   <router-outlet />
   <footer class="foot text-muted">

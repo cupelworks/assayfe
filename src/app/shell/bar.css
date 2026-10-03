@@ -1,0 +1,39 @@
+/* A link of the header's bar - the work, Settings, Reference's button. It takes the bar's whole
+   height, so the page you're on gets a red line on the bar's rule (only the red one shows there),
+   and its words sit on the bar's one baseline, the brand's: centred, a smaller size's baseline
+   rides higher, so a 14 px word starts 4 px down and an 11 px capital 6 px. */
+:where(button).bar-link {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.bar-link {
+  display: flex;
+  align-items: center;
+  padding-top: 4px;
+  margin-bottom: -2px;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.bar-link:hover {
+  color: var(--color-accent);
+}
+.bar-link.on {
+  color: var(--color-accent);
+  font-weight: 600;
+  border-bottom-color: var(--color-accent);
+}
+.bar-link:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+/* In small capitals (the global .small-caps), as the pages' kickers: Settings, quieter than the
+   work. */
+.bar-link.small-caps {
+  padding-top: 6px;
+}
