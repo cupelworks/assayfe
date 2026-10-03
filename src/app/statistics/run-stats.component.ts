@@ -27,6 +27,7 @@ import {
 } from '../api/models';
 import { StatisticalTestsStore, StatisticsApiService } from '../api/statistics-api.service';
 import { TestsApiService } from '../api/tests-api.service';
+import { RunsApiService } from '../api/runs-api.service';
 import { TestSetsApiService } from '../api/test-sets-api.service';
 import { TestPlansApiService } from '../api/test-plans-api.service';
 import { errText } from '../shared/format';
@@ -117,6 +118,7 @@ export class RunStatsComponent {
   private testsApi = inject(TestsApiService);
   private setsApi = inject(TestSetsApiService);
   private plansApi = inject(TestPlansApiService);
+  private runsApi = inject(RunsApiService);
   scope = computed(() => scopeRef({ kind: this.scopeKind(), id: this.id(), name: '' }));
   place = computed(() => scopePlace(this.scopeKind()));
   /** What one time runs, for the copy: "test", "set" or "plan". */
@@ -299,12 +301,29 @@ export class RunStatsComponent {
         }),
     );
   });
+  /** Step 2's lead, as the canvas has it: what the table says about the checks as a whole. */
+  seenLead = computed(() => {
+    const e = this.estimate();
+    if (this.allCertain()) return 'Nothing here can vary';
+    if (e?.goal_reachable == null && e?.trial) return 'No history yet';
+    return 'Each check against its target';
+  });
+  /** When nothing can vary, the box's line: why one run is enough. */
+  onceLine = computed(
+    () =>
+      `${this.noun() === 'test' ? 'The answer is recorded and its checks are fixed' : 'The answers are recorded and the checks are fixed'}, so a single run says it all.`,
+  );
+  /** The API's warnings - less the two the "Every run gives the same result" box already says. */
+  warnings = computed(() => {
+    const said = this.allCertain() ? ['recorded_answers', 'nothing_can_vary'] : [];
+    return (this.estimate()?.warnings ?? []).filter((w) => !said.includes(w.code));
+  });
   /** Whether the rows show a target: a test with one, from an API that sends it. */
   showTargets = computed(
     () => !!this.hasTargetParam() && this.seen().some((r) => r.target != null),
   );
   /** Every check that gets a verdict is certain: no curve to draw, nothing to make cheaper. */
-  private allCertain = computed(() => {
+  allCertain = computed(() => {
     const e = this.estimate();
     const rows = (e?.entries ?? []).flatMap((en) => en.checks.filter((c) => c.applies));
     return rows.length > 0 && rows.every((c) => c.outlook === 'certain');
@@ -958,6 +977,36 @@ export class RunStatsComponent {
     window.close();
     if (!window.closed) this.router.navigate(this.back());
   }
+  /** On to what was started, in this tab: in place of the form, so Back skips it, and from the
+   *  top - the form was left scrolled to its bottom bar. */
+  private leaveFor(link: unknown[]) {
+    this.router.navigate(link, { replaceUrl: true }).then(() => window.scrollTo(0, 0));
+  }
+  /** Run it once instead, when nothing can vary: a standalone run of the test, or a live run of
+   *  the set or plan - then its page, in this tab (Back skips the form, as after Start). */
+  runOnce() {
+    if (this.starting()) return;
+    this.starting.set(true);
+    const id = this.id();
+    const kind = this.scopeKind();
+    const open = (link: unknown[]) => this.leaveFor(link);
+    const fail = (err: unknown) => {
+      this.starting.set(false);
+      this.apiProblems.set(problems(err));
+    };
+    if (kind === 'test') {
+      this.runsApi.runStandalone(id).subscribe({
+        next: (r) => open(['/tests', id, 'runs', r.id]),
+        error: fail,
+      });
+      return;
+    }
+    const k = kind === 'test_set' ? 'test-sets' : 'test-plans';
+    this.runsApi.runLive(k, id).subscribe({
+      next: (x) => open(['/', k, id, 'executions', x.id]),
+      error: fail,
+    });
+  }
   /** The trial first: its own test and size, the same checks left out. */
   runTrial() {
     const t = this.estimate()?.trial;
@@ -974,7 +1023,7 @@ export class RunStatsComponent {
     const note = this.note().trim();
     this.api.createBatch({ ...req, note: note || null }).subscribe({
       // The batch's page shows it running; Back from there skips this page.
-      next: (b) => this.router.navigate(['/statistics/batches', b.id], { replaceUrl: true }),
+      next: (b) => this.leaveFor(['/statistics/batches', b.id]),
       error: (err) => {
         this.starting.set(false);
         this.apiProblems.set(problems(err));

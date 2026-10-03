@@ -83,7 +83,7 @@
         <section class="step">
           <div class="sh">
             <span class="sn">2</span><span class="st">What Assay has seen</span
-            ><span class="ss">Each check against its target</span>
+            ><span class="ss">{{ seenLead() }}</span>
           </div>
           <div class="seen" [class.with-target]="showTargets()">
             <span class="th cap">In</span>
@@ -167,6 +167,21 @@
             </div>
           </section>
         }
+      }
+
+      <!-- Nothing can vary: many runs only repeat one result. -->
+      @if (allCertain()) {
+        <section class="step">
+          <div class="box">
+            <div>
+              <div class="ot">Every run gives the same result.</div>
+              <div class="small">{{ onceLine() }}</div>
+            </div>
+            <button type="button" class="btn use go" [disabled]="starting()" (click)="runOnce()">
+              Run it once instead
+            </button>
+          </div>
+        </section>
       }
 
       @if (trial(); as tr) {
@@ -360,7 +375,7 @@
           }
         </ul>
       }
-      @for (w of e.warnings; track w.code) {
+      @for (w of warnings(); track w.code) {
         <div class="warn">{{ w.message }}</div>
       }
     </div>

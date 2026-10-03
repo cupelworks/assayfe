@@ -258,6 +258,10 @@
   min-height: 44px;
   padding-inline: 20px;
 }
+/* "Run it once instead": outlined in red, as on the canvas, centred in its box. */
+.box .use {
+  align-self: center;
+}
 
 /* What would bring the goal closer. */
 .cheap {
