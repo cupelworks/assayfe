@@ -6,7 +6,10 @@ export type StatusTone = 'ok' | 'warn' | 'unknown';
 /**
  * A state in words, coloured by how it stands: a square and a title in green (all good), amber
  * (something to do) or grey (couldn't tell), and a line under the title - as the Overview says,
- * beside its title, whether runs can start.
+ * beside its title, whether runs can start. The square stands on the title's line, right before
+ * the title, and the lines follow the alignment of where it's set: flush right, each line ends on
+ * the margin; flush left, the square hangs before the title and the line under it starts where the
+ * title does.
  */
 @Component({
   selector: 'assay-status-line',
@@ -16,14 +19,14 @@ export type StatusTone = 'ok' | 'warn' | 'unknown';
     '[class.warn]': "tone() === 'warn'",
     '[class.unknown]': "tone() === 'unknown'",
   },
-  template: `<i aria-hidden="true"></i><span class="title">{{ title() }}</span
+  template: `<span class="title"><i aria-hidden="true"></i>{{ title() }}</span
     ><span class="text">{{ text() }}</span>`,
   styles: `
+    /* A hanging indent as wide as the square and its gap: the title's line starts in it. */
     :host {
       --tone: var(--color-status-green);
-      display: grid;
-      grid-template-columns: 12px minmax(0, 1fr);
-      column-gap: 12px;
+      display: block;
+      padding-left: 24px;
     }
     :host(.warn) {
       --tone: var(--color-status-amber);
@@ -31,24 +34,25 @@ export type StatusTone = 'ok' | 'warn' | 'unknown';
     :host(.unknown) {
       --tone: var(--color-neutral-600);
     }
-    i {
-      grid-column: 1;
-      grid-row: 1;
-      width: 12px;
-      height: 12px;
-      margin-top: 9px;
-      background: var(--tone);
-    }
     .title {
-      grid-column: 2;
+      display: block;
+      text-indent: -24px;
       font-size: 21px;
       font-weight: 800;
       letter-spacing: -0.01em;
       line-height: 1.4;
       color: var(--tone);
     }
+    /* Standing on the title's baseline. */
+    i {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin-right: 12px;
+      background: var(--tone);
+    }
     .text {
-      grid-column: 2;
+      display: block;
       font-size: 14px;
       line-height: 1.5;
       color: var(--color-neutral-800);
