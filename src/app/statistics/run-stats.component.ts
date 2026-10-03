@@ -5,13 +5,13 @@ import {
   effect,
   inject,
   input,
-  output,
   signal,
   untracked,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { Observable, map } from 'rxjs';
 import {
-  Batch,
   CheaperOption,
   CheckRef,
   CheckTarget,
@@ -20,10 +20,14 @@ import {
   StatisticalEngine,
   StatisticalTest,
   StatisticalTestName,
+  StatsScopeKind,
   StatsScopeRef,
 } from '../api/models';
 import { StatisticalTestsStore, StatisticsApiService } from '../api/statistics-api.service';
-import { DialogComponent } from '../shared/dialog/dialog.component';
+import { TestsApiService } from '../api/tests-api.service';
+import { TestSetsApiService } from '../api/test-sets-api.service';
+import { TestPlansApiService } from '../api/test-plans-api.service';
+import { errText } from '../shared/format';
 import { ChevronComponent } from '../shared/chevron.component';
 import { StatusMarkComponent } from '../shared/status-mark.component';
 import { NumberInputDirective, parseDecimal } from '../shared/number';
@@ -39,12 +43,14 @@ import {
   oneIn,
   pct,
   ruleText,
+  scopePlace,
+  scopeRef,
   sizeWhat,
 } from './stats-format';
 
 /** What "Run again" starts from: the batch's own test, parameters, size, targets and left-out
  *  checks. */
-export interface BatchPreset {
+interface BatchPreset {
   statistical_test: StatisticalTestName;
   parameters: Record<string, number>;
   times: number;
@@ -54,7 +60,7 @@ export interface BatchPreset {
 
 /** The engines step 1 offers as questions. */
 const QUESTIONS: StatisticalEngine[] = ['binomial_gate', 'one_sample_t', 'judge_stability'];
-/** A check's key in this dialog: its entry and its label. */
+/** A check's key on this page: its entry and its label. */
 const keyOf = (r: CheckRef) => `${r.entry_id ?? ''}|${r.label}`;
 /** The targets a check can be given besides the batch's. */
 const TARGETS = [0.8, 0.9, 0.95, 0.99];
@@ -66,37 +72,53 @@ const OUTLOOK_MARK: Record<string, string> = {
 };
 
 /**
- * "Run with statistics": which question and its parameters, then - from the API's estimate, asked
- * again (debounced) on every change, creating nothing - what Assay has already seen of each check
- * and how it looks against its target, whether the goal (a 90% chance that every check gets an
- * answer) can be reached and what would bring it closer, the sizes with their chance of an answer
- * and their cost against the odds' curve, and how the batch would most likely end. A check can be
- * given its own target or left out of the batch; both go with every estimate and with Start. The
- * dialog computes no odds: every chance, size and sentence is the API's.
+ * "Run with statistics", a page of its own (`/tests/:id/run-with-statistics`, the same under
+ * `/test-sets` and `/test-plans`; `?from=<batch id>` starts from that batch, for "Run again…"):
+ * which question and its parameters, then - from the API's estimate, asked again (debounced) on
+ * every change, creating nothing - what Assay has already seen of each check and how it looks
+ * against its target, whether the goal (a 90% chance that every check gets an answer) can be
+ * reached and what would bring it closer, a trial first when a check has never run, the sizes with
+ * their chance of an answer and their cost against the odds' curve, and how the batch would most
+ * likely end. A check can be given its own target or left out of the batch; both go with every
+ * estimate and with Start. Start and Cancel stay in a bar at the bottom of the window. The page
+ * computes no odds: every chance, size and sentence is the API's.
  */
 @Component({
-  selector: 'assay-run-stats-dialog',
+  selector: 'assay-run-stats',
   standalone: true,
   imports: [
-    DialogComponent,
     ChevronComponent,
     FormsModule,
     NumberInputDirective,
     OddsChartComponent,
     ParamFieldComponent,
+    RouterLink,
     StatusMarkComponent,
   ],
-  templateUrl: './run-stats-dialog.component.html',
-  styleUrls: ['../shared/page.css', './stats-form.css', './run-stats-dialog.component.css'],
+  templateUrl: './run-stats.component.html',
+  styleUrls: ['../shared/page.css', './stats-form.css', './run-stats.component.css'],
 })
-export class RunStatsDialogComponent {
-  scope = input.required<StatsScopeRef>();
-  kicker = input('');
+export class RunStatsComponent {
+  /** From the route: the scope's id, its kind (the route's data) and the batch to start from. */
+  id = input.required<string>();
+  scopeKind = input.required<StatsScopeKind>();
+  from = input<string | undefined>();
+
+  private router = inject(Router);
+  private testsApi = inject(TestsApiService);
+  private setsApi = inject(TestSetsApiService);
+  private plansApi = inject(TestPlansApiService);
+  scope = computed(() => scopeRef({ kind: this.scopeKind(), id: this.id(), name: '' }));
+  place = computed(() => scopePlace(this.scopeKind()));
   /** What one time runs, for the copy: "test", "set" or "plan". */
-  noun = input('set');
-  preset = input<BatchPreset | null>(null);
-  created = output<Batch>();
-  closed = output<void>();
+  noun = computed(() => this.place().noun);
+  scopeName = signal('');
+  kicker = computed(() => `${this.place().label.slice(0, -1)} · ${this.scopeName()}`);
+  /** The scope's page: Cancel and the crumbs go back to it. */
+  back = computed(() => [this.place().list, this.id()]);
+  loadError = signal<string | null>(null);
+  /** The batch "Run again…" came from, as the choices it starts with. */
+  private preset = signal<BatchPreset | null>(null);
 
   private api = inject(StatisticsApiService);
   store = inject(StatisticalTestsStore);
@@ -222,8 +244,11 @@ export class RunStatsDialogComponent {
             label: c.label,
             where: many ? `${en.name} · ${c.test_type}` : c.test_type,
             included: !out,
+            // A check left out comes without its history: nothing to say then, not "No runs yet".
             seen: !h
-              ? 'No runs yet'
+              ? out
+                ? ''
+                : 'No runs yet'
               : h.mean != null
                 ? `${runs(h.runs)} · average ${Number(h.mean.toPrecision(3))}`
                 : `${runs(h.runs)} · ${h.passed} passed`,
@@ -409,7 +434,7 @@ export class RunStatsDialogComponent {
       line:
         `${t.application_calls.toLocaleString('en-US')} application calls · ` +
         `${t.judge_calls.toLocaleString('en-US')} judge calls. When it finishes, the trial shows ` +
-        'Done with what it learned about each check; then this dialog can say how likely each ' +
+        'Done with what it learned about each check; then this page can say how likely each ' +
         'size is to answer.',
     };
   });
@@ -453,7 +478,7 @@ export class RunStatsDialogComponent {
     if (e.goal_reachable == null && !p?.outcome)
       return {
         text: e.trial
-          ? `Unknown until these checks have run. The trial’s ${e.trial.times} runs tell this dialog how they behave; they give no verdict.`
+          ? `Unknown until these checks have run. The trial’s ${e.trial.times} runs tell this page how they behave; they give no verdict.`
           : "Unknown until these checks have run: Assay hasn't seen them yet.",
         bars: [],
       };
@@ -535,18 +560,20 @@ export class RunStatsDialogComponent {
       `Inconclusive when the runs can’t tell. Every run still evaluates all ${e.checks_total} checks.`
     );
   });
-  /** What the picked size costs, in one line. */
+  /** What the picked size costs, in one line - the bar's, beside Start: "286 times × 2 entries ·
+   *  572 application calls · no judge calls". */
   cost = computed(() => {
     const e = this.estimate();
     if (!e) return '';
     const per = e.runs_per_time;
+    const judge = e.calls.judge.total;
     return (
-      `${e.times} times${per > 1 ? ` × ${per} entries` : ''} · ${e.runs_total} runs · ` +
+      `${e.times} times${per > 1 ? ` × ${per} entries` : ''} · ` +
       `${e.calls.application.total.toLocaleString('en-US')} application calls · ` +
-      `${e.calls.judge.total.toLocaleString('en-US')} judge calls`
+      (judge ? `${judge.toLocaleString('en-US')} judge calls` : 'no judge calls')
     );
   });
-  /** Why Start is disabled, one phrase each - the dialog's footer lists them. */
+  /** Why Start is disabled, one phrase each - the bar lists them. */
   blockers = computed(() => {
     const out: string[] = [];
     const ap = this.apiProblems();
@@ -564,8 +591,15 @@ export class RunStatsDialogComponent {
     if (this.starting()) return 'Starting…';
     const e = this.estimate();
     if (this.trial()) return 'Start without a trial';
-    return e && !this.blockers().length ? `Start ${e.runs_total} runs` : 'Start';
+    return e && !this.blockers().length
+      ? `Start ${e.runs_total.toLocaleString('en-US')} runs`
+      : 'Start';
   });
+  blockersText = computed(() =>
+    this.blockers()
+      .map((b) => b.charAt(0).toUpperCase() + b.slice(1))
+      .join(' · '),
+  );
   primaryDisabled = computed(
     () => this.starting() || this.estimating() || !this.estimate() || this.blockers().length > 0,
   );
@@ -573,6 +607,30 @@ export class RunStatsDialogComponent {
   constructor() {
     this.store.load();
     inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));
+    effect(() => {
+      const kind = this.scopeKind();
+      const id = this.id();
+      untracked(() => this.loadScope(kind, id));
+    });
+    // "Run again…": the batch's own choices - only a batch of this scope's.
+    effect(() => {
+      const from = this.from();
+      const id = this.id();
+      if (!from) return;
+      untracked(() =>
+        this.api.batch(from, false).subscribe({
+          next: (b) =>
+            b.scope.id === id &&
+            this.preset.set({
+              statistical_test: b.statistical_test,
+              parameters: b.parameters,
+              times: b.progress.times_requested,
+              targets: b.targets,
+              leave_out: b.leave_out,
+            }),
+        }),
+      );
+    });
     // A preset (Run again) starts from the batch's own question, parameters, size, targets and
     // left-out checks.
     effect(() => {
@@ -669,6 +727,19 @@ export class RunStatsDialogComponent {
     this.customText.set('');
   }
 
+  private loadScope(kind: StatsScopeKind, id: string) {
+    const name: Observable<string> =
+      kind === 'test'
+        ? this.testsApi.test(id).pipe(map((t) => t.name ?? ''))
+        : (kind === 'test_set' ? this.setsApi.testSet(id) : this.plansApi.testPlan(id)).pipe(
+            map((s) => s.name),
+          );
+    name.subscribe({
+      next: (n) => this.scopeName.set(n),
+      error: (e) => this.loadError.set(errText(e)),
+    });
+  }
+
   private checkAvailability(tests: StatisticalTest[], scope: StatsScopeRef) {
     for (const t of tests) {
       this.api.estimate({ ...scope, statistical_test: t.id }).subscribe({
@@ -738,10 +809,8 @@ export class RunStatsDialogComponent {
     this.starting.set(true);
     const note = this.note().trim();
     this.api.createBatch({ ...req, note: note || null }).subscribe({
-      next: (b) => {
-        this.starting.set(false);
-        this.created.emit(b);
-      },
+      // The batch's page shows it running; Back from there skips this page.
+      next: (b) => this.router.navigate(['/statistics/batches', b.id], { replaceUrl: true }),
       error: (err) => {
         this.starting.set(false);
         this.apiProblems.set(problems(err));

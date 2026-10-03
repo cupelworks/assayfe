@@ -26,7 +26,14 @@
       @if (!inFlight()) {
         <div class="hero-actions">
           <button class="btn btn-secondary" (click)="dlg.set('compare')">Compare with…</button>
-          <button class="btn btn-primary" (click)="dlg.set('again')">Run again…</button>
+          @if (place(); as pl) {
+            <a
+              class="btn btn-primary"
+              [routerLink]="[pl.list, b.scope.id, 'run-with-statistics']"
+              [queryParams]="{ from: b.id }"
+              >Run again…</a
+            >
+          }
         </div>
       }
     </div>
@@ -322,16 +329,6 @@
     }
   }
 
-  @if (dlg() === 'again' && place(); as pl) {
-    <assay-run-stats-dialog
-      [scope]="pl.ref"
-      [kicker]="pl.label.slice(0, -1) + ' · ' + b.scope.name"
-      [noun]="pl.noun"
-      [preset]="preset()"
-      (created)="opened($event)"
-      (closed)="dlg.set(null)"
-    />
-  }
   @if (dlg() === 'compare') {
     <assay-compare-dialog [batch]="b" (created)="compared($event)" (closed)="dlg.set(null)" />
   }

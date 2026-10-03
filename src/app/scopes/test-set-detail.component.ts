@@ -7,9 +7,8 @@ import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { TestSetsApiService } from '../api/test-sets-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
-import { Batch, TestCaseBody, TestSetEntry } from '../api/models';
+import { TestCaseBody, TestSetEntry } from '../api/models';
 import { StatisticsApiService } from '../api/statistics-api.service';
-import { RunStatsDialogComponent } from '../statistics/run-stats-dialog.component';
 import { StatsPanelComponent } from '../statistics/stats-panel.component';
 import { rel, short, errText, displayName } from '../shared/format';
 import { NameDialogComponent } from '../shared/dialog/name-dialog.component';
@@ -20,7 +19,7 @@ import { ExecutionsPanelComponent } from './executions-panel.component';
 import { PagerComponent } from '../shared/pager.component';
 import { Paged } from '../shared/paged';
 
-type Dlg = null | 'rename' | 'delete' | 'add' | 'unlink' | 'deleteEntries' | 'editEntry' | 'stats';
+type Dlg = null | 'rename' | 'delete' | 'add' | 'unlink' | 'deleteEntries' | 'editEntry';
 
 import { Selection } from '../shared/selection';
 
@@ -36,7 +35,6 @@ import { Selection } from '../shared/selection';
     TestFormDialogComponent,
     ExecutionsPanelComponent,
     PagerComponent,
-    RunStatsDialogComponent,
     StatsPanelComponent,
   ],
   templateUrl: './test-set-detail.component.html',
@@ -213,10 +211,5 @@ export class TestSetDetailComponent {
     this.act.run(this.runsApi.replay('test-sets', this.id(), execId), {
       ok: (r) => `Enqueued ${r.run_count} pending runs (replay of ${short(execId)}).`,
     });
-  }
-  /** A batch was started from the dialog: its page shows it running. */
-  openBatch(b: Batch) {
-    this.dlg.set(null);
-    this.router.navigate(['/statistics/batches', b.id]);
   }
 }

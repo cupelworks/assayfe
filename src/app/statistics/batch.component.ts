@@ -10,7 +10,6 @@ import { RunStripComponent, pointText } from './charts/run-strip.component';
 import { RangeChartComponent } from './charts/range-chart.component';
 import { RateTrendComponent } from './charts/rate-trend.component';
 import { ScorePlotComponent } from './charts/score-plot.component';
-import { RunStatsDialogComponent, BatchPreset } from './run-stats-dialog.component';
 import { CompareDialogComponent } from './compare-dialog.component';
 import {
   pct,
@@ -70,7 +69,6 @@ const runsLine = (runs: RunCounts) =>
     RangeChartComponent,
     RateTrendComponent,
     ScorePlotComponent,
-    RunStatsDialogComponent,
     CompareDialogComponent,
   ],
   templateUrl: './batch.component.html',
@@ -91,7 +89,7 @@ export class BatchComponent {
   stopError = signal<string | null>(null);
   filter = signal<Filter>('all');
   openKey = signal<string | null>(null);
-  dlg = signal<null | 'again' | 'compare'>(null);
+  dlg = signal<null | 'compare'>(null);
 
   status = computed(() => this.batch()?.status ?? null);
   inFlight = computed(() => isInFlight(this.status()));
@@ -267,18 +265,6 @@ export class BatchComponent {
       })),
     };
   });
-  preset = computed<BatchPreset | null>(() => {
-    const b = this.batch();
-    return b
-      ? {
-          statistical_test: b.statistical_test,
-          parameters: b.parameters,
-          times: b.progress.times_requested,
-          targets: b.targets,
-          leave_out: b.leave_out,
-        }
-      : null;
-  });
 
   constructor() {
     this.tests.load();
@@ -336,10 +322,6 @@ export class BatchComponent {
     this.openKey.set(this.openKey() === key ? null : key);
   }
 
-  opened(next: Batch) {
-    this.dlg.set(null);
-    this.router.navigate(['/statistics/batches', next.id]);
-  }
   compared(c: Comparison) {
     this.dlg.set(null);
     this.router.navigate(['/statistics/comparisons', c.id]);

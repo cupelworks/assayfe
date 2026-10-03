@@ -5,8 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { TestsApiService } from '../api/tests-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
-import { Batch, StandaloneRun, TestCase, TestCaseBody } from '../api/models';
-import { RunStatsDialogComponent } from '../statistics/run-stats-dialog.component';
+import { StandaloneRun, TestCase, TestCaseBody } from '../api/models';
 import { StatsPanelComponent } from '../statistics/stats-panel.component';
 import {
   short,
@@ -35,7 +34,6 @@ import { pollWhile } from '../shared/poll';
     PagerComponent,
     RelTimeComponent,
     CopyButtonComponent,
-    RunStatsDialogComponent,
     StatsPanelComponent,
   ],
   templateUrl: './test-detail.component.html',
@@ -60,7 +58,7 @@ export class TestDetailComponent {
     errText,
   );
   runs = this.runsPage.items;
-  dlg = signal<null | 'edit' | 'delete' | 'clear-output' | 'stats'>(null);
+  dlg = signal<null | 'edit' | 'delete' | 'clear-output'>(null);
   statsScope = computed(() => ({ test_id: this.id() }));
   /** Busy flag, dialog error and page banner for this page's API actions - see shared/action-runner.ts. */
   act = new ActionRunner({
@@ -136,10 +134,5 @@ export class TestDetailComponent {
       ok: (r) => `Enqueued standalone run ${short(r.id)} - pending.`,
       then: () => this.load(),
     });
-  }
-  /** A batch was started from the dialog: its page shows it running. */
-  openBatch(b: Batch) {
-    this.dlg.set(null);
-    this.router.navigate(['/statistics/batches', b.id]);
   }
 }

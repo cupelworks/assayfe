@@ -9,14 +9,13 @@
   <div class="hero-actions">
     <button class="btn btn-ghost" (click)="act.err.set(null); dlg.set('delete')">Delete</button>
     <button class="btn btn-secondary" (click)="act.err.set(null); dlg.set('edit')">Edit</button>
-    <button
-      class="btn btn-secondary"
-      (click)="dlg.set('stats')"
-      [disabled]="!canRun()"
-      [title]="canRun() ? '' : 'Assign at least one test type first'"
-    >
-      Run with statistics…
-    </button>
+    @if (canRun()) {
+      <a class="btn btn-secondary" routerLink="run-with-statistics">Run with statistics…</a>
+    } @else {
+      <button class="btn btn-secondary" disabled title="Assign at least one test type first">
+        Run with statistics…
+      </button>
+    }
     <button
       class="btn btn-primary"
       (click)="run()"
@@ -96,15 +95,6 @@
       />
     </div>
   </section>
-}
-@if (dlg() === 'stats') {
-  <assay-run-stats-dialog
-    [scope]="statsScope()"
-    [kicker]="'Test · ' + name()"
-    noun="test"
-    (created)="openBatch($event)"
-    (closed)="dlg.set(null)"
-  />
 }
 @if (dlg() === 'edit') {
   <assay-test-form-dialog

@@ -15,8 +15,6 @@ export class DialogComponent {
   primaryLabel = input('Save');
   primaryDisabled = input(false);
   danger = input(false);
-  /** The primary as a secondary button: when the body offers a better first step of its own. */
-  quiet = input(false);
   error = input<string | null>(null);
   /** What keeps the primary disabled, one short phrase each ("Required substring (Contains 2)");
    *  shown in the footer as "2 things to fix: … · …". */

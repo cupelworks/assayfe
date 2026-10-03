@@ -5,8 +5,7 @@ import { forkJoin, map } from 'rxjs';
 import { TestPlansApiService } from '../api/test-plans-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
-import { Batch, TestPlanEntry } from '../api/models';
-import { RunStatsDialogComponent } from '../statistics/run-stats-dialog.component';
+import { TestPlanEntry } from '../api/models';
 import { StatsPanelComponent } from '../statistics/stats-panel.component';
 import { short, errText } from '../shared/format';
 import { NameDialogComponent } from '../shared/dialog/name-dialog.component';
@@ -17,7 +16,7 @@ import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { Paged } from '../shared/paged';
 
-type Dlg = null | 'rename' | 'delete' | 'link' | 'unlink' | 'stats';
+type Dlg = null | 'rename' | 'delete' | 'link' | 'unlink';
 
 @Component({
   selector: 'assay-test-plan-detail',
@@ -30,7 +29,6 @@ type Dlg = null | 'rename' | 'delete' | 'link' | 'unlink' | 'stats';
     ExecutionsPanelComponent,
     PagerComponent,
     RelTimeComponent,
-    RunStatsDialogComponent,
     StatsPanelComponent,
   ],
   templateUrl: './test-plan-detail.component.html',
@@ -165,10 +163,5 @@ export class TestPlanDetailComponent {
     this.act.run(this.runsApi.replay('test-plans', this.id(), execId), {
       ok: (r) => `Enqueued ${r.run_count} pending runs (replay of ${short(execId)}).`,
     });
-  }
-  /** A batch was started from the dialog: its page shows it running. */
-  openBatch(b: Batch) {
-    this.dlg.set(null);
-    this.router.navigate(['/statistics/batches', b.id]);
   }
 }

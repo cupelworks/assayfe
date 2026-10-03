@@ -17,9 +17,11 @@
       Delete
     </button>
     <button class="btn btn-secondary" (click)="open('link')">Link test sets</button>
-    <button class="btn btn-secondary" (click)="open('stats')" [disabled]="!page.total()">
-      Run with statistics…
-    </button>
+    @if (page.total()) {
+      <a class="btn btn-secondary" routerLink="run-with-statistics">Run with statistics…</a>
+    } @else {
+      <button class="btn btn-secondary" disabled>Run with statistics…</button>
+    }
     <button class="btn btn-primary" (click)="runLive()" [disabled]="act.busy() || !page.total()">
       {{ act.busy() ? 'Working…' : 'Run live' }}
     </button>
@@ -95,15 +97,6 @@
 </section>
 
 @switch (dlg()) {
-  @case ('stats') {
-    <assay-run-stats-dialog
-      [scope]="statsScope()"
-      [kicker]="'Test plan · ' + name()"
-      noun="plan"
-      (created)="openBatch($event)"
-      (closed)="dlg.set(null)"
-    />
-  }
   @case ('rename') {
     <assay-name-dialog
       [kicker]="name()"

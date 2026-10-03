@@ -127,11 +127,16 @@ const ENDS = [100, 150, 200, 300, 400, 500, 600, 800, 1000];
     .cap.red {
       fill: var(--color-accent);
     }
+    /* A label masks the lines under it with the background, as the other charts' do. */
     .lbl {
       font-size: 10.5px;
       font-weight: 800;
       fill: var(--color-text);
       font-variant-numeric: tabular-nums;
+      paint-order: stroke;
+      stroke: var(--color-bg);
+      stroke-width: 4px;
+      stroke-linejoin: round;
     }
     .lbl.soft {
       font-weight: 600;
@@ -198,9 +203,11 @@ export class OddsChartComponent {
       ? this.place(p.times, p.chance, `${p.times} times · ${chanceText(p.chance)}`, p.chance < 0.55)
       : null;
   });
+  /** Above its point, unless that would cross the goal's line just over it. */
   bestMark = computed(() => {
     const b = this.bestShown();
-    return b ? this.place(b.times, b.chance, `at best ${chanceText(b.chance)}`, true) : null;
+    const room = b ? this.y(b.chance) - this.goalY() : 0;
+    return b ? this.place(b.times, b.chance, `at best ${chanceText(b.chance)}`, room > 22) : null;
   });
   ticks = computed(() =>
     [1, 2, 3, 4].map((k) => {

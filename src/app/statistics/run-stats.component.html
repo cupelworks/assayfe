@@ -1,20 +1,24 @@
-<assay-dialog
-  [kicker]="kicker()"
-  title="Run with statistics"
-  [wide]="true"
-  [primaryLabel]="primaryLabel()"
-  [primaryDisabled]="primaryDisabled()"
-  [quiet]="!!trial()"
-  [blockers]="blockers()"
-  (primary)="start()"
-  (close)="closed.emit()"
->
-  <p class="intro">
-    One run tells you little about an application that answers differently every time. This runs the
-    {{ noun() }} many times and lets statistics decide, check by check. Nothing is created until you
-    start it.
-  </p>
+<div class="crumbs">
+  <a [routerLink]="place().list">{{ place().label }}</a
+  ><span>/</span><a [routerLink]="back()">{{ scopeName() || '…' }}</a
+  ><span>/</span><span class="cur">Run with statistics</span>
+</div>
+<div class="hero">
+  <div>
+    <div class="kicker">{{ kicker() }}</div>
+    <h1>Run with statistics</h1>
+    <p class="intro lede">
+      One run tells you little about an application that answers differently every time. This runs
+      the {{ noun() }} many times and lets statistics decide, check by check. Nothing is created
+      until you start it.
+    </p>
+  </div>
+</div>
+@if (loadError(); as e) {
+  <div class="msg msg-err">{{ e }}</div>
+}
 
+<div class="form">
   <section class="step">
     <div class="sh">
       <span class="sn">1</span><span class="st" id="sp-q">What do you want to know?</span>
@@ -203,9 +207,7 @@
                   ><span class="small">{{ c.cap }}</span></span
                 >
                 <span class="note" [class.reach]="c.reach">{{ c.note }}</span>
-                <button type="button" class="btn btn-ghost btn-sm use" (click)="use(c.o)">
-                  Use this
-                </button>
+                <button type="button" class="btn btn-sm use" (click)="use(c.o)">Use this</button>
               </div>
             }
           </div>
@@ -309,7 +311,7 @@
       }
 
       <p class="cost">
-        {{ cost() }} · Each time is a full run of the {{ noun() }}, paid for like any run.
+        Each time is a full run of the {{ noun() }}, paid for like any run.
         @if (skipped().length; as n) {
           <button
             type="button"
@@ -358,4 +360,26 @@
     ></textarea>
     <div class="hint-line">Shown in the batch list and when comparing two batches.</div>
   </div>
-</assay-dialog>
+</div>
+
+<!-- What it costs, why Start can't go yet, Start and Cancel: always in view. -->
+<div class="dock">
+  <span class="sum">{{ cost() }}</span>
+  @if (blockers().length; as n) {
+    <span class="blockers" role="status"
+      ><span class="strong">{{ n }} {{ n === 1 ? 'thing' : 'things' }} to fix:</span>
+      {{ blockersText() }}</span
+    >
+  }
+  <button
+    type="button"
+    class="btn go"
+    [class.btn-primary]="!trial()"
+    [class.btn-secondary]="!!trial()"
+    [disabled]="primaryDisabled()"
+    (click)="start()"
+  >
+    {{ primaryLabel() }}
+  </button>
+  <a class="btn btn-ghost" [routerLink]="back()">Cancel</a>
+</div>

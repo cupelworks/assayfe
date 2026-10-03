@@ -24,9 +24,7 @@
         </div>
       }
       <button
-        class="btn"
-        [class.btn-primary]="!quiet()"
-        [class.btn-secondary]="quiet()"
+        class="btn btn-primary"
         [class.danger]="danger()"
         (click)="primary.emit()"
         [disabled]="primaryDisabled()"

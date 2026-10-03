@@ -18,6 +18,7 @@ import { SettingsComponent } from './settings/settings.component';
 import { BatchComponent } from './statistics/batch.component';
 import { ComparisonComponent } from './statistics/comparison.component';
 import { StatisticalTestsComponent } from './statistics/statistical-tests.component';
+import { RunStatsComponent } from './statistics/run-stats.component';
 
 // Route data keys map onto component inputs via withComponentInputBinding().
 export const routes: Routes = [
@@ -32,10 +33,25 @@ export const routes: Routes = [
       { path: 'tests', component: TestsListComponent },
       { path: 'tests/:id', component: TestDetailComponent },
       { path: 'tests/:id/runs/:runId', component: StandaloneRunDetailComponent },
+      {
+        path: 'tests/:id/run-with-statistics',
+        component: RunStatsComponent,
+        data: { scopeKind: 'test' },
+      },
       { path: 'test-sets', component: ScopesListComponent, data: { kind: 'test-sets' } },
       { path: 'test-plans', component: ScopesListComponent, data: { kind: 'test-plans' } },
       { path: 'test-sets/:id', component: TestSetDetailComponent },
       { path: 'test-plans/:id', component: TestPlanDetailComponent },
+      {
+        path: 'test-sets/:id/run-with-statistics',
+        component: RunStatsComponent,
+        data: { scopeKind: 'test_set' },
+      },
+      {
+        path: 'test-plans/:id/run-with-statistics',
+        component: RunStatsComponent,
+        data: { scopeKind: 'test_plan' },
+      },
       { path: ':kind/:id/executions/:execId', component: ExecutionComponent },
       { path: ':kind/:id/executions/:execId/runs/:runId', component: RunDetailComponent },
       { path: 'statistics/batches/:id', component: BatchComponent },
