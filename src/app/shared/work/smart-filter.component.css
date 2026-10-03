@@ -195,27 +195,6 @@ select:focus-visible,
   color: var(--color-neutral-600);
   font-variant-numeric: tabular-nums;
 }
-.sort {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 44px;
-  color: var(--color-neutral-800);
-}
-.sort select {
-  appearance: none;
-  min-height: 44px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  font: inherit;
-  font-weight: 700;
-  color: var(--color-text);
-  cursor: pointer;
-}
-.sort select:hover {
-  color: var(--color-accent);
-}
 .go {
   all: unset;
   display: inline-flex;

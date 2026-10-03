@@ -36,6 +36,9 @@ const MARKS: Record<string, Mark> = {
   worse: { label: 'Worse', color: red, shape: 'filled' },
   no_difference: { label: 'No clear difference', color: outline, shape: 'hollow' },
   no_worse: { label: 'No worse', color: green, shape: 'filled' },
+  // A run's checks, counted (a set's run's tally): met, not met - and Not Ran, a run's own.
+  met: { label: 'Met', color: green, shape: 'filled' },
+  unmet: { label: 'Not met', color: red, shape: 'filled' },
 };
 
 /** The mark of any status word: a run's (Green, Amber, …) or one of the statistics' above. */

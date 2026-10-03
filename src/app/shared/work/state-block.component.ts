@@ -7,26 +7,38 @@ import { StatusMarkComponent, markLabel } from '../status-mark.component';
  * a big word with its mark ("■ Failed") - or, for a run of a set, its counts ("■ 5 Green ■ 4
  * Amber") - then what it means in a sentence, the facts in small (the question, how many times,
  * when) and what to do next (the page's links, projected). With nothing yet, the word is the
- * page's ("Not yet", "Never run") beside a dash.
+ * page's ("Not yet", "Never run") beside a dash. A figure can stand alone, in ink ("2 of 3
+ * met"); and what went wrong is said in its place, as an alert - a red rule and caption, the
+ * error as written.
  */
 @Component({
   selector: 'assay-state-block',
   standalone: true,
   imports: [StatusMarkComponent],
-  host: { '[class.never]': 'never()' },
+  host: {
+    '[class.never]': 'never()',
+    '[class.alert]': '!!alert()',
+    '[attr.role]': "alert() ? 'alert' : null",
+  },
   template: `
     <span class="cap">{{ caption() }}</span>
-    <span class="big">
-      @if (counts()?.length) {
-        @for (c of counts(); track c.key) {
-          <span class="w"><assay-mark [of]="c.key" size="lg" />{{ c.value }} {{ c.label }}</span>
+    @if (alert(); as a) {
+      <p class="msg">{{ a }}</p>
+    } @else {
+      <span class="big">
+        @if (counts()?.length) {
+          @for (c of counts(); track c.key) {
+            <span class="w"><assay-mark [of]="c.key" size="lg" />{{ c.value }} {{ c.label }}</span>
+          }
+        } @else if (of(); as s) {
+          <span class="w"><assay-mark [of]="s" size="lg" />{{ word() || label() }}</span>
+        } @else if (figure(); as f) {
+          <span class="w">{{ f }}</span>
+        } @else {
+          <span class="w"><i class="dash"></i>{{ word() }}</span>
         }
-      } @else if (of(); as s) {
-        <span class="w"><assay-mark [of]="s" size="lg" />{{ word() || label() }}</span>
-      } @else {
-        <span class="w"><i class="dash"></i>{{ word() }}</span>
-      }
-    </span>
+      </span>
+    }
     @if (say(); as s) {
       <p class="say">{{ s }}</p>
     }
@@ -101,6 +113,22 @@ import { StatusMarkComponent, markLabel } from '../status-mark.component';
     .acts:empty {
       display: none;
     }
+    /* What went wrong: the red of a problem in its rule and caption, the error as written. */
+    :host(.alert) {
+      padding-top: 11px;
+      border-top: 2px solid var(--color-accent);
+    }
+    :host(.alert) .cap {
+      color: var(--color-accent);
+    }
+    .msg {
+      margin: 14px 0 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 17px;
+      line-height: 1.45;
+      color: var(--color-text);
+      overflow-wrap: anywhere;
+    }
     @media (max-width: 960px) {
       .big {
         font-size: 36px;
@@ -117,8 +145,12 @@ export class StateBlockComponent {
   counts = input<StatusCount[] | null>(null);
   /** The word instead of the status's own - and the one shown with nothing yet. */
   word = input('');
+  /** A figure alone, in ink, in the big word's place ("2 of 3 met"). */
+  figure = input<string | null>(null);
+  /** What went wrong, in the big word's place - the block becomes an alert. */
+  alert = input<string | null>(null);
   say = input<string | null>(null);
   facts = input<string | null>(null);
   label = computed(() => markLabel(this.of()));
-  never = computed(() => !this.of() && !this.counts()?.length);
+  never = computed(() => !this.of() && !this.counts()?.length && !this.figure() && !this.alert());
 }

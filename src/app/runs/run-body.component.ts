@@ -1,415 +1,407 @@
-import { Component, inject, input, signal, computed } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { NgTemplateOutlet } from '@angular/common';
+import { RunDetails, StandaloneRunDetails, TestTypeResult } from '../api/models';
+import { isInFlight, listed, prettyJson } from '../shared/format';
 import {
-  RunDetails,
-  StandaloneRunDetails,
-  TestTypeAssignment,
-  TestTypeResult,
-} from '../api/models';
-import { rel, absTime, statusColor, statusLabel, prettyJson } from '../shared/format';
-import { RelTimeComponent } from '../shared/rel-time.component';
-import { ChevronComponent } from '../shared/chevron.component';
-import {
+  CATEGORIES,
   TestTypesStore,
   assignmentFields,
-  scoreScale,
   engineSettingsLabel,
   isCodeField,
+  scoreScale,
 } from '../api/test-types.store';
 import { checkName } from '../api/checks';
-import { TypeTagsComponent } from '../shared/type-tags.component';
-import { ClampDirective } from '../shared/clamp.directive';
+import { GuideSectionComponent } from '../shared/guide/guide-section.component';
+import { numbered } from '../shared/guide/guide-sections';
+import { CATALOG, CatalogColumn } from '../shared/catalog';
+import { StatusMarkComponent } from '../shared/status-mark.component';
 
-/** Status / error / per-type results (left) + frozen or live test content (right). */
+/** A line of what a check was run with, or how it ran: "Rubric", "Read from", "Engine". */
+interface Line {
+  label: string;
+  value: string;
+  mono: boolean;
+}
+
+/**
+ * A run's body, under its page's top, as the Guide's sections:
+ * 01 Checks - a ruled row per check, not met first: the check and its kind, how it went (and its
+ * score on its own scale, its threshold in red), why - with what it was run with in sight when it
+ * wasn't met, under Details when it was, and how it ran (the judge, the engine) under Details;
+ * 02 The answer - what the checks read (text as text, JSON as code), where it was read from, the
+ * whole reply folded; 03 The test, as it ran - kept with the run. A run that couldn't run, or
+ * hasn't yet, says so in each.
+ */
 @Component({
   selector: 'assay-run-body',
   standalone: true,
-  imports: [
-    ClampDirective,
-    TypeTagsComponent,
-    RouterLink,
-    NgTemplateOutlet,
-    RelTimeComponent,
-    ChevronComponent,
+  imports: [RouterLink, GuideSectionComponent, CATALOG, StatusMarkComponent],
+  styleUrls: [
+    '../shared/guide/head-aside.css',
+    '../shared/work/work.css',
+    './run-body.component.css',
   ],
-  styleUrls: ['../shared/page.css', './run-body.component.css'],
-  template: ` @if (run(); as r) {
-      <section class="half">
-        <div class="cell cell-r col">
-          <div>
-            <div class="label">Status</div>
-            <div class="status-line">
-              <span class="dot lg" [style.background]="statusColor(r.status)"></span
-              >{{ statusLabel(r.status) }}
-            </div>
-            @if (r.batch_id) {
-              <a class="plain small batch-link" [routerLink]="['/statistics/batches', r.batch_id]"
-                >Time {{ r.batch_index }} of a statistics batch →</a
+  template: `
+    @if (run(); as r) {
+      <assay-guide-section [section]="sections[0]" [sub]="checksSub()">
+        @if (checks().length) {
+          <assay-catalog-table label="Its checks" [columns]="columns">
+            @for (c of checks(); track c.name) {
+              <assay-catalog-row [name]="c.name" [tags]="c.tags" [expandable]="false">
+                <assay-catalog-cell caption="How it went">
+                  <span class="res"><assay-mark [of]="c.mark" size="md" />{{ c.word }}</span>
+                  @if (c.score; as s) {
+                    <span class="score">
+                      <span class="sv">{{ s.value }}</span>
+                      @if (s.needs) {
+                        <span class="needs">{{ s.needs }}</span>
+                      }
+                      @if (s.pct != null) {
+                        <span class="sbar" aria-hidden="true"
+                          ><i [style.width.%]="s.pct"></i>
+                          @if (s.at != null) {
+                            <b [style.left.%]="s.at"></b>
+                          }
+                        </span>
+                      }
+                    </span>
+                  }
+                </assay-catalog-cell>
+                <assay-catalog-cell caption="Why">
+                  @if (c.why) {
+                    <p class="why">{{ c.why }}</p>
+                  }
+                  @if (!c.passed && c.need.length) {
+                    <dl class="kv">
+                      @for (l of c.need; track l.label) {
+                        <dt>{{ l.label }}</dt>
+                        <dd [class.mono]="l.mono">{{ l.value }}</dd>
+                      }
+                    </dl>
+                  }
+                  @if (c.folded.length) {
+                    <button
+                      type="button"
+                      class="more"
+                      [attr.aria-expanded]="isOpen(c.name)"
+                      (click)="toggle(c.name)"
+                    >
+                      {{ isOpen(c.name) ? 'Details ↑' : 'Details ↓' }}
+                    </button>
+                    @if (isOpen(c.name)) {
+                      <dl class="kv">
+                        @for (l of c.folded; track l.label) {
+                          <dt>{{ l.label }}</dt>
+                          <dd [class.mono]="l.mono">{{ l.value }}</dd>
+                        }
+                      </dl>
+                    }
+                  }
+                </assay-catalog-cell>
+              </assay-catalog-row>
+            }
+          </assay-catalog-table>
+        } @else {
+          <p class="none-yet">
+            <b>{{ noChecks().title }}</b
+            ><span>{{ noChecks().text }}</span>
+          </p>
+        }
+      </assay-guide-section>
+
+      <assay-guide-section [section]="sections[1]" [sub]="answerSub()">
+        @if (answer(); as a) {
+          <div class="ans">
+            <span class="cap">{{ a.caption }}</span>
+            @if (a.empty) {
+              <p class="said empty">An empty answer.</p>
+            } @else if (a.json) {
+              <pre class="code">{{ a.text }}</pre>
+            } @else {
+              <p class="said">{{ a.text }}</p>
+            }
+            @if (a.live) {
+              <span class="src"
+                >Read from the application's reply at the Answer path in
+                <a routerLink="/settings">Settings</a>.{{
+                  ownPaths() ? ' A check with its own path reads that part instead.' : ''
+                }}</span
               >
             }
-            <div
-              class="muted"
-              [title]="
-                absTime(r.created_at) +
-                (r.executed_at ? ' · executed ' + absTime(r.executed_at) : '')
-              "
-            >
-              {{
-                r.executed_at
-                  ? 'created ' + rel(r.created_at) + ' · executed ' + rel(r.executed_at)
-                  : 'created ' + rel(r.created_at) + ' · not executed yet'
-              }}
-            </div>
           </div>
-          @if (r.error) {
-            <pre class="error">{{ r.error }}</pre>
-          }
-          <div>
-            <div class="row-head" style="margin-bottom: 12px">
-              <div class="label">Results</div>
-              @if (resultsSummary(); as summary) {
-                <span class="small muted">{{ summary }}</span>
-              }
-            </div>
-            @for (s of results(); track s.name) {
-              <div class="score">
-                <div class="strong">
-                  <span
-                    class="dot"
-                    [style.background]="
-                      s.errored
-                        ? 'var(--color-neutral-800)'
-                        : s.passed
-                          ? 'var(--color-status-green)'
-                          : 'var(--color-accent)'
-                    "
-                  ></span>
-                  {{ s.name }}
-                  @if (s.type) {
-                    <span class="tag tag-neutral type-tag">{{ s.type }}</span>
-                  }
-                  @if (s.errored) {
-                    <span class="tag tag-outline type-tag">couldn’t run</span>
-                  }
-                </div>
-                <!-- The score beside the name, its bar, then the reason. -->
-                @if (s.valueText) {
-                  <div class="val">{{ s.valueText }}</div>
-                }
-                @if (s.pct) {
-                  <div class="track"><div [style.width]="s.pct"></div></div>
-                }
-                @if (s.detail) {
-                  <div class="detail muted">{{ s.detail }}</div>
-                }
-                <!-- A check not met shows what it needed; a met one keeps it under Details. -->
-                @if (!s.passed) {
-                  <ng-container *ngTemplateOutlet="config; context: { $implicit: s }" />
-                }
-                @if (s.hasDetails) {
-                  <button
-                    type="button"
-                    class="adv-toggle"
-                    [attr.aria-expanded]="isOpen('details:' + s.name)"
-                    (click)="toggle('details:' + s.name)"
-                  >
-                    Details <assay-chevron [open]="isOpen('details:' + s.name)" />
-                  </button>
-                  @if (isOpen('details:' + s.name)) {
-                    @if (s.passed) {
-                      <ng-container *ngTemplateOutlet="config; context: { $implicit: s }" />
-                    }
-                    @if (s.answerPath) {
-                      <div class="detail small muted">
-                        <span class="strong">Read from:</span>
-                        <span class="mono">{{ s.answerPath }}</span>
-                      </div>
-                    }
-                    @if (s.judgedBy) {
-                      <div class="detail small muted">
-                        <span class="strong">Judged by:</span>
-                        <span class="mono">{{ s.judgedBy }}</span>
-                      </div>
-                    }
-                    @if (s.engine) {
-                      <div class="detail small muted">
-                        <span class="strong">Engine:</span> {{ s.engine }}
-                      </div>
-                    }
-                    @if (s.engineSettings) {
-                      <div class="detail small muted">
-                        <span class="strong">Engine settings:</span> {{ s.engineSettings }}
-                      </div>
-                    }
-                  }
-                }
-              </div>
-            } @empty {
-              <div class="score muted">
-                {{
-                  r.status === 'NotRan'
-                    ? 'Nothing could be evaluated in this run - see error above.'
-                    : 'No results yet - run is ' + statusLabel(r.status) + '.'
-                }}
-              </div>
-            }
-          </div>
-        </div>
-        <div class="cell col">
-          <div class="row-head">
-            <h2>{{ heading() }}</h2>
-            @if (snapshotAt()) {
-              <span class="small">snapshot <assay-rel-time [iso]="snapshotAt()" /></span>
-            }
-          </div>
-          <assay-type-tags [assignments]="content()?.test_type_assignments" />
-          @if (r.evaluated_output != null) {
-            <div class="field-ro">
-              <div class="label">
-                Evaluated output
-                <span
-                  class="tag"
-                  [class.tag-accent]="r.output_source === 'application'"
-                  [class.tag-outline]="r.output_source !== 'application'"
-                  >{{ r.output_source === 'application' ? 'From application' : 'Recorded' }}</span
-                >
-              </div>
-              @if (evaluated(); as ev) {
-                @if (ev.empty) {
-                  <div class="body muted">(empty answer)</div>
-                } @else {
-                  <div class="body" [class.mono]="ev.json">{{ ev.text }}</div>
-                }
-              }
-              @if (r.output_source === 'application') {
-                <div class="small source-note">
-                  Read from the application's reply at the Answer path in
-                  <a routerLink="/settings" class="plain">Settings</a>.
-                </div>
-              }
-            </div>
-          }
           @if (replyText(); as reply) {
-            <details class="field-ro reply" (toggle)="replyOpen.set($any($event.target).open)">
-              <summary class="label">
-                Full application reply <assay-chevron [open]="replyOpen()" />
-              </summary>
-              <div class="body mono">{{ reply }}</div>
-            </details>
-          }
-          @for (f of fields(); track f[0]) {
-            <div class="field-ro">
-              <div class="label">{{ f[0] }}</div>
-              <div class="body">{{ f[1] }}</div>
+            <div class="reply">
+              <button
+                type="button"
+                class="more"
+                [attr.aria-expanded]="replyOpen()"
+                (click)="replyOpen.set(!replyOpen())"
+              >
+                {{ replyOpen() ? 'The whole reply ↑' : 'The whole reply ↓' }}
+              </button>
+              @if (replyOpen()) {
+                <pre class="code">{{ reply }}</pre>
+              }
             </div>
           }
-          @if (sourceLink(); as l) {
-            <a class="plain small" [routerLink]="l">Open originating test →</a>
-          }
-        </div>
-      </section>
-    }
-    <!-- What a check was run with - shown when it wasn't met, under Details when it was. -->
-    <ng-template #config let-s>
-      @for (c of s.config; track c.key) {
-        <div
-          class="detail muted cfg"
-          [class.clamp]="!isOpen(c.key)"
-          [assayClamp]="!isOpen(c.key)"
-          #fold="clamp"
-        >
-          <span class="strong">{{ c.label }}:</span>
-          <span [class.mono]="c.mono">{{ c.value }}</span>
-        </div>
-        @if (fold.overflows() || isOpen(c.key)) {
-          <button type="button" class="more small" (click)="toggle(c.key)">
-            {{ isOpen(c.key) ? 'Less ↑' : 'More ↓' }}
-          </button>
+        } @else {
+          <p class="none-yet">
+            <b>{{ noAnswer().title }}</b
+            ><span>{{ noAnswer().text }}</span>
+          </p>
         }
-      }
-    </ng-template>`,
+      </assay-guide-section>
+
+      <assay-guide-section [section]="sections[2]" [sub]="testSub()">
+        <dl class="defs">
+          <dt>Input</dt>
+          <dd>
+            <span class="val">{{ r.input }}</span>
+          </dd>
+          <dt>Expected output</dt>
+          @if (r.expected_output) {
+            <dd>
+              <span class="val">{{ r.expected_output }}</span>
+            </dd>
+          } @else {
+            <dd class="none">None</dd>
+          }
+          <dt>Recorded answer</dt>
+          @if (r.model_output != null) {
+            <dd>
+              <span class="val">{{ r.model_output || '(empty)' }}</span>
+            </dd>
+          } @else {
+            <dd class="none">None: each run asks your application.</dd>
+          }
+          <dt>Checks</dt>
+          @if (checkLine().length) {
+            <dd>
+              <span class="val">
+                @for (k of checkLine(); track $index; let last = $last) {
+                  {{ k.name }}
+                  @if (k.path) {
+                    , at <span class="at">{{ k.path }}</span>
+                  }
+                  @if (k.rubric) {
+                    , with its own rubric
+                  }
+                  @if (!last) {
+                    ·
+                  }
+                }
+              </span>
+            </dd>
+          } @else {
+            <dd class="none">None</dd>
+          }
+        </dl>
+        @if (testLink(); as l) {
+          <span class="ends"><a class="go" [routerLink]="l">Open the test →</a></span>
+        }
+      </assay-guide-section>
+    }
+  `,
 })
 export class RunBodyComponent {
   run = input.required<RunDetails | StandaloneRunDetails | null>();
-  content = input<{
-    input?: string;
-    expected_output?: string | null;
-    model_output?: string | null;
-    test_type_assignments?: TestTypeAssignment[];
-  } | null>(null);
-  heading = input('Frozen entry');
-  snapshotAt = input<string | null>(null);
-  sourceLink = input<any[] | null>(null);
-  rel = rel;
-  absTime = absTime;
-  statusColor = statusColor;
-  statusLabel = statusLabel;
-  private testTypes = inject(TestTypesStore);
-  /** What's expanded: long config values past their clamp (keyed "<check>:<field key>" - a
-   *  rubric can run to a full paragraph, so it starts collapsed like a test type card's "More")
-   *  and a result's Details ("details:<check>"). */
-  private openKeys = signal<Set<string>>(new Set());
+  /** Under 03's title: whose test it is - "Kept with the run: editing the test since changes
+   *  nothing here", "The set's copy, kept with the run". */
+  testSub = input('');
+  /** The test it ran, or was copied from - null: none to open. */
+  testLink = input<unknown[] | null>(null);
+  private types = inject(TestTypesStore);
+  sections = numbered('run-', [
+    'Checks',
+    'The answer',
+    { id: 'test', label: 'The test, as it ran' },
+  ]);
+  columns: CatalogColumn[] = [
+    { label: 'Check', width: 2.1 },
+    { label: 'How it went', width: 1.4 },
+    { label: 'Why', width: 5.5 },
+  ];
+  /** Which checks' Details are open. */
+  private open = signal<Set<string>>(new Set());
+  replyOpen = signal(false);
   constructor() {
-    this.testTypes.load();
+    this.types.load();
   }
-  isOpen(key: string) {
-    return this.openKeys().has(key);
+  isOpen(name: string) {
+    return this.open().has(name);
   }
-  toggle(key: string) {
-    this.openKeys.update((s) => {
+  toggle(name: string) {
+    this.open.update((s) => {
       const next = new Set(s);
-      next.has(key) ? next.delete(key) : next.add(key);
+      next.has(name) ? next.delete(name) : next.add(name);
       return next;
     });
   }
-  /** The config the type was actually run with (e.g. "Minimum score to pass: 0.75") - without it
-   *  a failed score like BERTScore 0.56 is unexplained, since the pass/fail line alone doesn't say
-   *  what it needed to clear. One entry per field, labeled via the matching TestType's
-   *  config_fields (assignmentFields excludes "reference", which never appears here); a non-numeric
-   *  value folds to two lines in the template, with More only when that hides something.
-   *  A judge's rubric comes only from the result's own `rubric` stamp - what it actually graded
-   *  with - as "Rubric" (its own, which replaced the default) or "Default rubric", never from the
-   *  config's rubric field. No stamp means the judge wasn't asked (`detail` says why), so no
-   *  rubric is shown - there are no pre-stamp results to cover, this version ships fresh. */
-  private configFields(
-    name: string,
-    result: TestTypeResult,
-  ): { key: string; label: string; value: string; mono: boolean }[] {
-    // Results are keyed by the check's label; its type is the result's own test_type (the key
-    // itself on results from before labels).
-    const config = this.content()?.test_type_assignments?.find(
-      (a) => checkName(a) === name,
-    )?.config;
-    const type = this.testTypes.byName().get(result.test_type ?? name);
-    const fields = type ? assignmentFields(type) : [];
-    const valueOf = (key: string) => config?.[key]?.trim() || null;
-    const rows = fields.flatMap((f) => {
-      const value = f.kind === 'rubric' ? null : valueOf(f.key);
-      return value
+
+  /** A row per check, needing attention first: one that couldn't run, then not met, then met -
+   *  each group in the API's order. */
+  checks = computed(() =>
+    Object.entries(this.run()?.results ?? {})
+      .map(([name, r]) => this.row(name, r))
+      .sort((a, b) => a.rank - b.rank),
+  );
+  private row(name: string, r: TestTypeResult) {
+    const type = this.types.byName().get(r.test_type ?? name);
+    const errored = !!r.errored;
+    const need = this.need(name, r);
+    // How it ran: who judged it, what scored it - always folded.
+    const how: Line[] = [
+      ...(r.judge?.model ? [{ label: 'Judged by', value: r.judge.model, mono: true }] : []),
+      ...(r.engine ? [{ label: 'Engine', value: r.engine, mono: false }] : []),
+      ...(r.engine && engineSettingsLabel(r.engine_settings)
         ? [
             {
-              key: `${name}:${f.key}`,
-              label: f.label,
-              value,
-              mono: isCodeField(f),
+              label: 'Engine settings',
+              value: engineSettingsLabel(r.engine_settings)!,
+              mono: false,
             },
           ]
-        : [];
-    });
-    const rubric = result.rubric;
-    if (rubric) {
-      rows.push({
-        key: `${name}:rubric`,
-        label: rubric.source === 'custom' ? 'Rubric' : 'Default rubric',
-        value: rubric.text,
-        mono: false,
-      });
-    }
-    return rows;
-  }
-  /** What needs attention at the top - a check that couldn't run, then one not met - then what
-   *  was met, each group in the API's order (by check name). */
-  results = computed(() => [...this.resultRows()].sort((a, b) => this.rank(a) - this.rank(b)));
-  private rank = (r: { errored: boolean; passed: boolean }) => (r.errored ? 0 : r.passed ? 2 : 1);
-  private resultRows = computed(() =>
-    Object.entries(this.run()?.results ?? {}).map(([name, r]) => this.resultRow(name, r)),
-  );
-  private resultRow(name: string, r: TestTypeResult) {
-    const row = {
+        : []),
+    ];
+    const kind = CATEGORIES.find((c) => c.key === type?.category)?.label;
+    return {
       name,
-      // The check's type beside its name, when the name isn't simply the type's.
-      type: r.test_type && r.test_type !== name ? r.test_type : null,
+      // Its type, when its label isn't the type's name ("Mentions the order number": Contains),
+      // and its kind ("Deterministic").
+      tags: [
+        ...(r.test_type && r.test_type !== name ? [{ text: r.test_type }] : []),
+        ...(kind ? [{ text: kind }] : []),
+      ],
       passed: r.passed,
-      // The check itself couldn't run (no judge, an engine missing): an error, not a miss.
-      errored: !!r.errored,
-      // 4 decimals - the precision the backend keeps and quotes in a miss's detail ("0.3704 is
-      // below the threshold 0.5"), so the number beside the bar matches it.
-      valueText: r.score != null ? r.score.toFixed(4) : null,
-      pct: this.resultPct(name, r),
-      detail: r.detail,
-      config: this.configFields(name, r),
-      // The model that gave a judge's verdict, under its rubric - null for other types, a judge
-      // that couldn't be asked, and older results, so the line hides.
-      judgedBy: r.judge?.model ?? null,
-      // What scored it, as stamped on the result at execution time - null on legacy results and
-      // on a type that wasn't in the catalogue when the run executed, so both rows then hide.
-      answerPath: r.answer_path ?? null,
-      engine: r.engine ?? null,
-      engineSettings: r.engine ? engineSettingsLabel(r.engine_settings) : null,
+      rank: errored ? 0 : r.passed ? 2 : 1,
+      mark: errored ? 'NotRan' : r.passed ? 'met' : 'unmet',
+      word: errored ? "Couldn't run" : r.passed ? 'Met' : 'Not met',
+      why: r.detail,
+      score: this.score(name, r),
+      need,
+      // Under Details: what it was run with, when it was met (else it's in sight), then how.
+      folded: [...(r.passed ? need : []), ...how],
     };
-    // Something to fold under Details: a pass's config, or any of the technical lines.
-    const hasDetails =
-      (row.passed && row.config.length > 0) ||
-      !!(row.answerPath || row.judgedBy || row.engine || row.engineSettings);
-    return { ...row, hasDetails };
   }
-  /** Bar width for a result's score - null (no bar) when there's no score: LLM judges and the
-   *  deterministic types (every type on the exact_match / contains / regex engines, negated variants included) return `score: null` by contract, so
-   *  they get the pass/fail dot only. A threshold-scored type (`comparison` non-null) reports its
-   *  score on that type's own native scale, matching its config_fields threshold min/max - not
-   *  0-1 (BLEU is 0-100, Cosine Similarity is -1 to 1) - so the bar scales by where the score
-   *  falls in that range, not by clamping the raw score itself. The range is the catalogue's,
-   *  but the score is the stamped engine's - so when the result names an engine that isn't the
-   *  type's current one (the catalogue changed since the run), the range can't be trusted and
-   *  there's no bar. Same when no range is known at all (type gone from the catalogue, a score
-   *  the contract says the type shouldn't have, a degenerate min = max): the value still shows,
-   *  the bar doesn't, rather than guessing a scale. */
-  private resultPct(name: string, r: TestTypeResult): string | null {
+  /** The assignment a result is for - results are keyed by the check's label. */
+  private assignment(name: string) {
+    return this.run()?.test_type_assignments?.find((a) => checkName(a) === name);
+  }
+  /** What a check was run with: its settings (labelled as its type labels them), the rubric a
+   *  judge graded with (its own, or the type's default - stamped on the result), and the part of
+   *  the reply it read, when its own. Without them a miss is unexplained. */
+  private need(name: string, r: TestTypeResult): Line[] {
+    const config = this.assignment(name)?.config;
+    const type = this.types.byName().get(r.test_type ?? name);
+    const fields = (type ? assignmentFields(type) : []).flatMap((f) => {
+      const value = f.kind === 'rubric' ? null : config?.[f.key]?.trim() || null;
+      return value ? [{ label: f.label, value, mono: isCodeField(f) }] : [];
+    });
+    const rubric = r.rubric
+      ? [
+          {
+            label: r.rubric.source === 'custom' ? 'Rubric' : 'Default rubric',
+            value: r.rubric.text,
+            mono: false,
+          },
+        ]
+      : [];
+    const path = r.answer_path ? [{ label: 'Read from', value: r.answer_path, mono: true }] : [];
+    return [...fields, ...rubric, ...path];
+  }
+  /** A scored check's score against what it needs: 4 decimals (what the API keeps and quotes),
+   *  "needs at least 0.5, of 0 to 1", and its place - and the threshold's - on the type's own
+   *  scale. No scale when the result was scored by another engine than the type's now, or the
+   *  type gives none: the figure alone, rather than a guessed bar. */
+  private score(name: string, r: TestTypeResult) {
     if (r.score == null) return null;
-    const type = this.testTypes.byName().get(r.test_type ?? name);
-    if (!type?.comparison || (r.engine && r.engine !== type.engine)) return null;
-    const scale = scoreScale(type);
-    if (!scale) return null;
-    const ratio = (r.score - scale.min) / (scale.max - scale.min);
-    return Math.min(1, Math.max(0, ratio)) * 100 + '%';
+    const type = this.types.byName().get(r.test_type ?? name);
+    const scale =
+      type?.comparison && (!r.engine || r.engine === type.engine) ? scoreScale(type) : null;
+    const field = type ? assignmentFields(type).find((f) => f.kind === 'numeric') : undefined;
+    const raw = field ? this.assignment(name)?.config?.[field.key]?.trim() : undefined;
+    const threshold = raw ? Number(raw) : null;
+    const share = (x: number) =>
+      scale ? Math.min(1, Math.max(0, (x - scale.min) / (scale.max - scale.min))) * 100 : null;
+    return {
+      value: r.score.toFixed(4),
+      needs:
+        threshold != null && !Number.isNaN(threshold) && type?.comparison
+          ? `needs ${type.comparison === 'gte' ? 'at least' : 'at most'} ${threshold}` +
+            (scale ? `, of ${scale.min} to ${scale.max}` : '')
+          : null,
+      pct: share(r.score),
+      at: threshold != null && !Number.isNaN(threshold) ? share(threshold) : null,
+    };
   }
-  /** How to show the answer the checks judged. `""` is a real, scored answer (an application that
-   *  refused or was cut off) - shown as "(empty answer)", since it's why most checks failed,
-   *  rather than as a blank that looks like a rendering bug; null (not evaluated) hides the block
-   *  in the template. A JSON object/array - a structured reply, or the whole reply read at "$" -
-   *  is pretty-printed in monospace; anything else is shown as-is. An answer from the application
-   *  also gets a one-line note that it was read at Settings' Answer path - without the path itself,
-   *  since the run doesn't record which one was in effect and Settings may have changed since. */
-  evaluated = computed(() => {
-    const v = this.run()?.evaluated_output;
-    if (v == null) return null;
-    if (v === '') return { empty: true, text: '', json: false };
-    const pretty = prettyJson(v);
-    return { empty: false, text: pretty ?? v, json: pretty != null };
+
+  checksSub = computed(() =>
+    this.checks().some((c) => !c.passed)
+      ? 'What each one made of the answer - not met first'
+      : 'What each one made of the answer',
+  );
+  /** Nothing to list, and why. */
+  noChecks = computed(() => {
+    const r = this.run();
+    const names = (r?.test_type_assignments ?? []).map(checkName);
+    if (r?.status === 'NotRan')
+      return {
+        title: 'Nothing was checked.',
+        text: names.length
+          ? `With no answer, ${listed(names)} had nothing to read - see what went wrong, above.`
+          : 'See what went wrong, above.',
+      };
+    if (isInFlight(r?.status))
+      return {
+        title: 'Not checked yet.',
+        text: 'Each check reads the answer once the run has it.',
+      };
+    return { title: 'No checks.', text: 'The test had no checks when it ran.' };
   });
-  /** The application's whole reply, indented, for the collapsed "Full application reply" -
-   *  secondary to Evaluated output (the answer the checks judged), so it starts closed; null when
-   *  the run kept none (a recorded answer, NotRan, older runs). */
-  /** Mirrors the reply <details>' own open state, for its chevron. */
-  replyOpen = signal(false);
+
+  /** Some checks read their own part of the reply. */
+  ownPaths = computed(() => this.checks().some((c) => c.need.some((l) => l.label === 'Read from')));
+  answerSub = computed(() => {
+    const all = this.checks();
+    const own = all.filter((c) => c.need.some((l) => l.label === 'Read from')).length;
+    if (!own) return 'What the checks read';
+    return own === all.length
+      ? 'What the checks read - each from its own part of the reply'
+      : 'What the checks read - some from their own part of the reply';
+  });
+  /** The answer the checks read. "" is a real answer (a refusal, a cut-off): said, not hidden. A
+   *  JSON object or array is pretty-printed as code. */
+  answer = computed(() => {
+    const r = this.run();
+    const v = r?.evaluated_output;
+    if (v == null) return null;
+    const live = r?.output_source === 'application';
+    const caption = live ? 'From your application' : 'The recorded answer';
+    if (v === '') return { caption, live, empty: true, json: false, text: '' };
+    const pretty = prettyJson(v);
+    return { caption, live, empty: false, json: pretty != null, text: pretty ?? v };
+  });
+  noAnswer = computed(() => {
+    const r = this.run();
+    if (r?.status === 'NotRan')
+      return { title: 'No answer came back.', text: 'See what went wrong, above.' };
+    if (isInFlight(r?.status))
+      return { title: 'No answer yet.', text: 'It shows here once the run has it.' };
+    return { title: 'No answer kept.', text: 'This run kept no answer.' };
+  });
+  /** The application's whole reply, folded - null when the run kept none (a recorded answer,
+   *  Not Ran, older runs). */
   replyText = computed(() => {
     const reply = this.run()?.application_reply;
     if (reply == null) return null;
     return typeof reply === 'string' ? reply : JSON.stringify(reply, null, 2);
   });
-  /** "2 of 3 checks met" - a headline the per-check dots otherwise make the reader count out
-   *  themselves. "Met", not "passed": one run is a signal, and passed / failed is the verdict the
-   *  statistics over repeated runs will give. Null (hidden) while there's nothing to summarize yet. */
-  resultsSummary = computed(() => {
-    const r = this.results();
-    if (!r.length) return null;
-    const passed = r.filter((x) => x.passed).length;
-    const errored = r.filter((x) => x.errored).length;
-    const evaluated = r.length - errored;
-    return (
-      `${passed} of ${evaluated} check${evaluated === 1 ? '' : 's'} met` +
-      (errored ? ` · ${errored} couldn’t run` : '')
-    );
-  });
-  fields = computed(() => {
-    const c = this.content();
-    return c
-      ? ([
-          ['Input', c.input],
-          ['Expected output', c.expected_output],
-          ['Model output', c.model_output],
-        ].filter((f) => f[1]) as [string, string][])
-      : [];
-  });
+  /** "Contains, at $.stop_reason · ROUGE · Relevance, with its own rubric". */
+  checkLine = computed(() =>
+    (this.run()?.test_type_assignments ?? []).map((a) => ({
+      name: checkName(a),
+      path: a.answer_path ?? null,
+      rubric: !!a.config?.['rubric']?.trim(),
+    })),
+  );
 }

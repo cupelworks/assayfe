@@ -18,6 +18,12 @@
   min-height: 44px;
   padding: 0 20px;
 }
+/* Under the red button, small: what it does ("Runs the same copies again"). */
+.page-aside .why {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-neutral-600);
+}
 /* A link on to another page, or a thing to do, in red words: "Run with statistics ↗",
    "Open the batch →", "Add tests…". */
 .go {

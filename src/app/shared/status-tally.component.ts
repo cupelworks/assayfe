@@ -2,6 +2,7 @@ import { Component, computed, input } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { StatusMarkComponent, markOf } from './status-mark.component';
+import { UNDER_WAY } from './format';
 
 /** A status's row in a tally: which status (its mark, name and colour), how many have it, and
  *  where the row leads - none yet: the row looks the same and does nothing. */
@@ -24,13 +25,19 @@ export interface TallyPart {
  * name, a bar for its share of the whole tally (in the status's colour, hollow for Inconclusive as
  * its mark is), the figure and an arrow. A row goes to its list; nothing here filters (a tile is
  * what filters in this app). A row whose list isn't built yet looks the same and does nothing; a
- * status with none is plain text - its 0 in grey, no arrow, nothing to hover or click.
+ * status with none is plain text - its 0 in grey, no arrow, nothing to hover or click. `still`: no
+ * row leads anywhere (a set's run, its tests listed below it) - every row plain, no arrow column.
+ * A run's checks count as `met`, `unmet` and `NotRan` (their marks: green, red, grey).
  */
 @Component({
   selector: 'assay-status-tally',
   standalone: true,
   imports: [NgTemplateOutlet, RouterLink, StatusMarkComponent],
-  host: { role: 'group', '[attr.aria-label]': "caption() + ', ' + detail()" },
+  host: {
+    role: 'group',
+    '[attr.aria-label]': "caption() + ', ' + detail()",
+    '[class.still]': 'still()',
+  },
   template: `
     <div class="cap">
       {{ caption() }} <span>· {{ detail() }}</span>
@@ -39,7 +46,7 @@ export interface TallyPart {
       <span class="part">{{ p.label }}</span>
       <div class="rows">
         @for (r of p.rows; track r.key) {
-          @if (!r.count) {
+          @if (!r.count || still()) {
             <div class="row still">
               <ng-container *ngTemplateOutlet="row; context: { $implicit: r }" />
             </div>
@@ -170,10 +177,20 @@ export interface TallyPart {
         transition: none;
       }
     }
+    /* Nowhere to go from any row (a set's run, whose tests are listed below): no arrow column. */
+    :host(.still) .row {
+      grid-template-columns: minmax(0, 4fr) minmax(0, 6fr) 64px;
+    }
+    :host(.still) .arrow {
+      display: none;
+    }
     @media (max-width: 960px) {
       .row {
         grid-template-columns: minmax(0, 5fr) minmax(0, 4fr) 48px 14px;
         column-gap: 12px;
+      }
+      :host(.still) .row {
+        grid-template-columns: minmax(0, 5fr) minmax(0, 4fr) 48px;
       }
     }
   `,
@@ -186,6 +203,8 @@ export class StatusTallyComponent {
   /** For a row's accessible name: "Failed: 15 batches". */
   noun = input('');
   parts = input.required<TallyPart[]>();
+  /** No row leads anywhere: each is plain, as a 0 is - no arrow, nothing to hover or click. */
+  still = input(false);
 
   view = computed(() => {
     const parts = this.parts();
@@ -205,4 +224,24 @@ export class StatusTallyComponent {
       }),
     }));
   });
+}
+
+/**
+ * A summary's tally of statuses - the Overview's, a set's run's: each status in `ended`, then
+ * Running and Pending, counted in `statuses`; a row leads where `link` says, or nowhere yet.
+ */
+export function tallyParts(
+  statuses: string[],
+  ended: string[],
+  link?: (key: string) => Pick<TallyRow, 'link' | 'query'>,
+): TallyPart[] {
+  const row = (key: string): TallyRow => ({
+    key,
+    count: statuses.filter((s) => s === key).length,
+    ...link?.(key),
+  });
+  return [
+    { label: 'How it ended', rows: ended.map(row) },
+    { label: 'While it runs', rows: UNDER_WAY.map(row) },
+  ];
 }

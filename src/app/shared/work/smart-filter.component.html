@@ -68,14 +68,7 @@
   <div class="side">
     <span class="shown">{{ shown() }}</span>
     @if (sortOptions().length) {
-      <label class="sort"
-        >Sort:
-        <select [value]="sort()" (change)="sort.set($any($event.target).value)">
-          @for (s of sortOptions(); track s) {
-            <option [value]="s" [selected]="s === sort()">{{ s }} ↓</option>
-          }
-        </select></label
-      >
+      <assay-sort [options]="sortOptions()" [(value)]="sort" />
     }
     @if (anything()) {
       <button type="button" class="go" (click)="clearAll()">Clear all</button>

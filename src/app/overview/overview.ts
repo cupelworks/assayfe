@@ -1,5 +1,5 @@
-import { RUNS_ENDED, UNDER_WAY } from '../shared/format';
-import { TallyPart, TallyRow } from '../shared/status-tally.component';
+import { RUNS_ENDED } from '../shared/format';
+import { tallyParts } from '../shared/status-tally.component';
 
 /** How many rows each of the Overview's sections shows: the latest 5. */
 export const LATEST = 5;
@@ -12,22 +12,4 @@ export const BATCH_SAMPLE = 100;
 export const VERDICTS_ENDED = ['Passed', 'Inconclusive', 'Failed', 'NotRan'];
 export { RUNS_ENDED };
 
-/**
- * A summary's tally of statuses: each status in `ended`, then Running and Pending, counted in
- * `statuses`; a row leads where `link` says, or nowhere yet.
- */
-export function tallyParts(
-  statuses: string[],
-  ended: string[],
-  link?: (key: string) => Pick<TallyRow, 'link' | 'query'>,
-): TallyPart[] {
-  const row = (key: string): TallyRow => ({
-    key,
-    count: statuses.filter((s) => s === key).length,
-    ...link?.(key),
-  });
-  return [
-    { label: 'How it ended', rows: ended.map(row) },
-    { label: 'While it runs', rows: UNDER_WAY.map(row) },
-  ];
-}
+export { tallyParts };

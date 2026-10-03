@@ -1,19 +1,37 @@
-.result-cell {
+/* Under how it went: what ran and when, small; the run it replayed, in red words. */
+.went {
+  min-width: 0;
+}
+.facts {
+  margin: 12px 0 0;
+  max-width: 520px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-neutral-600);
+}
+.went .go {
+  margin-top: 4px;
+}
+/* 01 Tests: how many, and the order, over the table - as a list says it. */
+.listbar {
+  grid-column: 1 / -1;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--color-neutral-600);
 }
-.result-bar {
-  width: 56px;
-  height: 8px;
-  flex: none;
-  display: flex;
-  background: var(--color-divider);
-  overflow: hidden;
+.listbar b {
+  font-weight: 700;
+  color: var(--color-text);
 }
-.result-bar .seg.pass {
-  background: var(--color-status-green);
+/* Under a test's name: where its answer came from ("Asked live"). */
+.under {
+  display: block;
+  margin-top: 6px;
 }
-.result-bar .seg.fail {
-  background: var(--color-accent);
+/* Its checks' bar a little wider here, as the set's run has the room. */
+assay-checks-met {
+  --met-bar: 160px;
 }
