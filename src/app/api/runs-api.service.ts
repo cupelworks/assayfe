@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
+import { catchError, map, of } from 'rxjs';
 import * as M from './models';
 import { ApiBase, PAGE } from './api-base';
+import { StatusCount, countByStatus } from '../shared/format';
 
 /** Which runs or executions a list holds: `none` leaves out every statistics batch's - they're
  *  listed on their batch's page - and a batch id lists only that batch's. Omitted: all of them. */
@@ -48,6 +50,15 @@ export class RunsApiService extends ApiBase {
   }
   executionRuns(kind: M.Kind, id: string, execId: string) {
     return this.safe(this.items(this.executionRunsPage(kind, id, execId, 0, 100)));
+  }
+  /** How an execution's runs stand: every run's status counted (`run_count` as the limit, so each
+   *  one is, not a first page), statuses with none left out - [] when they can't be read. An
+   *  execution carries no such roll-up itself, so it's one call per execution. */
+  executionStatusCounts(kind: M.Kind, id: string, e: { id: string; run_count: number }) {
+    return this.executionRunsPage(kind, id, e.id, 0, e.run_count || 1).pipe(
+      map((p) => countByStatus(p.items).filter((s) => s.value > 0)),
+      catchError(() => of<StatusCount[]>([])),
+    );
   }
   runDetails(kind: M.Kind, id: string, execId: string, runId: string) {
     return this.http.get<M.RunDetails>(

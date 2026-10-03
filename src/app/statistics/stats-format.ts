@@ -180,14 +180,36 @@ export function timesText(b: Pick<BatchSummary, 'status' | 'progress'>): string 
     : `${p.times_requested} time${p.times_requested === 1 ? '' : 's'}`;
 }
 
-/** A scope's place in the app: its list (for crumbs) and its page. */
-const SCOPE_PLACES: Record<StatsScopeKind, { list: string; label: string; noun: string }> = {
-  test: { list: '/tests', label: 'Tests', noun: 'test' },
-  test_set: { list: '/test-sets', label: 'Test sets', noun: 'set' },
-  test_plan: { list: '/test-plans', label: 'Test plans', noun: 'plan' },
+/** How far a running batch is: the share of its times done, and "18 of 45 times done · 36 of 90
+ *  runs" ("of up to" for one that runs until there's an answer). */
+export function batchProgress(p: BatchSummary['progress']) {
+  return {
+    donePct: p.times_requested ? Math.round((p.times_done / p.times_requested) * 100) : 0,
+    line: `${p.times_done} of ${p.waves ? 'up to ' : ''}${p.times_requested} times done · ${p.runs_done} of ${p.runs_total} runs`,
+  };
+}
+
+/** How often a page re-reads a batch, or a list of batches, while one is still pending or running:
+ *  a read is cheap until the last run finishes, when the API computes the result once. */
+export const BATCH_POLL_MS = 3000;
+
+/** A scope's place in the app: its list (for crumbs) and its page, and what one is called. */
+const SCOPE_PLACES: Record<
+  StatsScopeKind,
+  { list: string; label: string; noun: string; one: string }
+> = {
+  test: { list: '/tests', label: 'Tests', noun: 'test', one: 'Test' },
+  test_set: { list: '/test-sets', label: 'Test sets', noun: 'set', one: 'Test set' },
+  test_plan: { list: '/test-plans', label: 'Test plans', noun: 'plan', one: 'Test plan' },
 };
 export const scopePlace = (kind: StatsScopeKind) => SCOPE_PLACES[kind];
 export const scopeLink = (s: StatsScope) => [SCOPE_PLACES[s.kind].list, s.id];
+/** "Run again ↗": the scope's Run with statistics page - with `?from=` the batch it starts from. */
+export const runAgainLink = (s: StatsScope) => [
+  SCOPE_PLACES[s.kind].list,
+  s.id,
+  'run-with-statistics',
+];
 export const scopeRef = (s: StatsScope): StatsScopeRef =>
   s.kind === 'test'
     ? { test_id: s.id }

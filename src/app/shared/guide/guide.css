@@ -58,20 +58,6 @@
   font-weight: 700;
   color: var(--color-text);
 }
-/* A link on to another page, in red: "Test types →" - one under the other when there are two. */
-.g-go {
-  display: flex;
-  width: fit-content;
-  margin-top: 12px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--color-accent);
-  text-decoration: none;
-}
-.g-go:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
 /* What follows something set across the body starts lower. */
 .g-gap {
   margin-top: 34px;

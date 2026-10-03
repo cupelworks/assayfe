@@ -8,16 +8,6 @@
   font-weight: 400;
   color: var(--color-neutral-600);
 }
-.prog {
-  height: 6px;
-  background: color-mix(in srgb, var(--color-text) 12%, transparent);
-  position: relative;
-}
-.prog i {
-  position: absolute;
-  inset: 0 auto 0 0;
-  background: var(--color-text);
-}
 .confirm {
   display: flex;
   gap: 8px;

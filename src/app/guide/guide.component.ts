@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { StatusMarkComponent } from '../shared/status-mark.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { GuideSectionComponent } from '../shared/guide/guide-section.component';
+import { GuideGoComponent } from '../shared/guide/guide-go.component';
 import { numbered } from '../shared/guide/guide-sections';
 
 /** The Guide's sections, in order: the contents under the title; each one's id is `guide-<its number>`. */
@@ -26,7 +27,13 @@ const SECTIONS = [
 @Component({
   selector: 'assay-guide',
   standalone: true,
-  imports: [RouterLink, StatusMarkComponent, GuideHeadComponent, GuideSectionComponent],
+  imports: [
+    RouterLink,
+    StatusMarkComponent,
+    GuideHeadComponent,
+    GuideSectionComponent,
+    GuideGoComponent,
+  ],
   templateUrl: './guide.component.html',
   styleUrls: ['../shared/page.css', '../shared/guide/guide.css', './guide.component.css'],
 })

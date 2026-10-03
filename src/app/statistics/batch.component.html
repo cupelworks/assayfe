@@ -26,17 +26,15 @@
       @if (!inFlight()) {
         <div class="hero-actions">
           <button class="btn btn-secondary" (click)="dlg.set('compare')">Compare with…</button>
-          @if (place(); as pl) {
-            <a
-              class="btn btn-primary new-tab"
-              [routerLink]="[pl.list, b.scope.id, 'run-with-statistics']"
-              [queryParams]="{ from: b.id }"
-              target="_blank"
-              rel="noopener"
-              aria-label="Run again, opens in a new tab"
-              >Run again<assay-arrow-out
-            /></a>
-          }
+          <a
+            class="btn btn-primary new-tab"
+            [routerLink]="runAgainLink(b.scope)"
+            [queryParams]="{ from: b.id }"
+            target="_blank"
+            rel="noopener"
+            aria-label="Run again, opens in a new tab"
+            >Run again<assay-arrow-out
+          /></a>
         </div>
       }
     </div>
@@ -55,7 +53,7 @@
         <div class="stat">
           <div class="label">Done</div>
           <div class="mid num">{{ p.times }}</div>
-          <div class="prog"><i [style.width.%]="p.donePct"></i></div>
+          <assay-progress-bar [pct]="p.donePct" />
           <div class="small">{{ p.runs }}</div>
         </div>
         <div class="stat">

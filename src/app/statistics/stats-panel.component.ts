@@ -1,14 +1,15 @@
-import { Component, DestroyRef, computed, effect, inject, input, untracked } from '@angular/core';
+import { Component, computed, effect, inject, input, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BatchSummary, ComparisonSummary, StatsScopeRef } from '../api/models';
 import { StatisticalTestsStore, StatisticsApiService } from '../api/statistics-api.service';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
+import { ProgressBarComponent } from '../shared/progress-bar.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { StatusMarkComponent, markLabel } from '../shared/status-mark.component';
 import { errText, isInFlight } from '../shared/format';
-import { pollWhile } from '../shared/poll';
-import { question, timesText } from './stats-format';
+import { pollWhile, whenTabShown } from '../shared/poll';
+import { BATCH_POLL_MS, batchProgress, question, timesText } from './stats-format';
 
 /** One square per check, failed first: the batch's verdicts at a glance. */
 const VERDICT_ORDER = ['fail', 'inconclusive', 'none', 'pass'];
@@ -21,7 +22,13 @@ const VERDICT_ORDER = ['fail', 'inconclusive', 'none', 'pass'];
 @Component({
   selector: 'assay-stats-panel',
   standalone: true,
-  imports: [RouterLink, PagerComponent, RelTimeComponent, StatusMarkComponent],
+  imports: [
+    RouterLink,
+    PagerComponent,
+    ProgressBarComponent,
+    RelTimeComponent,
+    StatusMarkComponent,
+  ],
   styleUrls: ['../shared/page.css', './stats-panel.component.css'],
   templateUrl: './stats-panel.component.html',
 })
@@ -42,15 +49,15 @@ export class StatsPanelComponent {
   );
   rows = computed(() =>
     this.page.items().map((b) => {
-      const p = b.progress;
+      const progress = batchProgress(b.progress);
       const verdicts = b.verdicts;
       return {
         b,
         question: question(b.engine, b.parameters, this.tests.byId().get(b.statistical_test)?.name),
         size: timesText(b),
         running: isInFlight(b.status),
-        donePct: p.times_requested ? Math.round((p.times_done / p.times_requested) * 100) : 0,
-        progressLine: `${p.times_done} of ${p.waves ? 'up to ' : ''}${p.times_requested} times done · ${p.runs_done} of ${p.runs_total} runs`,
+        donePct: progress.donePct,
+        progressLine: progress.line,
         squares: verdicts
           ? VERDICT_ORDER.flatMap((v) => Array.from({ length: verdicts[v] ?? 0 }, () => v))
           : [],
@@ -74,15 +81,12 @@ export class StatsPanelComponent {
       () => {
         if (!this.page.loading()) this.page.reload();
       },
-      3000,
+      BATCH_POLL_MS,
     );
     // Run with statistics opens in its own tab: back here, the batch started there is listed.
-    const onShow = () => {
-      if (document.visibilityState !== 'visible') return;
+    whenTabShown(() => {
       if (!this.page.loading()) this.page.reload();
       if (!this.comparisons.loading()) this.comparisons.reload();
-    };
-    document.addEventListener('visibilitychange', onShow);
-    inject(DestroyRef).onDestroy(() => document.removeEventListener('visibilitychange', onShow));
+    });
   }
 }

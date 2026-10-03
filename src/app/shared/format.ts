@@ -10,8 +10,10 @@ export function rel(iso?: string | null) {
   return `${Math.round(h / 24)} d ago`;
 }
 export const short = (id?: string | null) => String(id ?? '').slice(0, 8);
-/** "1 type", "15 types": a count and its noun, plural unless it's 1. */
-export const counted = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
+/** "1 type", "15 types": a count and its noun, plural unless it's 1 - "1 batch", "20 batches" given
+ *  the plural. */
+export const counted = (n: number, noun: string, plural = noun + 's') =>
+  `${n} ${n === 1 ? noun : plural}`;
 /** "Untitled · 1a2b3c4d" - the label for anything nameable that has no name. */
 export const untitled = (id?: string | null) => `Untitled · ${short(id)}`;
 /** A test's (or frozen entry's, or run's) display name: its own name, or `untitled(id)` when the
@@ -56,6 +58,8 @@ export const isInFlight = (s?: string | null) => s === 'Pending' || s === 'Runni
 export function countByStatus(runs: { status: TestStatus }[]) {
   return STATUS.map((s) => ({ ...s, value: runs.filter((r) => r.status === s.key).length }));
 }
+/** One status's count, with its label and colour - a row of countByStatus. */
+export type StatusCount = ReturnType<typeof countByStatus>[number];
 /** A 422 entry's `loc` after FastAPI's own location segment ("body"/"query") - the part that
  *  names the field (["body","settings","url"] → ["settings","url"]). */
 const locPath = (x: any): string[] => (x?.loc ?? []).slice(1).map(String);

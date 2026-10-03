@@ -15,11 +15,9 @@ import {
   TestCase,
 } from './models';
 
-/** How many of the newest test-set/test-plan executions the Overview table displays. */
-export const RECENT_EXECUTIONS_LIMIT = 10;
 /**
- * How many of the newest test-set/test-plan executions CatalogStore actually fetches -
- * independent of RECENT_EXECUTIONS_LIMIT (Overview only ever shows the first 10 of these).
+ * How many of the newest test-set/test-plan executions CatalogStore actually fetches - the
+ * Overview's latest runs take the first of each set and plan among them.
  * Feeds the hasRuns() delete-guard on test-set/test-plan detail pages and
  * ExecutionComponent's exec() lookup - both tolerate an incomplete sample (hasRuns() just
  * reads false, exec() just renders without the extra detail it would show), so there's no
@@ -30,7 +28,8 @@ export const RECENT_EXECUTIONS_LIMIT = 10;
  * note 12).
  */
 export const EXECUTIONS_SAMPLE_LIMIT = 50;
-/** How many of the newest runs (any origin) feed the "Run status" sample on the overview page. */
+/** How many of the newest runs (any origin, no batch's) the Overview counts by status - "Runs ·
+ *  the last 500" - and takes each test's latest run from. */
 export const RUN_STATUS_SAMPLE_LIMIT = 500;
 
 export interface ExecRow extends ExecutionMetadata {
@@ -74,7 +73,7 @@ export class CatalogStore {
     return (kind === 'test-sets' ? this.sets() : this.plans()).find((x) => x.id === id);
   }
 
-  /** Everything - used only by OverviewComponent, which reads every field. */
+  /** Everything - what a page that changed the catalogue calls to refresh it. */
   load() {
     this.loadDatasets();
     this.loadTests();

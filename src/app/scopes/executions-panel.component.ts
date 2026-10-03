@@ -9,17 +9,15 @@ import {
   untracked,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Observable, forkJoin, map, catchError, of } from 'rxjs';
+import { Observable, forkJoin, map } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
 import { ExecutionMetadata, Kind } from '../api/models';
-import { short, countByStatus, errText, isInFlight } from '../shared/format';
+import { StatusCount, short, errText, isInFlight } from '../shared/format';
 import { Paged } from '../shared/paged';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { CopyButtonComponent } from '../shared/copy-button.component';
 import { pollWhile } from '../shared/poll';
-
-type StatusCount = { key: string; label: string; color: string; value: number };
 
 @Component({
   selector: 'assay-executions-panel',
@@ -156,11 +154,8 @@ export class ExecutionsPanelComponent {
     });
   }
   private loadStatusRow(e: ExecutionMetadata): Observable<[string, StatusCount[]]> {
-    return this.api.executionRunsPage(this.kind(), this.id(), e.id, 0, e.run_count || 1).pipe(
-      map(
-        (p) => [e.id, countByStatus(p.items).filter((s) => s.value > 0)] as [string, StatusCount[]],
-      ),
-      catchError(() => of([e.id, []] as [string, StatusCount[]])),
-    );
+    return this.api
+      .executionStatusCounts(this.kind(), this.id(), e)
+      .pipe(map((counts) => [e.id, counts] as [string, StatusCount[]]));
   }
 }

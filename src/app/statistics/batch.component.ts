@@ -12,10 +12,12 @@ import { RateTrendComponent } from './charts/rate-trend.component';
 import { ScorePlotComponent } from './charts/score-plot.component';
 import { CompareDialogComponent } from './compare-dialog.component';
 import {
+  BATCH_POLL_MS,
   pct,
   question,
   readsScores,
   ruleText,
+  runAgainLink,
   runLink,
   scopeLink,
   scopePlace,
@@ -24,6 +26,7 @@ import {
   timesText,
 } from './stats-format';
 import { ArrowOutComponent } from '../shared/arrow-out.component';
+import { ProgressBarComponent } from '../shared/progress-bar.component';
 
 type Filter = 'all' | 'fail' | 'inconclusive' | 'pass' | 'none';
 /** Failures first, then what's undecided, then what passed - as on a run's page. */
@@ -67,6 +70,7 @@ const runsLine = (runs: RunCounts) =>
   standalone: true,
   imports: [
     ArrowOutComponent,
+    ProgressBarComponent,
     RouterLink,
     StatusMarkComponent,
     RunsGridComponent,
@@ -86,6 +90,7 @@ export class BatchComponent {
   private router = inject(Router);
   markLabel = markLabel;
   pct = pct;
+  runAgainLink = runAgainLink;
   batch = signal<Batch | null>(null);
   loadError = signal<string | null>(null);
   private loading = false;
@@ -294,12 +299,11 @@ export class BatchComponent {
         this.load();
       });
     });
-    // Every few seconds while a run is pending or running; a read is cheap until the last run
-    // finishes, when the API computes the result once.
+    // Every few seconds while a run is pending or running (BATCH_POLL_MS says why).
     pollWhile(
       () => this.inFlight(),
       () => this.load(),
-      3000,
+      BATCH_POLL_MS,
     );
   }
 

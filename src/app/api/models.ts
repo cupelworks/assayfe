@@ -1,4 +1,4 @@
-// Mirrors components.schemas in Assay's OpenAPI (v1.0.0).
+// Mirrors components.schemas in Assay's OpenAPI (v1.1.0).
 export interface Ref {
   id: string;
 }
@@ -973,6 +973,11 @@ export interface ComparisonResult {
   unmatched: { entry_id: string | null; name: string; label: string | null; only_in: 'a' | 'b' }[];
   paired?: PairedComparison | null;
 }
+/** A comparison's one overall answer, read off its checks' verdicts in the order its `summary`
+ *  sentence leads with (any worse, else any better, else all still as good, else any still as good
+ *  or can't tell, else no difference; `none`: nothing could be compared) - for its mark. API 1.1.0. */
+export type ComparisonOutcome =
+  'better' | 'worse' | 'no_difference' | 'no_worse' | 'inconclusive' | 'none';
 export interface ComparisonSummary {
   id: string;
   scope: StatsScope;
@@ -983,6 +988,9 @@ export interface ComparisonSummary {
   batch_a: ComparedBatch;
   batch_b: ComparedBatch;
   summary: string;
+  /** Its checks counted by verdict - all six keys, as `result.verdicts`. API 1.1.0. */
+  verdicts: Record<ComparisonVerdict | 'none', number>;
+  outcome: ComparisonOutcome;
   created_at: string;
 }
 export interface Comparison extends ComparisonSummary {

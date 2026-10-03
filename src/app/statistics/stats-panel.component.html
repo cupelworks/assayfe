@@ -19,7 +19,7 @@
             <div class="b-note">“{{ r.b.note }}”</div>
           }
           @if (r.running) {
-            <div class="prog"><i [style.width.%]="r.donePct"></i></div>
+            <assay-progress-bar class="prog" [pct]="r.donePct" />
             <div class="small">{{ r.progressLine }}</div>
           } @else {
             @if (r.squares.length) {

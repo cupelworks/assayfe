@@ -3,10 +3,11 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { GuideSection } from './guide-sections';
 
 /**
- * The top of a guide page, on the 12-column grid: a red kicker, the title, the lede, an optional
- * key (a red line and what red means), then a numbered link per section (the Guide, Charts) and
- * what the page puts under it, across the grid (the catalogues: their key, their index of
- * sections, a filter). A link scrolls to its section - also when the fragment is already the
+ * The top of a guide page, on the 12-column grid: a red kicker, the title - and beside it, at the
+ * right, what the page marks `guideHeadAside` (the Overview: whether runs can start) - the lede, an
+ * optional key (a red line and what red means), then a numbered link per section (the Guide,
+ * Charts) and what the page puts under it, across the grid (the catalogues: their key, their index
+ * of sections, a filter; the Overview: its summaries). A link scrolls to its section - also when the fragment is already the
  * route's, which the router wouldn't scroll to again. The page opens on the section its fragment
  * names (`/charts#chart-scores`), else at its top: the router neither scrolls to anchors nor back
  * to the top in this app, so a link from far down another page would otherwise land far down this
@@ -19,6 +20,7 @@ import { GuideSection } from './guide-sections';
   template: `
     <div class="kicker">{{ kicker() }}</div>
     <h1 class="h1">{{ title() }}</h1>
+    <div class="aside"><ng-content select="[guideHeadAside]" /></div>
     <p class="lede">{{ lede() }}</p>
     @if (key(); as k) {
       <p class="key">
@@ -59,6 +61,17 @@ import { GuideSection } from './guide-sections';
       font-weight: 800;
       letter-spacing: -0.04em;
       line-height: 0.92;
+    }
+    /* Beside the title, at the right (columns 9-12), standing on its baseline: what the page
+       adds there (the Overview: whether runs can start). */
+    .aside {
+      grid-column: 9 / -1;
+      grid-row: 2;
+      align-self: end;
+      padding-bottom: 4px;
+    }
+    .aside:empty {
+      display: none;
     }
     .lede {
       grid-column: 1 / 8;
@@ -123,6 +136,11 @@ import { GuideSection } from './guide-sections';
       }
       .h1 {
         font-size: 60px;
+      }
+      .aside {
+        grid-row: auto;
+        margin-top: 20px;
+        padding-bottom: 0;
       }
       .ixs {
         grid-template-columns: minmax(0, 1fr);

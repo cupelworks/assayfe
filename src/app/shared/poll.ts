@@ -34,3 +34,16 @@ export function pollWhile(active: () => boolean, tick: () => void, intervalMs = 
     if (active()) start();
   });
 }
+
+/**
+ * Calls `reload` each time the page's browser tab comes back into view: "Run with statistics ↗" and
+ * "Run again ↗" open their own tab, and what was started there should show here on coming back.
+ * Call it once from a component's constructor, as `pollWhile`: it stops listening with the page.
+ */
+export function whenTabShown(reload: () => void): void {
+  const onShow = () => {
+    if (document.visibilityState === 'visible') reload();
+  };
+  document.addEventListener('visibilitychange', onShow);
+  inject(DestroyRef).onDestroy(() => document.removeEventListener('visibilitychange', onShow));
+}
