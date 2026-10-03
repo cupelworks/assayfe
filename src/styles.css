@@ -301,6 +301,7 @@ figcaption {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
+  text-transform: none;
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
@@ -310,6 +311,11 @@ figcaption {
 .new-tab:focus-visible::after {
   opacity: 1;
   transition-delay: 250ms;
+}
+/* At the bottom of the page (the footer's API documentation), the label opens above. */
+.new-tab.above::after {
+  top: auto;
+  bottom: calc(100% + 8px);
 }
 
 /* - forms - */
@@ -476,7 +482,22 @@ textarea.input {
   color: var(--color-accent);
 }
 
-/* - small capitals - as the pages' kickers and captions: the header's Settings and theme. */
+/* - the page grid - 12 columns and 24 px gutters inside the page's 40 px margins (16 px on a
+   phone), as every page's top and sections are laid: the header's bar and the footer. */
+.page-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: 24px;
+  padding-inline: 40px;
+}
+@media (max-width: 960px) {
+  .page-grid {
+    padding-inline: 16px;
+  }
+}
+
+/* - small capitals - as the pages' kickers and captions: the header's Settings and theme, the
+   footer. */
 .small-caps {
   font-size: 11px;
   font-weight: 600;

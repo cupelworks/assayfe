@@ -1,5 +1,5 @@
 <div class="page">
-  <header class="bar">
+  <header class="bar page-grid">
     <a routerLink="/" class="brand"><span class="brand-mark"></span>Assay</a>
     <nav class="links" aria-label="Main">
       @for (l of work; track l.path) {
@@ -27,8 +27,5 @@
     <assay-app-menu />
   </header>
   <router-outlet />
-  <footer class="foot text-muted">
-    <span><a [href]="apiBase + '/docs'" target="_blank" rel="noopener">API documentation</a></span
-    ><span>Assay 1.0.0</span>
-  </footer>
+  <assay-app-footer />
 </div>
