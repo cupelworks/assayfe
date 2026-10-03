@@ -13,6 +13,7 @@ import { ChevronComponent } from '../shared/chevron.component';
 import {
   TestTypesStore,
   assignmentFields,
+  scoreScale,
   engineSettingsLabel,
   isCodeField,
 } from '../api/test-types.store';
@@ -358,10 +359,9 @@ export class RunBodyComponent {
     if (r.score == null) return null;
     const type = this.testTypes.byName().get(r.test_type ?? name);
     if (!type?.comparison || (r.engine && r.engine !== type.engine)) return null;
-    const threshold = assignmentFields(type).find((f) => f.kind === 'numeric');
-    if (threshold?.min == null || threshold?.max == null || threshold.max <= threshold.min)
-      return null;
-    const ratio = (r.score - threshold.min) / (threshold.max - threshold.min);
+    const scale = scoreScale(type);
+    if (!scale) return null;
+    const ratio = (r.score - scale.min) / (scale.max - scale.min);
     return Math.min(1, Math.max(0, ratio)) * 100 + '%';
   }
   /** How to show the answer the checks judged. `""` is a real, scored answer (an application that

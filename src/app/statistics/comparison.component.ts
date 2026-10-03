@@ -7,7 +7,8 @@ import { absTime, errText } from '../shared/format';
 import { StatusMarkComponent, markLabel } from '../shared/status-mark.component';
 import { RangeChartComponent } from './charts/range-chart.component';
 import { DumbbellComponent } from './charts/dumbbell.component';
-import { diffCaption, pct, points, scopeLink, scopePlace } from './stats-format';
+import { diffCaption, pct, points, scopeLink, scopePlace, scoreDecimals } from './stats-format';
+import { TestTypesStore, scoreScale } from '../api/test-types.store';
 
 /** The verdicts worth reading first: what got worse, then what changed, then the rest. */
 const ORDER: Record<string, number> = {
@@ -40,6 +41,8 @@ export class ComparisonComponent {
   id = input.required<string>();
   private api = inject(StatisticsApiService);
   private tests = inject(StatisticalTestsStore);
+  /** The check types: a score difference is written to its scale's decimals. */
+  private types = inject(TestTypesStore);
   markLabel = markLabel;
   absTime = absTime;
   c = signal<Comparison | null>(null);
@@ -139,6 +142,7 @@ export class ComparisonComponent {
 
   constructor() {
     this.tests.load();
+    this.types.load();
     effect(() => {
       const id = this.id();
       untracked(() => {
@@ -178,7 +182,13 @@ export class ComparisonComponent {
       // Under B − A: the change in bold, then its range; for score ranks, how often B beats A.
       diffCap:
         k.difference?.point != null
-          ? diffCaption(k.difference.point, k.difference.lower, k.difference.upper, scores)
+          ? diffCaption(
+              k.difference.point,
+              k.difference.lower,
+              k.difference.upper,
+              scores,
+              scoreDecimals(scoreScale(this.types.byName().get(k.test_type))),
+            )
           : k.effect != null
             ? { main: '', rest: `B beats A ${pct(k.effect)} of the time` }
             : null,

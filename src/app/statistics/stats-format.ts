@@ -16,20 +16,35 @@ export function pct(x: number | null | undefined): string {
 /** A difference of two rates in percentage points, signed: "+34.5", "-8.2", "0". */
 export function points(x: number): string {
   const v = Math.round(x * 1000) / 10;
-  return v > 0 ? `+${v}` : v < 0 ? `−${-v}` : '0';
+  const s = Math.abs(v).toFixed(1);
+  return v > 0 ? `+${s}` : v < 0 ? `−${s}` : '0.0';
 }
 
-/** A difference of scores, signed with a true minus: 0.05 → "+0.05", −0.012 → "−0.012". */
-export function signedScore(x: number): string {
-  const v = Math.round(x * 1000) / 1000;
-  return v > 0 ? `+${v}` : v < 0 ? `−${-v}` : '0';
+/** How many decimals a score difference gets, from its scale: 3 on a 0-1 metric, 1 on BLEU's
+ *  0-100 (3 when the scale isn't known). */
+export const scoreDecimals = (scale: { min: number; max: number } | null) =>
+  scale ? Math.max(0, 3 - Math.round(Math.log10(scale.max - scale.min))) : 3;
+
+/** A difference of scores to a given number of decimals, signed with a true minus: 0.05 at 3 →
+ *  "+0.050", −1.2 at 1 → "−1.2". */
+export function signedScore(x: number, decimals = 3): string {
+  const v = Number(x.toFixed(decimals));
+  const s = Math.abs(v).toFixed(decimals);
+  return v > 0 ? `+${s}` : v < 0 ? `−${s}` : (0).toFixed(decimals);
 }
 
 /** B − A as a comparison's row writes it under its range: the change (set in bold), then the
- *  range - "−27.6" + " points · −46 to −8.2" for pass rates, "+0.05" + " · −0.01 to +0.11" for
- *  scores. */
-export function diffCaption(d: number, lo: number | null, hi: number | null, scores: boolean) {
-  const f = scores ? signedScore : points;
+ *  range, all three at one precision - "−27.6" + " points · −46.0 to −8.2" for pass rates (one
+ *  decimal: percentage points), "+0.050" + " · −0.010 to +0.110" for scores (the decimals of
+ *  their scale). */
+export function diffCaption(
+  d: number,
+  lo: number | null,
+  hi: number | null,
+  scores: boolean,
+  decimals = 3,
+) {
+  const f = scores ? (x: number) => signedScore(x, decimals) : points;
   const range = lo != null && hi != null ? ` · ${f(lo)} to ${f(hi)}` : '';
   return { main: f(d), rest: (scores ? '' : ' points') + range };
 }

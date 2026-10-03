@@ -83,6 +83,14 @@ export const isCodeField = (f: ConfigFieldDescriptor): boolean =>
  *  Null for any non-numeric field too, so a caller iterating mixed fields needn't check the kind.
  *  Shared by the config input's hint and the catalogue card's field list, so the two can't drift
  *  apart. */
+/** A scored type's scale: its numeric threshold field's min and max (BLEU 0 to 100, cosine
+ *  similarity -1 to 1) - null for a type with no comparison, or when the field gives no range. */
+export const scoreScale = (t: TestType | undefined): { min: number; max: number } | null => {
+  if (!t?.comparison) return null;
+  const f = assignmentFields(t).find((x) => x.kind === 'numeric');
+  return f?.min != null && f?.max != null && f.max > f.min ? { min: f.min, max: f.max } : null;
+};
+
 export const numericFieldHint = (
   f: ConfigFieldDescriptor,
   comparison: TestType['comparison'],
