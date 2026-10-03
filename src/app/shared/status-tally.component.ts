@@ -9,6 +9,8 @@ import { UNDER_WAY } from './format';
 export interface TallyRow {
   key: string;
   count: number;
+  /** Shown in place of the count - "88%" when the counts are shares. */
+  figure?: string;
   /** Router commands of the list of these; null while that list isn't built. */
   link?: unknown[] | null;
   query?: Record<string, string> | null;
@@ -35,15 +37,20 @@ export interface TallyPart {
   imports: [NgTemplateOutlet, RouterLink, StatusMarkComponent],
   host: {
     role: 'group',
-    '[attr.aria-label]': "caption() + ', ' + detail()",
+    '[attr.aria-label]': "label() || caption() + ', ' + detail()",
     '[class.still]': 'still()',
+    '[class.thin]': 'thin()',
   },
   template: `
-    <div class="cap">
-      {{ caption() }} <span>· {{ detail() }}</span>
-    </div>
+    @if (caption()) {
+      <div class="cap">
+        {{ caption() }} <span>· {{ detail() }}</span>
+      </div>
+    }
     @for (p of view(); track p.label) {
-      <span class="part">{{ p.label }}</span>
+      @if (p.label) {
+        <span class="part">{{ p.label }}</span>
+      }
       <div class="rows">
         @for (r of p.rows; track r.key) {
           @if (!r.count || still()) {
@@ -67,7 +74,7 @@ export interface TallyPart {
       <span class="track"
         ><i [class.hollow]="r.hollow" [style.width.%]="r.pct" [style.--fill]="r.color"></i
       ></span>
-      <span class="n" [class.zero]="!r.count">{{ r.count }}</span>
+      <span class="n" [class.zero]="!r.count">{{ r.figure ?? r.count }}</span>
       <span class="arrow" aria-hidden="true">{{ r.count ? '→' : '' }}</span>
     </ng-template>
   `,
@@ -184,6 +191,16 @@ export interface TallyPart {
     :host(.still) .arrow {
       display: none;
     }
+    /* A second, smaller tally under a first (Run with statistics' other ending). */
+    :host(.thin) .row {
+      min-height: 36px;
+    }
+    :host(.thin) .name {
+      font-size: 13px;
+    }
+    :host(.thin) .n {
+      font-size: 17px;
+    }
     @media (max-width: 960px) {
       .row {
         grid-template-columns: minmax(0, 5fr) minmax(0, 4fr) 48px 14px;
@@ -196,8 +213,12 @@ export interface TallyPart {
   `,
 })
 export class StatusTallyComponent {
-  /** What's counted, in red: "Verdicts". */
-  caption = input.required<string>();
+  /** What's counted, in red: "Verdicts" - none: the rows alone (a batch's likely ending). */
+  caption = input('');
+  /** Its accessible name, when it has no caption. */
+  label = input('');
+  /** Smaller rows, under a first tally. */
+  thin = input(false);
   /** Which of them, after it: "the last 100 batches". */
   detail = input('');
   /** For a row's accessible name: "Failed: 15 batches". */

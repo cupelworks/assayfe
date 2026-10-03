@@ -22,18 +22,20 @@ import { ParamRow } from './stats-params';
           [ngModel]="row().text"
           (ngModelChange)="changed.emit($event)"
         /><span class="unit">{{ row().unit }}</span>
-        @if (inline()) {
-          @for (c of row().presets; track c.label) {
-            <button
-              type="button"
-              class="preset"
-              [class.on]="c.on"
-              [attr.aria-pressed]="c.on"
-              (click)="changed.emit(c.text)"
-            >
-              {{ c.label }}
-            </button>
-          }
+        @if (inline() && row().presets.length) {
+          <span class="presets" role="group" [attr.aria-label]="'Usual: ' + row().p.label">
+            @for (c of row().presets; track c.label) {
+              <button
+                type="button"
+                class="preset"
+                [class.on]="c.on"
+                [attr.aria-pressed]="c.on"
+                (click)="changed.emit(c.text)"
+              >
+                {{ c.label }}
+              </button>
+            }
+          </span>
         }
       </div>
       @if (!inline() && row().presets.length) {
@@ -55,43 +57,87 @@ import { ParamRow } from './stats-params';
     </div>
   `,
   styleUrl: './stats-form.css',
+  /* Inline - Run with statistics, as its canvas draws it: the name in small capitals, the value
+     big on a line with its unit, the usual values beside it in small capitals (the picked one
+     red), what the value means under it. */
   styles: `
     .inline > label {
+      font-size: 11px;
       font-weight: 600;
-      color: var(--color-text);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-neutral-600);
     }
     .inline .with-unit {
-      gap: 6px;
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
       flex-wrap: wrap;
     }
     .inline .input.num {
-      width: 64px;
+      all: unset;
+      box-sizing: border-box;
+      width: 60px;
+      padding: 2px 0 5px;
+      border-bottom: 1px solid var(--color-divider);
+      font-family: inherit;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+      color: var(--color-text);
+    }
+    .inline .input.num:focus {
+      padding-bottom: 4px;
+      border-bottom: 2px solid var(--color-accent);
+    }
+    .inline .input.num.invalid {
+      border-bottom-color: var(--color-accent);
     }
     .inline .unit {
-      margin-right: 4px;
+      padding-bottom: 7px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--color-neutral-600);
+    }
+    .presets {
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+      padding-bottom: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
     }
     .preset {
-      height: 28px;
-      padding: 0 8px;
-      border: 1px solid color-mix(in srgb, var(--color-text) 40%, transparent);
-      background: transparent;
-      color: var(--color-text);
-      font: inherit;
-      font-size: 12px;
+      all: unset;
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      color: var(--color-neutral-800);
       font-variant-numeric: tabular-nums;
       cursor: pointer;
     }
-    .preset:hover {
-      border-color: var(--color-accent);
+    .preset + .preset::before {
+      content: '·';
+      margin: 0 8px;
+      color: var(--color-neutral-500);
     }
+    .preset:hover,
     .preset.on {
-      background: var(--color-accent);
-      border-color: var(--color-accent);
-      color: var(--color-bg);
+      color: var(--color-accent);
     }
     .preset:focus-visible {
       outline: 2px solid var(--color-accent);
       outline-offset: 2px;
+    }
+    .inline .hint-line {
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--color-neutral-600);
+      text-wrap: pretty;
     }
   `,
 })

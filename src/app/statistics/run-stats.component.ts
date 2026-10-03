@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Title } from '@angular/platform-browser';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { Observable, map } from 'rxjs';
 import {
   CheaperOption,
@@ -31,8 +31,13 @@ import { RunsApiService } from '../api/runs-api.service';
 import { TestSetsApiService } from '../api/test-sets-api.service';
 import { TestPlansApiService } from '../api/test-plans-api.service';
 import { errText } from '../shared/format';
-import { ChevronComponent } from '../shared/chevron.component';
 import { StatusMarkComponent } from '../shared/status-mark.component';
+import { StatusLineComponent, StatusTone } from '../shared/status-line.component';
+import { StatusTallyComponent, TallyPart } from '../shared/status-tally.component';
+import { GuideHeadComponent } from '../shared/guide/guide-head.component';
+import { GuideSectionComponent } from '../shared/guide/guide-section.component';
+import { GuideSection, numbered } from '../shared/guide/guide-sections';
+import { BannerComponent } from '../shared/work/banner.component';
 import { NumberInputDirective, parseDecimal } from '../shared/number';
 import { ParamFieldComponent } from './param-field.component';
 import { OddsChartComponent } from './charts/odds-chart.component';
@@ -46,6 +51,7 @@ import {
   oneIn,
   pct,
   ruleText,
+  scopeCrumbs,
   scopePlace,
   scopeRef,
   sizeWhat,
@@ -96,16 +102,24 @@ const OUTLOOK_MARK: Record<string, string> = {
   selector: 'assay-run-stats',
   standalone: true,
   imports: [
-    ChevronComponent,
     FormsModule,
     NumberInputDirective,
     OddsChartComponent,
     ParamFieldComponent,
-    RouterLink,
     StatusMarkComponent,
+    StatusLineComponent,
+    StatusTallyComponent,
+    GuideHeadComponent,
+    GuideSectionComponent,
+    BannerComponent,
   ],
   templateUrl: './run-stats.component.html',
-  styleUrls: ['../shared/page.css', './stats-form.css', './run-stats.component.css'],
+  styleUrls: [
+    '../shared/guide/guide.css',
+    '../shared/guide/head-aside.css',
+    '../shared/work/work.css',
+    './run-stats.component.css',
+  ],
 })
 export class RunStatsComponent {
   /** From the route: the scope's id, its kind (the route's data) and the batch to start from. */
@@ -124,7 +138,22 @@ export class RunStatsComponent {
   /** What one time runs, for the copy: "test", "set" or "plan". */
   noun = computed(() => this.place().noun);
   scopeName = signal('');
-  kicker = computed(() => `${this.place().label.slice(0, -1)} · ${this.scopeName()}`);
+  /** The pages above it: the scope's list, then the scope by its name. */
+  crumbs = computed(() =>
+    this.scopeName()
+      ? scopeCrumbs({ kind: this.scopeKind(), id: this.id(), name: this.scopeName() })
+      : [{ label: this.place().label, link: this.place().list }],
+  );
+  /** What it does - and, once estimated, the goal. */
+  lede = computed(() => {
+    const g = this.estimate()?.goal;
+    return (
+      `One run tells you little about an application that answers differently every time. This ` +
+      `runs the ${this.noun()} many times and lets statistics decide, check by check` +
+      (g != null ? ` - the goal: a ${chanceText(g)} chance that every check gets an answer` : '') +
+      '. Nothing is created until you start it.'
+    );
+  });
   /** The scope's page: Cancel and the crumbs go back to it. */
   back = computed(() => [this.place().list, this.id()]);
   loadError = signal<string | null>(null);
@@ -343,6 +372,63 @@ export class RunStatsComponent {
     };
   });
 
+  /** How the goal stands, beside the title - as the Overview's "Ready to run". */
+  standing = computed<{ tone: StatusTone; title: string; text: string } | null>(() => {
+    const e = this.estimate();
+    if (!e) return null;
+    if (this.allCertain())
+      return {
+        tone: 'unknown',
+        title: 'Nothing can vary',
+        text: 'Every run gives the same result',
+      };
+    if (e.goal == null) return null;
+    if (e.goal_reachable === false)
+      return {
+        tone: 'warn',
+        title: 'The goal is out of reach',
+        text: `${chanceText(e.best_chance ?? 0)} at best, whatever the size`,
+      };
+    if (e.goal_reachable)
+      return { tone: 'ok', title: 'The goal is within reach', text: e.odds_summary ?? '' };
+    return {
+      tone: 'unknown',
+      title: "Can't tell yet",
+      text: e.trial ? 'No runs to plan from: try them first' : 'No runs to plan from yet',
+    };
+  });
+  /** Its steps, numbered as they show: the question; once estimated, what Assay has seen, then
+   *  one run instead (nothing can vary), a trial first (no history), what reaches the goal for
+   *  less (or brings it closer), how many times, how it would end; a note. */
+  sections = computed<GuideSection[]>(() => {
+    const e = this.estimate();
+    return numbered('rws-', [
+      { id: 'question', label: 'The question' },
+      ...(e && this.seen().length ? [{ id: 'seen', label: 'What Assay has seen' }] : []),
+      ...(e && this.allCertain() ? [{ id: 'once', label: 'Once is enough' }] : []),
+      ...(this.trial() ? [{ id: 'trial', label: 'Try them first' }] : []),
+      ...(this.cheaper().length
+        ? [
+            {
+              id: 'cheaper',
+              label: e?.goal_reachable ? 'Reach it for less' : 'Get closer to the goal',
+            },
+          ]
+        : []),
+      ...(e ? [{ id: 'sizes', label: 'How many times' }] : []),
+      ...(this.outcome() ? [{ id: 'outcome', label: 'What will probably happen' }] : []),
+      { id: 'note', label: 'A note' },
+    ]);
+  });
+  /** A step by its name, for the template. */
+  sec = computed(
+    () =>
+      Object.fromEntries(this.sections().map((x) => [x.id.slice(4), x])) as Record<
+        string,
+        GuideSection
+      >,
+  );
+
   /** What would bring the goal closer: the checks' own options and the batch's, the ones that
    *  reach it first. */
   cheaper = computed(() => {
@@ -379,9 +465,9 @@ export class RunStatsComponent {
         // What it costs at the size that reaches the goal: the judge calls it saves are gone.
         const app = o.times * e.calls.application.per_time;
         const judge = o.times * Math.max(0, e.calls.judge.per_time - saved);
-        const calls = judge
-          ? `${app.toLocaleString('en-US')} application, ${judge.toLocaleString('en-US')} judge calls`
-          : `${app.toLocaleString('en-US')} application calls, no judge calls`;
+        const calls =
+          (app ? `${app.toLocaleString('en-US')} application calls` : 'No application calls') +
+          (judge ? `, ${judge.toLocaleString('en-US')} judge calls` : ', no judge calls');
         return {
           o,
           title,
@@ -396,9 +482,11 @@ export class RunStatsComponent {
           reach: o.reaches_goal,
           fig: o.reaches_goal ? String(o.times) : chanceText(o.best_chance ?? o.chance),
           cap: o.reaches_goal ? 'times' : 'at best',
-          note: o.reaches_goal
-            ? `Reaches ${this.goalText()} · ${calls}`
+          // What it gets: the goal - and its calls - or not at any size.
+          gets: o.reaches_goal
+            ? `Reaches ${this.goalText()}`
             : `No size reaches ${this.goalText()}`,
+          note: o.reaches_goal ? calls : '',
         };
       })
       .sort((a, b) =>
@@ -412,6 +500,10 @@ export class RunStatsComponent {
       );
   });
 
+  /** Under its title: which of them reaches the goal - for fewer runs, when it's in reach. */
+  cheaperSub = computed(
+    () => this.cheaperLead() + (this.estimate()?.goal_reachable ? ' with fewer runs' : ''),
+  );
   /** The options in one line: which of them reaches the goal. */
   cheaperLead = computed(() => {
     const all = this.cheaper();
@@ -512,16 +604,11 @@ export class RunStatsComponent {
       t,
       lead: fresh ? 'Recommended: no history yet' : 'Recommended: some checks have never run',
       title: `Run the ${this.noun()} ${t.times} times to learn, with no verdict`,
-      line:
+      facts:
         `${t.application_calls.toLocaleString('en-US')} application calls · ` +
-        `${t.judge_calls.toLocaleString('en-US')} judge calls. When it finishes, the trial shows ` +
-        'Done with what it learned about each check; then this page can say how likely each ' +
-        'size is to answer.',
+        `${t.judge_calls.toLocaleString('en-US')} judge calls`,
     };
   });
-  /** The steps' numbers: the trial and "Get closer to the goal" each take one when they show. */
-  nCheaper = computed(() => (this.trial() ? 4 : 3));
-  nSizes = computed(() => 3 + (this.trial() ? 1 : 0) + (this.cheaper().length ? 1 : 0));
   /** Why there's no curve, when there isn't one. */
   noChart = computed(() => {
     const e = this.estimate();
@@ -568,7 +655,7 @@ export class RunStatsComponent {
           )
         : null;
       const o = u.outcome;
-      if (!o) return { text: u.summary + left, bars: [], alt: null };
+      if (!o) return { text: u.summary + left, parts: [] as TallyPart[], alt: null };
       const stops =
         u.usual_times != null
           ? `it most likely stops by ${u.usual_times} times with every check answered`
@@ -583,7 +670,7 @@ export class RunStatsComponent {
           `If the checks keep behaving as before, ${stops} - Passed ${chanceText(o.passed)}, ` +
           `Failed ${chanceText(o.failed)}. If it reaches its limit first, ${undecided} ` +
           `(${chanceText(o.inconclusive)}).${left}`,
-        bars: this.bars(o),
+        parts: this.tally(o),
         alt,
       };
     }
@@ -592,19 +679,19 @@ export class RunStatsComponent {
         text: e.trial
           ? `Unknown until these checks have run. The trial’s ${e.trial.times} runs tell this page how they behave; they give no verdict.`
           : "Unknown until these checks have run: Assay hasn't seen them yet.",
-        bars: [],
+        parts: [] as TallyPart[],
         alt: null,
       };
     if (!p)
       return {
         text: 'Pick one of the sizes above to see how the batch would most likely end.',
-        bars: [],
+        parts: [] as TallyPart[],
         alt: null,
       };
     if (!p.outcome)
       return {
         text: "Every check will get an answer; which one, Assay can't tell until it has run.",
-        bars: [],
+        parts: [] as TallyPart[],
         alt: null,
       };
     const v = this.verdicts(
@@ -612,7 +699,7 @@ export class RunStatsComponent {
       p.likely_undecided,
       'If the checks keep behaving as before, this batch will most likely say',
     );
-    return { text: v.text + left, bars: v.bars, alt: null };
+    return { text: v.text + left, parts: v.parts, alt: null };
   });
   /** More than one check gets a verdict: only then is naming the likely undecided one news. */
   private manyChecks = computed(
@@ -625,12 +712,17 @@ export class RunStatsComponent {
     const out = this.leaveOut().map(this.names());
     return out.length ? ` ${listed(out)} get${out.length === 1 ? 's' : ''} no verdict.` : '';
   });
-  private bars(o: OutcomeSplit) {
-    return [
-      { word: 'Passed', v: o.passed, cls: 'o-p' },
-      { word: 'Inconclusive', v: o.inconclusive, cls: 'o-n' },
-      { word: 'Failed', v: o.failed, cls: 'o-f' },
-    ].map((x) => ({ cls: x.cls, w: x.v * 100, label: `${x.word} ${chanceText(x.v)}` }));
+  /** The endings as a tally's rows, as the Overview's summaries: each verdict's mark, a bar for
+   *  its chance, the chance - only the sure one when one is sure. */
+  private tally(o: OutcomeSplit, sure = false): TallyPart[] {
+    const rows = [
+      { key: 'Passed', v: o.passed },
+      { key: 'Inconclusive', v: o.inconclusive },
+      { key: 'Failed', v: o.failed },
+    ]
+      .filter((x) => !sure || x.v >= 1)
+      .map((x) => ({ key: x.key, count: Math.round(x.v * 1000), figure: chanceText(x.v) }));
+    return [{ label: '', rows }];
   }
   /** A fixed size's ending in words, after `lead`: "…most likely say Failed (99%). Otherwise
    *  Inconclusive (1%). Passed is very unlikely. If it ends Inconclusive, Contains is the check
@@ -641,14 +733,11 @@ export class RunStatsComponent {
       { word: 'Inconclusive', v: o.inconclusive },
       { word: 'Failed', v: o.failed },
     ];
-    const bars = this.bars(o);
     const [first, ...rest] = [...parts].sort((a, b) => b.v - a.v);
     if (first.v >= 1)
       return {
         text: `This batch will say ${first.word} - certainly.${this.allCertain() ? ' One run would say the same.' : ''}`,
-        bars: bars
-          .filter((b) => b.w > 0)
-          .map((b) => ({ ...b, label: `${b.label.split(' ')[0]} - certain` })),
+        parts: this.tally(o, true),
       };
     const said = (x: (typeof parts)[number]) => `${x.word} (${chanceText(x.v)})`;
     const likely = rest.filter((x) => x.v >= 0.005);
@@ -663,7 +752,10 @@ export class RunStatsComponent {
       likelyUndecided && o.inconclusive >= 0.005 && this.manyChecks()
         ? ` If it ends Inconclusive, ${this.names()(likelyUndecided)} is the check most likely left undecided.`
         : '';
-    return { text: `${lead} ${said(first)}.${otherwise}${never}${undecided}`, bars };
+    return {
+      text: `${lead} ${said(first)}.${otherwise}${never}${undecided}`,
+      parts: this.tally(o),
+    };
   }
   /** The outcome step's lead: the size it's for. */
   outLead = computed(() => {
@@ -743,6 +835,14 @@ export class RunStatsComponent {
       ? `Start ${e.runs_total.toLocaleString('en-US')} runs`
       : 'Start';
   });
+  /** The bar's line, its size in bold: "286 times × 2 entries · 572 application calls · …". */
+  costParts = computed(() => {
+    const [head, ...rest] = this.cost().split(' · ');
+    return { head, rest: rest.join(' · ') };
+  });
+  /** Start steps back - outlined - while a step to take first is the one to do: a trial, or one
+   *  run when nothing can vary. */
+  startQuiet = computed(() => !!this.trial() || this.allCertain());
   blockersText = computed(() =>
     this.blockers()
       .map((b) => b.charAt(0).toUpperCase() + b.slice(1))
