@@ -1,7 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import { statusColor, statusLabel } from './format';
 
-export type MarkShape = 'filled' | 'hollow' | 'half';
+export type MarkShape = 'filled' | 'hollow' | 'half' | 'framed';
 export interface Mark {
   label: string;
   color: string;
@@ -12,16 +12,20 @@ const green = 'var(--color-status-green)';
 const red = 'var(--color-accent)';
 const grey = 'var(--color-neutral-800)';
 const outline = 'var(--color-neutral-600)';
+const ink = 'var(--color-text)';
 
 /** The words a batch, a check's verdict and a comparison add to a run's statuses, with their
  *  marks. One colour map with the runs': Passed and Failed are Green's and Red's colours, and
- *  Inconclusive (hollow) and Incomplete (half-filled) differ from the greys by shape, not shade. */
+ *  Inconclusive (hollow), Incomplete (half-filled) and Done (framed: a closed square with a filled
+ *  centre, in the text's colour - a finished trial, no verdict) differ from the greys by shape,
+ *  not shade. */
 const MARKS: Record<string, Mark> = {
   // A batch's outcome.
   Passed: { label: 'Passed', color: green, shape: 'filled' },
   Failed: { label: 'Failed', color: red, shape: 'filled' },
   Inconclusive: { label: 'Inconclusive', color: outline, shape: 'hollow' },
   Incomplete: { label: 'Incomplete', color: grey, shape: 'half' },
+  Done: { label: 'Done', color: ink, shape: 'framed' },
   // A check's verdict in a batch; `none`: no verdict could be drawn.
   pass: { label: 'Passed', color: green, shape: 'filled' },
   fail: { label: 'Failed', color: red, shape: 'filled' },
@@ -51,6 +55,7 @@ export const markLabel = (key: string | null | undefined) => markOf(key).label;
     'aria-hidden': 'true',
     '[class.mark-hollow]': "mark().shape === 'hollow'",
     '[class.mark-half]': "mark().shape === 'half'",
+    '[class.mark-framed]': "mark().shape === 'framed'",
     '[class.mark-md]': "size() === 'md'",
     '[class.mark-lg]': "size() === 'lg'",
     '[style.--mark]': 'mark().color',
@@ -78,6 +83,10 @@ export const markLabel = (key: string | null | undefined) => markOf(key).label;
     }
     :host(.mark-half) {
       background: linear-gradient(90deg, var(--mark) 50%, transparent 50%);
+      box-shadow: inset 0 0 0 1.5px var(--mark);
+    }
+    :host(.mark-framed) {
+      background: linear-gradient(var(--mark), var(--mark)) center / 40% 40% no-repeat;
       box-shadow: inset 0 0 0 1.5px var(--mark);
     }
   `,

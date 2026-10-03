@@ -194,6 +194,10 @@ export class ChartGuideComponent {
       key: 'NotRan',
       text: 'No check could be decided: every run Not Ran, or every check errored.',
     },
+    {
+      key: 'Done',
+      text: 'A trial finished: it shows how each check behaves, and gives no verdict.',
+    },
   ];
   checkMarks = [
     { key: 'pass', text: 'At or above the target.' },
