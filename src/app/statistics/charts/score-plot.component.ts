@@ -3,30 +3,37 @@ import { RouterLink } from '@angular/router';
 import { Interval, ScoreSummary, SeriesPoint, StatsScope } from '../../api/models';
 import { StatusMarkComponent } from '../../shared/status-mark.component';
 import { along } from './range-chart.component';
-import { runLink } from '../stats-format';
+import { pct, runLink } from '../stats-format';
+
+/** A score as the chart writes it, as the API's sentences do: to 3 significant figures - 0.3667
+ *  is 0.367, 24.752 is 24.8. */
+const scoreText = (v: number) => String(Number(v.toPrecision(3)));
 
 /**
  * A scored check over the batch, on its own scale: every score (stacked where equal), the spread
- * (box: the middle half, lines: 10th to 90th percentile), the average with the bounds its verdict
- * used - each against the threshold line - and the score of each run in order, each opening its run.
+ * (box: the middle half, line: all but the lowest and highest tenth), the average with the range
+ * its verdict was decided on, written beside it - each against the threshold line, unbroken from
+ * row to row - and the score of each run in order, each opening its run.
  */
 @Component({
   selector: 'assay-score-plot',
   standalone: true,
   imports: [RouterLink, StatusMarkComponent],
-  styleUrls: ['../../shared/page.css'],
   template: `
     <div class="plot">
       <div class="k">
         <span class="kt">
           @if (numbered()) {
-            <span class="no">1</span>
+            <span class="n">1</span>
           }
-          The {{ scored().length }} scores
+          <span class="cap">The {{ scored().length }} scores</span>
         </span>
       </div>
-      <div class="v dots" [style.height.px]="dotsHeight()">
+      <div class="v" [style.min-height.px]="dotsHeight()">
         <i class="thr" [style.left.%]="thr()"></i>
+        @if (numbered()) {
+          <span class="callout" [style.left]="'calc(' + thr() + '% + 6px)'">4</span>
+        }
         @for (d of dots(); track d.index) {
           <a
             class="sq"
@@ -42,13 +49,15 @@ import { runLink } from '../stats-format';
       <div class="k">
         <span class="kt">
           @if (numbered()) {
-            <span class="no">2</span>
+            <span class="n">2</span>
           }
-          Spread
+          <span class="cap">Spread</span>
         </span>
-        <span class="small"
-          >box: the middle half of the scores · line: all but the lowest and highest tenth</span
-        >
+        @if (!numbered()) {
+          <span class="small"
+            >box: the middle half of the scores · line: all but the lowest and highest tenth</span
+          >
+        }
       </div>
       <div class="v">
         @if (box(); as b) {
@@ -61,50 +70,63 @@ import { runLink } from '../stats-format';
       <div class="k">
         <span class="kt">
           @if (numbered()) {
-            <span class="no">3</span>
+            <span class="n">3</span>
           }
-          Average
+          <span class="cap">Average</span>
         </span>
-        <span class="small">with the range its verdict was decided on</span>
+        @if (!numbered()) {
+          <span class="small">with the range its verdict was decided on</span>
+        }
       </div>
       <div class="v">
-        @if (avg(); as a) {
-          <i class="whisk" [style.left.%]="a.lo" [style.width.%]="a.w"></i>
-          <assay-mark class="mean" [of]="verdict()" [style.left.%]="a.mean" />
-        }
         <i class="thr" [style.left.%]="thr()"></i>
-      </div>
-      <div></div>
-      <div class="ticks">
-        <span style="left: 0; transform: none">{{ min() }}</span>
-        <span class="t-thr" [style.left.%]="thr()">
-          @if (numbered()) {
-            <span class="no">4</span>
-          }
-          {{ threshold() }}</span
-        >
-        <span style="left: 100%; transform: translateX(-100%)">{{ max() }}</span>
-      </div>
-      <div class="k">
-        Score per run<span class="small"
-          >in order{{ scope() ? ', each opening its run' : '' }}</span
-        >
-      </div>
-      <div class="v series">
-        <i class="hthr" [style.bottom.%]="thr()"></i>
-        @for (p of perRun(); track p.index) {
-          <a class="col" [routerLink]="p.link" [title]="p.title" [attr.aria-label]="p.title">
-            @if (p.y != null) {
-              <i class="sq" [class.m]="p.met" [style.bottom.%]="p.y"></i>
+        @if (avg(); as a) {
+          <i class="bar" [style.left.%]="a.lo" [style.width.%]="a.w"></i>
+          <assay-mark class="mean" size="md" [of]="verdict()" [style.left.%]="a.mean" />
+          <span class="avg" [class.before]="a.before" [style.left.%]="a.labelAt"
+            ><span class="fig">{{ a.value }}</span>
+            @if (a.bound) {
+              <span class="small">{{ a.bound }}</span>
             }
-          </a>
+          </span>
         }
       </div>
       <div></div>
-      <div class="ticks runs">
-        <span style="left: 0; transform: none">run 1</span>
-        <span style="left: 100%; transform: translateX(-100%)">run {{ series().length }}</span>
+      <div class="scale">
+        @for (t of tenths; track t) {
+          <i class="tk" [style.left.%]="t"></i>
+        }
+        @for (l of scaleLabels(); track l.at) {
+          <span
+            [style.left.%]="l.at"
+            [class.mid]="l.align === 'mid'"
+            [class.end]="l.align === 'end'"
+            [class.line-label]="l.line"
+            >{{ l.text }}</span
+          >
+        }
       </div>
+      @if (showRuns()) {
+        <div class="k runs-k">
+          <span class="cap">Score per run</span>
+          <span class="small">in order{{ scope() ? ', each opening its run' : '' }}</span>
+        </div>
+        <div class="v series">
+          <i class="hthr" [style.bottom.%]="thr()"></i>
+          @for (p of runs(); track p.index) {
+            <a class="col" [routerLink]="p.link" [title]="p.title" [attr.aria-label]="p.title">
+              @if (p.y != null) {
+                <i class="sq" [class.m]="p.met" [style.bottom.%]="p.y"></i>
+              }
+            </a>
+          }
+        </div>
+        <div></div>
+        <div class="scale runs">
+          <span>run 1</span>
+          <span class="end" style="left: 100%">run {{ series().length }}</span>
+        </div>
+      }
     </div>
   `,
   styles: `
@@ -114,20 +136,53 @@ import { runLink } from '../stats-format';
     .plot {
       display: grid;
       grid-template-columns: 150px minmax(0, 1fr);
-      border-top: 2px solid var(--color-divider);
+      column-gap: 20px;
+      border-top: 2px solid var(--color-text);
     }
     .k {
-      padding: 10px 12px 10px 0;
-      border-bottom: 1px solid var(--color-divider);
-      font-size: 12px;
-      color: var(--color-neutral-600);
       display: flex;
       flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+      padding: 8px 0;
+      border-bottom: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
+    }
+    .kt {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .cap {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-neutral-600);
+    }
+    .small {
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--color-neutral-600);
+    }
+    /* A numbered part, when the plot is an example the text beside it explains. */
+    .n {
+      color: var(--color-accent);
+      font-size: 13px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+    .callout {
+      position: absolute;
+      top: 4px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--color-accent);
+      z-index: 3;
     }
     .v {
       position: relative;
-      min-height: 48px;
-      border-bottom: 1px solid var(--color-divider);
+      min-height: 56px;
+      border-bottom: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
     }
     .thr {
       position: absolute;
@@ -140,9 +195,9 @@ import { runLink } from '../stats-format';
     }
     .sq {
       position: absolute;
-      width: 8px;
-      height: 8px;
-      margin-left: -4px;
+      width: 6px;
+      height: 6px;
+      margin-left: -3px;
       background: var(--color-accent);
       display: block;
     }
@@ -152,76 +207,107 @@ import { runLink } from '../stats-format';
     .whisk {
       position: absolute;
       top: 50%;
-      height: 2px;
-      margin-top: -1px;
+      height: 1px;
       background: var(--color-text);
     }
     .box {
       position: absolute;
       top: 50%;
-      height: 18px;
-      margin-top: -9px;
+      height: 22px;
+      margin-top: -11px;
       border: 2px solid var(--color-text);
       background: var(--color-bg);
     }
     .med {
       position: absolute;
       top: 50%;
-      height: 18px;
-      margin-top: -9px;
+      height: 22px;
+      margin-top: -11px;
       width: 3px;
-      margin-left: -1px;
+      margin-left: -1.5px;
+      background: var(--color-text);
+    }
+    .bar {
+      position: absolute;
+      top: 50%;
+      height: 4px;
+      margin-top: -2px;
       background: var(--color-text);
     }
     .mean {
       position: absolute;
       top: 50%;
-      margin-top: -4px;
-      margin-left: -4px;
+      margin-top: -5px;
+      margin-left: -5px;
+      z-index: 2;
     }
-    .ticks {
-      position: relative;
-      height: 20px;
+    .v .mean.mark-hollow {
+      background: var(--color-bg);
     }
-    /* The score axis's labels close the rows above; the score-per-run row then starts anew. */
-    .ticks:not(.runs) {
-      margin-bottom: 16px;
-    }
-    .ticks > span {
-      white-space: nowrap;
+    /* The average, written beside its range - after it, or before it near the right edge. */
+    .avg {
       position: absolute;
-      top: 4px;
-      transform: translateX(-50%);
+      top: 50%;
+      transform: translateY(-50%);
+      margin-left: 10px;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      white-space: nowrap;
+    }
+    .avg.before {
+      transform: translate(-100%, -50%);
+      margin-left: -10px;
+    }
+    .fig {
+      font-size: 18px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+    .scale {
+      position: relative;
+      height: 28px;
+    }
+    .tk {
+      position: absolute;
+      top: 0;
+      width: 1px;
+      height: 5px;
+      background: var(--color-text);
+    }
+    .scale > span {
+      position: absolute;
+      top: 9px;
       font-size: 10px;
       color: var(--color-neutral-500);
       font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
-    .ticks .t-thr {
+    .scale > span.mid {
+      transform: translateX(-50%);
+    }
+    .scale > span.end {
+      transform: translateX(-100%);
+    }
+    .scale > span.line-label {
       color: var(--color-accent);
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .kt {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    /* A numbered part, when the plot is an example the text beside it explains. */
-    .no {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 16px;
-      height: 16px;
-      font-size: 10px;
       font-weight: 800;
-      background: var(--color-text);
-      color: var(--color-bg);
+    }
+    /* The score axis's labels close the rows above; the score-per-run rows then start anew. */
+    .runs-k {
+      margin-top: 16px;
+      border-top: 2px solid var(--color-text);
+    }
+    .runs-k + .v {
+      margin-top: 16px;
+      border-top: 2px solid var(--color-text);
     }
     .v.series {
       height: 150px;
       display: flex;
+    }
+    .scale.runs > span {
+      top: 6px;
     }
     .col {
       flex: 1;
@@ -229,7 +315,7 @@ import { runLink } from '../stats-format';
     }
     .col .sq {
       left: 50%;
-      margin-bottom: -4px;
+      margin-bottom: -3px;
     }
     .col:hover,
     .col:focus-visible {
@@ -257,8 +343,12 @@ export class ScorePlotComponent {
   /** Null draws an example: nothing links to a run. */
   scope = input<StatsScope | null>(null);
   testId = input<string | null>(null);
-  /** Number the parts (1 to 4), for an example the text beside it explains. */
+  /** Number the parts (1 to 4), for an example the text beside it explains - which then says
+   *  what the spread and the average are, so the rows don't. */
   numbered = input(false);
+  /** The score of each run, in order, under the rest. */
+  showRuns = input(true);
+  tenths = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
   private link = (p: SeriesPoint) => {
     const s = this.scope();
     return s ? runLink(s, p, this.testId()) : null;
@@ -279,7 +369,7 @@ export class ScorePlotComponent {
       return {
         index: p.index,
         x: this.at(v),
-        y: 6 + level * 10,
+        y: 8 + level * 8,
         met: this.met(v),
         link: this.link(p),
         title: `Run ${p.index}: ${v}`,
@@ -294,7 +384,7 @@ export class ScorePlotComponent {
       stacks.set(key, (stacks.get(key) ?? 0) + 1);
       most = Math.max(most, stacks.get(key)!);
     }
-    return Math.max(48, 14 + most * 10);
+    return Math.max(56, 20 + most * 8);
   });
   box = computed(() => {
     const s = this.scores();
@@ -307,15 +397,51 @@ export class ScorePlotComponent {
       med: this.at(s.median),
     };
   });
+  /** The average and its range, and what the label beside it says: "0.367 at least 0.336 (95%
+   *  sure)" - "at most" when lower passes; just the figure when the scores never varied. */
   avg = computed(() => {
     const i = this.interval();
     const s = this.scores();
     if (!s) return null;
     const lo = i?.lower ?? s.mean,
       hi = i?.upper ?? s.mean;
-    return { lo: this.at(lo), w: this.at(hi) - this.at(lo), mean: this.at(i?.point ?? s.mean) };
+    const mean = i?.point ?? s.mean;
+    const lte = this.comparison() === 'lte';
+    const bound =
+      i && lo !== hi
+        ? `${lte ? 'at most' : 'at least'} ${scoreText(lte ? hi : lo)} (${pct(i.level)} sure)`
+        : null;
+    const left = this.at(lo),
+      right = this.at(hi);
+    const before = right > 62;
+    return {
+      lo: left,
+      w: right - left,
+      mean: this.at(mean),
+      value: scoreText(mean),
+      bound,
+      before,
+      labelAt: before ? left : right,
+    };
   });
-  perRun = computed(() =>
+  /** The scale's ends, its middle and the threshold (in red) - a label too near the threshold left
+   *  out. */
+  scaleLabels = computed(() => {
+    const thr = this.thr();
+    const out: { at: number; text: string; align: 'start' | 'mid' | 'end'; line?: boolean }[] = [];
+    if (thr > 8) out.push({ at: 0, text: String(this.min()), align: 'start' });
+    if (Math.abs(thr - 50) >= 10)
+      out.push({ at: 50, text: String((this.min() + this.max()) / 2), align: 'mid' });
+    if (thr < 92) out.push({ at: 100, text: String(this.max()), align: 'end' });
+    out.push({
+      at: thr,
+      text: String(this.threshold()),
+      align: thr <= 3 ? 'start' : thr >= 97 ? 'end' : 'mid',
+      line: true,
+    });
+    return out;
+  });
+  runs = computed(() =>
     this.series().map((p) => ({
       index: p.index,
       y: p.score == null ? null : this.at(p.score),

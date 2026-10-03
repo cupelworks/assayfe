@@ -16,7 +16,22 @@ export function pct(x: number | null | undefined): string {
 /** A difference of two rates in percentage points, signed: "+34.5", "-8.2", "0". */
 export function points(x: number): string {
   const v = Math.round(x * 1000) / 10;
-  return v > 0 ? `+${v}` : `${v}`;
+  return v > 0 ? `+${v}` : v < 0 ? `−${-v}` : '0';
+}
+
+/** A difference of scores, signed with a true minus: 0.05 → "+0.05", −0.012 → "−0.012". */
+export function signedScore(x: number): string {
+  const v = Math.round(x * 1000) / 1000;
+  return v > 0 ? `+${v}` : v < 0 ? `−${-v}` : '0';
+}
+
+/** B − A as a comparison's row writes it under its range: the change (set in bold), then the
+ *  range - "−27.6" + " points · −46 to −8.2" for pass rates, "+0.05" + " · −0.01 to +0.11" for
+ *  scores. */
+export function diffCaption(d: number, lo: number | null, hi: number | null, scores: boolean) {
+  const f = scores ? signedScore : points;
+  const range = lo != null && hi != null ? ` · ${f(lo)} to ${f(hi)}` : '';
+  return { main: f(d), rest: (scores ? '' : ' points') + range };
 }
 
 /** A rate the way people say it, worded as the API's sentences word it: 0.9 → "9 times in 10",

@@ -51,6 +51,7 @@ export const markLabel = (key: string | null | undefined) => markOf(key).label;
     'aria-hidden': 'true',
     '[class.mark-hollow]': "mark().shape === 'hollow'",
     '[class.mark-half]': "mark().shape === 'half'",
+    '[class.mark-md]': "size() === 'md'",
     '[class.mark-lg]': "size() === 'lg'",
     '[style.--mark]': 'mark().color',
   },
@@ -62,6 +63,10 @@ export const markLabel = (key: string | null | undefined) => markOf(key).label;
       width: 8px;
       height: 8px;
       background: var(--mark);
+    }
+    :host(.mark-md) {
+      width: 10px;
+      height: 10px;
     }
     :host(.mark-lg) {
       width: 14px;
@@ -79,6 +84,7 @@ export const markLabel = (key: string | null | undefined) => markOf(key).label;
 })
 export class StatusMarkComponent {
   of = input.required<string | null>();
-  size = input<'sm' | 'lg'>('sm');
+  /** sm 8 px (in text), md 10 px (a point on a chart), lg 14 px. */
+  size = input<'sm' | 'md' | 'lg'>('sm');
   mark = computed(() => markOf(this.of()));
 }

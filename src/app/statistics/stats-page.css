@@ -29,7 +29,7 @@
 }
 .th {
   padding: 8px 0;
-  border-bottom: 2px solid var(--color-divider);
+  border-bottom: 2px solid var(--color-text);
   align-items: end;
 }
 .ticks {

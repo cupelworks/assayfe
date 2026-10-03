@@ -120,17 +120,17 @@
           <span class="t">{{ r.label }}</span>
           <span class="s">{{ r.entry ?? r.type ?? '' }}</span>
         </div>
-        <div>
+        <div class="chart-cell">
           <assay-dumbbell
             [a]="r.a"
             [b]="r.b"
             [min]="valueAxis().min"
             [max]="valueAxis().max"
             [mark]="r.verdict"
-          />
-          <div class="small num">{{ r.values }}</div>
+            ><span class="capn">{{ r.values }}</span></assay-dumbbell
+          >
         </div>
-        <div>
+        <div class="chart-cell">
           @if (r.diff) {
             <assay-range-chart
               [min]="diffAxis().min"
@@ -140,8 +140,15 @@
               [point]="r.diff.point"
               [line]="cmp.parameters['margin'] != null ? -cmp.parameters['margin'] : 0"
               [mark]="r.verdict"
-              [ticks]="[0]"
-            />
+              [ticks]="diffAxis().ticks"
+            >
+              @if (r.diffCap; as d) {
+                <span class="capn"
+                  ><b>{{ d.main }}</b
+                  >{{ d.rest }}</span
+                >
+              }
+            </assay-range-chart>
           } @else if (r.effect != null) {
             <assay-range-chart
               [min]="0"
@@ -149,9 +156,12 @@
               [point]="r.effect"
               [line]="0.5"
               [mark]="r.verdict"
-            />
+            >
+              @if (r.diffCap; as d) {
+                <span class="capn">{{ d.rest }}</span>
+              }
+            </assay-range-chart>
           }
-          <div class="small num">{{ r.diffText }}</div>
         </div>
         <div class="verdict">
           <span class="w"><assay-mark [of]="r.verdict" />{{ r.word }}</span>

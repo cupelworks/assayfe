@@ -7,7 +7,7 @@ import { absTime, errText } from '../shared/format';
 import { StatusMarkComponent, markLabel } from '../shared/status-mark.component';
 import { RangeChartComponent } from './charts/range-chart.component';
 import { DumbbellComponent } from './charts/dumbbell.component';
-import { pct, points, scopeLink, scopePlace } from './stats-format';
+import { diffCaption, pct, points, scopeLink, scopePlace } from './stats-format';
 
 /** The verdicts worth reading first: what got worse, then what changed, then the rest. */
 const ORDER: Record<string, number> = {
@@ -175,14 +175,13 @@ export class ComparisonComponent {
       b,
       diff: k.difference,
       effect: k.effect ?? null,
-      diffText:
+      // Under B − A: the change in bold, then its range; for score ranks, how often B beats A.
+      diffCap:
         k.difference?.point != null
-          ? scores
-            ? `${k.difference.point > 0 ? '+' : ''}${k.difference.point}`
-            : `${points(k.difference.point)} points`
+          ? diffCaption(k.difference.point, k.difference.lower, k.difference.upper, scores)
           : k.effect != null
-            ? `B beats A ${pct(k.effect)} of the time`
-            : '',
+            ? { main: '', rest: `B beats A ${pct(k.effect)} of the time` }
+            : null,
       counts: `${k.a.counts.evaluated} vs ${k.b.counts.evaluated} evaluated`,
     };
   }

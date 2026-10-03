@@ -1,190 +1,418 @@
+/* The guide on a 12-column grid: each section's number and title (2 columns), its chart (7),
+   how to read it (3). One red line in every chart: what the result is judged against. */
 :host {
   display: block;
   border-top: 2px solid var(--color-divider);
 }
-.guide-head {
-  border-bottom: 2px solid var(--color-divider);
+.wrap {
+  padding-inline: 40px;
 }
-.guide-head .kicker {
-  margin-bottom: 12px;
+.g12 {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: 24px;
+}
+.cap {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-neutral-600);
+}
+.small {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-neutral-600);
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+/* A numbered part: a red figure, beside the chart's part and in the text that explains it. */
+.n {
+  color: var(--color-accent);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.fig {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* The head: title, what the guide is, the red line's key, a link per section. */
+.head {
+  padding: 48px 0 40px;
+  row-gap: 28px;
+}
+.kicker {
+  grid-column: 1 / -1;
 }
 .title {
-  font-size: 36px;
-  line-height: 1.05;
-  letter-spacing: -0.02em;
-  margin: 0 0 12px;
-  max-width: 900px;
-  text-wrap: pretty;
+  grid-column: 1 / span 9;
+  margin: 0;
+  font-size: 46px;
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
 }
-/* A chart and what it says, side by side. */
-.sec {
-  display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-  gap: 48px;
-  padding: 36px 40px;
-  border-bottom: 2px solid var(--color-divider);
-}
-.sec.last {
-  border-bottom: 0;
-}
-.sec h3 {
-  font-size: 24px;
-  letter-spacing: -0.015em;
-  margin: 0 0 6px;
-}
-.sub {
+.lede {
+  grid-column: 10 / span 3;
+  margin: 0;
   font-size: 13px;
   color: var(--color-neutral-600);
-  margin: 0 0 20px;
+  align-self: end;
   text-wrap: pretty;
 }
-/* The numbered parts. */
-.no {
-  display: inline-flex;
+.key {
+  grid-column: 1 / -1;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  font-size: 11px;
-  font-weight: 800;
-  background: var(--color-text);
-  color: var(--color-bg);
+  gap: 14px;
+  font-size: 13px;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
+}
+.key i {
+  display: block;
   flex: none;
+  width: 32px;
+  height: 2px;
+  background: var(--color-accent);
 }
-.lane {
-  position: relative;
-  height: 22px;
+.toc {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0 24px;
 }
-.lane .no {
-  position: absolute;
-  top: 0;
-  margin-left: -9px;
-}
-.expl {
+.toc a {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
+  min-height: 56px;
+  padding-top: 10px;
+  border-top: 2px solid var(--color-text);
+  color: var(--color-text);
+  text-decoration: none;
+}
+.toc b {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
+}
+.toc span {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.toc a:hover span {
+  color: var(--color-accent);
+}
+.toc a:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* A section. */
+.sec .g12 {
+  padding: 40px 0 56px;
+  border-top: 2px solid var(--color-divider);
+}
+.rail {
+  grid-column: 1 / span 2;
+}
+.secno {
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 20px;
+}
+.rail h3 {
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  margin: 0 0 10px;
+}
+.rail p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-neutral-600);
+  text-wrap: pretty;
+}
+.chart {
+  grid-column: 3 / span 7;
+  min-width: 0;
+  padding-top: 8px;
+}
+.notes {
+  grid-column: 10 / span 3;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 8px;
   font-size: 14px;
   min-width: 0;
 }
-.expl p {
+.notes p {
   margin: 0;
   text-wrap: pretty;
 }
-.item {
+.part {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr);
-  gap: 10px;
-  align-items: start;
-}
-.rule {
-  border-top: 1px solid var(--color-divider);
-  padding-top: 12px;
-}
-.rule .r {
-  display: flex;
+  grid-template-columns: 20px minmax(0, 1fr);
   gap: 8px;
-  align-items: center;
-  margin-top: 6px;
+  align-items: baseline;
 }
-/* The verdict rows, as a batch's page draws them. */
-.rows {
+.reading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
+}
+.reading .r {
   display: grid;
-  grid-template-columns: 170px 70px minmax(0, 1fr) 120px;
-  gap: 0 16px;
-  align-items: center;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
 }
-.th {
-  padding: 6px 0;
-  border-bottom: 2px solid var(--color-divider);
-  align-self: end;
+.scroll {
+  overflow-x: auto;
 }
-.c {
-  padding: 10px 0;
+
+/* A table of charts: a head with its scale, then rows whose charts fill their height, so the
+   red line runs unbroken through them. */
+.hd {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--color-text);
+}
+.hd .cap .n {
+  margin-right: 6px;
+}
+.right {
+  align-items: flex-end;
+  text-align: right;
+}
+.tc {
+  min-height: 68px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   border-bottom: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
+}
+.chart-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
+}
+.chart-cell > assay-range-chart,
+.chart-cell > assay-dumbbell {
+  flex: 1;
+}
+.nm {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.tc .fig {
+  font-size: 22px;
 }
 .w {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-weight: 600;
+  gap: 8px;
   font-size: 13px;
+  font-weight: 600;
 }
-.ticks {
+.scale {
   position: relative;
-  height: 16px;
-  margin-top: 2px;
-}
-.ticks > span {
-  position: absolute;
-  transform: translateX(-50%);
+  height: 14px;
   font-size: 10px;
   color: var(--color-neutral-500);
   font-variant-numeric: tabular-nums;
+}
+.scale span {
+  position: absolute;
+  top: 0;
   white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
 }
-.ticks > span.first {
-  transform: none;
+.scale span.ax-mid {
+  transform: translateX(-50%);
 }
-.ticks > span.last {
+.scale span.ax-end {
   transform: translateX(-100%);
 }
-.ticks > span.line {
+.scale span.red {
   color: var(--color-accent);
+  font-weight: 800;
 }
-.ticks .no {
-  width: 14px;
-  height: 14px;
-  font-size: 9px;
+.callout {
+  position: absolute;
+  top: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--color-accent);
+  transform: translateX(-50%);
+  font-variant-numeric: tabular-nums;
+  z-index: 3;
 }
-.th .label .no {
-  width: 14px;
-  height: 14px;
-  font-size: 9px;
-  margin-right: 6px;
+/* What a chart projects under its bar. */
+.capn {
+  /* Over the chart's lines, the page shows behind the words so the line passes behind them. */
+  position: relative;
+  z-index: 2;
+  align-self: flex-start;
+  max-width: 100%;
+  padding-right: 4px;
+  background: var(--color-bg);
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--color-neutral-500);
+  font-variant-numeric: tabular-nums;
 }
-.strip-wrap {
-  max-width: 400px;
+.capn b {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-text);
 }
-/* A against B, as a comparison's page draws it. */
-.cmp {
+.rr {
   display: grid;
-  grid-template-columns: 170px minmax(0, 1fr) minmax(0, 1fr) 150px;
-  gap: 0 18px;
-  align-items: center;
+  grid-template-columns: minmax(0, 190px) 56px minmax(0, 1fr) max-content;
+  column-gap: 20px;
+  min-width: 640px;
 }
-.marks {
+.cg {
+  display: grid;
+  grid-template-columns: minmax(0, 170px) minmax(0, 1fr) minmax(0, 1fr) max-content;
+  column-gap: 20px;
+  min-width: 620px;
+}
+
+/* The strip, bigger than beside a check, its times numbered on the same columns. */
+.strip-box {
+  max-width: 692px;
+  min-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  --strip-h: 20px;
+  --strip-gap: 4px;
+  --strip-max: 692px;
+}
+.s29 {
+  display: grid;
+  grid-template-columns: repeat(29, minmax(0, 1fr));
+  column-gap: 4px;
+  font-size: 11px;
+}
+.s29 span {
+  text-align: center;
+}
+.s29.idx {
+  font-size: 10px;
+  color: var(--color-neutral-500);
+  font-variant-numeric: tabular-nums;
+}
+.tally {
+  display: flex;
+  gap: 48px;
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
+}
+.tally > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tally .fig {
+  font-size: 36px;
+}
+.tally .cap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sw {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--color-neutral-800);
+}
+.sw.m {
+  background: var(--color-status-green);
+}
+.sw.x {
+  background: var(--color-accent);
+}
+.wide {
+  min-width: 640px;
+}
+
+/* The marks, three columns. */
+.marks3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0 32px;
+  gap: 0 24px;
 }
-.col-head {
-  margin-bottom: 8px;
+.mhead {
+  padding: 10px 0;
+  border-top: 2px solid var(--color-text);
 }
-.mark-row {
+.mrow {
   display: grid;
-  grid-template-columns: 14px minmax(0, 1fr);
-  gap: 2px 10px;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 2px 8px;
   align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--color-divider);
+  padding: 10px 0;
+  border-top: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
 }
-.col-head + .mark-row {
-  border-top: 2px solid var(--color-divider);
+.mw {
+  font-size: 14px;
+  font-weight: 600;
 }
+
 @media (max-width: 900px) {
-  .sec,
-  .marks {
+  .wrap {
+    padding-inline: 16px;
+  }
+  .g12 {
     grid-template-columns: minmax(0, 1fr);
+    row-gap: 24px;
   }
-  .rows,
-  .cmp {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  .title,
+  .lede,
+  .rail,
+  .chart,
+  .notes {
+    grid-column: 1 / -1;
   }
-  .lane {
-    display: none;
+  .title {
+    font-size: 32px;
+  }
+  .toc {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+  }
+  .secno {
+    font-size: 44px;
+    margin-bottom: 12px;
+  }
+  .marks3 {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

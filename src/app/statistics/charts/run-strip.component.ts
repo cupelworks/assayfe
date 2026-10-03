@@ -10,7 +10,8 @@ export function pointText(p: SeriesPoint): string {
   return p.error ? `couldn't run: ${p.error}` : 'Not Ran';
 }
 
-/** A check's times as a strip - met, not met, no value - each opening its run. */
+/** A check's times as a strip - met, not met, no value - each opening its run. A parent can size it
+ *  with --strip-h (a square's height), --strip-gap and --strip-max (its widest). */
 @Component({
   selector: 'assay-run-strip',
   standalone: true,
@@ -30,11 +31,11 @@ export function pointText(p: SeriesPoint): string {
   styles: `
     :host {
       display: grid;
-      gap: 2px;
-      max-width: 400px;
+      gap: var(--strip-gap, 2px);
+      max-width: var(--strip-max, 400px);
     }
     .s {
-      height: 14px;
+      height: var(--strip-h, 14px);
       min-width: 2px;
       display: block;
       background: var(--color-neutral-800);

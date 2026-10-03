@@ -44,9 +44,41 @@
   gap: 0 24px;
   align-items: center;
 }
+/* A row's charts fill the row's height, so the line at 0 runs unbroken from row to row: the
+   other cells carry the row's padding. */
 .row {
-  padding: 12px 0;
   border-bottom: 1px solid var(--color-divider);
+}
+.row > :not(.chart-cell) {
+  padding: 12px 0;
+}
+.chart-cell {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+}
+.chart-cell > assay-range-chart,
+.chart-cell > assay-dumbbell {
+  flex: 1;
+}
+/* What a chart writes under its bar: B − A in bold, then its range. */
+.capn {
+  /* Over the chart's lines, the page shows behind the words so the line passes behind them. */
+  position: relative;
+  z-index: 2;
+  align-self: flex-start;
+  max-width: 100%;
+  padding-right: 4px;
+  background: var(--color-bg);
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--color-neutral-500);
+  font-variant-numeric: tabular-nums;
+}
+.capn b {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-text);
 }
 .check {
   display: flex;

@@ -1,12 +1,14 @@
 import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Interval, ScoreSummary, SeriesPoint, StripPoint, TestStatus } from '../api/models';
 import { StatusMarkComponent, markLabel } from '../shared/status-mark.component';
-import { RangeChartComponent } from './charts/range-chart.component';
+import { RangeChartComponent, along } from './charts/range-chart.component';
 import { RunStripComponent } from './charts/run-strip.component';
 import { RunsGridComponent, GridRow } from './charts/runs-grid.component';
 import { RateTrendComponent } from './charts/rate-trend.component';
 import { ScorePlotComponent } from './charts/score-plot.component';
 import { DumbbellComponent } from './charts/dumbbell.component';
+import { diffCaption, pct } from './stats-format';
 
 /** The guide's sections, in order - what the Statistical tests cards and the result pages link to. */
 export const CHART_SECTIONS = [
@@ -23,6 +25,7 @@ export const chartAnchor = (id: string) => `chart-${id}`;
 
 // The examples: what a batch and a comparison would show, with the bounds the API computes
 // (exact one-sided at 95% for a 90% target; Newcombe for B − A) - drawn by the app's own charts.
+// The checks are named as people name theirs, never by their type.
 const point = (index: number, ch: string, score: number | null = null): SeriesPoint => ({
   index,
   run_id: '',
@@ -32,7 +35,7 @@ const point = (index: number, ch: string, score: number | null = null): SeriesPo
   score,
   error: null,
 });
-/** 29 times: met, not met at 6 and 21, no value at 17 (the run was Not Ran). */
+/** 29 times: met, not met at 6 and 21, no value at 17 (the run was Not Ran) - so 26 of 28. */
 const TIMES = 'mmmmmxmmmmmmmmmmnmmmxmmmmmmmm';
 const strip = (statuses: Record<number, TestStatus>): StripPoint[] =>
   Array.from({ length: 29 }, (_, i) => ({
@@ -54,6 +57,13 @@ const exact = (lower: number, point: number, upper: number): Interval => ({
   sides: 'one',
 });
 
+/** A against B, 29 times each: [check, A's rate, B's rate, B − A, its range's ends, verdict]. */
+const COMPARE: [string, number, number, number, number, number, string][] = [
+  ['Never asks for the PIN', 28 / 29, 20 / 29, -0.276, -0.46, -0.082, 'worse'],
+  ['Offers to block the card', 15 / 29, 25 / 29, 0.345, 0.107, 0.537, 'better'],
+  ['Mentions the order number', 1, 1, 0, -0.117, 0.117, 'no_difference'],
+];
+
 /**
  * "How to read the charts": each chart a batch's or a comparison's page draws, drawn here by the
  * same components with example data, its parts numbered, and how a verdict reads off it. Static -
@@ -63,6 +73,7 @@ const exact = (lower: number, point: number, upper: number): Interval => ({
   selector: 'assay-chart-guide',
   standalone: true,
   imports: [
+    RouterLink,
     StatusMarkComponent,
     RangeChartComponent,
     RunStripComponent,
@@ -77,22 +88,46 @@ const exact = (lower: number, point: number, upper: number): Interval => ({
 export class ChartGuideComponent {
   anchor = chartAnchor;
   markLabel = markLabel;
+  /** The sections, numbered: the row of links under the guide's title, and each section's number. */
+  sections = CHART_SECTIONS.map((s, i) => ({ ...s, no: String(i + 1).padStart(2, '0') }));
   rateTicks = [0.5, 0.6, 0.7, 0.8, 0.9, 1];
   gate = [
-    { name: 'Contains', met: '29 of 29', interval: exact(0.902, 1, 1), verdict: 'pass' },
     {
-      name: 'JSON Field Equals',
-      met: '27 of 29',
-      interval: exact(0.798, 0.931, 0.988),
+      name: 'Mentions the order number',
+      met: '29 of 29',
+      rate: '100%',
+      interval: exact(0.901855, 1, 1),
+      verdict: 'pass',
+    },
+    {
+      name: 'Replies in English',
+      met: '26 of 28',
+      rate: '93%',
+      interval: exact(0.791795, 0.928571, 0.987159),
       verdict: 'inconclusive',
     },
     {
-      name: 'Regex Must Not Match',
+      name: 'Never asks for the PIN',
       met: '20 of 29',
-      interval: exact(0.521, 0.69, 0.828),
+      rate: '69%',
+      interval: exact(0.520988, 0.689655, 0.827535),
       verdict: 'fail',
     },
   ];
+  /** Where the range section's numbers 1 (the point) and 2 (the range) sit: on its second row. */
+  callouts = (() => {
+    const i = this.gate[1].interval;
+    const lo = along(i.lower!, 0.5, 1),
+      hi = along(i.upper!, 0.5, 1);
+    return { point: along(i.point!, 0.5, 1), range: lo + (hi - lo) * 0.12 };
+  })();
+  /** The strip's times numbered under it, and what it holds. */
+  stripIndex = [1, 5, 10, 15, 20, 25, 29];
+  stripTally = {
+    met: [...TIMES].filter((c) => c === 'm').length,
+    notMet: [...TIMES].filter((c) => c === 'x').length,
+    none: [...TIMES].filter((c) => c === 'n').length,
+  };
   series = [...TIMES].map((ch, i) => point(i + 1, ch));
   grid: GridRow[] = [
     {
@@ -139,38 +174,17 @@ export class ChartGuideComponent {
     sides: 'one',
   };
   diffTicks = [-0.6, -0.3, 0, 0.3, 0.6];
-  compare = [
-    {
-      name: 'Regex Must Not Match',
-      a: 28 / 29,
-      b: 20 / 29,
-      d: -0.276,
-      lo: -0.46,
-      hi: -0.082,
-      verdict: 'worse',
-      text: '-27.6 points · -46 to -8.2',
-    },
-    {
-      name: 'Regex Match',
-      a: 15 / 29,
-      b: 25 / 29,
-      d: 0.345,
-      lo: 0.107,
-      hi: 0.537,
-      verdict: 'better',
-      text: '+34.5 points · +10.7 to +53.7',
-    },
-    {
-      name: 'Contains',
-      a: 1,
-      b: 1,
-      d: 0,
-      lo: -0.117,
-      hi: 0.117,
-      verdict: 'no_difference',
-      text: '0 points · -11.7 to +11.7',
-    },
-  ];
+  compare = COMPARE.map(([name, a, b, d, lo, hi, verdict]) => ({
+    name,
+    a,
+    b,
+    d,
+    lo,
+    hi,
+    verdict,
+    vals: `${pct(a)} → ${pct(b)}`,
+    cap: diffCaption(d, lo, hi, false),
+  }));
   batchMarks = [
     { key: 'Passed', text: 'Every check reaches the target.' },
     { key: 'Failed', text: 'At least one check falls short.' },
@@ -187,6 +201,11 @@ export class ChartGuideComponent {
     { key: 'inconclusive', text: 'The target is inside the range.' },
     { key: 'none', text: 'Too few values to decide: none, or fewer than the test needs.' },
   ];
+  /** A link in the row under the title: to its section, also when the fragment is already the
+   *  route's (the router wouldn't scroll again). */
+  go(id: string) {
+    setTimeout(() => document.getElementById(chartAnchor(id))?.scrollIntoView());
+  }
   compareMarks = [
     { key: 'better', text: 'B met it more often, beyond chance.' },
     { key: 'worse', text: 'B met it less often, beyond chance.' },

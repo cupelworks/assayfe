@@ -207,7 +207,7 @@
                 <span class="small">{{ c.apart }}</span>
               }
             </span>
-            <div>
+            <div class="chart-cell">
               <assay-range-chart
                 [min]="c.chart.min"
                 [max]="c.chart.max"
@@ -218,6 +218,7 @@
                 [mark]="c.verdict"
                 [ticks]="c.ticks"
                 [labels]="c.labels"
+                [bounds]="isScores() ? null : 'pct'"
               />
             </div>
             <assay-run-strip [series]="c.series" [scope]="b.scope" [testId]="c.testId" />

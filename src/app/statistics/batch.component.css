@@ -73,9 +73,21 @@
 .ent-link {
   margin-left: auto;
 }
+/* A row's chart fills the row's height, so the target line runs unbroken from row to row: the
+   other cells carry the row's padding. */
 .row {
-  padding: 10px 0;
   border-bottom: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
+}
+.row > :not(.chart-cell):not(.detail) {
+  padding: 10px 0;
+}
+.chart-cell {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+}
+.chart-cell > assay-range-chart {
+  flex: 1;
 }
 .cname {
   all: unset;
