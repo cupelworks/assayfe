@@ -19,7 +19,7 @@ const KINDS: { key: Kind; label: string; blurb: string }[] = [
   {
     key: 'comparison',
     label: 'Compare two batches',
-    blurb: 'Did a change help? Better, worse, or no real difference - check by check.',
+    blurb: 'Did a change help? Better, worse, or no clear difference - check by check.',
   },
 ];
 const READS: Record<StatisticalTest['reads'], string> = {

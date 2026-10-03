@@ -30,7 +30,7 @@ const MARKS: Record<string, Mark> = {
   // A comparison's outcome per check.
   better: { label: 'Better', color: green, shape: 'filled' },
   worse: { label: 'Worse', color: red, shape: 'filled' },
-  no_difference: { label: 'No real difference', color: outline, shape: 'hollow' },
+  no_difference: { label: 'No clear difference', color: outline, shape: 'hollow' },
   no_worse: { label: 'No worse', color: green, shape: 'filled' },
 };
 

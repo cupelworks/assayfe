@@ -19,6 +19,19 @@ export function points(x: number): string {
   return v > 0 ? `+${v}` : `${v}`;
 }
 
+/** A rate the way people say it, worded as the API's sentences word it: 0.9 → "9 times in 10",
+ *  0.95 → "19 times in 20", 0.999 → "999 times in 1000"; "87% of the time" when no small count
+ *  fits. */
+export function often(rate: number): string {
+  for (const outOf of [10, 20, 100, 1000]) {
+    const count = Math.round(rate * outOf);
+    if (Math.abs(rate * outOf - count) < 1e-9 && count > 0 && count <= outOf) {
+      return `${count} times in ${outOf}`;
+    }
+  }
+  return `${pct(rate)} of the time`;
+}
+
 /** The question a batch answers, short: the kicker of its page and its line in lists - by its
  *  engine; `name` (the catalogue row's) for an engine with no short question. */
 export function question(
@@ -28,9 +41,9 @@ export function question(
 ): string {
   switch (engine) {
     case 'binomial_gate':
-      return `Passes at least ${pct(params['target'])} of the time?`;
+      return `Passes at least ${often(params['target'])}?`;
     case 'judge_stability':
-      return `Does the judge agree with itself at least ${pct(params['target'])} of the time?`;
+      return `Does the judge agree with itself at least ${often(params['target'])}?`;
     case 'one_sample_t':
       return 'Is the average score on the passing side of the threshold?';
     default:

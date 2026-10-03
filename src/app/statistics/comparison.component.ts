@@ -26,7 +26,7 @@ const halfWidth = (m: number, step: number) => Math.max(step, Math.ceil(m / step
 /**
  * Two batches of the same scope compared check by check: A (the baseline) against B (the change),
  * each check's two values, B - A with the interval that decides, and the verdict - what got worse
- * first, the checks with no real difference folded. Paired by entry, the scope's single verdict
+ * first, the checks with no clear difference folded. Paired by entry, the scope's single verdict
  * and every pair. Entries or checks only one batch has are listed under the table.
  */
 @Component({
