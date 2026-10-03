@@ -670,6 +670,30 @@ export interface Estimate {
   cheaper?: CheaperOption[];
   /** Offered when a check has never run: a short batch with no verdict, to plan from. */
   trial?: TrialOffer | null;
+  /** The same question run until there's an answer - in waves, stopping as soon as every check
+   *  has one; null without history. */
+  until_answer?: UntilAnswer | null;
+}
+/** Running until there's an answer instead of a fixed size: what it would cost and give. Started
+ *  by sending its `statistical_test` with `times: max_times`. */
+export interface UntilAnswer {
+  statistical_test: StatisticalTestName;
+  max_times: number;
+  /** A perfect record answers here. */
+  first_wave: number;
+  wave_size: number;
+  /** Where each wave ends, in times. */
+  looks: number[];
+  /** The size it most often stops at; null when it usually runs to the maximum. */
+  usual_times: number | null;
+  expected_times: number;
+  /** The chance every check has its answer by the maximum. */
+  chance_by_max: number;
+  /** null while a certain check's result is unseen. */
+  outcome: OutcomeSplit | null;
+  likely_undecided: CheckRef | null;
+  /** It in one sentence, shown as it is. */
+  summary: string;
 }
 /** A trial to run first: `statistical_test` and `times` to send, what it costs, and why. */
 export interface TrialOffer {
@@ -717,9 +741,22 @@ export interface BatchProgress {
   runs_cancelled: number;
   times_cancelled: number;
   calls: { application: BatchCallCount; judge: BatchCallCount };
+  /** A batch that runs until there's an answer: its waves. Null for every other batch. */
+  waves?: WaveProgress | null;
   /** The runs grid while Pending/Running; null in lists, with ?series=false and once the
    *  result is stored (then it's the result's entries' strips). */
   entries?: LiveEntry[] | null;
+}
+/** Where a batch that runs until there's an answer has got. `times_requested` is its maximum. */
+export interface WaveProgress {
+  released: number;
+  planned: number;
+  /** Where each wave ends, in times: it looks at the results there. */
+  looks: number[];
+  /** No more waves: every check has its answer, the maximum is reached, or it was stopped. */
+  closed: boolean;
+  /** It stopped before the maximum because every check had its answer. */
+  stopped_early: boolean;
 }
 /** Every interval says what it is. `sides: 'one'`: each bound is one-sided at `level`. */
 export interface Interval {

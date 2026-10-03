@@ -17,6 +17,7 @@ import {
   CheckTarget,
   Estimate,
   EstimateRequest,
+  OutcomeSplit,
   StatisticalEngine,
   StatisticalTest,
   StatisticalTestName,
@@ -58,6 +59,11 @@ interface BatchPreset {
   leave_out?: CheckRef[];
 }
 
+/** A batch run until there's an answer, by its fixed question's engine - for "Run again…". */
+const SEQUENTIAL: Partial<Record<StatisticalEngine, StatisticalEngine>> = {
+  sequential_gate: 'binomial_gate',
+  sequential_judge_stability: 'judge_stability',
+};
 /** The engines step 1 offers as questions. */
 const QUESTIONS: StatisticalEngine[] = ['binomial_gate', 'one_sample_t', 'judge_stability'];
 /** A check's key on this page: its entry and its label. */
@@ -244,7 +250,7 @@ export class RunStatsComponent {
             label: c.label,
             where: many ? `${en.name} · ${c.test_type}` : c.test_type,
             included: !out,
-            // A check left out comes without its history: nothing to say then, not "No runs yet".
+            // A check left out keeps its history (faded); without one, nothing - not "No runs yet".
             seen: !h
               ? out
                 ? ''
@@ -270,7 +276,7 @@ export class RunStatsComponent {
                     : 'none'
                 : (OUTLOOK_MARK[c.outlook ?? ''] ?? 'none'),
             word: out ? 'Left out of this batch' : c.outlook ? OUTLOOK[c.outlook] : '',
-            line: out ? 'No verdict and no judge call this time.' : (c.outlook_reason ?? ''),
+            line: out ? 'No verdict this time; its history stays.' : (c.outlook_reason ?? ''),
             drives: !out && key === driving,
             size: out
               ? ''
@@ -396,25 +402,78 @@ export class RunStatsComponent {
     return `${reach.length} of these reach ${goal}`;
   });
 
-  /** The sizes worth offering, each with its chance of an answer and what it costs. */
+  /** Running until there's an answer, when the API offers it - not for checks that can't vary. */
+  until = computed(() => {
+    const e = this.estimate();
+    return e?.until_answer && !this.allCertain() ? e.until_answer : null;
+  });
+  /** "Until there's an answer" picked (true), a fixed size (false), or neither yet (null). */
+  private untilPicked = signal<boolean | null>(null);
+  /** Whether the batch runs until there's an answer: picked, or - with no size asked for - the
+   *  default when no fixed size reaches the goal, as the canvas recommends. */
+  untilOn = computed(() => {
+    if (!this.until() || this.apiProblems()['times']) return false;
+    const picked = this.untilPicked();
+    return picked ?? (this.timesText() == null && this.estimate()?.goal_reachable === false);
+  });
+  /** The sizes worth offering, each with its chance of an answer and what it costs - and, when
+   *  it's offered, "until there's an answer" last. */
   sizes = computed(() => {
     const e = this.estimate();
     if (!e) return [];
     const bad = !!this.apiProblems()['times'];
-    return e.suggestions.map((s) => ({
+    const u = this.until();
+    const until = this.untilOn();
+    const per = e.calls;
+    const fixed = e.suggestions.map((s) => ({
+      key: String(s.times),
+      until: false,
       times: s.times,
-      what: sizeWhat(s),
+      title: `${s.times} times`,
+      what: sizeWhat(s, !!u),
       chance: s.chance != null ? chanceText(s.chance) : '?',
       chanceCap: s.chance != null ? 'chance of an answer' : 'unknown yet',
-      app: (s.times * e.calls.application.per_time).toLocaleString('en-US'),
-      judge: (s.times * e.calls.judge.per_time).toLocaleString('en-US'),
-      on: e.times === s.times && !bad,
+      app: (s.times * per.application.per_time).toLocaleString('en-US'),
+      judge: (s.times * per.judge.per_time).toLocaleString('en-US'),
+      on: !until && e.times === s.times && !bad,
     }));
+    if (!u) return fixed;
+    const upTo = (perTime: number) =>
+      perTime ? `up to ${(u.max_times * perTime).toLocaleString('en-US')}` : '0';
+    return [
+      ...fixed,
+      {
+        key: 'until',
+        until: true,
+        times: u.max_times,
+        title: 'Until there’s an answer',
+        what:
+          e.goal_reachable === false
+            ? 'recommended · stops once every check has one'
+            : 'stops once every check has one',
+        chance: chanceText(u.chance_by_max),
+        chanceCap: 'by its limit',
+        app: upTo(per.application.per_time),
+        judge: upTo(per.judge.per_time),
+        on: until,
+      },
+    ];
+  });
+  /** How "until there's an answer" goes, under it when it's picked: its waves, then the API's
+   *  sentence. */
+  untilText = computed(() => {
+    const u = this.until();
+    if (!u) return '';
+    const waves =
+      u.looks.length > 1
+        ? `Runs in waves - ${u.first_wave} times first, then ${u.wave_size} at a time - and stops at the first wave that gives every check an answer.`
+        : `Runs ${u.first_wave} times and stops there.`;
+    return `${waves} ${u.summary}`;
   });
   /** A size typed by hand, not one of the suggestions. */
   otherSize = computed(() => {
     const e = this.estimate();
-    return !!e && !e.suggestions.some((s) => s.times === e.times);
+    return !!e && !this.untilOn() && !e.suggestions.some((s) => s.times === e.times);
   });
   /** The suggestion the estimate is for, when it's one. */
   private pickedSize = computed(() => {
@@ -470,51 +529,105 @@ export class RunStatsComponent {
       judge: e.calls.judge.per_time,
     };
   });
-  /** How the batch would most likely end at the picked size. */
+  /** How the batch would most likely end at the picked size - or, until there's an answer, where
+   *  it would most likely stop and how, with the suggested fixed size's ending beside it. */
   outcome = computed(() => {
     const e = this.estimate();
     if (!e || e.goal == null) return null;
     const p = this.pickedSize();
+    const u = this.until();
+    const left = this.leftLine();
+    if (this.untilOn() && u) {
+      const alt = p?.outcome
+        ? this.verdicts(
+            p.outcome,
+            p.likely_undecided,
+            `At the suggested fixed size, ${p.times} times, it would most likely say`,
+          )
+        : null;
+      const o = u.outcome;
+      if (!o) return { text: u.summary + left, bars: [], alt: null };
+      const stops =
+        u.usual_times != null
+          ? `it most likely stops by ${u.usual_times} times with every check answered`
+          : `it most likely runs to its limit of ${u.max_times} times`;
+      const undecided = !this.manyChecks()
+        ? 'it ends Inconclusive'
+        : u.likely_undecided
+          ? `the checks still undecided, most likely ${this.names()(u.likely_undecided)}, end Inconclusive`
+          : 'the checks still undecided end Inconclusive';
+      return {
+        text:
+          `If the checks keep behaving as before, ${stops} - Passed ${chanceText(o.passed)}, ` +
+          `Failed ${chanceText(o.failed)}. If it reaches its limit first, ${undecided} ` +
+          `(${chanceText(o.inconclusive)}).${left}`,
+        bars: this.bars(o),
+        alt,
+      };
+    }
     if (e.goal_reachable == null && !p?.outcome)
       return {
         text: e.trial
           ? `Unknown until these checks have run. The trial’s ${e.trial.times} runs tell this page how they behave; they give no verdict.`
           : "Unknown until these checks have run: Assay hasn't seen them yet.",
         bars: [],
+        alt: null,
       };
     if (!p)
       return {
         text: 'Pick one of the sizes above to see how the batch would most likely end.',
         bars: [],
+        alt: null,
       };
     if (!p.outcome)
       return {
         text: "Every check will get an answer; which one, Assay can't tell until it has run.",
         bars: [],
+        alt: null,
       };
-    const o = p.outcome;
-    const parts = [
+    const v = this.verdicts(
+      p.outcome,
+      p.likely_undecided,
+      'If the checks keep behaving as before, this batch will most likely say',
+    );
+    return { text: v.text + left, bars: v.bars, alt: null };
+  });
+  /** More than one check gets a verdict: only then is naming the likely undecided one news. */
+  private manyChecks = computed(
+    () =>
+      (this.estimate()?.entries ?? []).flatMap((en) => en.checks.filter((c) => c.applies)).length >
+      1,
+  );
+  /** "Contains and ROUGE get no verdict." after the outcome, when checks are left out. */
+  private leftLine = computed(() => {
+    const out = this.leaveOut().map(this.names());
+    return out.length ? ` ${listed(out)} get${out.length === 1 ? 's' : ''} no verdict.` : '';
+  });
+  private bars(o: OutcomeSplit) {
+    return [
       { word: 'Passed', v: o.passed, cls: 'o-p' },
       { word: 'Inconclusive', v: o.inconclusive, cls: 'o-n' },
       { word: 'Failed', v: o.failed, cls: 'o-f' },
+    ].map((x) => ({ cls: x.cls, w: x.v * 100, label: `${x.word} ${chanceText(x.v)}` }));
+  }
+  /** A fixed size's ending in words, after `lead`: "…most likely say Failed (99%). Otherwise
+   *  Inconclusive (1%). Passed is very unlikely. If it ends Inconclusive, Contains is the check
+   *  most likely left undecided." - "certainly" when one verdict is sure. */
+  private verdicts(o: OutcomeSplit, likelyUndecided: CheckRef | null | undefined, lead: string) {
+    const parts = [
+      { word: 'Passed', v: o.passed },
+      { word: 'Inconclusive', v: o.inconclusive },
+      { word: 'Failed', v: o.failed },
     ];
-    const bars = parts.map((x) => ({
-      cls: x.cls,
-      w: x.v * 100,
-      label: `${x.word} ${chanceText(x.v)}`,
-    }));
+    const bars = this.bars(o);
     const [first, ...rest] = [...parts].sort((a, b) => b.v - a.v);
-    const out = this.leaveOut().map(this.names());
-    const left = out.length ? ` ${listed(out)} get${out.length === 1 ? 's' : ''} no verdict.` : '';
     if (first.v >= 1)
       return {
-        text: `This batch will say ${first.word} - certainly.${this.allCertain() ? ' One run would say the same.' : ''}${left}`,
+        text: `This batch will say ${first.word} - certainly.${this.allCertain() ? ' One run would say the same.' : ''}`,
         bars: bars
           .filter((b) => b.w > 0)
           .map((b) => ({ ...b, label: `${b.label.split(' ')[0]} - certain` })),
       };
-    // The other verdicts: "Otherwise Inconclusive (10%) or, rarely, Failed (1%)." - and the ones
-    // that round to nothing, "Failed is very unlikely."
     const said = (x: (typeof parts)[number]) => `${x.word} (${chanceText(x.v)})`;
     const likely = rest.filter((x) => x.v >= 0.005);
     const unlikely = rest.filter((x) => x.v < 0.005).map((x) => x.word);
@@ -525,13 +638,15 @@ export class RunStatsComponent {
       ? ` ${listed(unlikely)} ${unlikely.length === 1 ? 'is' : 'are'} very unlikely.`
       : '';
     const undecided =
-      p.likely_undecided && o.inconclusive >= 0.005
-        ? ` If it ends Inconclusive, ${this.names()(p.likely_undecided)} is the check most likely left undecided.`
+      likelyUndecided && o.inconclusive >= 0.005 && this.manyChecks()
+        ? ` If it ends Inconclusive, ${this.names()(likelyUndecided)} is the check most likely left undecided.`
         : '';
-    return {
-      text: `If the checks keep behaving as before, this batch will most likely say ${said(first)}.${otherwise}${never}${undecided}${left}`,
-      bars,
-    };
+    return { text: `${lead} ${said(first)}.${otherwise}${never}${undecided}`, bars };
+  }
+  /** The outcome step's lead: the size it's for. */
+  outLead = computed(() => {
+    const e = this.estimate();
+    return this.untilOn() ? 'Until there’s an answer' : e ? `At ${e.times} times` : '';
   });
   /** The checks that get no verdict for another reason than being left out, with why. */
   skipped = computed(() =>
@@ -544,7 +659,7 @@ export class RunStatsComponent {
   /** What each verdict will take at this size, in words. */
   takes = computed(() => {
     const e = this.estimate();
-    if (!e) return null;
+    if (!e || this.untilOn()) return null;
     const r = e.rule;
     const notRan =
       ' A run that is Not Ran doesn’t count: the rule applies to the times that were evaluated.';
@@ -566,6 +681,16 @@ export class RunStatsComponent {
     const e = this.estimate();
     if (!e) return '';
     const per = e.runs_per_time;
+    const u = this.until();
+    if (this.untilOn() && u) {
+      const app = u.max_times * e.calls.application.per_time;
+      const judge = u.max_times * e.calls.judge.per_time;
+      return (
+        `Until there’s an answer · at most ${u.max_times} times${per > 1 ? ` × ${per} entries` : ''} · ` +
+        `up to ${app.toLocaleString('en-US')} application calls · ` +
+        (judge ? `up to ${judge.toLocaleString('en-US')} judge calls` : 'no judge calls')
+      );
+    }
     const judge = e.calls.judge.total;
     return (
       `${e.times} times${per > 1 ? ` × ${per} entries` : ''} · ` +
@@ -591,6 +716,7 @@ export class RunStatsComponent {
     if (this.starting()) return 'Starting…';
     const e = this.estimate();
     if (this.trial()) return 'Start without a trial';
+    if (this.untilOn()) return 'Start - until there’s an answer';
     return e && !this.blockers().length
       ? `Start ${e.runs_total.toLocaleString('en-US')} runs`
       : 'Start';
@@ -638,10 +764,15 @@ export class RunStatsComponent {
       const t = p ? this.store.byId().get(p.statistical_test) : undefined;
       // After a trial, the batch it was for: the default question and size.
       if (!p || !t || t.engine === 'trial') return;
+      // Until there's an answer: its fixed question, with "until there's an answer" picked.
+      const fixed = SEQUENTIAL[t.engine];
+      const q = fixed ? this.store.batchTests().find((x) => x.engine === fixed) : t;
+      if (!q) return;
       untracked(() => {
-        this.picked.set(p.statistical_test);
-        this.typed.update((all) => ({ ...all, ...typedFrom(t, p.parameters) }));
-        this.timesText.set(String(p.times));
+        this.picked.set(q.id);
+        this.typed.update((all) => ({ ...all, ...typedFrom(q, p.parameters) }));
+        this.timesText.set(fixed ? null : String(p.times));
+        this.untilPicked.set(fixed ? true : null);
         this.targets.set(p.targets ?? []);
         this.leaveOut.set(p.leave_out ?? []);
       });
@@ -688,11 +819,19 @@ export class RunStatsComponent {
   }
   /** One of the suggested sizes. */
   pickSize(times: number) {
+    this.untilPicked.set(false);
     this.customText.set('');
     this.timesText.set(String(times));
   }
   /** "Another size", typed; empty goes back to the default. */
+  /** Run until there's an answer: the fixed size goes back to the default, for the chart. */
+  pickUntil() {
+    this.untilPicked.set(true);
+    this.customText.set('');
+    this.timesText.set(null);
+  }
   typeTimes(text: string) {
+    this.untilPicked.set(text.trim() ? false : null);
     this.customText.set(text);
     this.timesText.set(text.trim() ? text : null);
   }
@@ -723,6 +862,7 @@ export class RunStatsComponent {
   }
   /** After a change to what's asked, the size is the new default again. */
   private backToDefault() {
+    this.untilPicked.set(null);
     this.timesText.set(null);
     this.customText.set('');
   }
@@ -792,7 +932,12 @@ export class RunStatsComponent {
     const e = this.estimate();
     const req = this.request();
     if (!e || !req || this.primaryDisabled()) return;
-    this.create({ ...req, times: e.times });
+    const u = this.until();
+    this.create(
+      this.untilOn() && u
+        ? { ...req, statistical_test: u.statistical_test, times: u.max_times }
+        : { ...req, times: e.times },
+    );
   }
   /** The trial first: its own test and size, the same checks left out. */
   runTrial() {

@@ -19,6 +19,7 @@ import {
   scopeLink,
   scopePlace,
   scopeRef,
+  timesRun,
   timesText,
 } from './stats-format';
 
@@ -37,6 +38,7 @@ const OUTCOME_LINE: Record<string, string> = {
   Failed: 'One check that falls short fails the batch.',
   Inconclusive: 'Every run finished, but there weren’t enough runs to tell either way.',
   NotRan: 'No check could be decided: every run Not Ran, or every check errored.',
+  Done: 'A trial: it shows how each check behaves, and gives no verdict.',
 };
 
 const verdictKey = (c: CheckResult) => c.statistic?.verdict ?? 'none';
@@ -92,6 +94,7 @@ export class BatchComponent {
   dlg = signal<null | 'compare'>(null);
 
   status = computed(() => this.batch()?.status ?? null);
+  timesRun = timesRun;
   inFlight = computed(() => isInFlight(this.status()));
   scope = computed(() => this.batch()?.scope ?? null);
   place = computed(() => {
@@ -109,6 +112,12 @@ export class BatchComponent {
     if (!b) return '';
     const p = b.progress;
     if (b.status === 'Pending') return 'Pending: waiting for a worker to start.';
+    const w = p.waves;
+    // Until there's an answer: between two waves nothing runs while it looks at the results.
+    if (b.status === 'Running' && w && !w.closed && !p.runs.Pending && !p.runs.Running)
+      return `Running: looking at wave ${w.released}'s results - another wave only if a check still has no answer.`;
+    if (b.status === 'Running' && w)
+      return `Running: wave ${w.released} of up to ${w.planned} - ${p.times_done} of up to ${p.times_requested} times done.`;
     if (b.status === 'Running')
       return `Running: ${p.times_done} of ${p.times_requested} times done.`;
     return b.summary ?? b.result?.summary ?? markLabel(b.status);
@@ -135,7 +144,7 @@ export class BatchComponent {
       running = p.runs.Running ?? 0;
     return {
       donePct: p.times_requested ? (p.times_done / p.times_requested) * 100 : 0,
-      times: `${p.times_done} of ${p.times_requested} times`,
+      times: `${p.times_done} of ${p.waves ? 'up to ' : ''}${p.times_requested} times`,
       runs: `${p.runs_done - p.runs_cancelled} of ${p.runs_total} runs done · ${running} running · ${pending} pending`,
       spent: app.finished + app.in_flight + judge.finished + judge.in_flight,
       spentLine:
@@ -144,7 +153,7 @@ export class BatchComponent {
             ` · ${app.in_flight + judge.in_flight} in flight · ${app.planned + judge.planned} planned`
           : 'Nothing to pay for: recorded answers and no judge checks.',
       stopLine:
-        `The ${pending} pending run${pending === 1 ? '' : 's'} won’t run.` +
+        `The ${pending} pending run${pending === 1 ? '' : 's'} won’t run${p.waves ? ', and no more waves' : ''}.` +
         (running
           ? ` The ${running} running finish${running === 1 ? 'es' : ''}: already paid for.`
           : ''),
@@ -166,8 +175,10 @@ export class BatchComponent {
     return {
       line:
         b.status === 'Incomplete'
-          ? `Stopped at ${p.times_requested - p.times_cancelled} of ${p.times_requested} times.`
-          : (OUTCOME_LINE[b.status] ?? ''),
+          ? `Stopped at ${timesRun(p)} of ${p.waves ? 'up to ' : ''}${p.times_requested} times.`
+          : p.waves?.stopped_early
+            ? `${OUTCOME_LINE[b.status] ?? ''} Every check had its answer by ${timesRun(p)} of up to ${p.times_requested} times, so it stopped there.`.trim()
+            : (OUTCOME_LINE[b.status] ?? ''),
       stack: ['fail', 'inconclusive', 'none', 'pass']
         .filter((k) => v[k])
         .map((k) => ({ key: k, n: v[k] })),
@@ -419,7 +430,7 @@ export class BatchComponent {
           ? `The verdict was decided on this range (${pct(interval.level)} sure).`
           : null,
       rule: s?.rule
-        ? `At ${s.rule.times} times: ${ruleText(s.rule, b.engine === 'judge_stability' ? 'in agreement' : 'met')}`
+        ? `At ${s.rule.times} times: ${ruleText(s.rule, b.engine === 'judge_stability' || b.engine === 'sequential_judge_stability' ? 'in agreement' : 'met')}`
         : null,
       misses: misses.map((p) => ({ index: p.index, link: runLink(b.scope, p, e.test_id) })),
       errors: errors.length

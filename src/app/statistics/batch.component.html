@@ -178,7 +178,7 @@
             </div>
           }
         </div>
-        <span class="label">The {{ b.progress.times_requested }} times</span>
+        <span class="label">The {{ timesRun(b.progress) }} times</span>
         <span class="label">Verdict</span>
       </div>
       @for (e of entries(); track e.key) {

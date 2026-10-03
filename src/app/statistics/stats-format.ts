@@ -104,14 +104,16 @@ export const failuresText = (n: number) =>
   n === 0 ? 'no failure allowed' : n === 1 ? 'one failure allowed' : `${n} failures allowed`;
 
 /** What a suggested size is for, under its number: from its kind, or the API's own caption (less
- *  its leading "29 times · ") for a kind this doesn't word. */
-export function sizeWhat(s: SizeSuggestion): string {
+ *  its leading "29 times · ") for a kind this doesn't word. `fixed` when "until there's an answer"
+ *  is offered beside it: "the suggested fixed size", "the best any fixed size gets". */
+export function sizeWhat(s: SizeSuggestion, fixed = false): string {
   const fails = s.failures_allowed != null ? failuresText(s.failures_allowed) : null;
+  const size = fixed ? 'fixed size' : 'size';
   const own: Partial<Record<SizeSuggestion['kind'], string>> = {
     floor: 'the minimum',
     reaches_goal: 'reaches the goal',
-    worth_its_cost: 'the suggested size: within 5 points of the best',
-    best_chance: 'the best any size gets',
+    worth_its_cost: `the suggested ${size}: within 5 points of the best`,
+    best_chance: `the best any ${size} gets`,
   };
   const what = own[s.kind] ?? s.label.replace(/^\d+ times? · /, '');
   return own[s.kind] && fails ? `${what} · ${fails}` : what;
@@ -129,6 +131,10 @@ export function question(
       return `Passes at least ${often(params['target'])}?`;
     case 'judge_stability':
       return `Does the judge agree with itself at least ${often(params['target'])}?`;
+    case 'sequential_gate':
+      return `Passes at least ${often(params['target'])}? Until there's an answer`;
+    case 'sequential_judge_stability':
+      return `Does the judge agree with itself at least ${often(params['target'])}? Until there's an answer`;
     case 'one_sample_t':
       return 'Is the average score on the passing side of the threshold?';
     default:
@@ -136,10 +142,23 @@ export function question(
   }
 }
 
-/** "29 times", or how far a stopped batch got: "stopped at 12 of 29 times". */
+/** The times a batch ran, or is running - for one that runs until there's an answer, up to the
+ *  end of its last wave released (`times_requested` is its maximum). */
+export function timesRun(p: BatchSummary['progress']): number {
+  const w = p.waves;
+  return (w ? (w.looks[w.released - 1] ?? 0) : p.times_requested) - p.times_cancelled;
+}
+
+/** "29 times", or how far a stopped batch got: "stopped at 12 of 29 times"; until there's an
+ *  answer, "up to 750 times" while it runs, then "143 of up to 750 times". */
 export function timesText(b: Pick<BatchSummary, 'status' | 'progress'>): string {
   const p = b.progress;
-  const ran = p.times_requested - p.times_cancelled;
+  const ran = timesRun(p);
+  if (p.waves) {
+    const max = p.times_requested;
+    if (b.status === 'Incomplete') return `stopped at ${ran} of up to ${max} times`;
+    return p.waves.closed ? `${ran} of up to ${max} times` : `up to ${max} times`;
+  }
   return b.status === 'Incomplete'
     ? `stopped at ${ran} of ${p.times_requested} times`
     : `${p.times_requested} time${p.times_requested === 1 ? '' : 's'}`;

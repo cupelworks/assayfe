@@ -50,7 +50,7 @@ export class StatsPanelComponent {
         size: timesText(b),
         running: isInFlight(b.status),
         donePct: p.times_requested ? Math.round((p.times_done / p.times_requested) * 100) : 0,
-        progressLine: `${p.times_done} of ${p.times_requested} times done · ${p.runs_done} of ${p.runs_total} runs`,
+        progressLine: `${p.times_done} of ${p.waves ? 'up to ' : ''}${p.times_requested} times done · ${p.runs_done} of ${p.runs_total} runs`,
         squares: verdicts
           ? VERDICT_ORDER.flatMap((v) => Array.from({ length: verdicts[v] ?? 0 }, () => v))
           : [],

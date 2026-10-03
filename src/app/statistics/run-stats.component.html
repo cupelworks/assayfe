@@ -130,6 +130,8 @@
                 <span class="ow">
                   @if (r.mark) {
                     <assay-mark [of]="r.mark" size="md" />
+                  } @else if (!r.included) {
+                    <i class="mk-left" aria-hidden="true"></i>
                   }
                   {{ r.word }}</span
                 >
@@ -227,11 +229,16 @@
         </div>
         <div class="sizes" [class.no-chart]="!chart()">
           <div role="radiogroup" aria-labelledby="sp-n">
-            @for (s of sizes(); track s.times; let first = $first) {
+            @for (s of sizes(); track s.key; let first = $first) {
               <label class="so" [class.on]="s.on" [class.first]="first">
-                <input type="radio" name="sp-size" [checked]="s.on" (change)="pickSize(s.times)" />
+                <input
+                  type="radio"
+                  name="sp-size"
+                  [checked]="s.on"
+                  (change)="s.until ? pickUntil() : pickSize(s.times)"
+                />
                 <span class="what"
-                  ><span class="st2">{{ s.times }} times</span
+                  ><span class="st2">{{ s.title }}</span
                   ><span class="small">{{ s.what }}</span></span
                 >
                 <span class="ch"
@@ -241,6 +248,9 @@
                 <span class="calls"
                   ><b>{{ s.app }}</b> application<br /><b>{{ s.judge }}</b> judge calls</span
                 >
+                @if (s.until && s.on) {
+                  <span class="until">{{ untilText() }}</span>
+                }
               </label>
             }
             <label class="so" [class.on]="otherSize()" for="sp-times">
@@ -278,13 +288,15 @@
         </div>
         @if (timesIssue() ?? apiProblems()['times']; as issue) {
           <div class="err">{{ issue }}</div>
-        } @else {
+        } @else if (!untilOn()) {
           <div class="hint-line">{{ e.floor_explanation }}</div>
         }
-        <div class="takes">
-          <div class="label">What it takes</div>
-          {{ takes() }}
-        </div>
+        @if (takes(); as t) {
+          <div class="takes">
+            <div class="label">What it takes</div>
+            {{ t }}
+          </div>
+        }
       </section>
 
       @if (outcome(); as o) {
@@ -292,7 +304,7 @@
           <div class="sh">
             <span class="sn">{{ nSizes() + 1 }}</span
             ><span class="st">What will probably happen</span
-            ><span class="ss">At {{ e.times }} times</span>
+            ><span class="ss">{{ outLead() }}</span>
           </div>
           <p class="oc">{{ o.text }}</p>
           @if (o.bars.length) {
@@ -304,6 +316,15 @@
             <div class="legend">
               @for (b of o.bars; track b.cls) {
                 <span><i [class]="b.cls"></i>{{ b.label }}</span>
+              }
+            </div>
+          }
+          <!-- Until there's an answer: the suggested fixed size's ending, to weigh it against. -->
+          @if (o.alt; as a) {
+            <p class="oc alt">{{ a.text }}</p>
+            <div class="bar thin" role="img" [attr.aria-label]="a.text">
+              @for (b of a.bars; track b.cls) {
+                <i [class]="b.cls" [style.width.%]="b.w"></i>
               }
             </div>
           }
