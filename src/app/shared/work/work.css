@@ -179,6 +179,27 @@ assay-catalog-table.list {
 .muted {
   color: var(--color-neutral-600);
 }
+.when {
+  white-space: nowrap;
+}
+/* A thing's name in a cell, a link to its page - a run's test (Runs, a set's run): as a row's
+   own name is set. */
+.cell-nm {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: var(--color-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+a.cell-nm:hover {
+  color: var(--color-accent);
+}
+a.cell-nm:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
 .clamp {
   display: -webkit-box;
   -webkit-line-clamp: 2;

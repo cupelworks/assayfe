@@ -60,6 +60,13 @@ export const statusLabel = (s?: string) => STATUS.find((x) => x.key === s)?.labe
 /** Pending or Running - a run that hasn't settled yet, i.e. one a page still has to wait (poll)
  *  for. The one place this pair of statuses is spelled out. */
 export const isInFlight = (s?: string | null) => s === 'Pending' || s === 'Running';
+/** A run's statuses as the Guide groups them: how it ended, then what is still under way - the
+ *  Overview's tallies and Runs' tiles. */
+export const RUNS_ENDED = ['Green', 'Amber', 'Red', 'NotRan'];
+export const UNDER_WAY = ['Running', 'Pending'];
+/** "Contains", "Contains and Exact Match", "BLEU, ROUGE and METEOR": names in a sentence. */
+export const listed = (xs: readonly string[]) =>
+  xs.length < 2 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`;
 export function countByStatus(runs: { status: TestStatus }[]) {
   return STATUS.map((s) => ({ ...s, value: runs.filter((r) => r.status === s.key).length }));
 }

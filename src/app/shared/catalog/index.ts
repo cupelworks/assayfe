@@ -8,7 +8,11 @@ import { CatalogTableComponent } from './catalog-table.component';
 import { CatalogTagComponent } from './catalog-tag.component';
 
 export type { CatalogColumn } from './catalog-table.component';
-export type { CatalogIndexItem, CatalogIndexLink } from './catalog-index.component';
+export type {
+  CatalogIndexGroup,
+  CatalogIndexItem,
+  CatalogIndexLink,
+} from './catalog-index.component';
 export type { CatalogKeyItem } from './catalog-key.component';
 export type { CatalogTag } from './catalog-tag.component';
 

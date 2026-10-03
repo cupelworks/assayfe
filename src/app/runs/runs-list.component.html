@@ -1,79 +1,71 @@
-<div class="crumbs">
-  <a routerLink="/">Overview</a><span>/</span><span class="cur">{{ title() }}</span>
-</div>
-<div class="hero">
-  <div>
-    <div class="kicker">Runs</div>
-    <h1>{{ title() }}</h1>
-  </div>
-</div>
+<div class="g-wrap">
+  <assay-guide-head
+    kicker="Work"
+    title="Runs"
+    lede="Every run started one at a time: a test on its own, or a set or a plan, a test at a time. A statistics batch's runs are on the batch's page."
+  >
+    <assay-catalog-index
+      label="Show only one status"
+      [items]="tiles()"
+      [groups]="tileGroups"
+      [across]="6"
+      [selected]="status() ?? null"
+      (selectedChange)="pickTile($event)"
+    />
+  </assay-guide-head>
 
-<section class="cell">
-  <div class="chips">
-    @for (o of origins; track o) {
-      <button type="button" class="chip-btn" (click)="toggleOrigin(o)">
-        <span
-          class="tag"
-          [class.tag-accent]="origin() === o"
-          [class.tag-outline]="origin() !== o"
-          >{{ originLabel(o) }}</span
-        >
-      </button>
-    }
-  </div>
-  <p class="small batch-note">
-    The runs of a statistics batch aren’t listed here: they’re on the batch’s page.
-  </p>
-  <table class="table">
-    <colgroup>
-      <col style="width: 140px" />
-      <col />
-      <col style="width: 120px" />
-      <col style="width: 120px" />
-      <col style="width: 140px" />
-    </colgroup>
-    <thead>
-      <tr>
-        <th>Status</th>
-        <th>Name</th>
-        <th>Origin</th>
-        <th>Run</th>
-        <th class="sortable" (click)="sort.toggle()">
-          Created<span class="sort-arrow">{{ sort.dir() === 'desc' ? ' ↓' : ' ↑' }}</span>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (r of sortedRuns(); track r.id) {
-        <tr>
-          <td>
-            <span class="st"
-              ><span class="dot" [style.background]="statusColor(r.status)"></span
-              >{{ statusLabel(r.status) }}</span
-            >
-          </td>
-          <td class="strong">
-            @if (runLink(r); as link) {
-              <a class="plain" [routerLink]="link">{{ names()[r.id] ?? '…' }}</a>
+  <assay-smart-filter
+    label="Filter the runs"
+    placeholder="Tests, sets, plans - or type status, from, check…"
+    [facets]="facets()"
+    [shown]="shownText()"
+    [sortOptions]="sortOptions"
+    [(query)]="filter.query"
+    [(words)]="filter.kept"
+    [chosen]="choice()"
+    (chosenChange)="choose($event)"
+    [(sort)]="sort"
+  />
+
+  <assay-catalog-table class="list" label="Runs" [columns]="columns" [empty]="emptyText()">
+    @for (v of view(); track v.r.id) {
+      <assay-catalog-row
+        [name]="statusLabel(v.r.status)"
+        [mark]="v.r.status"
+        [link]="v.link"
+        [linkLabel]="v.label"
+        [expandable]="false"
+      >
+        <assay-catalog-cell caption="Test">
+          @if (v.read; as x) {
+            @if (x.testId) {
+              <a class="cell-nm" [routerLink]="['/tests', x.testId]">{{ x.name }}</a>
             } @else {
-              {{ names()[r.id] ?? '…' }}
+              <span class="cell-nm">{{ x.name }}</span>
             }
-          </td>
-          <td class="muted">{{ originLabel(r.origin) }}</td>
-          <td class="small"><assay-copy-button [value]="r.id" [label]="short(r.id)" /></td>
-          <td class="muted"><assay-rel-time [iso]="r.created_at" /></td>
-        </tr>
-      } @empty {
-        @if (!page.loading()) {
-          <tr>
-            <td colspan="5" class="empty">
-              No {{ status() || origin() ? 'matching ' : '' }}runs yet.
-            </td>
-          </tr>
-        }
-      }
-    </tbody>
-  </table>
+          } @else {
+            <span class="muted">{{ v.failed ? "Couldn't be read." : '…' }}</span>
+          }
+        </assay-catalog-cell>
+        <assay-catalog-cell caption="From">
+          @if (v.scope; as s) {
+            <span class="from"
+              ><span class="k">{{ s.kind }}</span
+              ><a [routerLink]="s.link">{{ s.name }}</a></span
+            >
+          } @else {
+            <span class="muted">On its own</span>
+          }
+        </assay-catalog-cell>
+        <assay-catalog-cell caption="Its checks">
+          <assay-checks-met [checks]="v.read?.checks ?? null" [failed]="v.failed" />
+        </assay-catalog-cell>
+        <assay-catalog-cell caption="When"
+          ><span class="when"><assay-rel-time [iso]="v.r.created_at" /></span
+        ></assay-catalog-cell>
+      </assay-catalog-row>
+    }
+  </assay-catalog-table>
   <assay-pager
     [total]="page.total()"
     [offset]="page.offset()"
@@ -81,4 +73,4 @@
     (offsetChange)="page.go($event)"
     (limitChange)="page.size($event)"
   />
-</section>
+</div>

@@ -1,3 +1,4 @@
+import { RUNS_ENDED, UNDER_WAY } from '../shared/format';
 import { TallyPart, TallyRow } from '../shared/status-tally.component';
 
 /** How many rows each of the Overview's sections shows: the latest 5. */
@@ -9,8 +10,7 @@ export const BATCH_SAMPLE = 100;
  *  statuses. Each verdict sits level with the run status it matches (Passed with Green, Failed with
  *  Red, Not Ran with Not Ran). */
 export const VERDICTS_ENDED = ['Passed', 'Inconclusive', 'Failed', 'NotRan'];
-export const RUNS_ENDED = ['Green', 'Amber', 'Red', 'NotRan'];
-const UNDER_WAY = ['Running', 'Pending'];
+export { RUNS_ENDED };
 
 /**
  * A summary's tally of statuses: each status in `ended`, then Running and Pending, counted in

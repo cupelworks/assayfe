@@ -1,4 +1,4 @@
-import { Component, input, model } from '@angular/core';
+import { Component, computed, input, model } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { StatusMarkComponent } from '../status-mark.component';
 
@@ -14,6 +14,11 @@ export interface CatalogIndexItem {
   count: number;
   blurb: string;
 }
+/** A caption over the next `count` tiles: Runs' "How it ended" over four, "While it runs" over two. */
+export interface CatalogIndexGroup {
+  label: string;
+  count: number;
+}
 /** A last tile that leads to another page instead ("How to read the charts"). */
 export interface CatalogIndexLink {
   label: string;
@@ -28,6 +33,8 @@ export interface CatalogIndexLink {
  * only its section (`selected`, two-way); clicked again, everything again. The selected tile's
  * rule turns thick and red. A tile with none can't be chosen ("None to show"). An optional last
  * tile leads to another page; an optional `note` under the tiles says where the counts come from.
+ * Optional `groups` caption the tiles in runs - on a line of their own above them, as the
+ * Overview groups the statuses; on a phone each caption heads its own tiles.
  */
 @Component({
   selector: 'assay-catalog-index',
@@ -36,11 +43,15 @@ export interface CatalogIndexLink {
   host: {
     role: 'navigation',
     '[attr.aria-label]': 'label()',
+    '[class.grouped]': 'groups().length > 0',
     '[style.--across]': 'across()',
     '[style.--phone-across]': 'across() >= 4 ? 2 : 1',
   },
   template: `
     @for (i of items(); track i.key) {
+      @if (groupAt().get($index); as g) {
+        <span class="grp" [style.--grp-col]="g.col">{{ g.label }}</span>
+      }
       @let on = selected() === i.key;
       @let none = i.count === 0;
       <button
@@ -182,6 +193,23 @@ export interface CatalogIndexLink {
       outline: 2px solid var(--color-accent);
       outline-offset: 4px;
     }
+    /* A group's caption, on the line above its tiles, over as many columns as it has tiles. */
+    .grp {
+      grid-column: var(--grp-col);
+      grid-row: 1;
+      padding-bottom: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-neutral-600);
+    }
+    :host(.grouped) .tile {
+      grid-row: 2;
+    }
+    :host(.grouped) .note {
+      grid-row: 3;
+    }
     @media (max-width: 960px) {
       :host {
         grid-template-columns: repeat(var(--phone-across, 1), minmax(0, 1fr));
@@ -190,6 +218,19 @@ export interface CatalogIndexLink {
       }
       .ct {
         font-size: 44px;
+      }
+      /* Each caption heads its own tiles, across the phone's line. */
+      .grp {
+        grid-column: 1 / -1;
+        grid-row: auto;
+        padding-bottom: 0;
+      }
+      .grp:not(:first-child) {
+        margin-top: 16px;
+      }
+      :host(.grouped) .tile,
+      :host(.grouped) .note {
+        grid-row: auto;
       }
     }
   `,
@@ -206,4 +247,16 @@ export class CatalogIndexComponent {
   across = input(3);
   /** Under the tiles, small: where the counts come from, when they're a sample. */
   note = input<string | null>(null);
+  /** Captions over the tiles, in order - each over the next `count` (all on one line). */
+  groups = input<CatalogIndexGroup[]>([]);
+  /** Each caption by the index of its first tile, with the columns it spans. */
+  groupAt = computed(() => {
+    const at = new Map<number, { label: string; col: string }>();
+    let start = 0;
+    for (const g of this.groups()) {
+      at.set(start, { label: g.label, col: `${start + 1} / span ${g.count}` });
+      start += g.count;
+    }
+    return at;
+  });
 }

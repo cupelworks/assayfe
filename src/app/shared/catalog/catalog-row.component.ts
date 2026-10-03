@@ -41,7 +41,7 @@ import { StatusMarkComponent } from '../status-mark.component';
           <assay-mark [of]="m" />
         }
         @if (link(); as l) {
-          <a class="nm" [routerLink]="l">{{ name() }}</a>
+          <a class="nm" [routerLink]="l" [attr.aria-label]="linkLabel()">{{ name() }}</a>
         } @else {
           <span class="nm">{{ name() }}</span>
         }
@@ -175,6 +175,9 @@ export class CatalogRowComponent {
   mark = input<string | null>(null);
   /** Where the name leads (the Overview's rows: a batch, an execution, a comparison); none: text. */
   link = input<unknown[] | null>(null);
+  /** What the link says to a screen reader, when the name alone doesn't ("Green" - a run's
+   *  status: "Open the run: Green, Password Reset Instructions"). */
+  linkLabel = input<string | null>(null);
   tags = input<CatalogTag[]>([]);
   /** A note the user wrote, quoted under the tags (a batch's). */
   note = input<string | null>(null);
