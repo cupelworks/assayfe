@@ -11,33 +11,6 @@
 assay-pager {
   grid-column: 1 / -1;
 }
-/* In a dialog: a caption over what it acts on, and a quoted answer. */
-.dcap {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-neutral-600);
-}
-.quote {
-  margin: 0;
-  padding: 2px 0 2px 14px;
-  border-left: 2px solid color-mix(in srgb, var(--color-text) 25%, transparent);
-  font-size: 15px;
-  line-height: 1.5;
-  color: var(--color-neutral-900);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-/* A section's own find line (a dataset's rows): across its body, over its table. */
-assay-smart-filter.rows-find {
-  grid-column: 1 / -1;
-  margin-bottom: 24px;
-  padding-top: 0;
-  border-top: 0;
-}
 /* A work list's table, under its filter. */
 assay-catalog-table.list {
   margin-top: 32px;

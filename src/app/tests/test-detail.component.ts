@@ -75,6 +75,7 @@ const sameAs = (t: TestCase, e: TestSetEntry) =>
     '../shared/guide/guide.css',
     '../shared/guide/head-aside.css',
     '../shared/work/work.css',
+    './test-detail.component.css',
   ],
 })
 export class TestDetailComponent {

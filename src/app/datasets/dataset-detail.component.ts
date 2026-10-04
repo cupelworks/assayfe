@@ -60,6 +60,7 @@ type Dlg =
     '../shared/guide/guide.css',
     '../shared/guide/head-aside.css',
     '../shared/work/work.css',
+    './dataset-detail.component.css',
   ],
 })
 export class DatasetDetailComponent {
