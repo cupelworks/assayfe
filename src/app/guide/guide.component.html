@@ -14,9 +14,7 @@
       </p>
       <div class="chain">
         <div class="blk">
-          <h3>
-            Dataset<span class="to" aria-hidden="true"><i></i><b></b></span>
-          </h3>
+          <h3>Dataset<assay-guide-arrow class="to" /></h3>
           <p>
             A named collection of prompt / expected-output / model-output rows, usually imported
             from a <code>.jsonl</code> file. Source material for bulk test creation - never run
@@ -24,9 +22,7 @@
           </p>
         </div>
         <div class="blk">
-          <h3>
-            Test<span class="to" aria-hidden="true"><i></i><b></b></span>
-          </h3>
+          <h3>Test<assay-guide-arrow class="to" /></h3>
           <p>
             A live, always-editable input, an optional expected output, an optional recorded model
             output, and a set of assigned test types. Leave the model output empty and a run asks
@@ -34,9 +30,7 @@
           </p>
         </div>
         <div class="blk">
-          <h3>
-            Test set<span class="to" aria-hidden="true"><i></i><b></b></span>
-          </h3>
+          <h3>Test set<assay-guide-arrow class="to" /></h3>
           <p>
             A named collection of frozen test snapshots ("entries"). Adding a test copies its
             current state in - the set never re-syncs with the live test afterward.
@@ -214,13 +208,7 @@
             </p>
           </div>
           <div>
-            <div class="flow">
-              <span class="node">Test</span>
-              <span class="edge"
-                ><span class="lb">Run standalone</span><span class="ln"><i></i><b></b></span
-              ></span>
-              <span class="node">Run</span>
-            </div>
+            <assay-guide-flow [path]="flows.quick" />
             <p class="after">
               Reads the test at the instant it runs and keeps its own record of it from that moment
               - editing the test again afterward doesn't touch that run's history, though the next
@@ -241,21 +229,7 @@
             </p>
           </div>
           <div>
-            <div class="flow">
-              <span class="node">Dataset</span>
-              <span class="edge"
-                ><span class="lb">Import rows</span><span class="ln"><i></i><b></b></span
-              ></span>
-              <span class="node">Test</span>
-              <span class="edge"
-                ><span class="lb">Add to set</span><span class="ln"><i></i><b></b></span
-              ></span>
-              <span class="node">Test set entry</span>
-              <span class="edge"
-                ><span class="lb">Run live / replay</span><span class="ln"><i></i><b></b></span
-              ></span>
-              <span class="node">Run</span>
-            </div>
+            <assay-guide-flow [path]="flows.set" />
             <p class="after">
               The dataset step is optional - a test can be written by hand instead. What matters is
               the moment it's <b>added to the set</b>: its content is copied into a frozen-eligible
@@ -277,17 +251,7 @@
             </p>
           </div>
           <div>
-            <div class="flow capd">
-              <span class="node">Test set</span>
-              <span class="edge"
-                ><span class="lb">Link to plan</span><span class="ln"><i></i><b></b></span
-              ></span>
-              <span class="node">Test plan</span>
-              <span class="edge"
-                ><span class="lb">Run live / replay</span><span class="ln"><i></i><b></b></span
-              ></span>
-              <span class="node">Run<small>× every entry, every linked set</small></span>
-            </div>
+            <assay-guide-flow [path]="flows.plan" />
             <p class="after">
               One level up from workflow 2, same live/replay shape. A plan can link any number of
               test sets, and one run fans out over <b>every entry in every set currently linked</b>
@@ -335,36 +299,22 @@
       <div class="marks">
         <div class="mgrp">
           <span class="g-cap">While it runs</span>
-          <div class="mr">
-            <assay-mark of="Pending" size="md" /><b>Pending</b
-            ><span>Created, not yet picked up.</span>
-          </div>
-          <div class="mr">
-            <assay-mark of="Running" size="md" /><b>Running</b><span>Currently executing.</span>
-          </div>
+          <assay-guide-mark of="Pending">Created, not yet picked up.</assay-guide-mark>
+          <assay-guide-mark of="Running">Currently executing.</assay-guide-mark>
         </div>
         <div class="mgrp">
           <span class="g-cap">How it ended</span>
-          <div class="mr">
-            <assay-mark of="Green" size="md" /><b>Green</b
-            ><span>Every check was met in this run.</span>
-          </div>
-          <div class="mr">
-            <assay-mark of="Amber" size="md" /><b>Amber</b
-            ><span>Some checks were met in this run, some weren't.</span>
-          </div>
-          <div class="mr">
-            <assay-mark of="Red" size="md" /><b>Red</b><span>No check was met in this run.</span>
-          </div>
-          <div class="mr">
-            <assay-mark of="NotRan" size="md" /><b>Not Ran</b
-            ><span
-              >The run couldn't be evaluated at all - something went wrong before any test type
-              could be checked (the model couldn't be reached, the application under test kept
-              failing, or the test's content couldn't be loaded). Unlike Red, no check was missed
-              here - nothing was checked.</span
-            >
-          </div>
+          <assay-guide-mark of="Green">Every check was met in this run.</assay-guide-mark>
+          <assay-guide-mark of="Amber"
+            >Some checks were met in this run, some weren't.</assay-guide-mark
+          >
+          <assay-guide-mark of="Red">No check was met in this run.</assay-guide-mark>
+          <assay-guide-mark of="NotRan" label="Not Ran"
+            >The run couldn't be evaluated at all - something went wrong before any test type could
+            be checked (the model couldn't be reached, the application under test kept failing, or
+            the test's content couldn't be loaded). Unlike Red, no check was missed here - nothing
+            was checked.</assay-guide-mark
+          >
         </div>
       </div>
     </div>
@@ -398,45 +348,30 @@
       <div class="marks">
         <div class="mgrp">
           <span class="g-cap">A batch, while it runs</span>
-          <div class="mr">
-            <assay-mark of="Pending" size="md" /><b>Pending</b
-            ><span>Created, no run started yet.</span>
-          </div>
-          <div class="mr">
-            <assay-mark of="Running" size="md" /><b>Running</b
-            ><span>Runs going. No verdicts until every run has finished.</span>
-          </div>
-          <div class="mr">
-            <assay-mark of="Incomplete" size="md" /><b>Incomplete</b
-            ><span>Stopped before every run ran. What ran is kept.</span>
-          </div>
-          <div class="mr">
-            <assay-mark of="Done" size="md" /><b>Done</b
-            ><span>A trial finished: it shows how each check behaves, and gives no verdict.</span>
-          </div>
+          <assay-guide-mark of="Pending">Created, no run started yet.</assay-guide-mark>
+          <assay-guide-mark of="Running"
+            >Runs going. No verdicts until every run has finished.</assay-guide-mark
+          >
+          <assay-guide-mark of="Incomplete"
+            >Stopped before every run ran. What ran is kept.</assay-guide-mark
+          >
+          <assay-guide-mark of="Done"
+            >A trial finished: it shows how each check behaves, and gives no
+            verdict.</assay-guide-mark
+          >
         </div>
         <div class="mgrp">
           <span class="g-cap">Its verdict</span>
-          <div class="mr">
-            <assay-mark of="Passed" size="md" /><b>Passed</b
-            ><span>Every check reaches the target.</span>
-          </div>
-          <div class="mr">
-            <assay-mark of="Failed" size="md" /><b>Failed</b
-            ><span>At least one check falls short.</span>
-          </div>
-          <div class="mr">
-            <assay-mark of="Inconclusive" size="md" /><b>Inconclusive</b
-            ><span
-              >Every run finished, but there weren't enough runs to tell either way. A new, larger
-              batch would likely settle it - the result says about how large, or that it would take
-              more than a batch can run.</span
-            >
-          </div>
-          <div class="mr">
-            <assay-mark of="NotRan" size="md" /><b>Not Ran</b
-            ><span>No check could be decided: every run Not Ran, or every check errored.</span>
-          </div>
+          <assay-guide-mark of="Passed">Every check reaches the target.</assay-guide-mark>
+          <assay-guide-mark of="Failed">At least one check falls short.</assay-guide-mark>
+          <assay-guide-mark of="Inconclusive"
+            >Every run finished, but there weren't enough runs to tell either way. A new, larger
+            batch would likely settle it - the result says about how large, or that it would take
+            more than a batch can run.</assay-guide-mark
+          >
+          <assay-guide-mark of="NotRan" label="Not Ran"
+            >No check could be decided: every run Not Ran, or every check errored.</assay-guide-mark
+          >
         </div>
       </div>
     </div>
