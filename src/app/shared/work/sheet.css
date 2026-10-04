@@ -1,0 +1,34 @@
+/* The smart filter's sheets - its suggestions, a facet's panel (<assay-facet-panel>) - and the
+   words beside its line: a value's label, cut with "…" when long, and its count; the red words
+   ("Clear all", "Clear", "Done"). Both components include it. */
+.ol {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.oc {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-neutral-600);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.go {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+.go:hover:not(:disabled) {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.go:disabled {
+  color: var(--color-neutral-500);
+  cursor: default;
+}

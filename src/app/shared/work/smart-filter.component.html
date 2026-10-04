@@ -125,57 +125,18 @@
           </button>
           @if (open) {
             @let vals = valuesOf(f);
-            <div class="pop panel" [class.wide]="f.many" role="group" [attr.aria-label]="f.label">
-              <div class="ph">
-                <b>{{ f.label }}</b>
-                @if (f.sub) {
-                  <span>{{ f.sub }}</span>
-                }
-              </div>
-              @if (f.many) {
-                <div class="pfind">
-                  <input
-                    type="text"
-                    [attr.aria-label]="'Find ' + f.label.toLowerCase()"
-                    [placeholder]="'Find ' + f.label.toLowerCase()"
-                    [value]="find()"
-                    (input)="find.set($any($event.target).value)"
-                  />
-                </div>
-              }
-              @for (v of vals.shown; track v.key) {
-                <label class="opt" [class.on]="isOn(f.key, v.key)" [class.zero]="v.count === 0">
-                  <input
-                    class="chk"
-                    [type]="f.single ? 'radio' : 'checkbox'"
-                    [name]="id + f.key"
-                    [checked]="isOn(f.key, v.key)"
-                    [disabled]="v.count === 0"
-                    (change)="pick(f, v.key)"
-                  />
-                  <span class="om">
-                    @if (v.mark) {
-                      <assay-mark [of]="v.mark" />
-                    } @else if (v.dash) {
-                      <i class="dash"></i>
-                    }
-                  </span>
-                  <span class="ol">{{ v.label }}</span>
-                  @if (v.count != null) {
-                    <span class="oc">{{ v.count }}</span>
-                  }
-                </label>
-              }
-              @if (moreText(f); as m) {
-                <span class="more">{{ m }}</span>
-              }
-              <div class="pf">
-                <button type="button" class="go" [disabled]="!n" (click)="clearFacet(f.key)">
-                  Clear
-                </button>
-                <button type="button" class="go" (click)="openFacet.set(null)">Done</button>
-              </div>
-            </div>
+            <assay-facet-panel
+              class="pop"
+              [facet]="f"
+              [group]="id + f.key"
+              [values]="vals.shown"
+              [chosen]="chosen()[f.key] ?? []"
+              [more]="moreText(f)"
+              [(find)]="find"
+              (pick)="pick(f, $event)"
+              (clear)="clearFacet(f.key)"
+              (done)="openFacet.set(null)"
+            />
           }
         </div>
       }

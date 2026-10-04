@@ -9,8 +9,8 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { StatusMarkComponent } from '../status-mark.component';
 import { SortComponent } from './sort.component';
+import { FacetPanelComponent } from './facet-panel.component';
 import { FilterChoice, FilterFacet, FilterItem, FilterValue, chosenCount } from './filters';
 
 /** A suggestion under the line, as you type. */
@@ -64,10 +64,10 @@ function split(text: string, q: string) {
 @Component({
   selector: 'assay-smart-filter',
   standalone: true,
-  imports: [StatusMarkComponent, SortComponent],
+  imports: [SortComponent, FacetPanelComponent],
   host: { '[class.compact]': 'compact()', '(document:click)': 'outside($event)' },
   templateUrl: './smart-filter.component.html',
-  styleUrl: './smart-filter.component.css',
+  styleUrls: ['./sheet.css', './smart-filter.component.css'],
 })
 export class SmartFilterComponent {
   private el = inject(ElementRef<HTMLElement>);
