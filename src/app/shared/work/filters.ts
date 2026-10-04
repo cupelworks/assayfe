@@ -97,16 +97,24 @@ export function createdEdges(now = new Date()) {
 export type CreatedEdges = ReturnType<typeof createdEdges>;
 
 /** The API's Created counts - from each edge sent, and `before` the earliest - by the facet's
- *  ranges. */
+ *  ranges. The API keys each count by the edge as sent; one written another way for the same
+ *  moment ("…22:00:00Z" for "…22:00:00.000Z") is found by the instant it names. */
 export function createdCounts(
   created: Partial<Record<string, number>> | null | undefined,
   edges: CreatedEdges,
 ): Record<string, number> | null {
   if (!created) return null;
+  const at = (edge: string) => {
+    const key =
+      edge in created
+        ? edge
+        : Object.keys(created).find((k) => k !== 'before' && Date.parse(k) === Date.parse(edge));
+    return key === undefined ? 0 : (created[key] ?? 0);
+  };
   return {
-    today: created[edges.today] ?? 0,
-    week: created[edges.week] ?? 0,
-    month: created[edges.month] ?? 0,
+    today: at(edges.today),
+    week: at(edges.week),
+    month: at(edges.month),
     earlier: created['before'] ?? 0,
   };
 }
