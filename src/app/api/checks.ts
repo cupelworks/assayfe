@@ -169,8 +169,11 @@ export function typeCounts(
   for (const a of assignments ?? []) counts.set(a.name, (counts.get(a.name) ?? 0) + 1);
   return [...counts].map(([name, count]) => ({ name, count }));
 }
+/** "Contains ×2", "Is Valid JSON": a check type, with how many checks are of it when more than
+ *  one - a test's checks on its list and its set's page, a run's checks on its page. */
+export const typeTimes = (name: string, count: number) => (count > 1 ? `${name} ×${count}` : name);
 /** The same as one line: "Contains ×2, Is Valid JSON". */
 export const typeSummary = (assignments?: readonly TestTypeAssignment[] | null) =>
   typeCounts(assignments)
-    .map((t) => (t.count > 1 ? `${t.name} ×${t.count}` : t.name))
+    .map((t) => typeTimes(t.name, t.count))
     .join(', ');

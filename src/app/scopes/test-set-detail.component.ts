@@ -5,7 +5,7 @@ import { TestSetsApiService } from '../api/test-sets-api.service';
 import { TestPlansApiService } from '../api/test-plans-api.service';
 import { StatisticsApiService } from '../api/statistics-api.service';
 import { LatestByRow } from '../api/latest';
-import { typeCounts } from '../api/checks';
+import { typeCounts, typeTimes } from '../api/checks';
 import { TestCaseBody, TestSetEntry } from '../api/models';
 import { Paged } from '../shared/paged';
 import { Selection } from '../shared/selection';
@@ -155,7 +155,7 @@ export class TestSetDetailComponent extends ScopePage<Dlg> {
   }
   checkTags(e: TestSetEntry): CatalogTag[] {
     return typeCounts(e.test_type_assignments).map((c) => ({
-      text: c.count > 1 ? `${c.name} ×${c.count}` : c.name,
+      text: typeTimes(c.name, c.count),
     }));
   }
   anyFrozen = computed(() => this.page.items().some((e) => this.frozen().has(e.id)));

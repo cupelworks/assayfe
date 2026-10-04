@@ -3,14 +3,13 @@ import { RouterLink } from '@angular/router';
 import { RunDetails, StandaloneRunDetails, TestTypeResult } from '../api/models';
 import { isInFlight, listed, prettyJson } from '../shared/format';
 import {
-  CATEGORIES,
   TestTypesStore,
   assignmentFields,
   engineSettingsLabel,
   isCodeField,
   scoreScale,
 } from '../api/test-types.store';
-import { checkName } from '../api/checks';
+import { checkName, typeCounts, typeTimes } from '../api/checks';
 import { GuideSectionComponent } from '../shared/guide/guide-section.component';
 import { numbered } from '../shared/guide/guide-sections';
 import { CATALOG, CatalogColumn } from '../shared/catalog';
@@ -25,7 +24,7 @@ interface Line {
 
 /**
  * A run's body, under its page's top, as the Guide's sections:
- * 01 Checks - a ruled row per check, not met first: the check and its kind, how it went (and its
+ * 01 Checks - a ruled row per check, not met first: the check and its type, how it went (and its
  * score on its own scale, its threshold in red), why - with what it was run with in sight when it
  * wasn't met, under Details when it was, and how it ran (the judge, the engine) under Details;
  * 02 The answer - what the checks read (text as text, JSON as code), where it was read from, the
@@ -245,8 +244,11 @@ export class RunBodyComponent {
       .map(([name, r]) => this.row(name, r))
       .sort((a, b) => a.rank - b.rank),
   );
+  /** How many of the run's checks are of each type. */
+  private typeCount = computed(
+    () => new Map(typeCounts(this.run()?.test_type_assignments).map((t) => [t.name, t.count])),
+  );
   private row(name: string, r: TestTypeResult) {
-    const type = this.types.byName().get(r.test_type ?? name);
     const errored = !!r.errored;
     const need = this.need(name, r);
     // How it ran: who judged it, what scored it - always folded.
@@ -263,15 +265,12 @@ export class RunBodyComponent {
           ]
         : []),
     ];
-    const kind = CATEGORIES.find((c) => c.key === type?.category)?.label;
+    // Its type, always, with how many of the run's checks are of it - "Contains ×2", as a test's
+    // checks are counted on its list (results before labels were keyed by the type).
+    const type = r.test_type ?? name;
     return {
       name,
-      // Its type, when its label isn't the type's name ("Mentions the order number": Contains),
-      // and its kind ("Deterministic").
-      tags: [
-        ...(r.test_type && r.test_type !== name ? [{ text: r.test_type }] : []),
-        ...(kind ? [{ text: kind }] : []),
-      ],
+      tags: [{ text: typeTimes(type, this.typeCount().get(type) ?? 1) }],
       passed: r.passed,
       rank: errored ? 0 : r.passed ? 2 : 1,
       mark: errored ? 'NotRan' : r.passed ? 'met' : 'unmet',

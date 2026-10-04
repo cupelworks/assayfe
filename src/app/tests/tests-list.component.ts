@@ -8,7 +8,7 @@ import { RunsApiService } from '../api/runs-api.service';
 import { StatisticsApiService } from '../api/statistics-api.service';
 import { MembershipStore } from '../api/membership.store';
 import { LatestByRow, firstOfEach } from '../api/latest';
-import { typeCounts } from '../api/checks';
+import { typeCounts, typeTimes } from '../api/checks';
 import { BatchSummary, TestCase, TestCaseBody } from '../api/models';
 import { ActionRunner } from '../shared/action-runner';
 import { Paged } from '../shared/paged';
@@ -226,9 +226,7 @@ export class TestsListComponent {
   /** A row's checks as tags: three, then "+N". */
   checkTags(t: TestCase) {
     const all = typeCounts(t.test_type_assignments);
-    const tags = all
-      .slice(0, 3)
-      .map((c) => ({ text: c.count > 1 ? `${c.name} ×${c.count}` : c.name }) as CatalogTag);
+    const tags = all.slice(0, 3).map((c) => ({ text: typeTimes(c.name, c.count) }) as CatalogTag);
     return all.length > 3 ? [...tags, { text: `+${all.length - 3}` }] : tags;
   }
 
