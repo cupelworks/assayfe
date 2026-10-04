@@ -26,7 +26,8 @@ const ROWS: Record<string, { rows_min?: number; rows_max?: number }> = {
 /**
  * Datasets, on the Guide's layout: the title with Import beside it, what a row holds, the smart
  * filter, then each dataset with how many rows and its first prompt (as the list has them), and
- * how it gets in. The API searches (names), filters and sorts it (API 2.0) - `ApiList`.
+ * how it gets in. The API searches (names and first prompts), filters and sorts it (API 2.0) -
+ * `ApiList`.
  */
 @Component({
   selector: 'assay-datasets-list',
@@ -53,7 +54,7 @@ export class DatasetsListComponent {
   private router = inject(Router);
   rowKey = ROW_KEY;
 
-  /** The datasets as the API searches (names), filters and sorts them. */
+  /** The datasets as the API searches (names and first prompts), filters and sorts them. */
   list = new ApiList<DataSetMetadata, FacetCounts>({
     noun: 'dataset',
     sort: 'Newest',
