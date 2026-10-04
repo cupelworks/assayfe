@@ -1,4 +1,5 @@
-// Mirrors components.schemas in Assay's OpenAPI (v2.1.0).
+// Mirrors components.schemas in Assay's OpenAPI (v2.2.0). Every timestamp (`…_at`) is UTC with a
+// Z ("2026-09-27T12:36:59.928077Z", the fraction left out when it's zero): read it with `Date`.
 export interface Ref {
   id: string;
 }
