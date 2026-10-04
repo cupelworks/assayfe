@@ -3,13 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { DatasetsApiService } from '../api/datasets-api.service';
 import { TestsApiService } from '../api/tests-api.service';
 import { CatalogStore } from '../api/catalog.store';
-import {
-  DataSetMetadata,
-  DataSetRow,
-  DataSetRowSchema,
-  TestCaseRead,
-  TestTypeAssignment,
-} from '../api/models';
+import { DataSetMetadata, DataSetRow, DataSetRowSchema, TestCaseRead } from '../api/models';
 import { ActionRunner } from '../shared/action-runner';
 import { Selection } from '../shared/selection';
 import { Paged } from '../shared/paged';
@@ -32,7 +26,7 @@ import { NameDialogComponent } from '../shared/dialog/name-dialog.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
 import { RowsDialogComponent } from './rows-dialog.component';
 import { EditRowDialogComponent } from './edit-row-dialog.component';
-import { MakeTestsDialogComponent, NumberedRow } from './make-tests-dialog.component';
+import { MakeTests, MakeTestsDialogComponent, NumberedRow } from './make-tests-dialog.component';
 import { ROW_KEY } from './row-keys';
 
 type Dlg =
@@ -264,16 +258,22 @@ export class DatasetDetailComponent {
       ok: () => `Saved row ${this.editing()!.no}.`,
     });
   }
-  /** Every row makes a test - the API's only way today. Ticked rows wait for it: nothing is sent
-   *  (docs/to_be_implemented_after_be_version_2/dev_notes.md). */
-  toTests(assignments: TestTypeAssignment[]) {
-    if (this.making()) return;
-    this.act.run(this.testsApi.createTestsFromDataset(this.id(), assignments), {
-      ok: (r) => `Made ${counted(r.test_cases.length, 'test')} from this dataset.`,
-      then: () => {
-        this.store.loadTests();
-        this.router.navigate(['/tests']);
+  /** Tests from the rows the dialog was opened for - the ticked ones, or every row - made as it
+   *  says; then Tests, showing those made from this dataset. */
+  toTests(m: MakeTests) {
+    const ticked = this.making();
+    this.act.run(
+      this.testsApi.createTestsFromDataset(this.id(), m.assignments, {
+        ...m.how,
+        ...(ticked ? { row_ids: ticked.map((r) => r.row.id) } : {}),
+      }),
+      {
+        ok: (r) => `Made ${counted(r.test_cases.length, 'test')} from this dataset.`,
+        then: () => {
+          this.store.loadTests();
+          this.router.navigate(['/tests'], { queryParams: { dataset: this.id() } });
+        },
       },
-    });
+    );
   }
 }

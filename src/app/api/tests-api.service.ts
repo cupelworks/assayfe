@@ -52,10 +52,18 @@ export class TestsApiService extends ApiBase {
   deleteTests(ids: string[]) {
     return this.http.delete<unknown>(this.u('/tests'), { body: this.ids(ids) });
   }
-  createTestsFromDataset(datasetId: string, test_type_assignments?: M.TestTypeAssignment[]) {
+  /** Tests from a dataset's rows - every row, or `row_ids` (used in row-number order) - each named
+   *  after its prompt or numbered, with its row's recorded answer or none (API 2.0), and every one
+   *  with the same checks. */
+  createTestsFromDataset(
+    datasetId: string,
+    test_type_assignments?: M.TestTypeAssignment[],
+    how: M.FromDatasetOptions = {},
+  ) {
     return this.http.post<{ id: string; test_cases: M.Ref[] }>(this.u('/tests/from-dataset'), {
       id: datasetId,
       ...(test_type_assignments?.length ? { test_type_assignments } : {}),
+      ...how,
     });
   }
 

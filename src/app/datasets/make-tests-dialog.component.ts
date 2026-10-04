@@ -1,11 +1,29 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
-import { DataSetRow, TestTypeAssignment } from '../api/models';
+import { DataSetRow, FromDatasetOptions, TestTypeAssignment } from '../api/models';
 import { TestTypesStore } from '../api/test-types.store';
 import { CheckDraft, checkIssues, toAssignments, typesNeedingReference } from '../api/checks';
 import { counted, listed } from '../shared/format';
 import { DialogComponent } from '../shared/dialog/dialog.component';
 import { ChecksTableComponent } from '../shared/checks-table.component';
 import { StatusMarkComponent } from '../shared/status-mark.component';
+
+/** A test's name after its prompt, as `POST /tests/from-dataset` names it (`naming: "prompt"`):
+ *  every run of spaces, tabs and line breaks one space, trimmed; up to 60 characters, it's the name;
+ *  longer, the first 59 - cut back to their last space when the 60th character isn't one - trimmed,
+ *  and "…": never more than 60 characters. */
+export function nameFromPrompt(prompt: string) {
+  const s = prompt.replace(/\s+/g, ' ').trim();
+  if (s.length <= 60) return s;
+  let head = s.slice(0, 59);
+  if (s[59] !== ' ' && head.includes(' ')) head = head.slice(0, head.lastIndexOf(' '));
+  return `${head.trim()}…`;
+}
+
+/** What the dialog asks for: the checks every test gets, and how the tests are made. */
+export interface MakeTests {
+  assignments: TestTypeAssignment[];
+  how: Pick<FromDatasetOptions, 'naming' | 'recorded_answers'>;
+}
 
 /** A row the dialog makes a test from, with its number in the dataset. */
 export interface NumberedRow {
@@ -19,8 +37,9 @@ export interface NumberedRow {
  * how the tests are named, and the checks every one of them gets, the test form's own table. A
  * check that compares with the expected output says whether every row has one.
  *
- * Only "every row, recorded answers kept, numbered names" is what the API does today: the rest is
- * chosen here and waits for it (docs/to_be_implemented_after_be_version_2/dev_notes.md).
+ * All of it is sent (API 2.0): the rows (every one, or the ticked), how they're named - after the
+ * prompt, cut as the API cuts it (`nameFromPrompt`), or numbered - and the recorded answers kept or
+ * left out.
  */
 @Component({
   selector: 'assay-make-tests-dialog',
@@ -226,7 +245,7 @@ export class MakeTestsDialogComponent {
   total = input(0);
   busy = input(false);
   error = input<string | null>(null);
-  confirm = output<TestTypeAssignment[]>();
+  confirm = output<MakeTests>();
   closed = output<void>();
   private types = inject(TestTypesStore);
   counted = counted;
@@ -239,10 +258,12 @@ export class MakeTestsDialogComponent {
     () =>
       `Make tests from ${this.rows() ? counted(this.count(), 'row') : `all ${counted(this.total(), 'row')}`}`,
   );
-  example = computed(
-    () =>
+  /** The first row's prompt as its test's name would read. */
+  example = computed(() =>
+    nameFromPrompt(
       (this.rows()?.[0]?.row ?? this.allRows()?.[0])?.row_info.prompt ??
-      'How do I reset my password?',
+        'How do I reset my password?',
+    ),
   );
   /** The rows at hand that tests were made from already - making them again makes one more each:
    *  "Row 4 has a test already: this makes one more." Null when none has, or they aren't at hand. */
@@ -280,6 +301,12 @@ export class MakeTestsDialogComponent {
 
   go() {
     if (this.busy() || this.issues().length) return;
-    this.confirm.emit(toAssignments(this.checks(), this.types.byName()));
+    this.confirm.emit({
+      assignments: toAssignments(this.checks(), this.types.byName()),
+      how: {
+        naming: this.byPrompt() ? 'prompt' : 'numbered',
+        recorded_answers: this.keep() ? 'keep' : 'leave_out',
+      },
+    });
   }
 }

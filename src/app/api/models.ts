@@ -160,6 +160,14 @@ export interface TestCasePage {
   test_cases: TestCaseRead[];
 }
 export type ModifyTestCase = Partial<TestCaseBody>;
+/** How `POST /tests/from-dataset` makes its tests (API 2.0) - each left out keeps the old way:
+ *  every row, numbered names ("New Test 1"), recorded answers kept. A name after the prompt is cut
+ *  as `nameFromPrompt` cuts it. */
+export interface FromDatasetOptions {
+  row_ids?: string[];
+  naming?: 'numbered' | 'prompt';
+  recorded_answers?: 'keep' | 'leave_out';
+}
 
 // Test sets / plans
 export interface ScopeMetadata {
