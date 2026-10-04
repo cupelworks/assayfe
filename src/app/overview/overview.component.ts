@@ -168,9 +168,8 @@ export class OverviewComponent {
       .recentRuns()
       .filter((r) => r.origin === 'Standalone' && r.test_case_id)
       .map((r) => ({ key: 'tests' + r.test_case_id!.id, at: r.created_at, exec: null, run: r }));
-    const newest = [...executions, ...tests].sort((a, b) =>
-      a.at < b.at ? 1 : a.at > b.at ? -1 : 0,
-    );
+    // By the instants they name, not their strings: "…:59Z" sorts after "…:59.5Z" as text.
+    const newest = [...executions, ...tests].sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
     return firstOfEach(newest, (x) => x.key)
       .slice(0, LATEST)
       .map(({ item }) => {
