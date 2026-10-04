@@ -17,25 +17,14 @@
   }
 
   <assay-guide-section [section]="sec()['question']" sub="What you want to know, and how strictly">
-    <div
-      class="asks g-wide"
-      role="radiogroup"
-      [attr.aria-labelledby]="sec()['question'].id + '-title'"
-    >
-      @for (q of questions(); track q.t.id) {
-        <label class="ask" [class.on]="q.t.id === choice()" [class.off]="q.off" [title]="q.full">
-          <input
-            type="radio"
-            name="sp-question"
-            [checked]="q.t.id === choice()"
-            [disabled]="q.off"
-            (change)="pick(q.t.id)"
-          />
-          <span class="an">{{ q.t.name }}</span
-          ><span class="al">{{ q.line }}</span>
-        </label>
-      }
-    </div>
+    <assay-choice-tiles
+      class="g-wide"
+      name="sp-question"
+      [labelledBy]="sec()['question'].id + '-title'"
+      [options]="questionTiles()"
+      [value]="choice()"
+      (choose)="pick($event)"
+    />
     <div class="params g-wide">
       @if (!hasTargetParam()) {
         <div class="lfield">
@@ -148,16 +137,7 @@
           </div>
           @if (goal(); as g) {
             @if (g.out) {
-              <div class="goal g-wide" role="status">
-                <div class="gfig">
-                  <span class="big">{{ g.best }}</span>
-                  <span class="gcap">at best, whatever the size</span>
-                </div>
-                <div class="gt">
-                  <h3>The goal is out of reach</h3>
-                  <p>{{ g.text }}</p>
-                </div>
-              </div>
+              <assay-goal-out class="g-wide" [best]="g.best" [text]="g.text" />
             } @else if (g.text) {
               <p class="concl g-wide">{{ g.text }}</p>
             }
@@ -167,40 +147,31 @@
 
       @if (sec()['once']; as s) {
         <assay-guide-section [section]="s" sub="Recommended: many runs only repeat one result">
-          <div class="first g-wide">
-            <h3>Every run gives the same result.</h3>
-            <p>{{ onceLine() }}</p>
-            <button
-              type="button"
-              class="btn btn-primary"
-              [disabled]="starting()"
-              (click)="runOnce()"
-            >
-              Run it once instead
-            </button>
-          </div>
+          <assay-first-step
+            class="g-wide"
+            title="Every run gives the same result."
+            action="Run it once instead"
+            [busy]="starting()"
+            (act)="runOnce()"
+            >{{ onceLine() }}</assay-first-step
+          >
         </assay-guide-section>
       }
 
       @if (trial(); as tr) {
         <assay-guide-section [section]="sec()['trial']" [sub]="tr.lead">
-          <div class="first g-wide">
-            <h3>{{ tr.title }}</h3>
-            <p class="facts">{{ tr.facts }}</p>
-            <p>
-              When it finishes, the trial shows
-              <span class="done"><assay-mark of="Done" />Done</span> with what it learned about each
-              check; then this page can say how likely each size is to answer.
-            </p>
-            <button
-              type="button"
-              class="btn btn-primary"
-              [disabled]="starting()"
-              (click)="runTrial()"
-            >
-              Run {{ tr.t.times }} times first
-            </button>
-          </div>
+          <assay-first-step
+            class="g-wide"
+            [title]="tr.title"
+            [facts]="tr.facts"
+            [action]="'Run ' + tr.t.times + ' times first'"
+            [busy]="starting()"
+            (act)="runTrial()"
+          >
+            When it finishes, the trial shows
+            <span class="done"><assay-mark of="Done" />Done</span> with what it learned about each
+            check; then this page can say how likely each size is to answer.
+          </assay-first-step>
         </assay-guide-section>
       }
 
@@ -253,63 +224,20 @@
               : '')
           "
         >
-          <div class="sizes g-wide" [class.no-chart]="!chart()">
-            <div class="rows" role="radiogroup" [attr.aria-labelledby]="s.id + '-title'">
-              @for (z of sizes(); track z.key) {
-                <label class="so" [class.on]="z.on">
-                  <input
-                    type="radio"
-                    name="sp-size"
-                    [checked]="z.on"
-                    (change)="z.until ? pickUntil() : pickSize(z.times)"
-                  />
-                  <span
-                    ><span class="t">{{ z.title }}</span
-                    ><span class="small">{{ z.what }}</span></span
-                  >
-                  <span class="ch"
-                    ><span class="fig">{{ z.chance }}</span
-                    ><span class="small">{{ z.chanceCap }}</span></span
-                  >
-                  <span class="calls"
-                    ><b>{{ z.app }}</b> application<br /><b>{{ z.judge }}</b> judge calls</span
-                  >
-                  @if (z.until && z.on) {
-                    <span class="more">{{ untilText() }}</span>
-                  }
-                </label>
-              }
-              <label class="so" [class.on]="otherSize()" for="sp-times">
-                <input type="radio" name="sp-size" [checked]="otherSize()" tabindex="-1" />
-                <span class="other"
-                  ><span class="t">Another size</span
-                  ><input
-                    id="sp-times"
-                    [class.invalid]="timesIssue() || apiProblems()['times']"
-                    assayNumber="numeric"
-                    placeholder="e.g. 100"
-                    [ngModel]="customShown()"
-                    (ngModelChange)="typeTimes($event)"
-                  /><span class="u">times</span></span
-                >
-              </label>
-            </div>
-            @if (chart(); as c) {
-              <figure class="chart">
-                <figcaption class="g-cap">Chance that every check gets an answer</figcaption>
-                <assay-odds-chart
-                  [odds]="c.odds"
-                  [goal]="c.goal"
-                  [picked]="c.picked"
-                  [best]="c.best"
-                  [appPerTime]="c.app"
-                  [judgePerTime]="c.judge"
-                />
-              </figure>
-            } @else if (noChart()) {
-              <p class="nochart">{{ noChart() }}</p>
-            }
-          </div>
+          <assay-size-picker
+            class="g-wide"
+            [sizes]="sizes()"
+            [labelledBy]="s.id + '-title'"
+            [other]="otherSize()"
+            [otherText]="customShown()"
+            [otherInvalid]="!!(timesIssue() || apiProblems()['times'])"
+            [untilText]="untilText()"
+            [chart]="chart()"
+            [noChart]="noChart()"
+            (size)="pickSize($event)"
+            (until)="pickUntil()"
+            (typed)="typeTimes($event)"
+          />
           @if (timesIssue() ?? apiProblems()['times']; as issue) {
             <p class="err g-wide">{{ issue }}</p>
           }

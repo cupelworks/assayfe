@@ -39,9 +39,12 @@ import { GuideSectionComponent } from '../shared/guide/guide-section.component';
 import { GuideSection, numbered } from '../shared/guide/guide-sections';
 import { BannerComponent } from '../shared/work/banner.component';
 import { DockComponent } from '../shared/dock.component';
-import { NumberInputDirective, parseDecimal } from '../shared/number';
+import { parseDecimal } from '../shared/number';
+import { ChoiceTile, ChoiceTilesComponent } from '../shared/choice-tiles.component';
 import { ParamFieldComponent } from './param-field.component';
-import { OddsChartComponent } from './charts/odds-chart.component';
+import { GoalOutComponent } from './goal-out.component';
+import { FirstStepComponent } from './first-step.component';
+import { SizePickerComponent } from './size-picker.component';
 import { ParamRow, paramRows, paramValues, problems, typedFrom } from './stats-params';
 import {
   OUTLOOK,
@@ -104,8 +107,10 @@ const OUTLOOK_MARK: Record<string, string> = {
   standalone: true,
   imports: [
     FormsModule,
-    NumberInputDirective,
-    OddsChartComponent,
+    ChoiceTilesComponent,
+    GoalOutComponent,
+    FirstStepComponent,
+    SizePickerComponent,
     ParamFieldComponent,
     StatusMarkComponent,
     StatusLineComponent,
@@ -120,6 +125,7 @@ const OUTLOOK_MARK: Record<string, string> = {
     '../shared/guide/guide.css',
     '../shared/guide/head-aside.css',
     '../shared/work/work.css',
+    './stats-figures.css',
     './run-stats.component.css',
   ],
 })
@@ -198,13 +204,13 @@ export class RunStatsComponent {
   /** Only the newest estimate's answer is shown; older ones may land late. */
   private seq = 0;
 
-  /** Side by side, each with one line: its question, or why it can't be asked here - the API's
-   *  sentence to its first clause, whole on hover. */
-  questions = computed(() =>
+  /** The questions as tiles, side by side, each with one line: its question, or why it can't be
+   *  asked here - the API's sentence to its first clause, whole on hover. */
+  questionTiles = computed<ChoiceTile[]>(() =>
     this.questionTests().map((t) => {
       const reason = this.unavailable()[t.id] ?? null;
       const full = reason ?? t.question;
-      return { t, off: !!reason, line: firstClause(full), full };
+      return { id: t.id, name: t.name, off: !!reason, line: firstClause(full), full };
     }),
   );
   test = computed(() => this.store.byId().get(this.choice()) ?? null);

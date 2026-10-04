@@ -1,0 +1,19 @@
+/* Run with statistics' figures: a figure, big and even, and the small line under it - its tables
+   (the page's) and its sizes' (<assay-size-picker>). Both include it. */
+.fig {
+  display: block;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+.small {
+  display: block;
+  margin-top: 3px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--color-neutral-600);
+  text-wrap: pretty;
+}
