@@ -1,6 +1,7 @@
 import { Component, afterNextRender, inject, input } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { BreadcrumbComponent, GuideCrumb } from './breadcrumb.component';
+import { CopyIdComponent } from '../copy-id.component';
 import { StatusMarkComponent } from '../status-mark.component';
 import { GuideSection } from './guide-sections';
 
@@ -26,14 +27,22 @@ import { GuideSection } from './guide-sections';
 @Component({
   selector: 'assay-guide-head',
   standalone: true,
-  imports: [RouterLink, BreadcrumbComponent, StatusMarkComponent],
+  imports: [RouterLink, BreadcrumbComponent, StatusMarkComponent, CopyIdComponent],
   host: { '[class.one]': "size() === 'one'", '[style.--ixs-across]': 'across()' },
   template: `
-    @if (crumbs().length) {
-      <assay-breadcrumb class="kicker" [trail]="crumbs()" [here]="kicker() || null" />
-    } @else {
-      <div class="kicker">{{ kicker() }}</div>
-    }
+    <div class="kline">
+      @if (crumbs().length) {
+        <assay-breadcrumb class="kicker" [trail]="crumbs()" [here]="kicker() || null" />
+      } @else {
+        <div class="kicker">{{ kicker() }}</div>
+      }
+      @if (copyId(); as id) {
+        <span class="idtag"
+          ><span class="idcap" aria-hidden="true">{{ copyIdLabel() }}</span
+          ><assay-copy-id [id]="id" [what]="copyIdLabel()" place="top"
+        /></span>
+      }
+    </div>
     <h1 class="h1">{{ title() }}</h1>
     <div class="aside"><ng-content select="[guideHeadAside]" /></div>
     <p class="lede">{{ lede() }}</p>
@@ -72,13 +81,35 @@ import { GuideSection } from './guide-sections';
       column-gap: 24px;
       padding: 72px 0 48px;
     }
-    .kicker {
+    /* The kicker's line: the breadcrumb (or the part of the app) and, on a page of one thing, its
+       ID at the right end. */
+    .kline {
       grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px 24px;
       margin-bottom: 12px;
+    }
+    .kicker {
+      min-width: 0;
       font-size: 11px;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--color-accent);
+    }
+    .idtag {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .idcap {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-neutral-600);
     }
     .h1 {
       grid-column: 1 / 9;
@@ -226,8 +257,7 @@ import { GuideSection } from './guide-sections';
   `,
 })
 export class GuideHeadComponent {
-  /** Its part of the app ("Work") - or, after a breadcrumb, what this page is ("Test"); none when
-   *  its title says it. */
+  /** Its part of the app ("Work") - or, after a breadcrumb, what this page is ("Test", "Run"). */
   kicker = input('');
   title = input.required<string>();
   lede = input.required<string>();
@@ -235,6 +265,12 @@ export class GuideHeadComponent {
   key = input<string | null>(null);
   /** Each page above this one, by its title, outermost first: its breadcrumb. */
   crumbs = input<GuideCrumb[]>([]);
+  /** The ID of the one thing the page is about, to copy, at the right end of the breadcrumb's
+   *  line (`<assay-copy-id>`); none on a page about no one thing. */
+  copyId = input<string | null>(null);
+  /** What it's called there: "ID" - or whose, when the breadcrumb ends with another word ("Run
+   *  ID" on a test in a set's run, whose breadcrumb ends "Test"). */
+  copyIdLabel = input('ID');
   /** `one`: the title is a thing's name - smaller than a list's. */
   size = input<'list' | 'one'>('list');
   /** A numbered link per section; none on a page whose index is its own (the catalogues'). */

@@ -9,6 +9,11 @@ export interface CopyInSet {
   set: ScopeMetadata;
   entry: TestSetEntry;
 }
+/** A plan that links a set, with the ID of its entry that links it. */
+export interface PlanOfSet extends ScopeMetadata {
+  entry_id: string;
+}
+type Link = { plan: ScopeMetadata; set: string; entry: string };
 
 /** Every item of a list, page after page (100 a page). */
 function all<T>(page: (offset: number) => Observable<Page<T>>): Observable<T[]> {
@@ -39,8 +44,8 @@ export class MembershipStore {
 
   /** test id → its copies, each in its set; null until read. */
   copies = signal<Map<string, CopyInSet[]> | null>(null);
-  /** set id → the plans that link it; null until read. */
-  plansOf = signal<Map<string, ScopeMetadata[]> | null>(null);
+  /** set id → the plans that link it, each with its entry; null until read. */
+  plansOf = signal<Map<string, PlanOfSet[]> | null>(null);
   private readingCopies = false;
   private readingPlans = false;
   /** Bumped by forget(): a read started before it is dropped when it comes back. */
@@ -94,18 +99,19 @@ export class MembershipStore {
             ? forkJoin(
                 plans.map((plan) =>
                   all<TestPlanEntry>((o) => this.plansApi.testPlanEntries(plan.id, o, 100)).pipe(
-                    map((links) => links.map((l) => ({ plan, set: l.test_set.id }))),
-                    catchError(() => of<{ plan: ScopeMetadata; set: string }[]>([])),
+                    map((links) => links.map((l) => ({ plan, set: l.test_set.id, entry: l.id }))),
+                    catchError(() => of<Link[]>([])),
                   ),
                 ),
               )
-            : of<{ plan: ScopeMetadata; set: string }[][]>([]),
+            : of<Link[][]>([]),
         ),
-        catchError(() => of<{ plan: ScopeMetadata; set: string }[][]>([])),
+        catchError(() => of<Link[][]>([])),
       )
       .subscribe((lists) => {
-        const bySet = new Map<string, ScopeMetadata[]>();
-        for (const l of lists.flat()) bySet.set(l.set, [...(bySet.get(l.set) ?? []), l.plan]);
+        const bySet = new Map<string, PlanOfSet[]>();
+        for (const l of lists.flat())
+          bySet.set(l.set, [...(bySet.get(l.set) ?? []), { ...l.plan, entry_id: l.entry }]);
         this.readingPlans = false;
         if (v === this.version) this.plansOf.set(bySet);
         else this.loadPlans();

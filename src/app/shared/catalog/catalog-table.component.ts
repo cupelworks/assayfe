@@ -6,6 +6,10 @@ export interface CatalogColumn {
   label: string;
   width: number;
 }
+/** The column of a row's ID, after its data and before its own action ("Remove"); its cells are
+ *  `<assay-catalog-cell [copyId]>`. "ID" when the row is the thing it names; whose when it's named
+ *  after something else - "Entry ID" (a set's copy of a test), "Run ID", "Batch ID". */
+export const idColumn = (label = 'ID'): CatalogColumn => ({ label, width: 1 });
 
 /**
  * A catalogue's ruled table, across a section's body, as the Guide's tables are: the headings over

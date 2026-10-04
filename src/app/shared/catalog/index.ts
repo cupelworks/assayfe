@@ -8,6 +8,7 @@ import { CatalogTableComponent } from './catalog-table.component';
 import { CatalogTagComponent } from './catalog-tag.component';
 
 export type { CatalogColumn } from './catalog-table.component';
+export { idColumn } from './catalog-table.component';
 export type {
   CatalogIndexGroup,
   CatalogIndexItem,
