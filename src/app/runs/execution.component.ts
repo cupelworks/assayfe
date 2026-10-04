@@ -1,9 +1,8 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { catchError, forkJoin, map, of } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
-import { ExecutionMetadata, Kind, RunDetails, RunMetadata } from '../api/models';
+import { ExecutionDetails, ExecutionMetadata, ExecutionRun, Kind } from '../api/models';
 import {
   RUNS_ENDED,
   counted,
@@ -14,6 +13,7 @@ import {
   shortDate,
   statusLabel,
 } from '../shared/format';
+import { Paged } from '../shared/paged';
 import { pollWhile } from '../shared/poll';
 import { ActionRunner } from '../shared/action-runner';
 import { PagerComponent } from '../shared/pager.component';
@@ -24,9 +24,9 @@ import { CATALOG, CatalogColumn, idColumn } from '../shared/catalog';
 import { StatusTallyComponent, TallyPart, tallyParts } from '../shared/status-tally.component';
 import { BannerComponent } from '../shared/work/banner.component';
 import { SortComponent } from '../shared/work/sort.component';
-import { ChecksMetComponent, checksMet } from '../shared/work/checks-met.component';
+import { ChecksMetComponent, checksListed } from '../shared/work/checks-met.component';
 import { whatRan } from '../scopes/executions-table.component';
-import { answerFrom, runOf, worstFirst } from './run-words';
+import { answerFrom, runOf } from './run-words';
 
 /**
  * A run of a set or plan - every test once - on the Guide's layout, its top with the breadcrumbs:
@@ -36,9 +36,10 @@ import { answerFrom, runOf, worstFirst } from './run-words';
  * is still under way - and its checks met, not met, or not ran with their test. 01 Tests: a ruled
  * row per test, worst first - how it went, the test (to its run), its checks - 25 a page.
  *
- * An execution carries no roll-up and the API has no call for one: every run is listed (one call),
- * each read once (a call each - again when its status changes) for its name and checks, and the run
- * itself found in its set's runs. Polls every 2 seconds while a test is under way.
+ * Read as the API has it (API 2.0): the run on its own - when it started, what it replayed, its
+ * tests counted by status and their checks counted - and its tests a page at a time, each with
+ * its name, its checks and where its answer came from, in the order chosen (worst first, or by
+ * the test's name). Polls every 2 seconds while a test is under way.
  */
 @Component({
   selector: 'assay-execution',
@@ -80,21 +81,31 @@ export class ExecutionComponent {
     idColumn('Run ID'),
   ];
 
-  /** Every run of it, as listed; each one read once - null: it couldn't be. */
-  runs = signal<RunMetadata[]>([]);
-  private details = signal<Record<string, RunDetails | null>>({});
-  loading = signal(true);
+  /** It, read on its own: when it started, what it replayed, its tests and their checks counted. */
+  exec = signal<ExecutionDetails | null>(null);
+  /** The run it replayed, read for when that was. */
+  private replayedRun = signal<ExecutionMetadata | null>(null);
+  private reading = false;
   err = signal<string | null>(null);
-  /** It, and the run it replayed, among its set's runs. */
-  private execs = signal<ExecutionMetadata[]>([]);
-  exec = computed(() => this.execs().find((e) => e.id === this.execId()) ?? null);
   sort = signal('How it went');
   sortOptions = ['How it went', 'Test'];
-  offset = signal(0);
-  limit = signal(25);
+  /** Its tests, a page at a time, in the order chosen - the API's. */
+  page = new Paged<ExecutionRun>(
+    (o, l) =>
+      this.api.executionRunsPage(
+        this.kind(),
+        this.id(),
+        this.execId(),
+        o,
+        l,
+        this.sort() === 'Test' ? 'name' : 'worst_first',
+      ),
+    25,
+    errText,
+  );
 
   loadMsg = computed(() => {
-    const e = this.err();
+    const e = this.err() ?? this.page.error();
     return e ? { ok: false, text: e } : null;
   });
   private list = computed(() => (this.kind() === 'test-sets' ? 'Test sets' : 'Test plans'));
@@ -107,25 +118,16 @@ export class ExecutionComponent {
         : []),
     ];
   });
-  /** When it ran - its own start, else its first test's. */
-  private startedAt = computed(
-    () =>
-      this.exec()?.created_at ??
-      this.runs()
-        .map((r) => r.created_at)
-        .sort()[0] ??
-      null,
-  );
   title = computed(() => {
-    const at = this.startedAt();
+    const at = this.exec()?.created_at;
     return at ? runOf(at) : '';
   });
-  /** The run it replayed, among its set's runs. */
+  /** The run it replayed: its id, and when it was once read. */
   private replayed = computed(() => {
     const ref = this.exec()?.replayed_execution_id;
-    return ref
-      ? (this.execs().find((e) => e.id === ref.id) ?? { id: ref.id, created_at: null })
-      : null;
+    if (!ref) return null;
+    const r = this.replayedRun();
+    return { id: ref.id, created_at: r?.id === ref.id ? r.created_at : null };
   });
   lede = computed(() => {
     const set = this.kind() === 'test-sets';
@@ -140,46 +142,29 @@ export class ExecutionComponent {
   /** Under how it went: what ran, and when - "Replayed an earlier run, with the same copies · 7
    *  d ago". */
   facts = computed(() => {
-    const e = this.exec(),
-      at = this.startedAt();
-    return e && at ? `${whatRan(e, this.kind())} · ${rel(at)}` : null;
+    const e = this.exec();
+    return e ? `${whatRan(e, this.kind())} · ${rel(e.created_at)}` : null;
   });
   replayedLink = computed(() => {
     const r = this.replayed();
     return r ? ['/', this.kind(), this.id(), 'executions', r.id] : null;
   });
 
+  /** How many tests ran in it. */
+  tests = computed(() => this.exec()?.run_count ?? this.page.total());
   /** Its tests by status: how they ended, then what is still under way. */
-  testParts = computed(() =>
-    tallyParts(
-      this.runs().map((r) => r.status),
-      RUNS_ENDED,
-    ),
-  );
+  testParts = computed(() => tallyParts(this.exec()?.runs ?? {}, RUNS_ENDED));
   /** Its checks: met and not met in the tests that finished, and the checks of a test that
    *  couldn't run - not ran with it. */
   checkParts = computed<TallyPart[]>(() => {
-    let met = 0,
-      unmet = 0,
-      notRan = 0;
-    for (const r of this.runs()) {
-      const d = this.details()[r.id];
-      if (!d || isInFlight(d.status)) continue;
-      if (d.status === 'NotRan') {
-        notRan += d.test_type_assignments?.length ?? 0;
-        continue;
-      }
-      const c = checksMet(d);
-      met += c.met;
-      unmet += c.total - c.met;
-    }
+    const c = this.exec()?.checks;
     return [
       {
         label: 'How it ended',
         rows: [
-          { key: 'met', count: met },
-          { key: 'unmet', count: unmet },
-          { key: 'NotRan', count: notRan },
+          { key: 'met', count: c?.met ?? 0 },
+          { key: 'unmet', count: c?.not_met.length ?? 0 },
+          { key: 'NotRan', count: (c?.not_ran ?? []).reduce((n, x) => n + x.checks, 0) },
         ],
       },
     ];
@@ -187,28 +172,23 @@ export class ExecutionComponent {
 
   /** A row per test, as the table shows it: its status, its name (to its run), where its answer
    *  came from, its checks. */
-  rows = computed(() => {
-    const all = this.runs().map((r) => {
-      const d = this.details()[r.id];
-      return {
-        r,
-        name: d ? displayName(d.name, r.id) : null,
-        failed: d === null,
-        source: d ? answerFrom(d) : null,
-        checks: d ? checksMet(d) : null,
-        link: ['/', this.kind(), this.id(), 'executions', this.execId(), 'runs', r.id],
-      };
-    });
-    return this.sort() === 'Test'
-      ? [...all].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
-      : worstFirst(all.map((x) => ({ ...x, status: x.r.status })));
-  });
-  pageRows = computed(() => this.rows().slice(this.offset(), this.offset() + this.limit()));
+  rows = computed(() =>
+    this.page.items().map((r) => ({
+      r,
+      name: displayName(r.test_name, r.id),
+      source: r.output_source ? answerFrom(r) : null,
+      checks: checksListed(r),
+      link: ['/', this.kind(), this.id(), 'executions', this.execId(), 'runs', r.id],
+    })),
+  );
   emptyText = computed(() =>
-    this.loading() || this.runs().length ? null : 'Nothing ran in it: its set had no tests.',
+    this.page.loading() || this.page.total() ? null : 'Nothing ran in it: its set had no tests.',
   );
   /** True while a test of it is under way - drives the poll below. */
-  hasInFlight = computed(() => this.runs().some((r) => isInFlight(r.status)));
+  hasInFlight = computed(() => {
+    const runs = this.exec()?.runs ?? {};
+    return Object.entries(runs).some(([status, n]) => isInFlight(status) && !!n);
+  });
 
   constructor() {
     effect(() => {
@@ -218,45 +198,48 @@ export class ExecutionComponent {
       untracked(() => {
         // This scope's own name (store.parent) - only sets or plans is needed, by kind.
         kind === 'test-sets' ? this.store.loadSets() : this.store.loadPlans();
-        this.runs.set([]);
-        this.details.set({});
-        this.offset.set(0);
-        this.loading.set(true);
-        this.api.executions(kind, id).subscribe((list) => this.execs.set(list));
-        this.load(kind, id, execId);
+        this.exec.set(null);
+        this.read(kind, id, execId);
       });
+    });
+    // Its tests, from the first page, for this run and in the order chosen.
+    effect(() => {
+      this.kind();
+      this.id();
+      this.execId();
+      this.sort();
+      untracked(() => this.page.reset());
+    });
+    // The run it replayed, read once for when that was.
+    effect(() => {
+      const ref = this.exec()?.replayed_execution_id;
+      if (!ref || untracked(() => this.replayedRun()?.id === ref.id)) return;
+      untracked(() =>
+        this.api
+          .execution(this.kind(), this.id(), ref.id)
+          .subscribe({ next: (e) => this.replayedRun.set(e), error: () => {} }),
+      );
     });
     // Polls while a test is under way, stops once nothing's left to wait for - see shared/poll.ts.
     pollWhile(
       () => this.hasInFlight(),
       () => {
-        if (!this.loading()) this.load(this.kind(), this.id(), this.execId());
+        if (!this.reading) this.read(this.kind(), this.id(), this.execId());
+        if (!this.page.loading()) this.page.reload();
       },
     );
   }
-  /** Its runs (one call), then each one not read yet - or read before its status changed. */
-  private load(kind: Kind, id: string, execId: string) {
-    this.api.executionRunsPage(kind, id, execId, 0, 500).subscribe({
-      next: (p) => {
-        this.loading.set(false);
+  /** It, on its own: its start, what it replayed, its tests and checks counted. */
+  private read(kind: Kind, id: string, execId: string) {
+    this.reading = true;
+    this.api.execution(kind, id, execId).subscribe({
+      next: (e) => {
+        this.reading = false;
         this.err.set(null);
-        this.runs.set(p.items);
-        const known = this.details();
-        const stale = p.items.filter((r) => !(r.id in known) || known[r.id]?.status !== r.status);
-        if (!stale.length) return;
-        forkJoin(
-          stale.map((r) =>
-            this.api.runDetails(kind, id, execId, r.id).pipe(
-              map((d): [string, RunDetails | null] => [r.id, d]),
-              catchError(() => of<[string, RunDetails | null]>([r.id, null])),
-            ),
-          ),
-        ).subscribe((pairs) =>
-          this.details.update((d) => ({ ...d, ...Object.fromEntries(pairs) })),
-        );
+        this.exec.set(e);
       },
       error: (e) => {
-        this.loading.set(false);
+        this.reading = false;
         this.err.set(errText(e));
       },
     });

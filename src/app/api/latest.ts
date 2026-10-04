@@ -1,9 +1,9 @@
 import { effect, inject, signal, untracked } from '@angular/core';
-import { Observable, catchError, forkJoin, map, of, switchMap } from 'rxjs';
+import { Observable, catchError, forkJoin, map, of } from 'rxjs';
 import { BatchSummary, Kind } from './models';
 import { RunsApiService } from './runs-api.service';
 import { StatisticsApiService } from './statistics-api.service';
-import { StatusCount, isInFlight } from '../shared/format';
+import { StatusCount, isInFlight, statusCountsOf } from '../shared/format';
 import { pollWhile, whenTabShown } from '../shared/poll';
 import { BATCH_POLL_MS } from '../statistics/stats-format';
 
@@ -44,10 +44,11 @@ const SCOPE_PARAM: Record<LatestKind, 'test_id' | 'test_set_id' | 'test_plan_id'
 };
 
 /**
- * Each shown row's latest verdict (its newest statistics batch) and latest run (outside a batch),
- * for a work list or a page's table - one call each per row, as the API has no "latest" per item
- * yet (see docs/to_be_implemented_after_be_version_2/dev_notes.md). Read again whenever the rows
- * change; polled as the pages that show them are - the runs every 2 seconds while one is pending
+ * Each shown row's latest verdict (its newest statistics batch) and latest run (outside a batch -
+ * a set's or plan's counted as it comes), for a work list or a page's table - a call each per row,
+ * as the API has no "latest" per item yet (see docs/to_be_implemented_after_be_version_2/
+ * dev_notes.md). Read again whenever the rows change; polled as the pages that show them are - the
+ * runs every 2 seconds while one is pending
  * or running, the batches every 3 - and again when the tab comes back into view ("Run with
  * statistics ↗" opens its own).
  *
@@ -141,25 +142,21 @@ export class LatestByRow {
       );
     }
     return this.runsApi.executionsPage(kind, id, 0, 1, 'none').pipe(
-      switchMap((p) => {
+      map((p) => {
         const e = p.items[0];
-        if (!e) return of([id, null] as const);
-        return this.runsApi.executionStatusCounts(kind, id, e).pipe(
-          map(
-            (counts) =>
-              [
-                id,
-                {
-                  status: null,
-                  counts,
-                  at: e.created_at,
-                  total: p.total,
-                  id: e.id,
-                  replayed: !!e.replayed_execution_id,
-                },
-              ] as const,
-          ),
-        );
+        return [
+          id,
+          e
+            ? {
+                status: null,
+                counts: statusCountsOf(e.runs),
+                at: e.created_at,
+                total: p.total,
+                id: e.id,
+                replayed: !!e.replayed_execution_id,
+              }
+            : null,
+        ] as const;
       }),
       catchError(() => of([id, null] as const)),
     );

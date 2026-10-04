@@ -9,7 +9,7 @@
       [items]="tiles()"
       [groups]="tileGroups"
       [across]="6"
-      [selected]="status() ?? null"
+      [selected]="oneStatus()"
       (selectedChange)="pickTile($event)"
     />
   </assay-guide-head>
@@ -17,11 +17,12 @@
   <assay-smart-filter
     label="Filter the runs"
     placeholder="Tests, sets, plans - or type status, from, check…"
+    wordsIn="the names of the tests, sets and plans"
     [facets]="facets()"
     [shown]="shownText()"
     [sortOptions]="sortOptions"
-    [(query)]="filter.query"
-    [(words)]="filter.kept"
+    [(query)]="words.query"
+    [(words)]="words.kept"
     [chosen]="choice()"
     (chosenChange)="choose($event)"
     [(sort)]="sort"
@@ -37,14 +38,10 @@
         [expandable]="false"
       >
         <assay-catalog-cell caption="Test">
-          @if (v.read; as x) {
-            @if (x.testId) {
-              <a class="cell-nm" [routerLink]="['/tests', x.testId]">{{ x.name }}</a>
-            } @else {
-              <span class="cell-nm">{{ x.name }}</span>
-            }
+          @if (v.testId) {
+            <a class="cell-nm" [routerLink]="['/tests', v.testId]">{{ v.name }}</a>
           } @else {
-            <span class="muted">{{ v.failed ? "Couldn't be read." : '…' }}</span>
+            <span class="cell-nm">{{ v.name }}</span>
           }
         </assay-catalog-cell>
         <assay-catalog-cell caption="From">
@@ -58,7 +55,7 @@
           }
         </assay-catalog-cell>
         <assay-catalog-cell caption="Its checks">
-          <assay-checks-met [checks]="v.read?.checks ?? null" [failed]="v.failed" />
+          <assay-checks-met [checks]="v.checks" />
         </assay-catalog-cell>
         <assay-catalog-cell caption="When"
           ><span class="when"><assay-rel-time [iso]="v.r.created_at" /></span

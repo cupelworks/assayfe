@@ -19,8 +19,8 @@ export const RUN_TILE_GROUPS: CatalogIndexGroup[] = [
   { label: 'How it ended', count: RUNS_ENDED.length },
   { label: 'While it runs', count: UNDER_WAY.length },
 ];
-/** Runs' quick filters: a tile per status, with how many runs have it (the API's totals). */
-export const runTiles = (counts: Record<string, number> | null): CatalogIndexItem[] =>
+/** Runs' quick filters: a tile per status, with how many runs have it (the API's counts). */
+export const runTiles = (counts: Partial<Record<string, number>> | null): CatalogIndexItem[] =>
   RUN_STATUSES.map((key) => ({
     key,
     mark: key,
@@ -28,12 +28,11 @@ export const runTiles = (counts: Record<string, number> | null): CatalogIndexIte
     count: counts?.[key] ?? 0,
     blurb: BLURB[key],
   }));
-/** The Status facet: the tiles' values - one at a time, as the API filters by one. */
-export const statusFacet = (counts: Record<string, number> | null): FilterFacet => ({
+/** The Status facet: the tiles' values - several add up (any of them). */
+export const statusFacet = (counts: Partial<Record<string, number>> | null): FilterFacet => ({
   key: 'status',
   label: 'Status',
   sub: 'runs with each',
-  single: true,
   values: RUN_STATUSES.map((key) => ({
     key,
     label: statusLabel(key),
@@ -49,12 +48,11 @@ export const FROM_LABEL: Record<RunOrigin, string> = {
   TestSet: 'Test set',
   TestPlan: 'Test plan',
 };
-/** The From facet: on its own, a set's, a plan's - one at a time, as the API filters by one. */
-export const fromFacet = (counts: Record<string, number> | null): FilterFacet => ({
+/** The From facet: on its own, a set's, a plan's - several add up (any of them). */
+export const fromFacet = (counts: Partial<Record<string, number>> | null): FilterFacet => ({
   key: 'from',
   label: 'From',
   sub: 'runs from each',
-  single: true,
   values: ORIGINS.map((key) => ({
     key,
     label: FROM_LABEL[key],

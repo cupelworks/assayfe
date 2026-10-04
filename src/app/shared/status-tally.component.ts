@@ -249,18 +249,19 @@ export class StatusTallyComponent {
 
 /**
  * A summary's tally of statuses - the Overview's, a set's run's: each status in `ended`, then
- * Running and Pending, counted in `statuses`; a row leads where `link` says, or nowhere yet.
+ * Running and Pending, counted in `statuses` - a list of them, or the API's counts by status (a
+ * set's run's `runs`); a row leads where `link` says, or nowhere yet.
  */
 export function tallyParts(
-  statuses: string[],
+  statuses: readonly string[] | Partial<Record<string, number>>,
   ended: string[],
   link?: (key: string) => Pick<TallyRow, 'link' | 'query'>,
 ): TallyPart[] {
-  const row = (key: string): TallyRow => ({
-    key,
-    count: statuses.filter((s) => s === key).length,
-    ...link?.(key),
-  });
+  const count = (key: string) =>
+    Array.isArray(statuses)
+      ? statuses.filter((s) => s === key).length
+      : ((statuses as Partial<Record<string, number>>)[key] ?? 0);
+  const row = (key: string): TallyRow => ({ key, count: count(key), ...link?.(key) });
   return [
     { label: 'How it ended', rows: ended.map(row) },
     { label: 'While it runs', rows: UNDER_WAY.map(row) },

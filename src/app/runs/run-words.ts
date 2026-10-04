@@ -1,26 +1,12 @@
-import { RunMetadata, TestType, TestTypeAssignment } from '../api/models';
+import { TestType, TestTypeAssignment } from '../api/models';
 import { counted, isInFlight, listed, shortDate } from '../shared/format';
 import { inWords } from '../shared/work/sentences';
-import { ChecksMet } from '../shared/work/checks-met.component';
+import { ChecksMet, ChecksRead } from '../shared/work/checks-met.component';
 
 /** A run's title, and how a breadcrumb names it: it has no name of its own, only when it ran -
  *  "Run of 1 Oct, 20:23" (in the reader's own order). */
 export const runOf = (iso: string) =>
   `Run of ${shortDate(iso)}, ${new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
-
-/** Worst first: what needs looking at, then what met every check, then what's still under way. */
-const RANK: Record<string, number> = {
-  NotRan: 0,
-  Red: 1,
-  Amber: 2,
-  Green: 3,
-  Running: 4,
-  Pending: 5,
-};
-/** A set's or plan's runs as its run's page lists them - worst first, the API's order within a
- *  status - and as a test in it counts its place ("Test 3 of 5 in this run"). */
-export const worstFirst = <T extends Pick<RunMetadata, 'status'>>(runs: readonly T[]) =>
-  [...runs].sort((a, b) => (RANK[a.status] ?? 9) - (RANK[b.status] ?? 9));
 
 /** Where a run's answer came from, in a few words: asked live, or the test's recorded one. */
 export function answerFrom(r: { output_source?: string | null; model_output?: string | null }) {
@@ -81,7 +67,7 @@ export function notMetSays(c: ChecksMet) {
   return `${who} ${no.length === 1 ? "wasn't" : "weren't"} met.`;
 }
 /** The ones met, after: "Bias and Toxicity were." - past three, how many. */
-export function metSays(c: ChecksMet) {
+export function metSays(c: ChecksRead) {
   const yes = c.names.filter((n) => !c.notMet.includes(n));
   if (!yes.length || !c.notMet.length) return '';
   return yes.length <= 3

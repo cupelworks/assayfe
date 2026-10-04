@@ -8,10 +8,9 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { Observable, forkJoin, map } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
 import { ExecutionMetadata, Kind } from '../api/models';
-import { StatusCount, errText, isInFlight } from '../shared/format';
+import { StatusCount, errText, isInFlight, statusCountsOf } from '../shared/format';
 import { Paged } from '../shared/paged';
 import { pollWhile } from '../shared/poll';
 import { PagerComponent } from '../shared/pager.component';
@@ -19,7 +18,7 @@ import { RelTimeComponent } from '../shared/rel-time.component';
 import { StatusCountsComponent } from '../shared/status-counts.component';
 import { CATALOG, CatalogColumn, CatalogTag, idColumn } from '../shared/catalog';
 
-/** A run of a set or plan: its execution, and its runs counted by status (empty while read). */
+/** A run of a set or plan: its execution, and its runs counted by status. */
 export interface ExecutionRow {
   e: ExecutionMetadata;
   counts: StatusCount[];
@@ -35,9 +34,9 @@ export const whatRan = (e: ExecutionMetadata, kind: Kind) =>
 
 /**
  * A set's or plan's runs outside a batch, newest first, five a page, as a catalogue's table: a
- * live run or a replay (to its page), how it went - its runs counted by status, one call each, as
- * an execution carries no roll-up - when, and Replay. Polls every 2 seconds while a run is under
- * way. The newest (`newest`) is the page's latest run.
+ * live run or a replay (to its page), how it went - its runs counted by status, as each one comes
+ * (`runs`) - when, and Replay. Polls every 2 seconds while a run is under way. The newest
+ * (`newest`) is the page's latest run.
  */
 @Component({
   selector: 'assay-executions-table',
@@ -64,7 +63,7 @@ export const whatRan = (e: ExecutionMetadata, kind: Kind) =>
             @if (r.counts.length) {
               <assay-status-counts [counts]="r.counts" />
             } @else {
-              <span class="muted">…</span>
+              <span class="muted">Nothing ran: no tests</span>
             }
           </assay-catalog-cell>
           <assay-catalog-cell caption="When"
@@ -110,9 +109,8 @@ export class ExecutionsTableComponent {
     5,
     errText,
   );
-  private countsOf = signal<Record<string, StatusCount[]>>({});
   rows = computed<ExecutionRow[]>(() =>
-    this.page.items().map((e) => ({ e, counts: this.countsOf()[e.id] ?? [] })),
+    this.page.items().map((e) => ({ e, counts: statusCountsOf(e.runs) })),
   );
   /** The newest run - undefined while it's read, null with none. */
   newest = signal<ExecutionRow | null | undefined>(undefined);
@@ -129,36 +127,16 @@ export class ExecutionsTableComponent {
       this.version();
       untracked(() => this.page.reload());
     });
-    // Each shown run's statuses, read again whenever the list is (each poll too); a slow read
-    // can't overwrite a newer one.
-    effect((onCleanup) => {
-      const items = this.page.items();
-      if (!items.length) {
-        this.countsOf.set({});
-        if (!this.page.loading() && this.page.offset() === 0) this.newest.set(null);
-        return;
-      }
-      const sub = forkJoin(items.map((e) => this.countRow(e))).subscribe((pairs) => {
-        const counts = Object.fromEntries(pairs);
-        this.countsOf.set(counts);
-        if (this.page.offset() === 0) this.newest.set({ e: items[0], counts: counts[items[0].id] });
-      });
-      onCleanup(() => sub.unsubscribe());
+    // The newest, from the first page once it's in - kept while another page is shown.
+    effect(() => {
+      const rows = this.rows();
+      if (!this.page.loading() && this.page.offset() === 0) this.newest.set(rows[0] ?? null);
     });
     pollWhile(
-      () =>
-        Object.values(this.countsOf()).some((counts) =>
-          counts.some((c) => isInFlight(c.key) && c.value > 0),
-        ),
+      () => this.rows().some((r) => r.counts.some((c) => isInFlight(c.key))),
       () => {
         if (!this.page.loading()) this.page.reload();
       },
     );
-  }
-
-  private countRow(e: ExecutionMetadata): Observable<[string, StatusCount[]]> {
-    return this.api
-      .executionStatusCounts(this.kind(), this.id(), e)
-      .pipe(map((counts) => [e.id, counts] as [string, StatusCount[]]));
   }
 }

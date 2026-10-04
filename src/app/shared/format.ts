@@ -1,4 +1,4 @@
-import { TestStatus } from '../api/models';
+import { RunCounts, TestStatus } from '../api/models';
 
 export function rel(iso?: string | null) {
   if (!iso) return '-';
@@ -72,6 +72,10 @@ export function countByStatus(runs: { status: TestStatus }[]) {
 }
 /** One status's count, with its label and colour - a row of countByStatus. */
 export type StatusCount = ReturnType<typeof countByStatus>[number];
+/** The API's runs counted by status (`RunCounts` - an execution's `runs`, `GET /runs/facets`), as
+ *  rows - the statuses with none left out. */
+export const statusCountsOf = (counts: RunCounts | null | undefined): StatusCount[] =>
+  STATUS.map((s) => ({ ...s, value: counts?.[s.key] ?? 0 })).filter((s) => s.value > 0);
 /** A 422 entry's `loc` after FastAPI's own location segment ("body"/"query") - the part that
  *  names the field (["body","settings","url"] → ["settings","url"]). */
 const locPath = (x: any): string[] => (x?.loc ?? []).slice(1).map(String);

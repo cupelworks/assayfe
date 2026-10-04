@@ -9,59 +9,48 @@ import {
   untracked,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Observable, catchError, forkJoin, map, of } from 'rxjs';
 import { CatalogStore } from '../api/catalog.store';
-import { RunsApiService } from '../api/runs-api.service';
+import { RunQuery, RunSort, RunsApiService } from '../api/runs-api.service';
 import { TestTypesStore } from '../api/test-types.store';
-import {
-  AnyRunMetadata,
-  RunDetails,
-  RunOrigin,
-  StandaloneRunDetails,
-  TestStatus,
-} from '../api/models';
+import { AnyRunMetadata, RunFacets, RunOrigin, TestStatus } from '../api/models';
 import { counted, displayName, errText, statusLabel } from '../shared/format';
-import { filterMissText } from '../shared/filter-miss';
 import { Paged } from '../shared/paged';
-import { TextFilter } from '../shared/text-filter';
+import { SearchWords } from '../shared/text-filter';
+import { debounced } from '../shared/debounced';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { CATALOG, CatalogColumn, idColumn } from '../shared/catalog';
 import { SmartFilterComponent } from '../shared/work/smart-filter.component';
-import { FilterChoice, FilterFacet, createdFacet } from '../shared/work/filters';
-import { ChecksMet, ChecksMetComponent, checksMet } from '../shared/work/checks-met.component';
 import {
-  FROM_LABEL,
-  ORIGINS,
-  RUN_STATUSES,
-  RUN_TILE_GROUPS,
-  fromFacet,
-  runTiles,
-  statusFacet,
-} from './runs-list';
+  FilterChoice,
+  FilterFacet,
+  chosenCount,
+  createdFacet,
+  createdParams,
+} from '../shared/work/filters';
+import { ChecksMetComponent, checksListed } from '../shared/work/checks-met.component';
+import { FROM_LABEL, RUN_TILE_GROUPS, fromFacet, runTiles, statusFacet } from './runs-list';
 
-/** What a row reads of its run, one call each: its test's name, the test it's a copy of (a set's
- *  or plan's run) or is, and its checks. */
-interface RunRead {
-  name: string;
-  testId: string | null;
-  checks: ChecksMet;
-}
+/** A value of the address's ?status= or ?origin=: once, several times, or not there. */
+type Several<T> = T | T[] | undefined;
+const several = <T>(v: Several<T>): T[] => (v == null ? [] : Array.isArray(v) ? v : [v]);
+const same = (a: readonly string[], b: readonly string[]) => a.join(' ') === b.join(' ');
+const sumOf = (counts: Partial<Record<string, number>>) =>
+  Object.values(counts).reduce<number>((a, b) => a + (b ?? 0), 0);
 
 /**
  * Runs, on the Guide's layout as the work's lists are: every run
  * started one at a time - a test on its own, or a set's or plan's, a test at a time - newest
  * first; a statistics batch's runs are on its page. A tile per status, grouped as the Overview
- * groups them, each with the API's total; the smart filter; a ruled row per run - how it went (to
- * its page), its test, where it was started from, its checks, when - read one call each, as the
- * list carries ids only; the pager.
+ * groups them, each with how many runs have it; the smart filter; a ruled row per run - how it
+ * went (to its page), its test, where it was started from, its checks, when; the pager.
  *
- * The API filters by one status and one origin (`?status=`, `?origin=`): the tiles and the
- * Status and From facets set them, in the address - the Overview's tally rows open a status. The
- * Test set, Test plan, Checks and Created facets are chosen but not applied, the sort reverses
- * the page shown, and the words search the page shown - see
- * docs/to_be_implemented_after_be_version_2/dev_notes.md.
+ * The API does the work (API 2.0): the list carries each run's name, its set's or plan's, its
+ * checks counted and its error; every facet's choice, the words and the sort go to it as
+ * parameters (`GET /runs`), and the tiles' and the facets' counts come from `GET /runs/facets`,
+ * each within the other filters. The statuses and origins chosen are in the address, so the
+ * Overview's tally rows open a status.
  */
 @Component({
   selector: 'assay-runs-list',
@@ -79,9 +68,12 @@ interface RunRead {
   styleUrls: ['../shared/guide/guide.css', '../shared/work/work.css', './runs-list.component.css'],
 })
 export class RunsListComponent {
-  /** ?status= and ?origin=, bound by withComponentInputBinding() - none: every run. */
-  status = input<TestStatus | undefined>();
-  origin = input<RunOrigin | undefined>();
+  /** ?status= and ?origin= - once per value - bound by withComponentInputBinding(); none: every
+   *  run. */
+  status = input<Several<TestStatus>>();
+  origin = input<Several<RunOrigin>>();
+  private statuses = computed(() => several(this.status()));
+  private origins = computed(() => several(this.origin()));
   private api = inject(RunsApiService);
   private store = inject(CatalogStore);
   private types = inject(TestTypesStore);
@@ -89,47 +81,58 @@ export class RunsListComponent {
   private route = inject(ActivatedRoute);
   statusLabel = statusLabel;
 
+  /** The words, looked for in each run's test's, set's or plan's name - by the API. */
+  words = new SearchWords();
+  sort = signal('Newest');
+  sortOptions = ['Newest', 'Oldest'];
+  /** The choice, its statuses and origins as the address says - the other facets kept as
+   *  chosen. */
+  choice = linkedSignal<{ status: TestStatus[]; origin: RunOrigin[] }, FilterChoice>({
+    source: () => ({ status: this.statuses(), origin: this.origins() }),
+    computation: (s, prev) => ({ ...(prev?.value ?? {}), status: s.status, from: s.origin }),
+  });
+  /** The words as the API gets them: once they've stood still. */
+  private terms = debounced(() => this.words.terms());
+  /** What the API is asked for: every facet's choice and the words. */
+  private query = computed<RunQuery>(() => {
+    const c = this.choice();
+    return {
+      batch: 'none',
+      status: this.statuses(),
+      origin: this.origins(),
+      test_set_id: c['set'],
+      test_plan_id: c['plan'],
+      check_type: c['check'],
+      ...createdParams(c['created']),
+      q: this.terms(),
+    };
+  });
+  private apiSort = computed<RunSort>(() => (this.sort() === 'Oldest' ? 'oldest' : 'newest'));
+  /** Something narrows the list: a facet's choice or words. */
+  private narrowed = computed(() => chosenCount(this.choice()) > 0 || this.terms().length > 0);
+  /** Something besides the statuses narrows it - the status counts then count within it. */
+  private narrowedBeyondStatus = computed(
+    () => chosenCount({ ...this.choice(), status: [] }) > 0 || this.terms().length > 0,
+  );
+
   page = new Paged<AnyRunMetadata>(
-    (o, l) => this.api.latestRunsPage(o, l, this.status(), this.origin(), 'none'),
+    (o, l) => this.api.runsPage(this.query(), o, l, this.apiSort()),
     25,
     errText,
   );
-  /** Each row's run as read - null: it couldn't be. */
-  reads = signal<Record<string, RunRead | null>>({});
-  /** The page's words: each run's test, its set or plan, its checks, its error. */
-  filter = new TextFilter<AnyRunMetadata>((r) => {
-    const x = this.reads()[r.id];
-    return [x?.name, this.scope(r)?.name, ...(x?.checks.names ?? []), x?.checks.error]
-      .filter(Boolean)
-      .join(' ');
-  });
-  sort = signal('Newest');
-  sortOptions = ['Newest', 'Oldest'];
-  rows = computed(() => {
-    const rows = this.filter.apply(this.page.items());
-    return this.sort() === 'Oldest' ? [...rows].reverse() : rows;
-  });
-
-  /** The API's totals: runs with each status (given the chosen origin), from each origin (given
-   *  the chosen status), and every run outside a batch. */
-  statusCounts = signal<Record<string, number> | null>(null);
-  fromCounts = signal<Record<string, number> | null>(null);
+  /** The runs counted by status and by origin, each within the other filters - the tiles' and
+   *  the Status and From facets' counts. */
+  counts = signal<RunFacets | null>(null);
+  /** Every run outside a batch. */
   everything = signal<number | null>(null);
 
-  tiles = computed(() => runTiles(this.statusCounts()));
+  tiles = computed(() => runTiles(this.counts()?.status ?? null));
   tileGroups = RUN_TILE_GROUPS;
-  /** The choice, its status and origin as the address says - the other facets kept as chosen. */
-  choice = linkedSignal<{ status?: TestStatus; origin?: RunOrigin }, FilterChoice>({
-    source: () => ({ status: this.status(), origin: this.origin() }),
-    computation: (s, prev) => ({
-      ...(prev?.value ?? {}),
-      status: s.status ? [s.status] : [],
-      from: s.origin ? [s.origin] : [],
-    }),
-  });
+  /** The tile chosen: the one status, when only one is. */
+  oneStatus = computed(() => (this.statuses().length === 1 ? this.statuses()[0] : null));
   facets = computed<FilterFacet[]>(() => [
-    statusFacet(this.statusCounts()),
-    fromFacet(this.fromCounts()),
+    statusFacet(this.counts()?.status ?? null),
+    fromFacet(this.counts()?.origin ?? null),
     {
       key: 'set',
       label: 'Test set',
@@ -152,20 +155,13 @@ export class RunsListComponent {
   ]);
 
   shownText = computed(() => {
-    if (this.filter.terms().length)
-      return `${this.rows().length} of ${this.page.items().length} on this page`;
     const n = this.page.total(),
       all = this.everything();
-    return (this.status() || this.origin()) && all != null
-      ? `${n} of ${all} shown`
-      : counted(n, 'run');
+    return this.narrowed() && all != null ? `${n} of ${all} shown` : counted(n, 'run');
   });
   emptyText = computed(() => {
-    if (this.page.loading()) return null;
-    if (this.filter.terms().length)
-      return filterMissText('run', this.filter.text(), this.page.total() > this.page.limit());
-    if (this.page.total()) return null;
-    return this.status() || this.origin()
+    if (this.page.loading() || this.page.total()) return null;
+    return this.narrowed()
       ? 'No run matches these filters. Take one out, or clear them all.'
       : 'No runs yet. Run a test, a test set or a test plan, and its runs show here.';
   });
@@ -178,42 +174,47 @@ export class RunsListComponent {
     { label: 'When', width: 1 },
     idColumn(),
   ];
-  /** A row as the table shows it. */
-  view = computed(() => {
-    const reads = this.reads();
-    return this.rows().map((r) => ({
-      r,
-      read: reads[r.id],
-      /** Not read yet: undefined; couldn't be: null. */
-      failed: reads[r.id] === null,
-      link: this.runLink(r),
-      scope: this.scope(r),
-      label: `Open the run: ${statusLabel(r.status)}${reads[r.id] ? `, ${reads[r.id]!.name}` : ''}`,
-    }));
-  });
+  /** A row as the table shows it - all of it from the list. */
+  view = computed(() =>
+    this.page.items().map((r) => {
+      const name = displayName(r.test_name, r.test_case_id?.id ?? r.id);
+      return {
+        r,
+        name,
+        testId: r.test_case_id?.id ?? null,
+        checks: checksListed(r),
+        link: this.runLink(r),
+        scope: this.scope(r),
+        label: `Open the run: ${statusLabel(r.status)}, ${name}`,
+      };
+    }),
+  );
 
   constructor() {
     this.store.loadSets();
     this.store.loadPlans();
     this.types.load();
-    this.count().subscribe((n) => this.everything.set(n));
+    // The list, from its first page, whenever what's asked or the order changes.
     effect(() => {
-      const status = this.status(),
-        origin = this.origin();
+      this.query();
+      this.apiSort();
       // untracked: page.reset() -> reload() reads page's own offset()/limit() signals.
-      untracked(() => {
-        this.page.reset();
-        forkJoin(Object.fromEntries(RUN_STATUSES.map((s) => [s, this.count(s, origin)]))).subscribe(
-          (c) => this.statusCounts.set(c),
-        );
-        forkJoin(Object.fromEntries(ORIGINS.map((o) => [o, this.count(status, o)]))).subscribe(
-          (c) => this.fromCounts.set(c),
-        );
-      });
+      untracked(() => this.page.reset());
     });
-    effect(() => {
-      const items = this.page.items();
-      untracked(() => this.read(items));
+    // The counts, whenever what's asked changes; a newer answer drops the one before it. The
+    // status counts leave the statuses chosen out, so with nothing else narrowing they add up to
+    // every run - otherwise every run is asked for once.
+    effect((onCleanup) => {
+      const alone = !this.narrowedBeyondStatus();
+      const sub = this.api.runFacets(this.query()).subscribe({
+        next: (f) => {
+          this.counts.set(f);
+          if (alone) this.everything.set(sumOf(f.status));
+          else if (untracked(() => this.everything()) == null) this.readEverything();
+        },
+        error: () => this.counts.set(null),
+      });
+      onCleanup(() => sub.unsubscribe());
     });
   }
 
@@ -221,63 +222,29 @@ export class RunsListComponent {
   pickTile(key: string | null) {
     this.choose({ ...this.choice(), status: key ? [key] : [] });
   }
-  /** The smart filter's choice: its status and origin go to the address, which the API reads. */
+  /** The smart filter's choice: its statuses and origins go to the address, and with the rest to
+   *  the API. */
   choose(c: FilterChoice) {
     this.choice.set(c);
-    const status = c['status']?.[0] ?? null,
-      origin = c['from']?.[0] ?? null;
-    if (status !== (this.status() ?? null) || origin !== (this.origin() ?? null))
+    const status = c['status'] ?? [],
+      origin = c['from'] ?? [];
+    if (!same(status, this.statuses()) || !same(origin, this.origins()))
       this.router.navigate([], {
         relativeTo: this.route,
-        queryParams: { status, origin },
+        queryParams: {
+          status: status.length ? status : null,
+          origin: origin.length ? origin : null,
+        },
         queryParamsHandling: 'merge',
       });
   }
 
-  /** How many runs outside a batch have this status and origin - the API's total. */
-  private count(status?: TestStatus, origin?: RunOrigin) {
-    return this.api.latestRunsPage(0, 1, status, origin, 'none').pipe(
-      map((p) => p.total),
-      catchError(() => of(0)),
-    );
-  }
-  /** Each row's run, one call each - the list carries ids only. */
-  private read(items: AnyRunMetadata[]) {
-    if (!items.length) {
-      this.reads.set({});
-      return;
-    }
-    forkJoin(
-      items.map((r) =>
-        this.details(r).pipe(
-          map((d): [string, RunRead | null] => [
-            r.id,
-            d
-              ? {
-                  name: displayName(d.name, d.test_case_id?.id ?? r.id),
-                  testId: d.test_case_id?.id ?? null,
-                  checks: checksMet(d),
-                }
-              : null,
-          ]),
-          catchError(() => of<[string, RunRead | null]>([r.id, null])),
-        ),
-      ),
-    ).subscribe((pairs) => this.reads.set(Object.fromEntries(pairs)));
-  }
-  private details(r: AnyRunMetadata): Observable<RunDetails | StandaloneRunDetails | null> {
-    if (r.origin === 'Standalone' && r.test_case_id)
-      return this.api.standaloneRun(r.test_case_id.id, r.id);
-    if (r.origin === 'TestSet' && r.test_set_id && r.test_set_execution_id)
-      return this.api.runDetails('test-sets', r.test_set_id.id, r.test_set_execution_id.id, r.id);
-    if (r.origin === 'TestPlan' && r.test_plan_id && r.test_plan_execution_id)
-      return this.api.runDetails(
-        'test-plans',
-        r.test_plan_id.id,
-        r.test_plan_execution_id.id,
-        r.id,
-      );
-    return of(null);
+  /** Every run outside a batch - when the counts can't say it. */
+  private readEverything() {
+    this.api.runFacets({ batch: 'none' }).subscribe({
+      next: (f) => this.everything.set(sumOf(f.status)),
+      error: () => {},
+    });
   }
   /** The set or plan a run was started from: its kind, name and page. */
   private scope(r: AnyRunMetadata) {
@@ -285,10 +252,9 @@ export class RunsListComponent {
       plan = r.origin === 'TestPlan' ? r.test_plan_id : null,
       ref = set ?? plan;
     if (!ref) return null;
-    const found = (set ? this.store.sets() : this.store.plans()).find((x) => x.id === ref.id);
     return {
       kind: FROM_LABEL[r.origin],
-      name: found ? displayName(found.name, found.id) : '…',
+      name: displayName(r.scope_name, ref.id),
       link: [set ? '/test-sets' : '/test-plans', ref.id],
     };
   }

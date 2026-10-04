@@ -1,8 +1,6 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
 import { CatalogStore, ExecRow } from '../api/catalog.store';
-import { RunsApiService } from '../api/runs-api.service';
 import { StatisticalTestsStore, StatisticsApiService } from '../api/statistics-api.service';
 import { AnyRunMetadata, BatchSummary, ComparisonSummary } from '../api/models';
 import { Paged } from '../shared/paged';
@@ -10,9 +8,10 @@ import {
   StatusCount,
   countByStatus,
   counted,
+  displayName,
   errText,
   isInFlight,
-  untitled,
+  statusCountsOf,
 } from '../shared/format';
 import { pollWhile, whenTabShown } from '../shared/poll';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
@@ -44,9 +43,9 @@ interface LatestRun {
   name: string;
   link: unknown[];
   tags: CatalogTag[];
-  /** Set for a set's or plan's execution, whose runs are counted with one more call. */
+  /** Set for a set's or plan's execution. */
   exec: ExecRow | null;
-  /** A test's run: its one status. */
+  /** Its runs by status: a test's run its one status, a set's or plan's run as it comes. */
   counts: StatusCount[];
   runs: number;
   at: string;
@@ -91,7 +90,6 @@ interface LatestRun {
 })
 export class OverviewComponent {
   private statsApi = inject(StatisticsApiService);
-  private runsApi = inject(RunsApiService);
   private statTests = inject(StatisticalTestsStore);
   store = inject(CatalogStore);
   runAgainLink = runAgainLink;
@@ -133,9 +131,6 @@ export class OverviewComponent {
     BATCH_SAMPLE,
     errText,
   );
-  /** Each shown execution's runs, counted by status. */
-  private statusByExec = signal<Record<string, StatusCount[]>>({});
-
   // The summaries - each shown once its list is in (and read), never a count of nothing.
   batchesReady = computed(
     () => !this.batches.error() && (!this.batches.loading() || this.batches.items().length > 0),
@@ -177,9 +172,9 @@ export class OverviewComponent {
       }),
   );
 
-  /** 02: the latest run of each test, and execution of each set or plan, newest first. */
-  private latestRuns = computed((): LatestRun[] => {
-    const testNames = new Map(this.store.tests().map((t) => [t.id, t.name]));
+  /** 02: the latest run of each test, and execution of each set or plan, newest first - each named
+   *  and counted as the API lists it. */
+  runRows = computed((): LatestRun[] => {
     const executions = this.store.executions().map((e) => ({
       key: e.kind + e.parentId,
       at: e.created_at,
@@ -206,7 +201,7 @@ export class OverviewComponent {
               ? [{ text: e.scope }, { text: 'Replay', look: 'boxed' }]
               : [{ text: e.scope }],
             exec: e,
-            counts: [],
+            counts: statusCountsOf(e.runs),
             runs: e.run_count,
             at: e.created_at,
           };
@@ -215,7 +210,7 @@ export class OverviewComponent {
         const testId = r.test_case_id!.id;
         return {
           id: r.id,
-          name: testNames.get(testId) ?? untitled(testId),
+          name: displayName(r.test_name, testId),
           link: ['/tests', testId, 'runs', r.id],
           tags: [{ text: 'Test' }],
           exec: null,
@@ -224,19 +219,6 @@ export class OverviewComponent {
           at: r.created_at,
         };
       });
-  });
-  runRows = computed(() =>
-    this.latestRuns().map((r) => ({
-      ...r,
-      counts: r.exec ? (this.statusByExec()[r.exec.id] ?? []) : r.counts,
-    })),
-  );
-  /** The shown executions - the same ones (by id and size) don't count their runs again, unless the
-   *  runs reload. */
-  private shownExecs = computed(() => this.latestRuns().flatMap((r) => (r.exec ? [r.exec] : [])), {
-    equal: (a, b) =>
-      a.length === b.length &&
-      a.every((e, i) => e.id === b[i].id && e.run_count === b[i].run_count),
   });
 
   /** 03: the latest comparison of each test, set or plan. */
@@ -270,10 +252,6 @@ export class OverviewComponent {
 
   constructor() {
     this.statTests.load();
-    // The names of what ran.
-    this.store.loadTests();
-    this.store.loadSets();
-    this.store.loadPlans();
     this.loadRuns();
     this.batches.reload();
     this.comparisons.reload();
@@ -295,19 +273,6 @@ export class OverviewComponent {
       if (!this.store.runsLoading()) this.loadRuns();
       if (!this.batches.loading()) this.batches.reload();
       if (!this.comparisons.loading()) this.comparisons.reload();
-    });
-    // Each shown execution's runs, counted - again whenever the runs reload (each poll); a newer
-    // count drops the one before it.
-    effect((onCleanup) => {
-      const execs = this.shownExecs();
-      this.store.recentRuns();
-      if (!execs.length) return;
-      const sub = forkJoin(
-        execs.map((e) => this.runsApi.executionStatusCounts(e.kind, e.parentId, e)),
-      ).subscribe((counts) =>
-        this.statusByExec.set(Object.fromEntries(execs.map((e, i) => [e.id, counts[i]]))),
-      );
-      onCleanup(() => sub.unsubscribe());
     });
   }
 

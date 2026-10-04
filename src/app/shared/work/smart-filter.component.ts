@@ -79,6 +79,8 @@ export class SmartFilterComponent {
   items = input<FilterItem[]>([]);
   itemsLabel = input('Open');
   placeholder = input('');
+  /** Where the words are looked for, as the Words suggestion says it. */
+  wordsIn = input('the names and the inputs');
   /** Over the line, in small capitals: "Filter", "Find a row". */
   caption = input('Filter');
   label = input('Filter');
@@ -175,7 +177,7 @@ export class SmartFilterComponent {
           kind: 'words',
           before: 'Look for “',
           match: raw,
-          after: '” in the names and the inputs',
+          after: `” in ${this.wordsIn()}`,
           count: 'Enter',
         },
       ],

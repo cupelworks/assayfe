@@ -17,7 +17,7 @@
       <div class="went">
         <assay-status-tally
           caption="How it went"
-          [detail]="'its ' + counted(runs().length, 'test')"
+          [detail]="'its ' + counted(tests(), 'test')"
           noun="tests"
           [parts]="testParts()"
           [still]="true"
@@ -31,7 +31,7 @@
       </div>
       <assay-status-tally
         caption="Its checks"
-        [detail]="'in the ' + counted(runs().length, 'test')"
+        [detail]="'in the ' + counted(tests(), 'test')"
         noun="checks"
         [parts]="checkParts()"
         [still]="true"
@@ -51,40 +51,36 @@
   >
     <div class="listbar">
       <span
-        ><b>{{ runs().length }}</b> {{ runs().length === 1 ? 'test' : 'tests' }}</span
+        ><b>{{ tests() }}</b> {{ tests() === 1 ? 'test' : 'tests' }}</span
       >
       <assay-sort [options]="sortOptions" [(value)]="sort" />
     </div>
     <assay-catalog-table label="Its tests" [columns]="columns" [empty]="emptyText()">
-      @for (v of pageRows(); track v.r.id) {
+      @for (v of rows(); track v.r.id) {
         <assay-catalog-row
           [name]="statusLabel(v.r.status)"
           [mark]="v.r.status"
           [expandable]="false"
         >
           <assay-catalog-cell caption="Test">
-            @if (v.name !== null) {
-              <a class="cell-nm" [routerLink]="v.link">{{ v.name }}</a>
-              @if (v.source) {
-                <span class="under"><assay-catalog-tag [tag]="{ text: v.source }" /></span>
-              }
-            } @else {
-              <span class="muted">{{ v.failed ? "Couldn't be read." : '…' }}</span>
+            <a class="cell-nm" [routerLink]="v.link">{{ v.name }}</a>
+            @if (v.source) {
+              <span class="under"><assay-catalog-tag [tag]="{ text: v.source }" /></span>
             }
           </assay-catalog-cell>
           <assay-catalog-cell caption="Its checks">
-            <assay-checks-met [checks]="v.checks" [failed]="v.failed" />
+            <assay-checks-met [checks]="v.checks" />
           </assay-catalog-cell>
           <assay-catalog-cell caption="Run ID" [copyId]="v.r.id" />
         </assay-catalog-row>
       }
     </assay-catalog-table>
     <assay-pager
-      [total]="runs().length"
-      [offset]="offset()"
-      [limit]="limit()"
-      (offsetChange)="offset.set($event)"
-      (limitChange)="limit.set($event); offset.set(0)"
+      [total]="page.total()"
+      [offset]="page.offset()"
+      [limit]="page.limit()"
+      (offsetChange)="page.go($event)"
+      (limitChange)="page.size($event)"
     />
   </assay-guide-section>
 </div>

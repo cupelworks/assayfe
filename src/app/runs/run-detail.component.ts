@@ -1,16 +1,15 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { catchError, forkJoin, map, of } from 'rxjs';
 import { RunsApiService } from '../api/runs-api.service';
 import { CatalogStore } from '../api/catalog.store';
-import { Kind, RunDetails, RunMetadata } from '../api/models';
+import { ExecutionRun, Kind, RunDetails } from '../api/models';
 import { displayName, errText, isInFlight } from '../shared/format';
 import { pollWhile } from '../shared/poll';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { BannerComponent } from '../shared/work/banner.component';
 import { RunBodyComponent } from './run-body.component';
 import { RunNowComponent } from './run-now.component';
-import { runLede, runOf, worstFirst } from './run-words';
+import { runLede, runOf } from './run-words';
 
 /** A neighbour in the run: its page, and its name for a screen reader. */
 interface Step {
@@ -94,10 +93,9 @@ export class RunDetailComponent {
   run = signal<RunDetails | null>(null);
   err = signal<string | null>(null);
   refreshing = signal(false);
-  /** The run's runs, worst first - where this one stands among them. */
-  private siblings = signal<RunMetadata[]>([]);
-  /** The previous and next one's names, read once each. */
-  private names = signal<Record<string, string>>({});
+  /** The run's runs, worst first as its page lists them (the API's order), each with its name -
+   *  where this one stands among them. */
+  private siblings = signal<ExecutionRun[]>([]);
   /** When the set's run started - its title, here in the breadcrumb. */
   private startedAt = signal<string | null>(null);
   loadMsg = computed(() => {
@@ -132,11 +130,11 @@ export class RunDetailComponent {
     const all = this.siblings();
     const at = all.findIndex((r) => r.id === this.runId());
     if (at < 0) return null;
-    const step = (r: RunMetadata | undefined): Step | null =>
+    const step = (r: ExecutionRun | undefined): Step | null =>
       r
         ? {
             link: ['/', this.kind(), this.id(), 'executions', this.execId(), 'runs', r.id],
-            name: this.names()[r.id] ?? '',
+            name: displayName(r.test_name, r.id),
           }
         : null;
     return { at: at + 1, of: all.length, prev: step(all[at - 1]), next: step(all[at + 1]) };
@@ -154,12 +152,6 @@ export class RunDetailComponent {
         id = this.id(),
         execId = this.execId();
       untracked(() => this.readRun(kind, id, execId));
-    });
-    // The names either side of this one - again when Previous or Next opens another.
-    effect(() => {
-      const all = this.siblings(),
-        runId = this.runId();
-      untracked(() => this.readNames(all, runId));
     });
     // Polls while the run is in flight, stops once it settles - see shared/poll.ts. Skips a tick
     // while the previous fetch is still in flight.
@@ -184,34 +176,16 @@ export class RunDetailComponent {
       },
     });
   }
-  /** The set's run: its runs, worst first (one call), and its start - from its set's runs, as the
-   *  API has no call for one run of a set. */
+  /** The set's run: when it started (read on its own), and its runs worst first, named - one
+   *  call each. */
   private readRun(kind: Kind, id: string, execId: string) {
-    this.api
-      .executions(kind, id)
-      .subscribe((list) =>
-        this.startedAt.set(list.find((e) => e.id === execId)?.created_at ?? null),
-      );
-    this.api.executionRunsPage(kind, id, execId, 0, 500).subscribe({
-      next: (p) => this.siblings.set(worstFirst(p.items)),
+    this.api.execution(kind, id, execId).subscribe({
+      next: (e) => this.startedAt.set(e.created_at),
+      error: () => this.startedAt.set(null),
+    });
+    this.api.executionRunsPage(kind, id, execId, 0, 500, 'worst_first').subscribe({
+      next: (p) => this.siblings.set(p.items),
       error: () => this.siblings.set([]),
     });
-  }
-  /** The names of the ones either side of this one not read yet - a call each. */
-  private readNames(all: RunMetadata[], runId: string) {
-    const at = all.findIndex((r) => r.id === runId);
-    if (at < 0) return;
-    const near = [all[at - 1], all[at + 1]].filter(
-      (r): r is RunMetadata => !!r && !(r.id in this.names()),
-    );
-    if (!near.length) return;
-    forkJoin(
-      near.map((r) =>
-        this.api.runDetails(this.kind(), this.id(), this.execId(), r.id).pipe(
-          map((d): [string, string] => [r.id, displayName(d.name, r.id)]),
-          catchError(() => of<[string, string]>([r.id, ''])),
-        ),
-      ),
-    ).subscribe((pairs) => this.names.update((n) => ({ ...n, ...Object.fromEntries(pairs) })));
   }
 }

@@ -1,17 +1,20 @@
 import { Component, computed, input } from '@angular/core';
-import { TestTypeResult } from '../../api/models';
+import { RunChecks, TestTypeResult } from '../../api/models';
 import { isInFlight, listed } from '../format';
 import { runSays } from './sentences';
 
-/** A run's checks, counted: how many were met of how many, which weren't (by label), every
- *  label (for a list's words to find), and - when none could be checked - why. */
+/** A run's checks, counted: how many were met of how many, which weren't (by label), and - when
+ *  none could be checked - why. */
 export interface ChecksMet {
   status: string;
   met: number;
   total: number;
-  names: string[];
   notMet: string[];
   error: string | null;
+}
+/** A run's details counted, with every check's label too - what its page says of the ones met. */
+export interface ChecksRead extends ChecksMet {
+  names: string[];
 }
 
 /** A run's details, counted - `results` keyed by each check's label. A check that couldn't run
@@ -20,7 +23,7 @@ export function checksMet(d: {
   status: string;
   results?: Record<string, TestTypeResult> | null;
   error?: string | null;
-}): ChecksMet {
+}): ChecksRead {
   const results = Object.entries(d.results ?? {});
   return {
     status: d.status,
@@ -29,6 +32,23 @@ export function checksMet(d: {
     names: results.map(([label]) => label),
     notMet: results.filter(([, r]) => !r.passed).map(([label]) => label),
     error: d.error ?? null,
+  };
+}
+
+/** A run as a list has it - its checks counted by the API (`checks`: none while it's under way, or
+ *  when it couldn't run) and why it couldn't run - as the cell shows it. The same rule as
+ *  `checksMet`: a check that failed or couldn't run wasn't met. */
+export function checksListed(r: {
+  status: string;
+  checks?: RunChecks | null;
+  error?: string | null;
+}): ChecksMet {
+  return {
+    status: r.status,
+    met: r.checks?.met ?? 0,
+    total: r.checks?.total ?? 0,
+    notMet: r.checks?.not_met ?? [],
+    error: r.error ?? null,
   };
 }
 
@@ -108,7 +128,7 @@ export function checksMetSays(c: ChecksMet): string {
   `,
 })
 export class ChecksMetComponent {
-  /** The run's checks, counted (`checksMet`); null while it's read. */
+  /** The run's checks, counted (`checksMet`, `checksListed`); null while it's read. */
   checks = input<ChecksMet | null>(null);
   /** The run couldn't be read. */
   failed = input(false);

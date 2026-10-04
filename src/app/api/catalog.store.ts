@@ -58,7 +58,8 @@ export class CatalogStore {
   sets = signal<ScopeMetadata[]>([]);
   plans = signal<ScopeMetadata[]>([]);
   private rawExecutions = signal<AnyExecutionMetadata[]>([]);
-  /** Joins the raw GET /runs/executions rows against sets()/plans() for a display name - reactive to either changing. */
+  /** The raw GET /runs/executions rows, each with its set's or plan's name - its own (`name`), else
+   *  from sets()/plans(). */
   executions = computed<ExecRow[]>(() => this.rawExecutions().map((e) => this.toExecRow(e)));
   /** Independent of every other loading flag: true while the global executions sample is in flight. */
   executionsLoading = signal(true);
@@ -125,16 +126,18 @@ export class CatalogStore {
     const kind: Kind = isSet ? 'test-sets' : 'test-plans';
     const parentId = (isSet ? e.test_set_id : e.test_plan_id)!.id;
     const replayed = isSet ? e.replayed_test_set_execution_id : e.replayed_test_plan_execution_id;
-    const name = (isSet ? this.sets() : this.plans()).find((x) => x.id === parentId)?.name;
+    const name =
+      e.name || (isSet ? this.sets() : this.plans()).find((x) => x.id === parentId)?.name;
     return {
       id: e.id,
       created_at: e.created_at,
       run_count: e.run_count,
+      runs: e.runs,
       replayed_execution_id: replayed ?? null,
       kind,
       parentId,
       scope: isSet ? 'Test set' : 'Test plan',
-      target: name ?? short(parentId),
+      target: name || short(parentId),
     };
   }
 }

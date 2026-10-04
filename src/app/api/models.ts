@@ -162,6 +162,8 @@ export interface ExecutionMetadata {
   id: string;
   created_at: string;
   run_count: number;
+  /** Its runs counted by status, every status there (API 2.0). */
+  runs: RunCounts;
   /** The statistics batch that made it, and which time of the batch it was (from 1); null
    *  outside a batch. */
   batch_id?: string | null;
@@ -169,6 +171,36 @@ export interface ExecutionMetadata {
   replayed_execution_id: Ref | null;
   test_set_id?: Ref;
   test_plan_id?: Ref;
+}
+/** A set's or plan's run read on its own (`GET /runs/{kind}/{id}/executions/{exec}`, API 2.0): the
+ *  executions list's item, and the checks of its tests counted - runs still under way count only
+ *  in `runs`. */
+export interface ExecutionDetails extends ExecutionMetadata {
+  checks: ExecutionChecks;
+}
+export interface ExecutionChecks {
+  /** How many checks were met, across its tests. */
+  met: number;
+  /** Each check not met (failed or errored), with its test. */
+  not_met: { run_id: string; test_name: string | null; label: string }[];
+  /** Each test that couldn't run, with why and how many checks it would have asked. */
+  not_ran: { run_id: string; test_name: string | null; error: string | null; checks: number }[];
+}
+/** A run's checks as a list counts them (API 2.0): how many were met, of how many, and the labels
+ *  not met - failed or errored, in label order. A check left out of a batch isn't counted. */
+export interface RunChecks {
+  met: number;
+  total: number;
+  not_met: string[];
+}
+/** What a list shows of a run (API 2.0) - one shape on `GET /runs` and on a set's or plan's run's
+ *  runs: its test's name, frozen when the run was made (from its own copy or its set's entry), its
+ *  checks (null while it's under way, and for a run that couldn't run), and why it couldn't run
+ *  (NotRan only). */
+export interface RunListFields {
+  test_name: string | null;
+  checks: RunChecks | null;
+  error: string | null;
 }
 export interface RunMetadata {
   id: string;
@@ -180,6 +212,11 @@ export interface RunMetadata {
   batch_index?: number | null;
   test_set_entry_id?: Ref;
   test_case_id?: Ref;
+}
+/** A run in a set's or plan's run's list (`…/executions/{exec}/test-runs`, API 2.0): what a list
+ *  shows of a run, and where its answer came from (null until it ran). */
+export interface ExecutionRun extends RunMetadata, RunListFields {
+  output_source: 'recorded' | 'application' | null;
 }
 /** The lifecycle/outcome fields every run-detail response carries regardless of origin - factored
  *  out once RunDetails and StandaloneRunDetails were about to duplicate a fifth field
@@ -233,8 +270,11 @@ export interface StandaloneRunDetails extends StandaloneRun, TestCaseBody, RunOu
   test_case_snapshot_at: { snapshot_at: string };
 }
 export type RunOrigin = 'Standalone' | 'TestSet' | 'TestPlan';
-/** A row from GET /runs - every run in the system, regardless of origin. Only the ID field(s) `origin` implies are non-null. */
-export interface AnyRunMetadata {
+/** A row from GET /runs - every run in the system, regardless of origin. Only the ID field(s)
+ *  `origin` implies are non-null - and what a list shows of a run (API 2.0). */
+export interface AnyRunMetadata extends RunListFields {
+  /** Its set's or plan's name; null for a test's own run. */
+  scope_name: string | null;
   id: string;
   status: TestStatus;
   created_at: string;
@@ -252,6 +292,12 @@ export interface AnyRunMetadata {
   /** The test plan this run belongs to - set only when origin is TestPlan. */
   test_plan_id?: Ref | null;
 }
+/** `GET /runs/facets` (API 2.0): the runs counted by status and by origin - every value there,
+ *  each counted within the other filters given. */
+export interface RunFacets {
+  status: RunCounts;
+  origin: Partial<Record<RunOrigin, number>>;
+}
 export type ExecutionOrigin = 'TestSet' | 'TestPlan';
 /** A row from GET /runs/executions - every test-set/test-plan execution, no standalone runs (they have no execution wrapper). Only the ID field(s) `origin` implies are non-null. */
 export interface AnyExecutionMetadata {
@@ -259,6 +305,10 @@ export interface AnyExecutionMetadata {
   created_at: string;
   origin: ExecutionOrigin;
   run_count: number;
+  /** Its runs counted by status, every status there (API 2.0). */
+  runs: RunCounts;
+  /** Its set's or plan's name (API 2.0). */
+  name: string;
   /** The statistics batch that made it, and which time of the batch it was (from 1); null
    *  outside a batch. */
   batch_id?: string | null;
