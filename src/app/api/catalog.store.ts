@@ -11,7 +11,7 @@ import {
   DataSetMetadata,
   ExecutionMetadata,
   Kind,
-  ScopeMetadata,
+  ScopeRead,
   TestCaseRead,
 } from './models';
 
@@ -55,8 +55,8 @@ export class CatalogStore {
   private runsApi = inject(RunsApiService);
   datasets = signal<DataSetMetadata[]>([]);
   tests = signal<TestCaseRead[]>([]);
-  sets = signal<ScopeMetadata[]>([]);
-  plans = signal<ScopeMetadata[]>([]);
+  sets = signal<ScopeRead[]>([]);
+  plans = signal<ScopeRead[]>([]);
   private rawExecutions = signal<AnyExecutionMetadata[]>([]);
   /** The raw GET /runs/executions rows, each with its set's or plan's name - its own (`name`), else
    *  from sets()/plans(). */

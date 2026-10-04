@@ -2,7 +2,6 @@ import { Directive, computed, effect, inject, input, signal, untracked } from '@
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { CatalogStore } from '../api/catalog.store';
-import { MembershipStore } from '../api/membership.store';
 import { RunsApiService } from '../api/runs-api.service';
 import { Kind, ScopeRead, StatsScopeRef } from '../api/models';
 import { ActionRunner } from '../shared/action-runner';
@@ -22,7 +21,6 @@ export abstract class ScopePage<D extends string> {
   abstract readonly one: string;
   id = input.required<string>();
   protected runsApi = inject(RunsApiService);
-  protected membership = inject(MembershipStore);
   protected router = inject(Router);
   store = inject(CatalogStore);
 
@@ -40,7 +38,6 @@ export abstract class ScopePage<D extends string> {
     done: () => {
       this.dlg.set(null);
       this.version.update((v) => v + 1);
-      this.membership.forget();
       this.loadMeta();
       this.reload();
     },

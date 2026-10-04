@@ -193,6 +193,28 @@ export interface TestPlanEntry {
   id: string;
   test_set: ScopeRead;
 }
+/** A set holding a copy of a test (`GET /tests/{id}/test-sets`, API 2.0): the set as its list has
+ *  it, and its copy - whether it has run (frozen) and whether it still says what the test says
+ *  (its input, its answers, its checks - not its name). */
+export interface SetHoldingTest {
+  test_set: ScopeRead;
+  entry: { id: string; has_runs: boolean; matches_test: boolean };
+}
+/** The sets holding a test's copies, by name - and how many of its copies were unlinked from
+ *  their set since (kept, in no set, and still keeping the test from being deleted). */
+export interface SetsHoldingTest extends Page<SetHoldingTest> {
+  unlinked_copies: number;
+}
+/** A plan linking a set (`GET /test-sets/{id}/test-plans`, API 2.0): the plan as its list has it,
+ *  and the ID of its entry that links the set. */
+export interface PlanLinkingSet {
+  test_plan: ScopeRead;
+  entry_id: string;
+}
+/** A plan linking a set, as a page lists it: the plan, with the ID of its entry linking the set. */
+export interface PlanOfSet extends ScopeRead {
+  entry_id: string;
+}
 /** An item's latest verdict: its newest statistics batch (API 2.0). */
 export interface LatestBatch {
   id: string;

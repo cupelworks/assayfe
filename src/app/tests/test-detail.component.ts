@@ -5,8 +5,7 @@ import { TestsApiService } from '../api/tests-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { TestSetsApiService } from '../api/test-sets-api.service';
 import { CatalogStore } from '../api/catalog.store';
-import { MembershipStore } from '../api/membership.store';
-import { StandaloneRun, TestCase, TestCaseBody, TestCaseRead, TestSetEntry } from '../api/models';
+import { SetsHoldingTest, StandaloneRun, TestCaseBody, TestCaseRead } from '../api/models';
 import { ActionRunner } from '../shared/action-runner';
 import { Paged } from '../shared/paged';
 import { counted, displayName, errText, isInFlight, rel, statusLabel } from '../shared/format';
@@ -30,13 +29,6 @@ import { VerdictsTableComponent } from '../statistics/verdicts-table.component';
 import { LatestVerdictComponent } from '../statistics/latest-verdict.component';
 
 type Dlg = null | 'edit' | 'delete' | 'clear-output' | 'add';
-
-/** Does a set's copy still say what the test says? Its words and its checks, as sent. */
-const sameAs = (t: TestCase, e: TestSetEntry) =>
-  t.input === e.input &&
-  (t.expected_output ?? null) === (e.expected_output ?? null) &&
-  (t.model_output ?? null) === (e.model_output ?? null) &&
-  JSON.stringify(t.test_type_assignments ?? []) === JSON.stringify(e.test_type_assignments ?? []);
 
 /**
  * A test's page, on the Guide's layout. Its top: the way back to Tests, its name, and beside it Run
@@ -83,7 +75,6 @@ export class TestDetailComponent {
   private testsApi = inject(TestsApiService);
   private runsApi = inject(RunsApiService);
   private setsApi = inject(TestSetsApiService);
-  private membership = inject(MembershipStore);
   private router = inject(Router);
   store = inject(CatalogStore);
   statusLabel = statusLabel;
@@ -101,22 +92,19 @@ export class TestDetailComponent {
   statsScope = computed(() => ({ test_id: this.id() }));
   /** Bumped after a run is started here: the tables read again. */
   version = signal(0);
-  /** Its copies, each in its set; null while read. */
-  copies = computed(() => {
-    const all = this.membership.copies();
-    return all ? (all.get(this.id()) ?? []) : null;
-  });
-  sets = computed(() => {
-    const t = this.test();
-    const copies = this.copies();
-    return t && copies
-      ? copies.map((c) => ({
-          set: c.set,
-          entry: c.entry.id,
-          same: sameAs(t, c.entry),
-        }))
-      : null;
-  });
+  /** The sets holding a copy of it, as the API has them; null while read. */
+  private holding = signal<SetsHoldingTest | null>(null);
+  /** Each set with its copy: its ID, and whether it still says what the test says. */
+  sets = computed(
+    () =>
+      this.holding()?.items.map((h) => ({
+        set: h.test_set,
+        entry: h.entry.id,
+        same: h.entry.matches_test,
+      })) ?? null,
+  );
+  /** Its copies unlinked from their set since - kept, and keeping the test. */
+  unlinked = computed(() => this.holding()?.unlinked_copies ?? 0);
 
   // ---- the top ----
   checks = computed(() => this.test()?.test_type_assignments?.length ?? 0);
@@ -210,7 +198,7 @@ export class TestDetailComponent {
   dlg = signal<Dlg>(null);
   act = new ActionRunner({ inDialog: () => !!this.dlg(), done: () => this.dlg.set(null) });
   setRows = computed<PickRow[]>(() => {
-    const holding = new Set((this.copies() ?? []).map((c) => c.set.id));
+    const holding = new Set((this.sets() ?? []).map((s) => s.set.id));
     return this.store.sets().map((s) => ({
       id: s.id,
       name: s.name,
@@ -223,7 +211,6 @@ export class TestDetailComponent {
 
   constructor() {
     this.store.loadSets();
-    this.membership.loadCopies();
     effect(() => {
       this.id();
       untracked(() => this.load());
@@ -243,7 +230,16 @@ export class TestDetailComponent {
 
   load() {
     this.loadTest();
+    this.loadSets();
     this.runs.reset();
+  }
+  /** The sets holding a copy of it - again after it's added to some. */
+  private loadSets() {
+    this.testsApi.setsHolding(this.id()).subscribe({
+      next: (h) => this.holding.set(h),
+      error: () =>
+        this.holding.set({ total: 0, offset: 0, limit: 0, items: [], unlinked_copies: 0 }),
+    });
   }
   /** The test, how it stands - again once a run of it starts (it has runs then). */
   private loadTest() {
@@ -312,8 +308,8 @@ export class TestDetailComponent {
     this.act.run(forkJoin(ids.map((id) => this.setsApi.addTestsToSet(id, [this.id()]))), {
       ok: () => `Added a copy of it to ${counted(ids.length, 'test set')}.`,
       then: () => {
-        this.membership.forget();
-        this.membership.loadCopies();
+        this.loadSets();
+        this.loadTest();
         this.store.loadSets();
       },
     });

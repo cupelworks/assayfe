@@ -6,7 +6,7 @@ import { TestsApiService } from '../api/tests-api.service';
 import { TestSetsApiService } from '../api/test-sets-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { StatisticsApiService } from '../api/statistics-api.service';
-import { MembershipStore } from '../api/membership.store';
+import { holdersOf } from '../api/holders';
 import { firstOfEach, latestRunOf, refreshStandings } from '../api/latest';
 import { typeCounts, typeTimes } from '../api/checks';
 import { BatchSummary, TestCase, TestCaseBody, TestCaseRead } from '../api/models';
@@ -79,7 +79,6 @@ export class TestsListComponent {
   private setsApi = inject(TestSetsApiService);
   private runsApi = inject(RunsApiService);
   private statsApi = inject(StatisticsApiService);
-  private membership = inject(MembershipStore);
 
   page = new Paged<TestCaseRead>((o, l) => this.api.testsPage(o, l), 10, errText);
   /** Names, inputs and checks - the page's words. */
@@ -149,10 +148,6 @@ export class TestsListComponent {
         types.set(n, (types.get(n) ?? 0) + 1);
     }
     const recorded = tests.filter((t) => t.model_output != null).length;
-    const copies = this.membership.copies();
-    const inSet = new Map<string, number>();
-    for (const list of copies?.values() ?? [])
-      for (const s of new Set(list.map((c) => c.set.id))) inSet.set(s, (inSet.get(s) ?? 0) + 1);
     return [
       {
         key: 'check',
@@ -181,12 +176,12 @@ export class TestsListComponent {
       {
         key: 'set',
         label: 'In a test set',
-        sub: copies ? 'tests in each' : 'reading the sets…',
+        sub: 'tests in each',
         many: true,
         values: this.store.sets().map((s) => ({
           key: s.id,
           label: s.name,
-          count: copies ? (inSet.get(s.id) ?? 0) : null,
+          count: s.entry_count ?? null,
         })),
       },
       {
@@ -236,7 +231,6 @@ export class TestsListComponent {
     done: () => {
       this.dlg.set(null);
       this.store.load();
-      this.membership.forget();
       this.page.reload();
     },
   });
@@ -263,13 +257,8 @@ export class TestsListComponent {
       };
     });
   });
-  /** Which tests each set holds a copy of - from the membership read. */
-  private heldBySet = computed(() => {
-    const held = new Map<string, Set<string>>();
-    for (const [test, copies] of this.membership.copies() ?? [])
-      for (const c of copies) held.set(c.set.id, (held.get(c.set.id) ?? new Set()).add(test));
-    return held;
-  });
+  /** Which of the ticked tests each set holds a copy of - read when the dialog opens. */
+  private heldBySet = signal<Map<string, Set<string>>>(new Map());
   /** The tests the delete dialog was opened for. */
   private deleting = signal<TestCaseRead[]>([]);
   /** Which of them can go, which can't - and why, from each test's flags: its copies (one in a
@@ -335,23 +324,26 @@ export class TestsListComponent {
     this.selection.clear();
     this.page.size(limit);
   }
-  facetOpened(key: string) {
-    if (key === 'set') this.membership.loadCopies();
-  }
   open(d: Dlg) {
     this.act.err.set(null);
     this.dlg.set(d);
   }
   bulk(key: string) {
-    if (key === 'add') {
-      this.membership.loadCopies();
-      this.open('add');
-    } else if (key === 'run') this.runEach();
+    if (key === 'add') this.askAdd();
+    else if (key === 'run') this.runEach();
     else if (key === 'delete') this.askDelete();
   }
 
   create(b: TestCaseBody) {
     this.act.run(this.api.createTest(b), { ok: (t) => `Made the test “${t.name ?? t.id}”.` });
+  }
+  /** Opens the dialog to add the ticked tests to sets, and reads which sets hold each already. */
+  askAdd() {
+    this.heldBySet.set(new Map());
+    this.open('add');
+    holdersOf(this.selection.ids(), (id) =>
+      this.api.setsHolding(id).pipe(map((p) => p.items.map((x) => x.test_set.id))),
+    ).subscribe((m) => this.heldBySet.set(m));
   }
   /** Adds the ticked tests to each set picked - leaving out the ones it holds already (the API
    *  refuses a test a set holds). */

@@ -6,7 +6,7 @@ import { TestSetsApiService } from '../api/test-sets-api.service';
 import { TestPlansApiService } from '../api/test-plans-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { StatisticsApiService } from '../api/statistics-api.service';
-import { MembershipStore } from '../api/membership.store';
+import { holdersOf } from '../api/holders';
 import { firstOfEach, latestRunOf, refreshStandings } from '../api/latest';
 import { BatchSummary, Kind, ScopeMetadata, ScopeRead } from '../api/models';
 import { ActionRunner } from '../shared/action-runner';
@@ -101,7 +101,6 @@ export class ScopesListComponent {
   private plansApi = inject(TestPlansApiService);
   private runsApi = inject(RunsApiService);
   private statsApi = inject(StatisticsApiService);
-  private membership = inject(MembershipStore);
   private router = inject(Router);
 
   isSet = computed(() => this.kind() === 'test-sets');
@@ -158,7 +157,6 @@ export class ScopesListComponent {
     const total = this.page.total();
     const shared = [verdictFacet(this.verdictOf(), total), latestRunFacet(null, total)];
     if (this.isSet()) {
-      const copies = this.membership.copies();
       return [
         ...shared,
         {
@@ -175,29 +173,28 @@ export class ScopesListComponent {
         {
           key: 'test',
           label: 'Holds a test',
-          sub: copies ? 'sets holding each' : 'reading the sets…',
+          sub: 'sets holding each',
           many: true,
           values: this.store.tests().map((t) => ({
             key: t.id,
             label: displayName(t.name, t.id),
-            count: copies ? new Set((copies.get(t.id) ?? []).map((c) => c.set.id)).size : null,
+            count: t.test_set_count,
           })),
         },
         createdFacet(this.store.sets().map((s) => s.created_at)),
       ];
     }
-    const plansOf = this.membership.plansOf();
     return [
       ...shared,
       {
         key: 'set',
         label: 'Holds a test set',
-        sub: plansOf ? 'plans linking each' : 'reading the plans…',
+        sub: 'plans linking each',
         many: true,
         values: this.store.sets().map((s) => ({
           key: s.id,
           label: s.name,
-          count: plansOf ? (plansOf.get(s.id) ?? []).length : null,
+          count: s.test_plan_count ?? null,
         })),
       },
       createdFacet(this.store.plans().map((p) => p.created_at)),
@@ -235,8 +232,8 @@ export class ScopesListComponent {
     idColumn(),
   ]);
   /** A set's tag: the plans that run it. */
-  tagsOf(s: ScopeMetadata): CatalogTag[] {
-    const n = this.membership.plansOf()?.get(s.id)?.length ?? 0;
+  tagsOf(s: ScopeRead): CatalogTag[] {
+    const n = s.test_plan_count ?? 0;
     return this.isSet() && n ? [{ text: `In ${counted(n, 'test plan')}` }] : [];
   }
   holds(s: ScopeMetadata) {
@@ -249,8 +246,6 @@ export class ScopesListComponent {
     done: () => {
       this.dlg.set(null);
       this.store.load();
-      this.membership.forget();
-      this.membership.loadPlans();
       this.page.reload();
     },
   });
@@ -260,12 +255,14 @@ export class ScopesListComponent {
     { key: 'delete', label: 'Delete…', red: true },
   ]);
   private ticked = computed(() => this.page.items().filter((s) => this.selection.has(s.id)));
+  /** Which plans link which of the ticked sets - read when the dialog opens (null while read). */
+  private linkedBy = signal<Map<string, Set<string>> | null>(null);
   /** The plans to add the ticked sets to - one that links them all already can't be picked. */
   planRows = computed<PickRow[]>(() => {
-    const plansOf = this.membership.plansOf();
+    const linkedBy = this.linkedBy();
     const sets = this.selection.ids();
     return this.store.plans().map((p) => {
-      const linked = sets.filter((s) => plansOf?.get(s)?.some((x) => x.id === p.id)).length;
+      const linked = sets.filter((s) => linkedBy?.get(p.id)?.has(s)).length;
       const all = linked === sets.length && sets.length > 0;
       return {
         id: p.id,
@@ -334,8 +331,6 @@ export class ScopesListComponent {
         this.page.reset();
       });
     });
-    // A set's tag says how many plans run it.
-    this.membership.loadPlans();
   }
 
   go(offset: number) {
@@ -346,15 +341,12 @@ export class ScopesListComponent {
     this.selection.clear();
     this.page.size(limit);
   }
-  facetOpened(key: string) {
-    if (key === 'test') this.membership.loadCopies();
-  }
   open(d: Dlg) {
     this.act.err.set(null);
     this.dlg.set(d);
   }
   bulk(key: string) {
-    if (key === 'link') this.open('link');
+    if (key === 'link') this.askLink();
     else if (key === 'run') this.runEach();
     else if (key === 'delete') this.askDelete();
   }
@@ -365,15 +357,20 @@ export class ScopesListComponent {
       : this.plansApi.createTestPlan(name);
     this.act.run(made, { then: (x) => this.router.navigate(['/', this.kind(), x.id]) });
   }
+  /** Opens the dialog to add the ticked sets to plans, and reads which plans link each already. */
+  askLink() {
+    this.linkedBy.set(null);
+    this.open('link');
+    holdersOf(this.selection.ids(), (id) =>
+      this.setsApi.plansLinking(id).pipe(map((p) => p.items.map((x) => x.test_plan.id))),
+    ).subscribe((m) => this.linkedBy.set(m));
+  }
   /** Links the ticked sets to each plan picked - leaving out the ones it links already. */
   linkToPlans(planIds: string[]) {
-    const plansOf = this.membership.plansOf();
+    const linkedBy = this.linkedBy();
     const sets = this.selection.ids();
     const calls = planIds
-      .map((p) => ({
-        p,
-        ids: sets.filter((s) => !plansOf?.get(s)?.some((x) => x.id === p)),
-      }))
+      .map((p) => ({ p, ids: sets.filter((s) => !linkedBy?.get(p)?.has(s)) }))
       .filter((c) => c.ids.length)
       .map((c) => this.plansApi.linkSetsToPlan(c.p, c.ids));
     this.act.run(calls.length ? forkJoin(calls) : of([]), {

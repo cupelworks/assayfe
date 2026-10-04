@@ -26,6 +26,12 @@ export class TestsApiService extends ApiBase {
   test(id: string) {
     return this.http.get<M.TestCaseRead>(this.u(`/tests/${id}`));
   }
+  /** The sets holding a copy of the test, by name - 500 at most, a test's sets all at once. */
+  setsHolding(id: string, offset = 0, limit = 500) {
+    return this.http.get<M.SetsHoldingTest>(this.u(`/tests/${id}/test-sets`), {
+      params: PAGE(offset, limit),
+    });
+  }
   createTest(body: M.TestCaseBody) {
     return this.http.post<M.TestCase>(this.u('/tests'), body);
   }

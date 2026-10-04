@@ -12,6 +12,12 @@ export class TestSetsApiService extends ApiBase {
   testSet(id: string) {
     return this.http.get<M.ScopeRead>(this.u(`/test-sets/${id}`));
   }
+  /** The plans linking the set, by name - 500 at most, a set's plans all at once. */
+  plansLinking(id: string, offset = 0, limit = 500) {
+    return this.http.get<M.Page<M.PlanLinkingSet>>(this.u(`/test-sets/${id}/test-plans`), {
+      params: PAGE(offset, limit),
+    });
+  }
   createTestSet(name: string) {
     return this.http.post<M.DataSetInfo>(this.u('/test-sets'), { name });
   }

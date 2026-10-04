@@ -154,6 +154,14 @@
       <b>A test set keeps its own copy of the test, made when it was added.</b> Editing the test
       here leaves those copies as they are. To bring a change into a set, unlink its copy there and
       add the test again.
+      @if (unlinked(); as n) {
+        {{
+          n === 1
+            ? 'One more copy was unlinked from its set: it keeps its runs, and keeps the test from being deleted.'
+            : n +
+              ' more copies were unlinked from their sets: they keep their runs, and keep the test from being deleted.'
+        }}
+      }
     </p>
     <div class="ends">
       <button type="button" class="go" (click)="open('add')">Add to a test set…</button>

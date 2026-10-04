@@ -3,9 +3,9 @@ import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { TestSetsApiService } from '../api/test-sets-api.service';
 import { TestPlansApiService } from '../api/test-plans-api.service';
-import { latestRunOf } from '../api/latest';
+import { latestRunOf, refreshStandings } from '../api/latest';
 import { typeCounts, typeTimes } from '../api/checks';
-import { TestCaseBody, TestSetEntry } from '../api/models';
+import { PlanOfSet, TestCaseBody, TestSetEntry } from '../api/models';
 import { Paged } from '../shared/paged';
 import { Selection } from '../shared/selection';
 import { counted, displayName, errText } from '../shared/format';
@@ -89,10 +89,9 @@ export class TestSetDetailComponent extends ScopePage<Dlg> {
   hasRuns = computed(() => !!this.meta()?.has_runs);
 
   // ---- the top ----
-  plans = computed(() => {
-    const all = this.membership.plansOf();
-    return all ? (all.get(this.id()) ?? []) : null;
-  });
+  /** The plans linking it, each as the plans' list has it with the ID of its entry that links the
+   *  set (API 2.0's lookup); null while read. */
+  plans = signal<PlanOfSet[] | null>(null);
   lede = computed(() => {
     const n = this.meta()?.entry_count ?? this.page.total();
     if (!n) return 'No tests yet: add some, then run it.';
@@ -250,13 +249,23 @@ export class TestSetDetailComponent extends ScopePage<Dlg> {
     super();
     this.store.loadTests();
     this.store.loadPlans();
-    this.membership.loadPlans();
+    refreshStandings(
+      () => this.plans() ?? [],
+      () => this.loadPlans(),
+    );
   }
 
   reload() {
     this.selection.clear();
     this.page.reload();
-    this.membership.loadPlans();
+    this.loadPlans();
+  }
+  /** The plans that link it - one call, again after a change here or while one runs. */
+  private loadPlans() {
+    this.setsApi.plansLinking(this.id()).subscribe({
+      next: (p) => this.plans.set(p.items.map((x) => ({ ...x.test_plan, entry_id: x.entry_id }))),
+      error: () => this.plans.set([]),
+    });
   }
   protected fetchMeta() {
     return this.setsApi.testSet(this.id());
