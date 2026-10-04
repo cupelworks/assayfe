@@ -28,8 +28,8 @@
       label="Find a row"
       placeholder="Words in a prompt or an answer"
       [shown]="shownText()"
-      [(query)]="filter.query"
-      [(words)]="filter.kept"
+      [(query)]="rowsList.words.query"
+      [(words)]="rowsList.words.kept"
     />
     <assay-catalog-table
       class="rows"
@@ -68,19 +68,48 @@
       }
     </assay-catalog-table>
     <assay-pager
-      [total]="total()"
-      [offset]="offset()"
-      [limit]="limit()"
+      [total]="rowsList.page.total()"
+      [offset]="rowsList.page.offset()"
+      [limit]="rowsList.page.limit()"
       (offsetChange)="go($event)"
       (limitChange)="size($event)"
     />
   </assay-guide-section>
 
   <assay-guide-section [section]="sections[1]" sub="Each from one of its rows">
-    <assay-catalog-table
-      label="Tests made from it"
-      [columns]="madeColumns"
-      empty="Which tests were made from it can't be shown yet."
+    <assay-catalog-table label="Tests made from it" [columns]="madeColumns" [empty]="madeEmpty()">
+      @for (t of made.items(); track t.id) {
+        @let v = t.latest_batch;
+        @let r = madeRuns().get(t.id);
+        <assay-catalog-row
+          [name]="displayName(t.name, t.id)"
+          [link]="['/tests', t.id]"
+          [expandable]="false"
+        >
+          <assay-catalog-cell caption="From row"
+            ><span class="num">{{ t.dataset_row_number ?? '-' }}</span></assay-catalog-cell
+          >
+          <assay-catalog-cell caption="Latest verdict">
+            <assay-latest-status
+              [of]="v?.status ?? null"
+              [at]="v?.created_at ?? null"
+              none="Not yet"
+              noneWhen="never run with statistics"
+            />
+          </assay-catalog-cell>
+          <assay-catalog-cell caption="Latest run">
+            <assay-latest-status [of]="r?.status ?? null" [at]="r?.at ?? null" none="Never run" />
+          </assay-catalog-cell>
+          <assay-catalog-cell caption="ID" [copyId]="t.id" />
+        </assay-catalog-row>
+      }
+    </assay-catalog-table>
+    <assay-pager
+      [total]="made.total()"
+      [offset]="made.offset()"
+      [limit]="made.limit()"
+      (offsetChange)="made.go($event)"
+      (limitChange)="made.size($event)"
     />
     <p class="note">
       <b>A test keeps its own copy of the row it was made from.</b> Editing a row here doesn't
@@ -88,7 +117,7 @@
       which row they came from.
     </p>
     <div class="ends">
-      <a class="go" routerLink="/tests">See them in Tests →</a>
+      <a class="go" routerLink="/tests" [queryParams]="{ dataset: id() }">See them in Tests →</a>
     </div>
   </assay-guide-section>
 </div>

@@ -1,12 +1,14 @@
 import { Injectable } from '@angular/core';
 import * as M from './models';
-import { ApiBase, PAGE } from './api-base';
+import { ApiBase, PAGE, QUERY } from './api-base';
+import { ListParams } from '../shared/work/api-list';
 
 @Injectable({ providedIn: 'root' })
 export class TestSetsApiService extends ApiBase {
-  testSets(offset = 0, limit = 100) {
+  /** The sets the parameters let through (API 2.0: search, filters, sort - `ListParams`). */
+  testSets(offset = 0, limit = 100, params: ListParams = {}) {
     return this.http.get<M.Page<M.ScopeRead>>(this.u('/test-sets'), {
-      params: PAGE(offset, limit),
+      params: QUERY({ ...params, offset, limit }),
     });
   }
   testSet(id: string) {

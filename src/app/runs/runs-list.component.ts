@@ -1,34 +1,17 @@
-import {
-  Component,
-  computed,
-  effect,
-  inject,
-  input,
-  linkedSignal,
-  signal,
-  untracked,
-} from '@angular/core';
+import { Component, computed, inject, input, linkedSignal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CatalogStore } from '../api/catalog.store';
-import { RunQuery, RunSort, RunsApiService } from '../api/runs-api.service';
+import { RunQuery, RunsApiService } from '../api/runs-api.service';
 import { TestTypesStore } from '../api/test-types.store';
 import { AnyRunMetadata, RunFacets, RunOrigin, TestStatus } from '../api/models';
-import { counted, displayName, errText, statusLabel } from '../shared/format';
-import { Paged } from '../shared/paged';
-import { SearchWords } from '../shared/text-filter';
-import { debounced } from '../shared/debounced';
+import { displayName, statusLabel } from '../shared/format';
+import { ApiList } from '../shared/work/api-list';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { CATALOG, CatalogColumn, idColumn } from '../shared/catalog';
 import { SmartFilterComponent } from '../shared/work/smart-filter.component';
-import {
-  FilterChoice,
-  FilterFacet,
-  chosenCount,
-  createdFacet,
-  createdParams,
-} from '../shared/work/filters';
+import { FilterChoice, FilterFacet, createdFacet, createdParams } from '../shared/work/filters';
 import { ChecksMetComponent, checksListed } from '../shared/work/checks-met.component';
 import { FROM_LABEL, RUN_TILE_GROUPS, fromFacet, runTiles, statusFacet } from './runs-list';
 
@@ -36,8 +19,6 @@ import { FROM_LABEL, RUN_TILE_GROUPS, fromFacet, runTiles, statusFacet } from '.
 type Several<T> = T | T[] | undefined;
 const several = <T>(v: Several<T>): T[] => (v == null ? [] : Array.isArray(v) ? v : [v]);
 const same = (a: readonly string[], b: readonly string[]) => a.join(' ') === b.join(' ');
-const sumOf = (counts: Partial<Record<string, number>>) =>
-  Object.values(counts).reduce<number>((a, b) => a + (b ?? 0), 0);
 
 /**
  * Runs, on the Guide's layout as the work's lists are: every run
@@ -80,59 +61,39 @@ export class RunsListComponent {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   statusLabel = statusLabel;
-
-  /** The words, looked for in each run's test's, set's or plan's name - by the API. */
-  words = new SearchWords();
-  sort = signal('Newest');
   sortOptions = ['Newest', 'Oldest'];
-  /** The choice, its statuses and origins as the address says - the other facets kept as
-   *  chosen. */
-  choice = linkedSignal<{ status: TestStatus[]; origin: RunOrigin[] }, FilterChoice>({
-    source: () => ({ status: this.statuses(), origin: this.origins() }),
-    computation: (s, prev) => ({ ...(prev?.value ?? {}), status: s.status, from: s.origin }),
-  });
-  /** The words as the API gets them: once they've stood still. */
-  private terms = debounced(() => this.words.terms());
-  /** What the API is asked for: every facet's choice and the words. */
-  private query = computed<RunQuery>(() => {
-    const c = this.choice();
-    return {
+
+  /** The runs as the API searches, filters, counts and sorts them - the choice, its statuses and
+   *  origins as the address says, the other facets kept as chosen. */
+  list = new ApiList<AnyRunMetadata, RunFacets, RunQuery>({
+    noun: 'run',
+    sort: 'Newest',
+    choice: linkedSignal<{ status: TestStatus[]; origin: RunOrigin[] }, FilterChoice>({
+      source: () => ({ status: this.statuses(), origin: this.origins() }),
+      computation: (s, prev) => ({ ...(prev?.value ?? {}), status: s.status, from: s.origin }),
+    }),
+    params: (c, q, sort) => ({
       batch: 'none',
-      status: this.statuses(),
-      origin: this.origins(),
+      status: c['status'],
+      origin: c['from'],
       test_set_id: c['set'],
       test_plan_id: c['plan'],
       check_type: c['check'],
       ...createdParams(c['created']),
-      q: this.terms(),
-    };
+      q,
+      sort: sort === 'Oldest' ? 'oldest' : 'newest',
+    }),
+    fetch: (p, o, l) => this.api.runsPage(p, o, l),
+    counts: (p) => this.api.runFacets(p),
   });
-  private apiSort = computed<RunSort>(() => (this.sort() === 'Oldest' ? 'oldest' : 'newest'));
-  /** Something narrows the list: a facet's choice or words. */
-  private narrowed = computed(() => chosenCount(this.choice()) > 0 || this.terms().length > 0);
-  /** Something besides the statuses narrows it - the status counts then count within it. */
-  private narrowedBeyondStatus = computed(
-    () => chosenCount({ ...this.choice(), status: [] }) > 0 || this.terms().length > 0,
-  );
 
-  page = new Paged<AnyRunMetadata>(
-    (o, l) => this.api.runsPage(this.query(), o, l, this.apiSort()),
-    25,
-    errText,
-  );
-  /** The runs counted by status and by origin, each within the other filters - the tiles' and
-   *  the Status and From facets' counts. */
-  counts = signal<RunFacets | null>(null);
-  /** Every run outside a batch. */
-  everything = signal<number | null>(null);
-
-  tiles = computed(() => runTiles(this.counts()?.status ?? null));
+  tiles = computed(() => runTiles(this.list.counts()?.status ?? null));
   tileGroups = RUN_TILE_GROUPS;
   /** The tile chosen: the one status, when only one is. */
   oneStatus = computed(() => (this.statuses().length === 1 ? this.statuses()[0] : null));
   facets = computed<FilterFacet[]>(() => [
-    statusFacet(this.counts()?.status ?? null),
-    fromFacet(this.counts()?.origin ?? null),
+    statusFacet(this.list.counts()?.status ?? null),
+    fromFacet(this.list.counts()?.origin ?? null),
     {
       key: 'set',
       label: 'Test set',
@@ -153,18 +114,9 @@ export class RunsListComponent {
     },
     createdFacet(null),
   ]);
-
-  shownText = computed(() => {
-    const n = this.page.total(),
-      all = this.everything();
-    return this.narrowed() && all != null ? `${n} of ${all} shown` : counted(n, 'run');
-  });
-  emptyText = computed(() => {
-    if (this.page.loading() || this.page.total()) return null;
-    return this.narrowed()
-      ? 'No run matches these filters. Take one out, or clear them all.'
-      : 'No runs yet. Run a test, a test set or a test plan, and its runs show here.';
-  });
+  emptyText = computed(() =>
+    this.list.empty('No runs yet. Run a test, a test set or a test plan, and its runs show here.'),
+  );
 
   columns: CatalogColumn[] = [
     { label: 'How it went', width: 1.2 },
@@ -176,7 +128,7 @@ export class RunsListComponent {
   ];
   /** A row as the table shows it - all of it from the list. */
   view = computed(() =>
-    this.page.items().map((r) => {
+    this.list.page.items().map((r) => {
       const name = displayName(r.test_name, r.test_case_id?.id ?? r.id);
       return {
         r,
@@ -194,38 +146,16 @@ export class RunsListComponent {
     this.store.loadSets();
     this.store.loadPlans();
     this.types.load();
-    // The list, from its first page, whenever what's asked or the order changes.
-    effect(() => {
-      this.query();
-      this.apiSort();
-      // untracked: page.reset() -> reload() reads page's own offset()/limit() signals.
-      untracked(() => this.page.reset());
-    });
-    // The counts, whenever what's asked changes; a newer answer drops the one before it. The
-    // status counts leave the statuses chosen out, so with nothing else narrowing they add up to
-    // every run - otherwise every run is asked for once.
-    effect((onCleanup) => {
-      const alone = !this.narrowedBeyondStatus();
-      const sub = this.api.runFacets(this.query()).subscribe({
-        next: (f) => {
-          this.counts.set(f);
-          if (alone) this.everything.set(sumOf(f.status));
-          else if (untracked(() => this.everything()) == null) this.readEverything();
-        },
-        error: () => this.counts.set(null),
-      });
-      onCleanup(() => sub.unsubscribe());
-    });
   }
 
   /** A tile: its status alone, or every one again. */
   pickTile(key: string | null) {
-    this.choose({ ...this.choice(), status: key ? [key] : [] });
+    this.choose({ ...this.list.choice(), status: key ? [key] : [] });
   }
   /** The smart filter's choice: its statuses and origins go to the address, and with the rest to
    *  the API. */
   choose(c: FilterChoice) {
-    this.choice.set(c);
+    this.list.choice.set(c);
     const status = c['status'] ?? [],
       origin = c['from'] ?? [];
     if (!same(status, this.statuses()) || !same(origin, this.origins()))
@@ -239,13 +169,6 @@ export class RunsListComponent {
       });
   }
 
-  /** Every run outside a batch - when the counts can't say it. */
-  private readEverything() {
-    this.api.runFacets({ batch: 'none' }).subscribe({
-      next: (f) => this.everything.set(sumOf(f.status)),
-      error: () => {},
-    });
-  }
   /** The set or plan a run was started from: its kind, name and page. */
   private scope(r: AnyRunMetadata) {
     const set = r.origin === 'TestSet' ? r.test_set_id : null,

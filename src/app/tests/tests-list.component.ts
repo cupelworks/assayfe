@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of } from 'rxjs';
 import { CatalogStore } from '../api/catalog.store';
@@ -13,14 +13,13 @@ import { BatchSummary, TestCase, TestCaseBody, TestCaseRead } from '../api/model
 import { ActionRunner } from '../shared/action-runner';
 import { Paged } from '../shared/paged';
 import { Selection } from '../shared/selection';
-import { TextFilter } from '../shared/text-filter';
 import { counted, displayName, errText } from '../shared/format';
-import { filterMissText } from '../shared/filter-miss';
 import { PagerComponent } from '../shared/pager.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { CATALOG, CatalogColumn, CatalogTag, idColumn } from '../shared/catalog';
 import { SmartFilterComponent } from '../shared/work/smart-filter.component';
-import { FilterChoice, FilterFacet, createdFacet } from '../shared/work/filters';
+import { FilterFacet, createdFacet, createdParams, yesNo } from '../shared/work/filters';
+import { ApiList } from '../shared/work/api-list';
 import { NOT_YET, latestRunFacet, verdictFacet, verdictTiles } from '../shared/work/verdicts';
 import { LatestStatusComponent } from '../shared/work/latest-status.component';
 import { BulkAction, BulkBarComponent } from '../shared/work/bulk-bar.component';
@@ -45,9 +44,8 @@ interface Kept extends NamedItem {
  * the foot adds them to a test set, runs each once, or deletes them - saying first which can't go
  * and why, from each test's own flags.
  *
- * What the API can't filter by yet is chosen but not applied: the tiles, the facets, the sort
- * (only the page's words narrow the list, as before) - see
- * docs/to_be_implemented_after_be_version_2/dev_notes.md.
+ * The API searches, filters and sorts it (API 2.0): the words, the tiles and every facet, the
+ * sort - `ApiList`.
  */
 @Component({
   selector: 'assay-tests-list',
@@ -80,18 +78,28 @@ export class TestsListComponent {
   private runsApi = inject(RunsApiService);
   private statsApi = inject(StatisticsApiService);
 
-  page = new Paged<TestCaseRead>((o, l) => this.api.testsPage(o, l), 10, errText);
-  /** Names, inputs and checks - the page's words. */
-  filter = new TextFilter<TestCaseRead>(
-    (t) =>
-      `${t.name ?? ''} ${t.input} ${(t.test_type_assignments ?? []).map((a) => `${a.name} ${a.label ?? ''}`).join(' ')}`,
-  );
-  rows = computed(() => {
-    const rows = this.filter.apply(this.page.items());
-    return this.sort() === 'Name'
-      ? [...rows].sort((a, b) => displayName(a.name, a.id).localeCompare(displayName(b.name, b.id)))
-      : rows;
+  /** ?dataset= - "See them in Tests →" on a dataset's page: the tests made from it. */
+  dataset = input<string | undefined>();
+  /** The tests as the API searches (names, inputs, checks), filters and sorts them. */
+  list = new ApiList<TestCaseRead>({
+    noun: 'test',
+    sort: 'Latest activity',
+    limit: 10,
+    params: (c, q, sort) => ({
+      q,
+      check_type: c['check'],
+      latest_verdict: c['verdict'],
+      latest_run: c['run'],
+      has_recorded_answer: yesNo(c['answer'], 'recorded', 'live'),
+      in_test_set: c['set'],
+      from_dataset: c['dataset'],
+      ...createdParams(c['created']),
+      sort: sort === 'Name' ? 'name' : 'latest_activity',
+    }),
+    fetch: (p, o, l) => this.api.testsPage(p, o, l),
   });
+  page = this.list.page;
+  rows = this.page.items;
   selection = new Selection(() => this.rows());
   /** Each shown test's latest run, as its cell shows it. */
   latestRuns = computed(() => new Map(this.page.items().map((t) => [t.id, latestRunOf(t)])));
@@ -127,16 +135,13 @@ export class TestsListComponent {
     this.batches.total() > BATCH_SAMPLE ? `Counted from the last ${BATCH_SAMPLE} batches.` : null,
   );
 
-  // The choice: kept for when the API filters by it (see the class's comment).
-  choice = signal<FilterChoice>({});
-  sort = signal('Latest activity');
   sortOptions = ['Latest activity', 'Name'];
   tile = computed(() => {
-    const v = this.choice()['verdict'] ?? [];
+    const v = this.list.choice()['verdict'] ?? [];
     return v.length === 1 ? v[0] : null;
   });
   pickTile(key: string | null) {
-    this.choice.update((c) => ({ ...c, verdict: key ? [key] : [] }));
+    this.list.choice.update((c) => ({ ...c, verdict: key ? [key] : [] }));
   }
 
   facets = computed<FilterFacet[]>(() => {
@@ -196,17 +201,9 @@ export class TestsListComponent {
   items = computed(() =>
     this.store.tests().map((t) => ({ label: displayName(t.name, t.id), link: ['/tests', t.id] })),
   );
-  shownText = computed(() =>
-    this.filter.terms().length
-      ? `${this.rows().length} of ${this.page.items().length} on this page`
-      : counted(this.page.total(), 'test'),
+  emptyText = computed(() =>
+    this.list.empty('No tests yet. Make one, or make tests from a dataset.'),
   );
-  emptyText = computed(() => {
-    if (this.page.loading()) return null;
-    if (this.filter.terms().length)
-      return filterMissText('test', this.filter.text(), this.page.total() > this.page.limit());
-    return this.page.total() ? null : 'No tests yet. Make one, or make tests from a dataset.';
-  });
 
   columns: CatalogColumn[] = [
     { label: 'Test', width: 3 },
@@ -302,13 +299,16 @@ export class TestsListComponent {
     "A test that has run, or has a copy - in a test set, or unlinked from one - can't be deleted: its runs and its copies need it. Deleting can't be undone.";
 
   constructor() {
+    effect(() => {
+      const d = this.dataset();
+      if (d) untracked(() => this.list.choice.update((c) => ({ ...c, dataset: [d] })));
+    });
     refreshStandings(
       () => this.page.items(),
       () => {
         if (!this.page.loading()) this.page.reload();
       },
     );
-    this.page.reload();
     this.batches.reload();
     this.store.loadTests();
     this.store.loadSets();

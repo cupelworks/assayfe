@@ -4,24 +4,29 @@ import { CatalogStore } from '../api/catalog.store';
 import { DatasetsApiService } from '../api/datasets-api.service';
 import { DataSetMetadata } from '../api/models';
 import { ActionRunner } from '../shared/action-runner';
-import { Paged } from '../shared/paged';
-import { TextFilter } from '../shared/text-filter';
-import { counted, errText } from '../shared/format';
-import { filterMissText } from '../shared/filter-miss';
+import { counted } from '../shared/format';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { CATALOG, CatalogColumn, idColumn } from '../shared/catalog';
 import { SmartFilterComponent } from '../shared/work/smart-filter.component';
-import { FilterChoice, FilterFacet, createdFacet } from '../shared/work/filters';
+import { FilterFacet, createdFacet, createdParams, yesNo } from '../shared/work/filters';
+import { ApiList } from '../shared/work/api-list';
 import { BannerComponent } from '../shared/work/banner.component';
 import { ImportDatasetDialogComponent } from './import-dataset-dialog.component';
 import { ROW_KEY } from './row-keys';
 
+/** The Rows facet's ranges, one at a time, as the API's `rows_min` / `rows_max`. */
+const ROWS: Record<string, { rows_min?: number; rows_max?: number }> = {
+  few: { rows_min: 1, rows_max: 10 },
+  some: { rows_min: 11, rows_max: 100 },
+  many: { rows_min: 101 },
+};
+
 /**
  * Datasets, on the Guide's layout: the title with Import beside it, what a row holds, the smart
  * filter, then each dataset with how many rows and its first prompt (as the list has them), and
- * how it gets in. As on the other lists, only the page's words narrow it.
+ * how it gets in. The API searches (names), filters and sorts it (API 2.0) - `ApiList`.
  */
 @Component({
   selector: 'assay-datasets-list',
@@ -48,19 +53,23 @@ export class DatasetsListComponent {
   private router = inject(Router);
   rowKey = ROW_KEY;
 
-  page = new Paged<DataSetMetadata>((o, l) => this.api.datasets(o, l), 10, errText);
-  filter = new TextFilter<DataSetMetadata>((d) => `${d.name} ${d.first_prompt ?? ''}`);
-  sort = signal('Newest');
-  sortOptions = ['Newest', 'Oldest', 'Name'];
-  rows = computed(() => {
-    const rows = [...this.filter.apply(this.page.items())];
-    const sort = this.sort();
-    if (sort === 'Name') return rows.sort((a, b) => a.name.localeCompare(b.name));
-    return rows.sort(
-      (a, b) => (a.created_at < b.created_at ? 1 : -1) * (sort === 'Oldest' ? -1 : 1),
-    );
+  /** The datasets as the API searches (names), filters and sorts them. */
+  list = new ApiList<DataSetMetadata>({
+    noun: 'dataset',
+    sort: 'Newest',
+    limit: 10,
+    params: (c, q, sort) => ({
+      q,
+      made_into_tests: yesNo(c['used'], 'yes', 'no'),
+      ...ROWS[c['rows']?.[0] ?? ''],
+      ...createdParams(c['created']),
+      sort: sort.toLowerCase(),
+    }),
+    fetch: (p, o, l) => this.api.datasets(o, l, p),
   });
-  choice = signal<FilterChoice>({});
+  page = this.list.page;
+  rows = this.page.items;
+  sortOptions = ['Newest', 'Oldest', 'Name'];
   facets = computed<FilterFacet[]>(() => [
     {
       key: 'used',
@@ -73,6 +82,7 @@ export class DatasetsListComponent {
     {
       key: 'rows',
       label: 'Rows',
+      single: true,
       values: [
         { key: 'few', label: '1 to 10' },
         { key: 'some', label: '11 to 100' },
@@ -84,17 +94,7 @@ export class DatasetsListComponent {
   items = computed(() =>
     this.store.datasets().map((d) => ({ label: d.name, link: ['/datasets', d.id] })),
   );
-  shownText = computed(() =>
-    this.filter.terms().length
-      ? `${this.rows().length} of ${this.page.items().length} on this page`
-      : counted(this.page.total(), 'dataset'),
-  );
-  emptyText = computed(() => {
-    if (this.page.loading()) return null;
-    if (this.filter.terms().length)
-      return filterMissText('dataset', this.filter.text(), this.page.total() > this.page.limit());
-    return this.page.total() ? null : 'No datasets yet. Import a .jsonl file to start.';
-  });
+  emptyText = computed(() => this.list.empty('No datasets yet. Import a .jsonl file to start.'));
   columns: CatalogColumn[] = [
     { label: 'Dataset', width: 3 },
     { label: 'Rows', width: 0.8 },
@@ -107,7 +107,6 @@ export class DatasetsListComponent {
   act = new ActionRunner({ inDialog: () => this.dialog(), done: () => this.dialog.set(false) });
 
   constructor() {
-    this.page.reload();
     this.store.loadDatasets();
   }
 

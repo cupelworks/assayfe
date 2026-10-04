@@ -19,13 +19,13 @@
     placeholder="Tests, sets, plans - or type status, from, check…"
     wordsIn="the names of the tests, sets and plans"
     [facets]="facets()"
-    [shown]="shownText()"
+    [shown]="list.shownText()"
     [sortOptions]="sortOptions"
-    [(query)]="words.query"
-    [(words)]="words.kept"
-    [chosen]="choice()"
+    [(query)]="list.words.query"
+    [(words)]="list.words.kept"
+    [chosen]="list.choice()"
     (chosenChange)="choose($event)"
-    [(sort)]="sort"
+    [(sort)]="list.sort"
   />
 
   <assay-catalog-table class="list" label="Runs" [columns]="columns" [empty]="emptyText()">
@@ -65,10 +65,10 @@
     }
   </assay-catalog-table>
   <assay-pager
-    [total]="page.total()"
-    [offset]="page.offset()"
-    [limit]="page.limit()"
-    (offsetChange)="page.go($event)"
-    (limitChange)="page.size($event)"
+    [total]="list.page.total()"
+    [offset]="list.page.offset()"
+    [limit]="list.page.limit()"
+    (offsetChange)="list.page.go($event)"
+    (limitChange)="list.page.size($event)"
   />
 </div>

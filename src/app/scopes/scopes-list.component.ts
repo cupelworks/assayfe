@@ -12,15 +12,14 @@ import { BatchSummary, Kind, ScopeMetadata, ScopeRead } from '../api/models';
 import { ActionRunner } from '../shared/action-runner';
 import { Paged } from '../shared/paged';
 import { Selection } from '../shared/selection';
-import { TextFilter } from '../shared/text-filter';
 import { counted, displayName, errText } from '../shared/format';
-import { filterMissText } from '../shared/filter-miss';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { CATALOG, CatalogColumn, CatalogTag, idColumn } from '../shared/catalog';
 import { SmartFilterComponent } from '../shared/work/smart-filter.component';
-import { FilterChoice, FilterFacet, createdFacet } from '../shared/work/filters';
+import { FilterFacet, createdFacet, createdParams } from '../shared/work/filters';
+import { ApiList } from '../shared/work/api-list';
 import { latestRunFacet, verdictFacet, verdictTiles } from '../shared/work/verdicts';
 import { LatestStatusComponent } from '../shared/work/latest-status.component';
 import { BulkAction, BulkBarComponent } from '../shared/work/bulk-bar.component';
@@ -38,6 +37,13 @@ interface Named extends NamedItem {
 }
 
 /** What a set's or a plan's list says - the one component lists both. */
+/** The sorts offered, and the API's names for them. */
+const SORT: Record<string, string> = {
+  'Latest run': 'latest_run',
+  Created: 'created',
+  Name: 'name',
+};
+
 const COPY = {
   'test-sets': {
     title: 'Test sets',
@@ -67,8 +73,8 @@ const COPY = {
  * the foot adds sets to a test plan, runs each live, or deletes them - saying first which can't
  * go, from each one's own flags.
  *
- * As on Tests, only the page's words narrow the list; the tiles, facets and sort wait for the API
- * (docs/to_be_implemented_after_be_version_2/dev_notes.md).
+ * The API searches, filters and sorts it (API 2.0): the words, the tiles and every facet, the
+ * sort - `ApiList`.
  */
 @Component({
   selector: 'assay-scopes-list',
@@ -106,21 +112,27 @@ export class ScopesListComponent {
   isSet = computed(() => this.kind() === 'test-sets');
   copy = computed(() => COPY[this.kind()]);
 
-  page = new Paged<ScopeRead>(
-    (o, l) => (this.isSet() ? this.setsApi.testSets(o, l) : this.plansApi.testPlans(o, l)),
-    10,
-    errText,
-  );
-  filter = new TextFilter<ScopeRead>((s) => s.name);
-  sort = signal('Latest run');
-  sortOptions = ['Latest run', 'Created', 'Name'];
-  rows = computed(() => {
-    const rows = this.filter.apply(this.page.items());
-    const sort = this.sort();
-    if (sort === 'Name') return [...rows].sort((a, b) => a.name.localeCompare(b.name));
-    if (sort === 'Created') return [...rows].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
-    return rows;
+  /** The sets or plans as the API searches (names), filters and sorts them. */
+  list = new ApiList<ScopeRead>({
+    noun: () => this.copy().one,
+    sort: 'Latest run',
+    limit: 10,
+    params: (c, q, sort) => ({
+      q,
+      latest_verdict: c['verdict'],
+      latest_run: c['run'],
+      ...(this.isSet()
+        ? { in_test_plan: c['plan'], holds_test: c['test'] }
+        : { holds_test_set: c['set'] }),
+      ...createdParams(c['created']),
+      sort: SORT[sort] ?? 'latest_run',
+    }),
+    fetch: (p, o, l) =>
+      this.isSet() ? this.setsApi.testSets(o, l, p) : this.plansApi.testPlans(o, l, p),
   });
+  page = this.list.page;
+  rows = this.page.items;
+  sortOptions = Object.keys(SORT);
   selection = new Selection(() => this.rows());
   /** Each shown set's or plan's latest run, counted, as its cell shows it. */
   latestRuns = computed(() => new Map(this.page.items().map((s) => [s.id, latestRunOf(s)])));
@@ -145,13 +157,12 @@ export class ScopesListComponent {
     this.batches.total() > BATCH_SAMPLE ? `Counted from the last ${BATCH_SAMPLE} batches.` : null,
   );
 
-  choice = signal<FilterChoice>({});
   tile = computed(() => {
-    const v = this.choice()['verdict'] ?? [];
+    const v = this.list.choice()['verdict'] ?? [];
     return v.length === 1 ? v[0] : null;
   });
   pickTile(key: string | null) {
-    this.choice.update((c) => ({ ...c, verdict: key ? [key] : [] }));
+    this.list.choice.update((c) => ({ ...c, verdict: key ? [key] : [] }));
   }
   facets = computed<FilterFacet[]>(() => {
     const total = this.page.total();
@@ -206,21 +217,7 @@ export class ScopesListComponent {
       link: ['/', this.kind(), s.id],
     })),
   );
-  shownText = computed(() =>
-    this.filter.terms().length
-      ? `${this.rows().length} of ${this.page.items().length} on this page`
-      : counted(this.page.total(), this.copy().one),
-  );
-  emptyText = computed(() => {
-    if (this.page.loading()) return null;
-    if (this.filter.terms().length)
-      return filterMissText(
-        this.copy().one,
-        this.filter.text(),
-        this.page.total() > this.page.limit(),
-      );
-    return this.page.total() ? null : `No ${this.copy().title.toLowerCase()} yet.`;
-  });
+  emptyText = computed(() => this.list.empty(`No ${this.copy().title.toLowerCase()} yet.`));
 
   columns = computed<CatalogColumn[]>(() => [
     { label: this.isSet() ? 'Test set' : 'Test plan', width: 3 },
@@ -327,8 +324,7 @@ export class ScopesListComponent {
       this.kind();
       untracked(() => {
         this.selection.clear();
-        this.choice.set({});
-        this.page.reset();
+        this.list.choice.set({});
       });
     });
   }

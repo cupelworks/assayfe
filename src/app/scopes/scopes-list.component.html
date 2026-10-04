@@ -24,12 +24,12 @@
     [itemsLabel]="copy().title"
     [facets]="facets()"
     [items]="items()"
-    [shown]="shownText()"
+    [shown]="list.shownText()"
     [sortOptions]="sortOptions"
-    [(query)]="filter.query"
-    [(words)]="filter.kept"
-    [(chosen)]="choice"
-    [(sort)]="sort"
+    [(query)]="list.words.query"
+    [(words)]="list.words.kept"
+    [(chosen)]="list.choice"
+    [(sort)]="list.sort"
   />
 
   <assay-catalog-table

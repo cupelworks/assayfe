@@ -2,16 +2,20 @@ import { Injectable } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { forkJoin, map } from 'rxjs';
 import * as M from './models';
-import { ApiBase, PAGE } from './api-base';
+import { ApiBase, PAGE, QUERY } from './api-base';
+import { ListParams } from '../shared/work/api-list';
 
 @Injectable({ providedIn: 'root' })
 export class TestsApiService extends ApiBase {
-  tests(offset = 0, limit = 100) {
-    return this.http.get<M.TestCasePage>(this.u('/tests'), { params: PAGE(offset, limit) });
+  /** The tests the parameters let through (API 2.0: search, filters, sort - `ListParams`). */
+  tests(offset = 0, limit = 100, params: ListParams = {}) {
+    return this.http.get<M.TestCasePage>(this.u('/tests'), {
+      params: QUERY({ ...params, offset, limit }),
+    });
   }
   /** tests() normalised to the common Page shape (the API names the array `test_cases`). */
-  testsPage(offset = 0, limit = 100) {
-    return this.tests(offset, limit).pipe(
+  testsPage(params: ListParams, offset = 0, limit = 100) {
+    return this.tests(offset, limit, params).pipe(
       map(
         (p) =>
           ({

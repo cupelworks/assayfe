@@ -75,6 +75,13 @@ export function createdRange(
   }
 }
 
+/** A facet of two values as the API's true or false: one chosen - true for `yes`, false for `no`;
+ *  both or neither - nothing sent ("Answer: a recorded one" → `has_recorded_answer=true`). */
+export function yesNo(keys: readonly string[] | undefined, yes: string, no: string) {
+  if (keys?.length !== 1) return null;
+  return keys[0] === yes ? 'true' : keys[0] === no ? 'false' : null;
+}
+
 /** The Created facet's chosen range as the API's parameters - none chosen: nothing sent. */
 export function createdParams(keys: readonly string[] | undefined) {
   const r = createdRange(keys?.[0] ?? '');

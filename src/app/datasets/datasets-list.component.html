@@ -16,16 +16,17 @@
 
   <assay-smart-filter
     label="Filter the datasets"
-    placeholder="Names and prompts - or type rows, used, created…"
+    placeholder="Names - or type rows, used, created…"
+    wordsIn="the names"
     itemsLabel="Datasets"
     [facets]="facets()"
     [items]="items()"
-    [shown]="shownText()"
+    [shown]="list.shownText()"
     [sortOptions]="sortOptions"
-    [(query)]="filter.query"
-    [(words)]="filter.kept"
-    [(chosen)]="choice"
-    [(sort)]="sort"
+    [(query)]="list.words.query"
+    [(words)]="list.words.kept"
+    [(chosen)]="list.choice"
+    [(sort)]="list.sort"
   />
 
   <assay-catalog-table class="list" label="Datasets" [columns]="columns" [empty]="emptyText()">
