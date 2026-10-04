@@ -46,10 +46,7 @@
         </assay-catalog-cell>
         <assay-catalog-cell caption="From">
           @if (v.scope; as s) {
-            <span class="from"
-              ><span class="k">{{ s.kind }}</span
-              ><a [routerLink]="s.link">{{ s.name }}</a></span
-            >
+            <assay-kind-name [kind]="s.kind" [name]="s.name" [link]="s.link" />
           } @else {
             <span class="muted">On its own</span>
           }

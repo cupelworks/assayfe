@@ -183,6 +183,15 @@ export function timesText(b: Pick<BatchSummary, 'status' | 'progress'>): string 
     : `${p.times_requested} time${p.times_requested === 1 ? '' : 's'}`;
 }
 
+/** How many times, as a table's figure: the times it ran - "211 of 300" for one stopped before
+ *  the end (Incomplete) - or, while it runs, the times asked for. */
+export function timesFigure(b: Pick<BatchSummary, 'status' | 'progress'>): string {
+  const p = b.progress;
+  if (isInFlight(b.status)) return String(p.times_requested);
+  const ran = timesRun(p);
+  return b.status === 'Incomplete' ? `${ran} of ${p.times_requested}` : String(ran);
+}
+
 /** How far a running batch is: the share of its times done, and "18 of 45 times done · 36 of 90
  *  runs" ("of up to" for one that runs until there's an answer). */
 export function batchProgress(p: BatchSummary['progress']) {

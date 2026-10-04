@@ -3,8 +3,8 @@ import { RouterLink } from '@angular/router';
 
 /**
  * A link on to another page, in red: "Test types →", "All runs →" - one under the other when there
- * are two, and across a section's body when it ends one. With no link yet (a page still to come:
- * "All batches →") it reads and looks the same, and does nothing.
+ * are two, and across a section's body when it ends one. With no link yet (a page still to come)
+ * it reads and looks the same, and does nothing.
  */
 @Component({
   selector: 'assay-guide-go',

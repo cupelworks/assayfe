@@ -22,6 +22,8 @@ export interface ApiListOptions<T, C, P extends ListParams> {
   limit?: number;
   /** What a count calls them: "run" → "493 runs" - or, when it changes (sets or plans), how. */
   noun: string | (() => string);
+  /** When it isn't the noun and an s: "batches". */
+  plural?: string;
   /** The choice, when the page keeps it itself (Runs: some of it from the address). */
   choice?: WritableSignal<FilterChoice>;
   /** The counts beside the filter's values, for what's asked (`GET …/facets`). */
@@ -30,12 +32,12 @@ export interface ApiListOptions<T, C, P extends ListParams> {
 
 /**
  * A work list the API searches, filters and sorts (API 2.0) - Runs, Tests, Test sets and plans,
- * Datasets: its words (`SearchWords`, each phrase a `q`, sent once they stand still), its facets'
- * choice and its sort, as the page maps them to parameters; the page of results (`Paged`), read
- * again from its first page whenever what's asked changes; the counts beside the filter's values,
- * when the page has them; and how many there are in all - the page's own total with nothing
- * narrowing, else asked once - for "N of M shown". Create it in a field initializer: it starts
- * effects.
+ * Datasets, and (API 2.1) Batches and Comparisons, which have no words: its words (`SearchWords`,
+ * each phrase a `q`, sent once they stand still), its facets' choice and its sort, as the page
+ * maps them to parameters; the page of results (`Paged`), read again from its first page whenever
+ * what's asked changes; the counts beside the filter's values, when the page has them; and how
+ * many there are in all - the page's own total with nothing narrowing, else asked once - for "N
+ * of M shown". Create it in a field initializer: it starts effects.
  */
 export class ApiList<T, C = never, P extends ListParams = ListParams> {
   words = new SearchWords();
@@ -57,7 +59,9 @@ export class ApiList<T, C = never, P extends ListParams = ListParams> {
   shownText = computed(() => {
     const n = this.page.total(),
       all = this.everything();
-    return this.narrowed() && all != null ? `${n} of ${all} shown` : counted(n, this.noun());
+    return this.narrowed() && all != null
+      ? `${n} of ${all} shown`
+      : counted(n, this.noun(), this.o.plural);
   });
 
   constructor(private o: ApiListOptions<T, C, P>) {

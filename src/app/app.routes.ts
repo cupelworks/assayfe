@@ -86,6 +86,16 @@ export const routes: Routes = [
           import('./runs/run-detail.component').then((m) => m.RunDetailComponent),
       },
       {
+        path: 'statistics/batches',
+        loadComponent: () =>
+          import('./statistics/batches-list.component').then((m) => m.BatchesListComponent),
+      },
+      {
+        path: 'statistics/comparisons',
+        loadComponent: () =>
+          import('./statistics/comparisons-list.component').then((m) => m.ComparisonsListComponent),
+      },
+      {
         path: 'statistics/batches/:id',
         loadComponent: () => import('./statistics/batch.component').then((m) => m.BatchComponent),
       },

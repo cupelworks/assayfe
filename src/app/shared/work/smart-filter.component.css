@@ -178,6 +178,18 @@ select:focus-visible,
   color: var(--color-neutral-600);
   font-variant-numeric: tabular-nums;
 }
+/* The one order there is, as the sort reads: "Order: Newest first". */
+.order {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--color-neutral-800);
+}
+.order b {
+  font-weight: 700;
+  color: var(--color-text);
+}
 /* Every way to narrow, in small capitals; the chosen and the open ones red, with how many. */
 .facets {
   grid-column: 1 / -1;

@@ -69,6 +69,10 @@
     <span class="shown">{{ shown() }}</span>
     @if (sortOptions().length) {
       <assay-sort [options]="sortOptions()" [(value)]="sort" />
+    } @else if (order()) {
+      <span class="order"
+        >Order: <b>{{ order() }}</b></span
+      >
     }
     @if (anything()) {
       <button type="button" class="go" (click)="clearAll()">Clear all</button>
