@@ -12,7 +12,7 @@
 
   <assay-guide-section [section]="sec()['question']" sub="What you want to know, and how strictly">
     <div
-      class="asks wide"
+      class="asks g-wide"
       role="radiogroup"
       [attr.aria-labelledby]="sec()['question'].id + '-title'"
     >
@@ -30,7 +30,7 @@
         </label>
       }
     </div>
-    <div class="params wide">
+    <div class="params g-wide">
       @if (!hasTargetParam()) {
         <div class="lfield">
           <span class="lfield-label">Threshold</span>
@@ -47,7 +47,7 @@
       }
     </div>
     @if (advParams().length) {
-      <div class="wide adv">
+      <div class="g-wide adv">
         <button type="button" class="quiet" [attr.aria-expanded]="adv()" (click)="adv.set(!adv())">
           Advanced {{ adv() ? '↑' : '↓' }}
         </button>
@@ -66,16 +66,16 @@
     <div class="est" [class.stale]="estimating()">
       @if (sec()['seen']; as s) {
         <assay-guide-section [section]="s" [sub]="seenLead()">
-          <div class="tb wide" role="table" aria-label="Each check against its target">
+          <div class="tb g-wide" role="table" aria-label="Each check against its target">
             <div class="tr h seen" [class.with-target]="showTargets()" role="row">
-              <span role="columnheader">In</span>
-              <span role="columnheader">Check</span>
-              <span role="columnheader">Its last runs</span>
+              <span role="columnheader" class="g-cap">In</span>
+              <span role="columnheader" class="g-cap">Check</span>
+              <span role="columnheader" class="g-cap">Its last runs</span>
               @if (showTargets()) {
-                <span role="columnheader">Target</span>
+                <span role="columnheader" class="g-cap">Target</span>
               }
-              <span role="columnheader">Outlook</span>
-              <span role="columnheader" class="right">Alone, for {{ goalText() }}</span>
+              <span role="columnheader" class="g-cap">Outlook</span>
+              <span role="columnheader" class="g-cap right">Alone, for {{ goalText() }}</span>
             </div>
             @for (r of seen(); track r.key) {
               <div
@@ -93,7 +93,7 @@
                     (change)="include(r.ref, $any($event.target).checked)"
                 /></span>
                 <span role="cell"
-                  ><span class="cn">{{ r.label }}</span
+                  ><span class="cell-nm">{{ r.label }}</span
                   ><span class="small">{{ r.where }}</span></span
                 >
                 <span role="cell"
@@ -142,7 +142,7 @@
           </div>
           @if (goal(); as g) {
             @if (g.out) {
-              <div class="goal wide" role="status">
+              <div class="goal g-wide" role="status">
                 <div class="gfig">
                   <span class="big">{{ g.best }}</span>
                   <span class="gcap">at best, whatever the size</span>
@@ -153,7 +153,7 @@
                 </div>
               </div>
             } @else if (g.text) {
-              <p class="concl wide">{{ g.text }}</p>
+              <p class="concl g-wide">{{ g.text }}</p>
             }
           }
         </assay-guide-section>
@@ -161,7 +161,7 @@
 
       @if (sec()['once']; as s) {
         <assay-guide-section [section]="s" sub="Recommended: many runs only repeat one result">
-          <div class="first wide">
+          <div class="first g-wide">
             <h3>Every run gives the same result.</h3>
             <p>{{ onceLine() }}</p>
             <button
@@ -178,7 +178,7 @@
 
       @if (trial(); as tr) {
         <assay-guide-section [section]="sec()['trial']" [sub]="tr.lead">
-          <div class="first wide">
+          <div class="first g-wide">
             <h3>{{ tr.title }}</h3>
             <p class="facts">{{ tr.facts }}</p>
             <p>
@@ -200,17 +200,17 @@
 
       @if (sec()['cheaper']; as s) {
         <assay-guide-section [section]="s" [sub]="cheaperSub()">
-          <div class="tb wide" role="table" [attr.aria-label]="s.label">
+          <div class="tb g-wide" role="table" [attr.aria-label]="s.label">
             <div class="tr h opts" role="row">
-              <span role="columnheader">Instead</span>
-              <span role="columnheader">Size</span>
-              <span role="columnheader">What it gets</span>
-              <span role="columnheader"></span>
+              <span role="columnheader" class="g-cap">Instead</span>
+              <span role="columnheader" class="g-cap">Size</span>
+              <span role="columnheader" class="g-cap">What it gets</span>
+              <span role="columnheader" class="g-cap"></span>
             </div>
             @for (c of cheaper(); track c.title) {
               <div class="tr opts" role="row">
                 <span role="cell"
-                  ><span class="cn">{{ c.title }}</span
+                  ><span class="cell-nm">{{ c.title }}</span
                   ><span class="small">{{ c.line }}</span></span
                 >
                 <span role="cell"
@@ -247,7 +247,7 @@
               : '')
           "
         >
-          <div class="sizes wide" [class.no-chart]="!chart()">
+          <div class="sizes g-wide" [class.no-chart]="!chart()">
             <div class="rows" role="radiogroup" [attr.aria-labelledby]="s.id + '-title'">
               @for (z of sizes(); track z.key) {
                 <label class="so" [class.on]="z.on">
@@ -290,7 +290,7 @@
             </div>
             @if (chart(); as c) {
               <figure class="chart">
-                <figcaption class="cap">Chance that every check gets an answer</figcaption>
+                <figcaption class="g-cap">Chance that every check gets an answer</figcaption>
                 <assay-odds-chart
                   [odds]="c.odds"
                   [goal]="c.goal"
@@ -305,7 +305,7 @@
             }
           </div>
           @if (timesIssue() ?? apiProblems()['times']; as issue) {
-            <p class="err wide">{{ issue }}</p>
+            <p class="err g-wide">{{ issue }}</p>
           }
           <dl class="defs">
             @if (!untilOn() && e.floor_explanation) {
@@ -339,17 +339,17 @@
             }
           </dl>
           @for (w of warnings(); track w.code) {
-            <p class="warn wide">{{ w.message }}</p>
+            <p class="warn g-wide">{{ w.message }}</p>
           }
         </assay-guide-section>
       }
 
       @if (outcome(); as o) {
         <assay-guide-section [section]="sec()['outcome']" [sub]="outLead()">
-          <p class="oc wide">{{ o.text }}</p>
+          <p class="oc g-wide">{{ o.text }}</p>
           @if (o.parts.length) {
             <assay-status-tally
-              class="wide split"
+              class="g-wide split"
               [label]="o.text"
               [parts]="o.parts"
               [still]="true"
@@ -357,9 +357,9 @@
           }
           <!-- Until there's an answer: the suggested fixed size's ending, to weigh it against. -->
           @if (o.alt; as a) {
-            <p class="alt wide">{{ a.text }}</p>
+            <p class="alt g-wide">{{ a.text }}</p>
             <assay-status-tally
-              class="wide split"
+              class="g-wide split"
               [label]="a.text"
               [parts]="a.parts"
               [still]="true"
@@ -374,7 +374,7 @@
   }
 
   <assay-guide-section [section]="sec()['note']" sub="Optional">
-    <div class="lfield wide noted">
+    <div class="lfield g-wide noted">
       <label for="sp-note">What’s different this time</label>
       <textarea
         id="sp-note"
@@ -389,29 +389,22 @@
   </assay-guide-section>
 </div>
 
-<!-- Start and Cancel, in view at the bottom of the window: what it takes on the left margin, the
-     buttons on the right one - and why Start can't go yet. -->
-<div class="dock" role="region" aria-label="Start the batch">
-  <span class="sum"
-    ><b>{{ costParts().head }}</b
-    >{{ costParts().rest ? ' · ' + costParts().rest : '' }}</span
+<!-- Start and Cancel, in view at the bottom of the window - and why Start can't go yet. -->
+<assay-dock
+  label="Start the batch"
+  [head]="costParts().head"
+  [rest]="costParts().rest"
+  [fix]="fixes()"
+>
+  <button
+    type="button"
+    class="btn"
+    [class.btn-primary]="!startQuiet()"
+    [class.btn-secondary]="startQuiet()"
+    [disabled]="primaryDisabled()"
+    (click)="start()"
   >
-  @if (blockers().length; as n) {
-    <span class="blockers" role="status"
-      ><b>{{ n }} {{ n === 1 ? 'thing' : 'things' }} to fix:</b> {{ blockersText() }}</span
-    >
-  }
-  <span class="acts">
-    <button
-      type="button"
-      class="btn"
-      [class.btn-primary]="!startQuiet()"
-      [class.btn-secondary]="startQuiet()"
-      [disabled]="primaryDisabled()"
-      (click)="start()"
-    >
-      {{ primaryLabel() }}
-    </button>
-    <button type="button" class="word" (click)="cancel()">Cancel</button>
-  </span>
-</div>
+    {{ primaryLabel() }}
+  </button>
+  <button type="button" class="word" (click)="cancel()">Cancel</button>
+</assay-dock>

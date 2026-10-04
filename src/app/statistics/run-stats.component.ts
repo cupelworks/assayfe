@@ -38,6 +38,7 @@ import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { GuideSectionComponent } from '../shared/guide/guide-section.component';
 import { GuideSection, numbered } from '../shared/guide/guide-sections';
 import { BannerComponent } from '../shared/work/banner.component';
+import { DockComponent } from '../shared/dock.component';
 import { NumberInputDirective, parseDecimal } from '../shared/number';
 import { ParamFieldComponent } from './param-field.component';
 import { OddsChartComponent } from './charts/odds-chart.component';
@@ -112,6 +113,7 @@ const OUTLOOK_MARK: Record<string, string> = {
     GuideHeadComponent,
     GuideSectionComponent,
     BannerComponent,
+    DockComponent,
   ],
   templateUrl: './run-stats.component.html',
   styleUrls: [
@@ -843,11 +845,8 @@ export class RunStatsComponent {
   /** Start steps back - outlined - while a step to take first is the one to do: a trial, or one
    *  run when nothing can vary. */
   startQuiet = computed(() => !!this.trial() || this.allCertain());
-  blockersText = computed(() =>
-    this.blockers()
-      .map((b) => b.charAt(0).toUpperCase() + b.slice(1))
-      .join(' · '),
-  );
+  /** What's left to fix, as the bar says it: each a sentence. */
+  fixes = computed(() => this.blockers().map((b) => b.charAt(0).toUpperCase() + b.slice(1)));
   primaryDisabled = computed(
     () => this.starting() || this.estimating() || !this.estimate() || this.blockers().length > 0,
   );
