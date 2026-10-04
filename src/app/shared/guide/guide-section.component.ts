@@ -5,9 +5,10 @@ import { GuideSection } from './guide-sections';
  * A section of a guide page, on the 12-column grid: its red number and title in columns 1-3 (and
  * under the title, optionally, what it holds - "15 types"), then what it says in 4-12 - a
  * nine-column grid its content is laid on, with `guide.css`'s classes (`g-lead`, `g-text`,
- * `g-wide`, `g-note`), which the page includes for the content it projects. What it puts under
- * the title (`sectionRail` - Settings' Save and Discard) stays in view while the body scrolls, given
- * the class `sticky-rail`.
+ * `g-wide`, `g-note`), which the page includes for the content it projects. Its rail - the number,
+ * the title and what goes under it (`sectionRail`: Settings' Save and Discard, the workers' Check
+ * again) - stays in view while the body scrolls, on every page (not on a phone);
+ * `[stickyRail]="false"` keeps one where it starts.
  */
 @Component({
   selector: 'assay-guide-section',
@@ -16,6 +17,7 @@ import { GuideSection } from './guide-sections';
     role: 'region',
     '[id]': 'section().id',
     '[attr.aria-labelledby]': "section().id + '-title'",
+    '[class.sticky-rail]': 'stickyRail()',
   },
   template: `
     <div class="rail">
@@ -39,8 +41,7 @@ import { GuideSection } from './guide-sections';
     .rail {
       grid-column: 1 / 4;
     }
-    /* What to do with the section (Settings' Save and Discard) under its title, in view while
-       its body scrolls. */
+    /* The rail - its number, title and what's under it - in view while the body scrolls. */
     :host(.sticky-rail) .rail {
       align-self: start;
       position: sticky;
@@ -104,4 +105,7 @@ export class GuideSectionComponent {
   section = input.required<GuideSection>();
   /** What the section holds, under its title: "15 types". */
   sub = input<string | null>(null);
+  /** Its rail stays in view while its body scrolls (not on a phone); false keeps it where it
+   *  starts. */
+  stickyRail = input(true);
 }
