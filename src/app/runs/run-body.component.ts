@@ -1,4 +1,5 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { RunDetails, StandaloneRunDetails, TestTypeResult } from '../api/models';
 import { isInFlight, listed, prettyJson } from '../shared/format';
@@ -14,6 +15,7 @@ import { GuideSectionComponent } from '../shared/guide/guide-section.component';
 import { numbered } from '../shared/guide/guide-sections';
 import { CATALOG, CatalogColumn } from '../shared/catalog';
 import { StatusMarkComponent } from '../shared/status-mark.component';
+import { ChecksViewComponent } from '../shared/checks-view.component';
 
 /** A line of what a check was run with, or how it ran: "Rubric", "Read from", "Engine". */
 interface Line {
@@ -22,19 +24,37 @@ interface Line {
   mono: boolean;
 }
 
+/** An answer as a row shows it: text as text, JSON as code (pretty), an empty one said so - or,
+ *  with none, why (`none`). */
+function said(v: string | null | undefined, none: string) {
+  if (v == null) return { none, empty: false, json: false, text: '' };
+  if (v === '') return { none: null, empty: true, json: false, text: '' };
+  const pretty = prettyJson(v);
+  return { none: null, empty: false, json: pretty != null, text: pretty ?? v };
+}
+
 /**
  * A run's body, under its page's top, as the Guide's sections:
  * 01 Checks - a ruled row per check, not met first: the check and its type, how it went (and its
  * score on its own scale, its threshold in red), why - with what it was run with in sight when it
  * wasn't met, under Details when it was, and how it ran (the judge, the engine) under Details;
- * 02 The answer - what the checks read (text as text, JSON as code), where it was read from, the
- * whole reply folded; 03 The test, as it ran - kept with the run. A run that couldn't run, or
- * hasn't yet, says so in each.
+ * 02 The answer - what the checks read: asked live, said big under a black rule (text as text,
+ * JSON as code), where it was read from, the whole reply folded; recorded, a row as the test's
+ * own; 03 The test, as it ran - kept with the run, as the test's
+ * page has it: its rows (input, expected output, recorded answer) and its Checks table
+ * (`<assay-checks-view>`). A run that couldn't run, or hasn't yet, says so in each.
  */
 @Component({
   selector: 'assay-run-body',
   standalone: true,
-  imports: [RouterLink, GuideSectionComponent, CATALOG, StatusMarkComponent],
+  imports: [
+    RouterLink,
+    NgTemplateOutlet,
+    GuideSectionComponent,
+    CATALOG,
+    StatusMarkComponent,
+    ChecksViewComponent,
+  ],
   styleUrls: [
     '../shared/guide/head-aside.css',
     '../shared/work/work.css',
@@ -110,24 +130,30 @@ interface Line {
 
       <assay-guide-section [section]="sections[1]" [sub]="answerSub()">
         @if (answer(); as a) {
-          <div class="ans">
-            <span class="cap">{{ a.caption }}</span>
-            @if (a.empty) {
-              <p class="said empty">An empty answer.</p>
-            } @else if (a.json) {
-              <pre class="code">{{ a.text }}</pre>
-            } @else {
-              <p class="said">{{ a.text }}</p>
-            }
-            @if (a.live) {
+          @if (a.live) {
+            <div class="ans">
+              <span class="cap">From your application</span>
+              @if (a.said.empty) {
+                <p class="said empty">An empty answer.</p>
+              } @else if (a.said.json) {
+                <pre class="code">{{ a.said.text }}</pre>
+              } @else {
+                <p class="said">{{ a.said.text }}</p>
+              }
               <span class="src"
                 >Read from the application's reply at the Answer path in
                 <a routerLink="/settings">Settings</a>.{{
                   ownPaths() ? ' A check with its own path reads that part instead.' : ''
                 }}</span
               >
-            }
-          </div>
+            </div>
+          } @else {
+            <!-- Recorded: a row, as the test's own below. -->
+            <dl class="defs">
+              <dt>Recorded answer</dt>
+              <ng-container *ngTemplateOutlet="saidRow; context: { $implicit: a.said }" />
+            </dl>
+          }
           @if (replyText(); as reply) {
             <div class="reply">
               <button
@@ -166,40 +192,32 @@ interface Line {
             <dd class="none">None</dd>
           }
           <dt>Recorded answer</dt>
-          @if (r.model_output != null) {
-            <dd>
-              <span class="val">{{ r.model_output || '(empty)' }}</span>
-            </dd>
-          } @else {
-            <dd class="none">None: each run asks your application.</dd>
-          }
-          <dt>Checks</dt>
-          @if (checkLine().length) {
-            <dd>
-              <span class="val">
-                @for (k of checkLine(); track $index; let last = $last) {
-                  {{ k.name }}
-                  @if (k.path) {
-                    , at <span class="at">{{ k.path }}</span>
-                  }
-                  @if (k.rubric) {
-                    , with its own rubric
-                  }
-                  @if (!last) {
-                    ·
-                  }
-                }
-              </span>
-            </dd>
-          } @else {
-            <dd class="none">None</dd>
-          }
+          <ng-container *ngTemplateOutlet="saidRow; context: { $implicit: recorded() }" />
         </dl>
+        <h3 class="h3">Checks</h3>
+        <assay-checks-view [assignments]="r.test_type_assignments" empty="None." />
         @if (testLink(); as l) {
           <span class="ends"><a class="go" [routerLink]="l">Open the test →</a></span>
         }
       </assay-guide-section>
     }
+    <!-- An answer as a row's value (02's when recorded, 03's recorded answer): text as text, JSON
+         as code, an empty one said so - or why there's none. -->
+    <ng-template #saidRow let-v>
+      @if (v.none) {
+        <dd class="none">{{ v.none }}</dd>
+      } @else if (v.empty) {
+        <dd class="none">An empty answer.</dd>
+      } @else if (v.json) {
+        <dd>
+          <pre class="code">{{ v.text }}</pre>
+        </dd>
+      } @else {
+        <dd>
+          <span class="val">{{ v.text }}</span>
+        </dd>
+      }
+    </ng-template>
   `,
 })
 export class RunBodyComponent {
@@ -370,16 +388,17 @@ export class RunBodyComponent {
   });
   /** The answer the checks read. "" is a real answer (a refusal, a cut-off): said, not hidden. A
    *  JSON object or array is pretty-printed as code. */
+  /** What the checks read: asked live (as said - its own block), or recorded (a row). */
   answer = computed(() => {
     const r = this.run();
     const v = r?.evaluated_output;
     if (v == null) return null;
-    const live = r?.output_source === 'application';
-    const caption = live ? 'From your application' : 'The recorded answer';
-    if (v === '') return { caption, live, empty: true, json: false, text: '' };
-    const pretty = prettyJson(v);
-    return { caption, live, empty: false, json: pretty != null, text: pretty ?? v };
+    return { live: r?.output_source === 'application', said: said(v, '') };
   });
+  /** The test's recorded answer, as it ran - none when each run asks the application. */
+  recorded = computed(() =>
+    said(this.run()?.model_output, 'None: each run asks your application.'),
+  );
   noAnswer = computed(() => {
     const r = this.run();
     if (r?.status === 'NotRan')
@@ -396,11 +415,4 @@ export class RunBodyComponent {
     return typeof reply === 'string' ? reply : JSON.stringify(reply, null, 2);
   });
   /** "Contains, at $.stop_reason · ROUGE · Relevance, with its own rubric". */
-  checkLine = computed(() =>
-    (this.run()?.test_type_assignments ?? []).map((a) => ({
-      name: checkName(a),
-      path: a.answer_path ?? null,
-      rubric: !!a.config?.['rubric']?.trim(),
-    })),
-  );
 }

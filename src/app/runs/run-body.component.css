@@ -161,11 +161,11 @@
 .reply .more {
   margin-top: 0;
 }
-/* 03: a check's own answer path, as code. */
-.at {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 14px;
-  color: var(--color-neutral-800);
+/* An answer as a row's value (02 recorded, 03): JSON as code, across the value's column. */
+.defs dd .code {
+  flex: 1 1 100%;
+  min-width: 0;
+  margin: 0;
 }
 @media (max-width: 960px) {
   .said {

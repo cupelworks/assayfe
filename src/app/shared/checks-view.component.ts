@@ -19,14 +19,14 @@ interface Setting {
 const FIRST = 5;
 
 /**
- * A test's checks, read-only, on the test page, as a catalogue's ruled table: Check | Kind |
- * Settings | Reads - the check's name (its type under it, when the name is its own), its type's
- * kind, each setting on its own line, wrapping ("Required substring: 4471"; code values in
- * monospace, an unset rubric as "Default rubric", a type with none as "No settings"), and what of
- * the reply it reads. A value longer than two lines folds to them, a JSON block to six, behind
- * "More ↓" - shown only when the fold really hides something (ClampDirective). A test with many
- * checks shows the first five and "Show all N checks", so the page never turns into a wall of
- * rows.
+ * A test's checks, read-only - on the test page, and on a run's as the test ran (its own copy of
+ * them) - as a catalogue's ruled table: Check | Kind | Settings | Reads - the check's name (its
+ * type under it, when the name is its own), its type's kind, each setting on its own line,
+ * wrapping ("Required substring: 4471"; code values in monospace, an unset rubric as "Default
+ * rubric", a type with none as "No settings"), and what of the reply it reads. A value longer than
+ * two lines folds to them, a JSON block to six, behind "More ↓" - shown only when the fold really
+ * hides something (ClampDirective). A test with many checks shows the first five and "Show all N
+ * checks", so the page never turns into a wall of rows.
  */
 @Component({
   selector: 'assay-checks-view',
