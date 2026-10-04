@@ -11,6 +11,13 @@ export class TestSetsApiService extends ApiBase {
       params: QUERY({ ...params, offset, limit }),
     });
   }
+  /** The sets' counts beside each filter value, within the others chosen - the list's own
+   *  parameters, and the Created edges to count from. */
+  testSetFacets(params: ListParams, edges: readonly string[]) {
+    return this.http.get<M.FacetCounts>(this.u('/test-sets/facets'), {
+      params: QUERY({ ...params, sort: undefined, created_edges: edges }),
+    });
+  }
   testSet(id: string) {
     return this.http.get<M.ScopeRead>(this.u(`/test-sets/${id}`));
   }

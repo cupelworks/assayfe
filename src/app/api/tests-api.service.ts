@@ -13,6 +13,13 @@ export class TestsApiService extends ApiBase {
       params: QUERY({ ...params, offset, limit }),
     });
   }
+  /** The tests' counts beside each filter value, within the others chosen - the list's own
+   *  parameters, and the Created edges to count from. */
+  testFacets(params: ListParams, edges: readonly string[]) {
+    return this.http.get<M.FacetCounts>(this.u('/tests/facets'), {
+      params: QUERY({ ...params, sort: undefined, created_edges: edges }),
+    });
+  }
   /** tests() normalised to the common Page shape (the API names the array `test_cases`). */
   testsPage(params: ListParams, offset = 0, limit = 100) {
     return this.tests(offset, limit, params).pipe(

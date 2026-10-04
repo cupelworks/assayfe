@@ -370,6 +370,11 @@ export interface AnyRunMetadata extends RunListFields {
   /** The test plan this run belongs to - set only when origin is TestPlan. */
   test_plan_id?: Ref | null;
 }
+/** The counts beside a list's filter values (`GET /tests/facets`, `/test-sets/facets`,
+ *  `/test-plans/facets`, `/datasets/facets` - API 2.0): each facet counted within every other filter
+ *  chosen, not its own; by value - a status, `none` / `never`, `true` / `false`, `any`, an id or a
+ *  name; `created` by the edges sent (and `before`), null without them. */
+export type FacetCounts = Partial<Record<string, Partial<Record<string, number>> | null>>;
 /** `GET /runs/facets` (API 2.0): the runs counted by status and by origin - every value there,
  *  each counted within the other filters given. */
 export interface RunFacets {

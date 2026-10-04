@@ -5,22 +5,20 @@ import { CatalogStore } from '../api/catalog.store';
 import { TestsApiService } from '../api/tests-api.service';
 import { TestSetsApiService } from '../api/test-sets-api.service';
 import { RunsApiService } from '../api/runs-api.service';
-import { StatisticsApiService } from '../api/statistics-api.service';
 import { holdersOf } from '../api/holders';
-import { firstOfEach, latestRunOf, refreshStandings } from '../api/latest';
+import { latestRunOf, refreshStandings } from '../api/latest';
 import { typeCounts, typeTimes } from '../api/checks';
-import { BatchSummary, TestCase, TestCaseBody, TestCaseRead } from '../api/models';
+import { FacetCounts, TestCase, TestCaseBody, TestCaseRead } from '../api/models';
 import { ActionRunner } from '../shared/action-runner';
-import { Paged } from '../shared/paged';
 import { Selection } from '../shared/selection';
-import { counted, displayName, errText } from '../shared/format';
+import { counted, displayName } from '../shared/format';
 import { PagerComponent } from '../shared/pager.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { CATALOG, CatalogColumn, CatalogTag, idColumn } from '../shared/catalog';
 import { SmartFilterComponent } from '../shared/work/smart-filter.component';
 import { FilterFacet, createdFacet, createdParams, yesNo } from '../shared/work/filters';
-import { ApiList } from '../shared/work/api-list';
-import { NOT_YET, latestRunFacet, verdictFacet, verdictTiles } from '../shared/work/verdicts';
+import { ApiList, countsWithCreated } from '../shared/work/api-list';
+import { latestRunFacet, verdictFacet, verdictTiles } from '../shared/work/verdicts';
 import { LatestStatusComponent } from '../shared/work/latest-status.component';
 import { BulkAction, BulkBarComponent } from '../shared/work/bulk-bar.component';
 import { BannerComponent } from '../shared/work/banner.component';
@@ -28,7 +26,6 @@ import { NamedItem, NamedListComponent } from '../shared/work/named-list.compone
 import { TestFormDialogComponent } from '../shared/dialog/test-form-dialog.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
 import { PickDialogComponent, PickRow } from '../shared/dialog/pick-dialog.component';
-import { BATCH_SAMPLE } from '../overview/overview';
 
 type Dlg = null | 'new' | 'delete' | 'add';
 
@@ -76,12 +73,11 @@ export class TestsListComponent {
   private api = inject(TestsApiService);
   private setsApi = inject(TestSetsApiService);
   private runsApi = inject(RunsApiService);
-  private statsApi = inject(StatisticsApiService);
 
   /** ?dataset= - "See them in Tests →" on a dataset's page: the tests made from it. */
   dataset = input<string | undefined>();
   /** The tests as the API searches (names, inputs, checks), filters and sorts them. */
-  list = new ApiList<TestCaseRead>({
+  list = new ApiList<TestCaseRead, FacetCounts>({
     noun: 'test',
     sort: 'Latest activity',
     limit: 10,
@@ -97,6 +93,7 @@ export class TestsListComponent {
       sort: sort === 'Name' ? 'name' : 'latest_activity',
     }),
     fetch: (p, o, l) => this.api.testsPage(p, o, l),
+    counts: (p) => countsWithCreated((edges) => this.api.testFacets(p, edges)),
   });
   page = this.list.page;
   rows = this.page.items;
@@ -104,36 +101,8 @@ export class TestsListComponent {
   /** Each shown test's latest run, as its cell shows it. */
   latestRuns = computed(() => new Map(this.page.items().map((t) => [t.id, latestRunOf(t)])));
 
-  /** The last 100 batches: the tiles' and the Verdict facet's counts. */
-  batches = new Paged<BatchSummary>(
-    (o, l) => this.statsApi.batchesPage({}, o, l),
-    BATCH_SAMPLE,
-    errText,
-  );
-  /** Each test's latest verdict, among those batches. */
-  private verdictOf = computed(
-    () =>
-      new Map(
-        firstOfEach(
-          this.batches.items().filter((b) => b.scope.kind === 'test'),
-          (b) => b.scope.id,
-        ).map(({ item }) => [item.scope.id, item.status]),
-      ),
-  );
-  /** Each test's latest run outside a batch, among the last 500 runs. */
-  private runOf = computed(
-    () =>
-      new Map(
-        firstOfEach(
-          this.store.recentRuns().filter((r) => r.origin === 'Standalone' && r.test_case_id),
-          (r) => r.test_case_id!.id,
-        ).map(({ item }) => [item.test_case_id!.id, item.status as string]),
-      ),
-  );
-  tiles = computed(() => verdictTiles(this.verdictOf(), this.page.total()));
-  tilesNote = computed(() =>
-    this.batches.total() > BATCH_SAMPLE ? `Counted from the last ${BATCH_SAMPLE} batches.` : null,
-  );
+  /** How many tests each latest verdict has, within the other filters chosen. */
+  tiles = computed(() => verdictTiles(this.list.counts()?.['latest_verdict']));
 
   sortOptions = ['Latest activity', 'Name'];
   tile = computed(() => {
@@ -144,37 +113,32 @@ export class TestsListComponent {
     this.list.choice.update((c) => ({ ...c, verdict: key ? [key] : [] }));
   }
 
+  /** The facets, each value counted within the other filters chosen (the API's counts). */
   facets = computed<FilterFacet[]>(() => {
-    const tests = this.store.tests();
-    const total = this.page.total();
-    const types = new Map<string, number>();
-    for (const t of tests) {
-      for (const n of new Set((t.test_type_assignments ?? []).map((a) => a.name)))
-        types.set(n, (types.get(n) ?? 0) + 1);
-    }
-    const recorded = tests.filter((t) => t.model_output != null).length;
+    const c = this.list.counts();
+    const of = (facet: string, key: string) => (c ? (c[facet]?.[key] ?? 0) : null);
     return [
       {
         key: 'check',
         label: 'Checks',
         sub: 'tests with each',
         many: true,
-        values: [...types.entries()]
-          .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-          .map(([name, count]) => ({ key: name, label: name, count })),
+        values: Object.entries(c?.['check_type'] ?? {})
+          .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0) || a[0].localeCompare(b[0]))
+          .map(([name, count]) => ({ key: name, label: name, count: count ?? 0 })),
       },
-      verdictFacet(this.verdictOf(), total),
-      latestRunFacet(this.store.runsLoading() ? null : this.runOf(), total),
+      verdictFacet(c?.['latest_verdict']),
+      latestRunFacet(c?.['latest_run']),
       {
         key: 'answer',
         label: 'Answer',
         sub: 'what a run scores',
         values: [
-          { key: 'recorded', label: 'A recorded answer', count: tests.length ? recorded : null },
+          { key: 'recorded', label: 'A recorded answer', count: of('has_recorded_answer', 'true') },
           {
             key: 'live',
             label: 'Asks the application',
-            count: tests.length ? tests.length - recorded : null,
+            count: of('has_recorded_answer', 'false'),
           },
         ],
       },
@@ -186,16 +150,20 @@ export class TestsListComponent {
         values: this.store.sets().map((s) => ({
           key: s.id,
           label: s.name,
-          count: s.entry_count ?? null,
+          count: of('in_test_set', s.id),
         })),
       },
       {
         key: 'dataset',
         label: 'From a dataset',
         many: true,
-        values: this.store.datasets().map((d) => ({ key: d.id, label: d.name })),
+        values: this.store.datasets().map((d) => ({
+          key: d.id,
+          label: d.name,
+          count: of('from_dataset', d.id),
+        })),
       },
-      createdFacet(tests.map((t) => t.created_at)),
+      createdFacet(c?.['created']),
     ];
   });
   items = computed(() =>
@@ -228,7 +196,7 @@ export class TestsListComponent {
     done: () => {
       this.dlg.set(null);
       this.store.load();
-      this.page.reload();
+      this.list.refresh();
     },
   });
   bulkActions: BulkAction[] = [
@@ -309,11 +277,9 @@ export class TestsListComponent {
         if (!this.page.loading()) this.page.reload();
       },
     );
-    this.batches.reload();
     this.store.loadTests();
     this.store.loadSets();
     this.store.loadDatasets();
-    this.store.loadRunStatus();
   }
 
   go(offset: number) {

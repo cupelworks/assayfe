@@ -5,21 +5,19 @@ import { CatalogStore } from '../api/catalog.store';
 import { TestSetsApiService } from '../api/test-sets-api.service';
 import { TestPlansApiService } from '../api/test-plans-api.service';
 import { RunsApiService } from '../api/runs-api.service';
-import { StatisticsApiService } from '../api/statistics-api.service';
 import { holdersOf } from '../api/holders';
-import { firstOfEach, latestRunOf, refreshStandings } from '../api/latest';
-import { BatchSummary, Kind, ScopeMetadata, ScopeRead } from '../api/models';
+import { latestRunOf, refreshStandings } from '../api/latest';
+import { FacetCounts, Kind, ScopeRead } from '../api/models';
 import { ActionRunner } from '../shared/action-runner';
-import { Paged } from '../shared/paged';
 import { Selection } from '../shared/selection';
-import { counted, displayName, errText } from '../shared/format';
+import { counted, displayName } from '../shared/format';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { CATALOG, CatalogColumn, CatalogTag, idColumn } from '../shared/catalog';
 import { SmartFilterComponent } from '../shared/work/smart-filter.component';
 import { FilterFacet, createdFacet, createdParams } from '../shared/work/filters';
-import { ApiList } from '../shared/work/api-list';
+import { ApiList, countsWithCreated } from '../shared/work/api-list';
 import { latestRunFacet, verdictFacet, verdictTiles } from '../shared/work/verdicts';
 import { LatestStatusComponent } from '../shared/work/latest-status.component';
 import { BulkAction, BulkBarComponent } from '../shared/work/bulk-bar.component';
@@ -28,7 +26,6 @@ import { NamedItem, NamedListComponent } from '../shared/work/named-list.compone
 import { NameDialogComponent } from '../shared/dialog/name-dialog.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
 import { PickDialogComponent, PickRow } from '../shared/dialog/pick-dialog.component';
-import { BATCH_SAMPLE } from '../overview/overview';
 
 type Dlg = null | 'new' | 'delete' | 'link';
 
@@ -52,7 +49,6 @@ const COPY = {
     placeholder: 'Names - or type verdict, run, plan, test…',
     help: 'You add its tests next, on its page.',
     holds: 'Tests',
-    statsKind: 'test_set',
   },
   'test-plans': {
     title: 'Test plans',
@@ -61,7 +57,6 @@ const COPY = {
     placeholder: 'Names - or type verdict, run, set…',
     help: 'You link its test sets next, on its page.',
     holds: 'Sets',
-    statsKind: 'test_plan',
   },
 } as const;
 
@@ -106,14 +101,13 @@ export class ScopesListComponent {
   private setsApi = inject(TestSetsApiService);
   private plansApi = inject(TestPlansApiService);
   private runsApi = inject(RunsApiService);
-  private statsApi = inject(StatisticsApiService);
   private router = inject(Router);
 
   isSet = computed(() => this.kind() === 'test-sets');
   copy = computed(() => COPY[this.kind()]);
 
   /** The sets or plans as the API searches (names), filters and sorts them. */
-  list = new ApiList<ScopeRead>({
+  list = new ApiList<ScopeRead, FacetCounts>({
     noun: () => this.copy().one,
     sort: 'Latest run',
     limit: 10,
@@ -129,6 +123,12 @@ export class ScopesListComponent {
     }),
     fetch: (p, o, l) =>
       this.isSet() ? this.setsApi.testSets(o, l, p) : this.plansApi.testPlans(o, l, p),
+    counts: (p) =>
+      countsWithCreated((edges) =>
+        this.isSet()
+          ? this.setsApi.testSetFacets(p, edges)
+          : this.plansApi.testPlanFacets(p, edges),
+      ),
   });
   page = this.list.page;
   rows = this.page.items;
@@ -137,25 +137,8 @@ export class ScopesListComponent {
   /** Each shown set's or plan's latest run, counted, as its cell shows it. */
   latestRuns = computed(() => new Map(this.page.items().map((s) => [s.id, latestRunOf(s)])));
 
-  /** The last 100 batches: the tiles' and the Verdict facet's counts. */
-  batches = new Paged<BatchSummary>(
-    (o, l) => this.statsApi.batchesPage({}, o, l),
-    BATCH_SAMPLE,
-    errText,
-  );
-  private verdictOf = computed(() => {
-    const kind = this.copy().statsKind;
-    return new Map(
-      firstOfEach(
-        this.batches.items().filter((b) => b.scope.kind === kind),
-        (b) => b.scope.id,
-      ).map(({ item }) => [item.scope.id, item.status as string]),
-    );
-  });
-  tiles = computed(() => verdictTiles(this.verdictOf(), this.page.total()));
-  tilesNote = computed(() =>
-    this.batches.total() > BATCH_SAMPLE ? `Counted from the last ${BATCH_SAMPLE} batches.` : null,
-  );
+  /** How many each latest verdict has, within the other filters chosen. */
+  tiles = computed(() => verdictTiles(this.list.counts()?.['latest_verdict']));
 
   tile = computed(() => {
     const v = this.list.choice()['verdict'] ?? [];
@@ -164,9 +147,11 @@ export class ScopesListComponent {
   pickTile(key: string | null) {
     this.list.choice.update((c) => ({ ...c, verdict: key ? [key] : [] }));
   }
+  /** The facets, each value counted within the other filters chosen (the API's counts). */
   facets = computed<FilterFacet[]>(() => {
-    const total = this.page.total();
-    const shared = [verdictFacet(this.verdictOf(), total), latestRunFacet(null, total)];
+    const c = this.list.counts();
+    const of = (facet: string, key: string) => (c ? (c[facet]?.[key] ?? 0) : null);
+    const shared = [verdictFacet(c?.['latest_verdict']), latestRunFacet(c?.['latest_run'])];
     if (this.isSet()) {
       return [
         ...shared,
@@ -178,7 +163,7 @@ export class ScopesListComponent {
           values: this.store.plans().map((p) => ({
             key: p.id,
             label: p.name,
-            count: p.linked_set_count ?? null,
+            count: of('in_test_plan', p.id),
           })),
         },
         {
@@ -189,10 +174,10 @@ export class ScopesListComponent {
           values: this.store.tests().map((t) => ({
             key: t.id,
             label: displayName(t.name, t.id),
-            count: t.test_set_count,
+            count: of('holds_test', t.id),
           })),
         },
-        createdFacet(this.store.sets().map((s) => s.created_at)),
+        createdFacet(c?.['created']),
       ];
     }
     return [
@@ -205,10 +190,10 @@ export class ScopesListComponent {
         values: this.store.sets().map((s) => ({
           key: s.id,
           label: s.name,
-          count: s.test_plan_count ?? null,
+          count: of('holds_test_set', s.id),
         })),
       },
-      createdFacet(this.store.plans().map((p) => p.created_at)),
+      createdFacet(c?.['created']),
     ];
   });
   items = computed(() =>
@@ -233,7 +218,7 @@ export class ScopesListComponent {
     const n = s.test_plan_count ?? 0;
     return this.isSet() && n ? [{ text: `In ${counted(n, 'test plan')}` }] : [];
   }
-  holds(s: ScopeMetadata) {
+  holds(s: ScopeRead) {
     return (this.isSet() ? s.entry_count : s.linked_set_count) ?? 0;
   }
 
@@ -243,7 +228,7 @@ export class ScopesListComponent {
     done: () => {
       this.dlg.set(null);
       this.store.load();
-      this.page.reload();
+      this.list.refresh();
     },
   });
   bulkActions = computed<BulkAction[]>(() => [
@@ -319,7 +304,6 @@ export class ScopesListComponent {
     this.store.loadSets();
     this.store.loadPlans();
     this.store.loadTests();
-    this.batches.reload();
     effect(() => {
       this.kind();
       untracked(() => {

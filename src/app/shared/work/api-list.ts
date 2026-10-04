@@ -1,12 +1,12 @@
 import { WritableSignal, computed, effect, signal, untracked } from '@angular/core';
-import { Observable } from 'rxjs';
-import { Page } from '../../api/models';
+import { Observable, map } from 'rxjs';
+import { FacetCounts, Page } from '../../api/models';
 import { QueryValue } from '../../api/api-base';
 import { Paged } from '../paged';
 import { SearchWords } from '../text-filter';
 import { debounced } from '../debounced';
 import { counted, errText } from '../format';
-import { FilterChoice, chosenCount } from './filters';
+import { FilterChoice, chosenCount, createdCounts, createdEdges } from './filters';
 
 /** A list's query parameters, as `QUERY` sends them (several values of one: the key once each). */
 export type ListParams = Record<string, QueryValue>;
@@ -49,6 +49,8 @@ export class ApiList<T, C = never, P extends ListParams = ListParams> {
   narrowed = computed(() => chosenCount(this.choice()) > 0 || this.terms().length > 0);
   page: Paged<T>;
   counts = signal<C | null>(null);
+  /** Bumped by `refresh()`: the counts read again, as the page is. */
+  private version = signal(0);
   /** Every one there is, with nothing narrowing - null until known. */
   everything = signal<number | null>(null);
   /** "N of M shown" when anything narrows, "N runs" without. */
@@ -84,6 +86,7 @@ export class ApiList<T, C = never, P extends ListParams = ListParams> {
     const counts = o.counts;
     if (counts)
       effect((onCleanup) => {
+        this.version();
         const sub = counts(this.params()).subscribe({
           next: (c) => this.counts.set(c),
           error: () => this.counts.set(null),
@@ -92,6 +95,11 @@ export class ApiList<T, C = never, P extends ListParams = ListParams> {
       });
   }
 
+  /** The page and its counts, read again - after something changed what the list holds. */
+  refresh() {
+    this.page.reload();
+    this.version.update((v) => v + 1);
+  }
   /** What a list with nothing in it says: none at all, or none that matches. */
   empty(none: string) {
     if (this.page.loading() || this.page.total()) return null;
@@ -108,4 +116,15 @@ export class ApiList<T, C = never, P extends ListParams = ListParams> {
       error: () => {},
     });
   }
+}
+
+/** A list's counts (`GET …/facets`), asked with the Created facet's edges (`created_edges`) - its
+ *  `created` then counted by the facet's ranges (today, week, month, earlier). */
+export function countsWithCreated(
+  read: (edges: string[]) => Observable<FacetCounts>,
+): Observable<FacetCounts> {
+  const edges = createdEdges();
+  return read(Object.values(edges)).pipe(
+    map((f) => ({ ...f, created: createdCounts(f['created'], edges) })),
+  );
 }

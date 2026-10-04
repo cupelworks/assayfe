@@ -88,22 +88,50 @@ export function createdParams(keys: readonly string[] | undefined) {
   return { created_from: r.from?.toISOString() ?? null, created_to: r.to?.toISOString() ?? null };
 }
 
-/** The Created facet, its counts from the dates given (null when the list has none - tests). */
-export function createdFacet(dates: string[] | null): FilterFacet {
+/** The Created ranges' starting edges, from now - what a list's counts are asked with
+ *  (`created_edges`): since midnight, 7 days ago, 30 days ago. */
+export function createdEdges(now = new Date()) {
+  const at = (key: string) => createdRange(key, now).from!.toISOString();
+  return { today: at('today'), week: at('week'), month: at('month') };
+}
+export type CreatedEdges = ReturnType<typeof createdEdges>;
+
+/** The API's Created counts - from each edge sent, and `before` the earliest - by the facet's
+ *  ranges. */
+export function createdCounts(
+  created: Partial<Record<string, number>> | null | undefined,
+  edges: CreatedEdges,
+): Record<string, number> | null {
+  if (!created) return null;
+  return {
+    today: created[edges.today] ?? 0,
+    week: created[edges.week] ?? 0,
+    month: created[edges.month] ?? 0,
+    earlier: created['before'] ?? 0,
+  };
+}
+
+/** The Created facet, counted from the dates given, or from counts by range (the API's, through
+ *  `createdCounts`); null: no counts. */
+export function createdFacet(
+  from: string[] | Partial<Record<string, number>> | null | undefined,
+): FilterFacet {
   const now = new Date();
   const holds = (key: string, iso: string) => {
     const r = createdRange(key, now),
       t = +new Date(iso);
     return (!r.from || t >= +r.from) && (!r.to || t < +r.to);
   };
+  const count = (key: string) =>
+    !from
+      ? null
+      : Array.isArray(from)
+        ? from.filter((d) => holds(key, d)).length
+        : ((from as Partial<Record<string, number>>)[key] ?? 0);
   return {
     key: 'created',
     label: 'Created',
     single: true,
-    values: CREATED_VALUES.map((r) => ({
-      key: r.key,
-      label: r.label,
-      count: dates ? dates.filter((d) => holds(r.key, d)).length : null,
-    })),
+    values: CREATED_VALUES.map((r) => ({ key: r.key, label: r.label, count: count(r.key) })),
   };
 }

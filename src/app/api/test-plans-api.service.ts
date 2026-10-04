@@ -11,6 +11,13 @@ export class TestPlansApiService extends ApiBase {
       params: QUERY({ ...params, offset, limit }),
     });
   }
+  /** The plans' counts beside each filter value, within the others chosen - the list's own
+   *  parameters, and the Created edges to count from. */
+  testPlanFacets(params: ListParams, edges: readonly string[]) {
+    return this.http.get<M.FacetCounts>(this.u('/test-plans/facets'), {
+      params: QUERY({ ...params, sort: undefined, created_edges: edges }),
+    });
+  }
   testPlan(id: string) {
     return this.http.get<M.ScopeRead>(this.u(`/test-plans/${id}`));
   }

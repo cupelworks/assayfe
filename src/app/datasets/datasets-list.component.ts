@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CatalogStore } from '../api/catalog.store';
 import { DatasetsApiService } from '../api/datasets-api.service';
-import { DataSetMetadata } from '../api/models';
+import { DataSetMetadata, FacetCounts } from '../api/models';
 import { ActionRunner } from '../shared/action-runner';
 import { counted } from '../shared/format';
 import { PagerComponent } from '../shared/pager.component';
@@ -11,7 +11,7 @@ import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { CATALOG, CatalogColumn, idColumn } from '../shared/catalog';
 import { SmartFilterComponent } from '../shared/work/smart-filter.component';
 import { FilterFacet, createdFacet, createdParams, yesNo } from '../shared/work/filters';
-import { ApiList } from '../shared/work/api-list';
+import { ApiList, countsWithCreated } from '../shared/work/api-list';
 import { BannerComponent } from '../shared/work/banner.component';
 import { ImportDatasetDialogComponent } from './import-dataset-dialog.component';
 import { ROW_KEY } from './row-keys';
@@ -54,7 +54,7 @@ export class DatasetsListComponent {
   rowKey = ROW_KEY;
 
   /** The datasets as the API searches (names), filters and sorts them. */
-  list = new ApiList<DataSetMetadata>({
+  list = new ApiList<DataSetMetadata, FacetCounts>({
     noun: 'dataset',
     sort: 'Newest',
     limit: 10,
@@ -66,31 +66,37 @@ export class DatasetsListComponent {
       sort: sort.toLowerCase(),
     }),
     fetch: (p, o, l) => this.api.datasets(o, l, p),
+    counts: (p) => countsWithCreated((edges) => this.api.datasetFacets(p, edges)),
   });
   page = this.list.page;
   rows = this.page.items;
   sortOptions = ['Newest', 'Oldest', 'Name'];
-  facets = computed<FilterFacet[]>(() => [
-    {
-      key: 'used',
-      label: 'Made into tests',
-      values: [
-        { key: 'yes', label: 'Made into tests' },
-        { key: 'no', label: 'Not yet' },
-      ],
-    },
-    {
-      key: 'rows',
-      label: 'Rows',
-      single: true,
-      values: [
-        { key: 'few', label: '1 to 10' },
-        { key: 'some', label: '11 to 100' },
-        { key: 'many', label: 'Over 100' },
-      ],
-    },
-    createdFacet(this.store.datasets().map((d) => d.created_at)),
-  ]);
+  /** The facets, each value counted within the other filters chosen (the API's counts). */
+  facets = computed<FilterFacet[]>(() => {
+    const c = this.list.counts();
+    const of = (facet: string, key: string) => (c ? (c[facet]?.[key] ?? 0) : null);
+    return [
+      {
+        key: 'used',
+        label: 'Made into tests',
+        values: [
+          { key: 'yes', label: 'Made into tests', count: of('made_into_tests', 'true') },
+          { key: 'no', label: 'Not yet', count: of('made_into_tests', 'false') },
+        ],
+      },
+      {
+        key: 'rows',
+        label: 'Rows',
+        single: true,
+        values: [
+          { key: 'few', label: '1 to 10', count: of('rows', '1-10') },
+          { key: 'some', label: '11 to 100', count: of('rows', '11-100') },
+          { key: 'many', label: 'Over 100', count: of('rows', '101+') },
+        ],
+      },
+      createdFacet(c?.['created']),
+    ];
+  });
   items = computed(() =>
     this.store.datasets().map((d) => ({ label: d.name, link: ['/datasets', d.id] })),
   );

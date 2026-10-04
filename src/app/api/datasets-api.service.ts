@@ -11,6 +11,13 @@ export class DatasetsApiService extends ApiBase {
       params: QUERY({ ...params, offset, limit }),
     });
   }
+  /** The datasets' counts beside each filter value, within the others chosen - the list's own
+   *  parameters, and the Created edges to count from. */
+  datasetFacets(params: ListParams, edges: readonly string[]) {
+    return this.http.get<M.FacetCounts>(this.u('/datasets/facets'), {
+      params: QUERY({ ...params, sort: undefined, created_edges: edges }),
+    });
+  }
   dataset(id: string) {
     return this.http.get<M.DataSetMetadata>(this.u(`/datasets/${id}`));
   }
