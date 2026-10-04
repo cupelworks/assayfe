@@ -3,6 +3,7 @@
     size="one"
     kicker="Test"
     [crumbs]="[{ label: 'Tests', link: '/tests' }]"
+    [copyId]="id()"
     [title]="name()"
     [lede]="lede()"
   >
@@ -112,6 +113,7 @@
           <assay-catalog-cell caption="When"
             ><span class="when"><assay-rel-time [iso]="r.created_at" /></span
           ></assay-catalog-cell>
+          <assay-catalog-cell caption="ID" [copyId]="r.id" />
         </assay-catalog-row>
       }
     </assay-catalog-table>
@@ -130,7 +132,7 @@
       [columns]="setColumns"
       [empty]="sets()?.length ? null : setsEmpty()"
     >
-      @for (s of sets() ?? []; track s.set.id) {
+      @for (s of sets() ?? []; track s.entry) {
         <assay-catalog-row
           [name]="s.set.name"
           [link]="['/test-sets', s.set.id]"
@@ -144,6 +146,7 @@
               s.same ? 'Same as the test' : 'Differs from the test now'
             }}</span></assay-catalog-cell
           >
+          <assay-catalog-cell caption="Entry ID" [copyId]="s.entry" />
         </assay-catalog-row>
       }
     </assay-catalog-table>

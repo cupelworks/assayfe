@@ -12,7 +12,7 @@ import { PagerComponent } from '../shared/pager.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { GuideSectionComponent } from '../shared/guide/guide-section.component';
 import { numbered } from '../shared/guide/guide-sections';
-import { CATALOG, CatalogColumn } from '../shared/catalog';
+import { CATALOG, CatalogColumn, idColumn } from '../shared/catalog';
 import { SmartFilterComponent } from '../shared/work/smart-filter.component';
 import { QuietAction, QuietActionsComponent } from '../shared/work/quiet-actions.component';
 import { BulkAction, BulkBarComponent } from '../shared/work/bulk-bar.component';
@@ -114,6 +114,7 @@ export class DatasetDetailComponent {
     { label: 'Prompt', width: 3 },
     { label: 'Expected output', width: 3 },
     { label: 'Model output', width: 3 },
+    idColumn(),
     { label: '', width: 0.6 },
   ];
   rowsEmpty = computed(() => {
@@ -127,6 +128,7 @@ export class DatasetDetailComponent {
     { label: 'From row', width: 1 },
     { label: 'Latest verdict', width: 2.4 },
     { label: 'Latest run', width: 2 },
+    idColumn(),
   ];
 
   /** The ticked rows, numbered - what "Make tests from N rows…" and "Delete…" act on. */

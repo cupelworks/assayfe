@@ -20,7 +20,7 @@ import { PagerComponent } from '../shared/pager.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { GuideSectionComponent } from '../shared/guide/guide-section.component';
 import { numbered } from '../shared/guide/guide-sections';
-import { CATALOG, CatalogColumn } from '../shared/catalog';
+import { CATALOG, CatalogColumn, idColumn } from '../shared/catalog';
 import { StatusTallyComponent, TallyPart, tallyParts } from '../shared/status-tally.component';
 import { BannerComponent } from '../shared/work/banner.component';
 import { SortComponent } from '../shared/work/sort.component';
@@ -77,6 +77,7 @@ export class ExecutionComponent {
     { label: 'How it went', width: 1.3 },
     { label: 'Test', width: 3.3 },
     { label: 'Its checks', width: 4.4 },
+    idColumn('Run ID'),
   ];
 
   /** Every run of it, as listed; each one read once - null: it couldn't be. */

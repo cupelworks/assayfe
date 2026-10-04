@@ -14,7 +14,7 @@ import { PagerComponent } from '../shared/pager.component';
 import { ArrowOutComponent } from '../shared/arrow-out.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { GuideSectionComponent } from '../shared/guide/guide-section.component';
-import { CATALOG, CatalogColumn, CatalogTag } from '../shared/catalog';
+import { CATALOG, CatalogColumn, CatalogTag, idColumn } from '../shared/catalog';
 import { QuietAction, QuietActionsComponent } from '../shared/work/quiet-actions.component';
 import { BulkAction, BulkBarComponent } from '../shared/work/bulk-bar.component';
 import { BannerComponent } from '../shared/work/banner.component';
@@ -145,6 +145,7 @@ export class TestSetDetailComponent extends ScopePage<Dlg> {
     { label: 'Test', width: 2.6 },
     { label: 'Input', width: 3.6 },
     { label: 'Checks', width: 1.6 },
+    idColumn('Entry ID'),
     { label: '', width: 0.7 },
   ];
   tagsOf(e: TestSetEntry): CatalogTag[] {
@@ -199,6 +200,7 @@ export class TestSetDetailComponent extends ScopePage<Dlg> {
     { label: 'Test plan', width: 3.4 },
     { label: 'Holds', width: 1.6 },
     { label: 'Its latest run', width: 3.5 },
+    idColumn('Entry ID'),
   ];
   planRuns = new LatestByRow(
     () => 'test-plans',

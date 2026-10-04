@@ -3,6 +3,7 @@
     size="one"
     kicker="Test set"
     [crumbs]="[{ label: 'Test sets', link: '/test-sets' }]"
+    [copyId]="id()"
     [title]="name()"
     [lede]="lede()"
   >
@@ -65,6 +66,7 @@
               }
             </span>
           </assay-catalog-cell>
+          <assay-catalog-cell caption="Entry ID" [copyId]="e.id" />
           <assay-catalog-cell caption="">
             @if (!frozen().has(e.id)) {
               <button type="button" class="row-act" (click)="edit(e)">Edit</button>
@@ -117,7 +119,7 @@
       [columns]="planColumns"
       [empty]="plans()?.length ? null : plansEmpty()"
     >
-      @for (p of plans() ?? []; track p.id) {
+      @for (p of plans() ?? []; track p.entry_id) {
         @let r = planRuns.runs()[p.id];
         <assay-catalog-row [name]="p.name" [link]="['/test-plans', p.id]" [expandable]="false">
           <assay-catalog-cell caption="Holds">{{
@@ -131,6 +133,7 @@
               none="Never run"
             />
           </assay-catalog-cell>
+          <assay-catalog-cell caption="Entry ID" [copyId]="p.entry_id" />
         </assay-catalog-row>
       }
     </assay-catalog-table>

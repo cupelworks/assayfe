@@ -48,6 +48,8 @@ interface Step {
       size="one"
       kicker="Test"
       [crumbs]="crumbs()"
+      [copyId]="runId()"
+      copyIdLabel="Run ID"
       [title]="title()"
       [lede]="lede()"
     >

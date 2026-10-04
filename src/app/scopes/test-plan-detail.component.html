@@ -3,6 +3,7 @@
     size="one"
     kicker="Test plan"
     [crumbs]="[{ label: 'Test plans', link: '/test-plans' }]"
+    [copyId]="id()"
     [title]="name()"
     [lede]="lede()"
   >
@@ -57,6 +58,7 @@
               none="Never run"
             />
           </assay-catalog-cell>
+          <assay-catalog-cell caption="Entry ID" [copyId]="l.id" />
           <assay-catalog-cell caption="">
             <button
               type="button"

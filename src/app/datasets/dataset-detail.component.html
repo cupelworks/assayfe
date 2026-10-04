@@ -3,6 +3,7 @@
     size="one"
     kicker="Dataset"
     [crumbs]="[{ label: 'Datasets', link: '/datasets' }]"
+    [copyId]="id()"
     [title]="name()"
     [lede]="lede()"
   >
@@ -52,6 +53,7 @@
           <assay-catalog-cell caption="Model output"
             ><span class="clamp muted">{{ r.row.row_info.model_output }}</span></assay-catalog-cell
           >
+          <assay-catalog-cell caption="ID" [copyId]="r.row.id" />
           <assay-catalog-cell caption="">
             <button
               type="button"

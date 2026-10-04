@@ -17,7 +17,7 @@ import { pollWhile } from '../shared/poll';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { StatusCountsComponent } from '../shared/status-counts.component';
-import { CATALOG, CatalogColumn, CatalogTag } from '../shared/catalog';
+import { CATALOG, CatalogColumn, CatalogTag, idColumn } from '../shared/catalog';
 
 /** A run of a set or plan: its execution, and its runs counted by status (empty while read). */
 export interface ExecutionRow {
@@ -70,6 +70,7 @@ export const whatRan = (e: ExecutionMetadata, kind: Kind) =>
           <assay-catalog-cell caption="When"
             ><span class="when"><assay-rel-time [iso]="r.e.created_at" /></span
           ></assay-catalog-cell>
+          <assay-catalog-cell caption="ID" [copyId]="r.e.id" />
           <assay-catalog-cell caption="">
             <button type="button" class="row-act" [disabled]="busy()" (click)="replay.emit(r.e.id)">
               Replay
@@ -99,6 +100,7 @@ export class ExecutionsTableComponent {
     { label: 'Run', width: 2 },
     { label: 'How it went', width: 4.2 },
     { label: 'When', width: 1.6 },
+    idColumn(),
     { label: '', width: 1.2 },
   ];
   replayTag: CatalogTag[] = [{ text: 'Of an earlier run' }];

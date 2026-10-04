@@ -27,7 +27,7 @@ import { TextFilter } from '../shared/text-filter';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
-import { CATALOG, CatalogColumn } from '../shared/catalog';
+import { CATALOG, CatalogColumn, idColumn } from '../shared/catalog';
 import { SmartFilterComponent } from '../shared/work/smart-filter.component';
 import { FilterChoice, FilterFacet, createdFacet } from '../shared/work/filters';
 import { ChecksMet, ChecksMetComponent, checksMet } from '../shared/work/checks-met.component';
@@ -176,6 +176,7 @@ export class RunsListComponent {
     { label: 'From', width: 3.1 },
     { label: 'Its checks', width: 3.6 },
     { label: 'When', width: 1 },
+    idColumn(),
   ];
   /** A row as the table shows it. */
   view = computed(() => {

@@ -12,7 +12,7 @@ import { filterMissText } from '../shared/filter-miss';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
-import { CATALOG, CatalogColumn } from '../shared/catalog';
+import { CATALOG, CatalogColumn, idColumn } from '../shared/catalog';
 import { SmartFilterComponent } from '../shared/work/smart-filter.component';
 import { FilterChoice, FilterFacet, createdFacet } from '../shared/work/filters';
 import { BannerComponent } from '../shared/work/banner.component';
@@ -108,6 +108,7 @@ export class DatasetsListComponent {
     { label: 'Rows', width: 0.8 },
     { label: 'Its first prompt', width: 5 },
     { label: 'Created', width: 1.2 },
+    idColumn(),
   ];
 
   dialog = signal(false);

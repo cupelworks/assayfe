@@ -10,7 +10,7 @@ import { PagerComponent } from '../shared/pager.component';
 import { ArrowOutComponent } from '../shared/arrow-out.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { GuideSectionComponent } from '../shared/guide/guide-section.component';
-import { CATALOG, CatalogColumn } from '../shared/catalog';
+import { CATALOG, CatalogColumn, idColumn } from '../shared/catalog';
 import { QuietAction, QuietActionsComponent } from '../shared/work/quiet-actions.component';
 import { BannerComponent } from '../shared/work/banner.component';
 import { LatestStatusComponent } from '../shared/work/latest-status.component';
@@ -116,6 +116,7 @@ export class TestPlanDetailComponent extends ScopePage<Dlg> {
     { label: 'Test set', width: 3.4 },
     { label: 'Tests', width: 1 },
     { label: 'Its latest run', width: 3 },
+    idColumn('Entry ID'),
     { label: '', width: 1 },
   ];
   linksEmpty = computed(() =>

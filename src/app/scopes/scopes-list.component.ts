@@ -18,7 +18,7 @@ import { filterMissText } from '../shared/filter-miss';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
-import { CATALOG, CatalogColumn, CatalogTag } from '../shared/catalog';
+import { CATALOG, CatalogColumn, CatalogTag, idColumn } from '../shared/catalog';
 import { SmartFilterComponent } from '../shared/work/smart-filter.component';
 import { FilterChoice, FilterFacet, createdFacet } from '../shared/work/filters';
 import { latestRunFacet, verdictFacet, verdictTiles } from '../shared/work/verdicts';
@@ -233,6 +233,7 @@ export class ScopesListComponent {
     { label: 'Latest run', width: 2.6 },
     { label: 'Runs', width: 0.7 },
     { label: 'Created', width: 1 },
+    idColumn(),
   ]);
   /** A set's tag: the plans that run it. */
   tagsOf(s: ScopeMetadata): CatalogTag[] {

@@ -41,6 +41,7 @@
         <assay-catalog-cell caption="Created"
           ><span class="when"><assay-rel-time [iso]="d.created_at" /></span
         ></assay-catalog-cell>
+        <assay-catalog-cell caption="ID" [copyId]="d.id" />
       </assay-catalog-row>
     }
   </assay-catalog-table>

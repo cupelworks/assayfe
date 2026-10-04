@@ -18,7 +18,7 @@ import { ChecksViewComponent } from '../shared/checks-view.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { GuideSectionComponent } from '../shared/guide/guide-section.component';
 import { numbered } from '../shared/guide/guide-sections';
-import { CATALOG, CatalogColumn } from '../shared/catalog';
+import { CATALOG, CatalogColumn, idColumn } from '../shared/catalog';
 import { StateBlockComponent } from '../shared/work/state-block.component';
 import { QuietAction, QuietActionsComponent } from '../shared/work/quiet-actions.component';
 import { BannerComponent } from '../shared/work/banner.component';
@@ -112,6 +112,7 @@ export class TestDetailComponent {
     return t && copies
       ? copies.map((c) => ({
           set: c.set,
+          entry: c.entry.id,
           same: sameAs(t, c.entry),
         }))
       : null;
@@ -186,11 +187,13 @@ export class TestDetailComponent {
     { label: 'Run', width: 1.6 },
     { label: 'How it went', width: 5.4 },
     { label: 'When', width: 2 },
+    idColumn(),
   ];
   setColumns: CatalogColumn[] = [
     { label: 'Test set', width: 4 },
     { label: 'Holds', width: 2 },
     { label: 'Its copy', width: 3 },
+    idColumn('Entry ID'),
   ];
   runsEmpty = computed(() =>
     this.runs.loading() || this.runs.items().length

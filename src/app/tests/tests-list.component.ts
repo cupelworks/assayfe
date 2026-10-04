@@ -18,7 +18,7 @@ import { counted, displayName, errText } from '../shared/format';
 import { filterMissText } from '../shared/filter-miss';
 import { PagerComponent } from '../shared/pager.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
-import { CATALOG, CatalogColumn, CatalogTag } from '../shared/catalog';
+import { CATALOG, CatalogColumn, CatalogTag, idColumn } from '../shared/catalog';
 import { SmartFilterComponent } from '../shared/work/smart-filter.component';
 import { FilterChoice, FilterFacet, createdFacet } from '../shared/work/filters';
 import { NOT_YET, latestRunFacet, verdictFacet, verdictTiles } from '../shared/work/verdicts';
@@ -220,6 +220,7 @@ export class TestsListComponent {
     { label: 'Checks', width: 2.4 },
     { label: 'Latest verdict', width: 1.5 },
     { label: 'Latest run', width: 1.5 },
+    idColumn(),
   ];
   recordedTag: CatalogTag[] = [{ text: 'Recorded answer', look: 'boxed' }];
   displayName = displayName;

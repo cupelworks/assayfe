@@ -1,5 +1,12 @@
 <div class="g-wrap">
-  <assay-guide-head size="one" kicker="Run" [crumbs]="crumbs()" [title]="title()" [lede]="lede()">
+  <assay-guide-head
+    size="one"
+    kicker="Run"
+    [crumbs]="crumbs()"
+    [copyId]="execId()"
+    [title]="title()"
+    [lede]="lede()"
+  >
     <div class="page-aside" guideHeadAside>
       <button type="button" class="btn btn-primary" (click)="replay()" [disabled]="act.busy()">
         {{ act.busy() ? 'Starting…' : 'Replay' }}
@@ -68,6 +75,7 @@
           <assay-catalog-cell caption="Its checks">
             <assay-checks-met [checks]="v.checks" [failed]="v.failed" />
           </assay-catalog-cell>
+          <assay-catalog-cell caption="Run ID" [copyId]="v.r.id" />
         </assay-catalog-row>
       }
     </assay-catalog-table>

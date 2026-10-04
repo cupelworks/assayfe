@@ -10,7 +10,7 @@ import { RelTimeComponent } from '../shared/rel-time.component';
 import { ArrowOutComponent } from '../shared/arrow-out.component';
 import { MarkedComponent } from '../shared/marked.component';
 import { ProgressBarComponent } from '../shared/progress-bar.component';
-import { CATALOG, CatalogColumn } from '../shared/catalog';
+import { CATALOG, CatalogColumn, idColumn } from '../shared/catalog';
 import { CompareDialogComponent } from './compare-dialog.component';
 import {
   BATCH_POLL_MS,
@@ -85,6 +85,7 @@ import {
           <assay-catalog-cell caption="When"
             ><span class="when"><assay-rel-time [iso]="v.b.created_at" /></span
           ></assay-catalog-cell>
+          <assay-catalog-cell caption="Batch ID" [copyId]="v.b.id" />
         </assay-catalog-row>
       }
     </assay-catalog-table>
@@ -127,6 +128,7 @@ export class VerdictsTableComponent {
     { label: 'Verdict', width: 4 },
     { label: 'Times', width: 1 },
     { label: 'When', width: 1.2 },
+    idColumn('Batch ID'),
   ];
   page = new Paged<BatchSummary>((o, l) => this.api.batchesPage(this.scope(), o, l), 5, errText);
   /** The newest batch - undefined while it's read, null with none. */
