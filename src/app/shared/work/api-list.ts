@@ -95,10 +95,13 @@ export class ApiList<T, C = never, P extends ListParams = ListParams> {
       });
   }
 
-  /** The page and its counts, read again - after something changed what the list holds. */
+  /** The page, its counts and how many there are in all, read again - after something changed
+   *  what the list holds. */
   refresh() {
     this.page.reload();
     this.version.update((v) => v + 1);
+    // With nothing narrowing, the page's own total says it once it's in.
+    if (this.narrowed()) this.readEverything();
   }
   /** What a list with nothing in it says: none at all, or none that matches. */
   empty(none: string) {
