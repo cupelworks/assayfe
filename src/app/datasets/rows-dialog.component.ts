@@ -14,6 +14,7 @@ import { PasteRowsComponent } from './paste-rows.component';
   standalone: true,
   imports: [DialogComponent, PasteRowsComponent],
   template: `<assay-dialog
+    [busy]="busy()"
     [kicker]="kicker()"
     [title]="title()"
     [wide]="true"

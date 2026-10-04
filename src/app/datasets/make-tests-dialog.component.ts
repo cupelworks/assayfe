@@ -27,6 +27,7 @@ export interface NumberedRow {
   standalone: true,
   imports: [DialogComponent, ChecksTableComponent, StatusMarkComponent],
   template: `<assay-dialog
+    [busy]="busy()"
     [kicker]="kicker()"
     [title]="title()"
     [wide]="true"

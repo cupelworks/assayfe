@@ -12,6 +12,7 @@ import { DialogComponent } from '../shared/dialog/dialog.component';
   standalone: true,
   imports: [DialogComponent, FormsModule],
   template: `<assay-dialog
+    [busy]="busy()"
     [kicker]="kicker()"
     [title]="'Edit row ' + no()"
     [primaryLabel]="busy() ? 'Saving…' : 'Save row'"

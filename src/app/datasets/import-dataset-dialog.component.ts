@@ -13,6 +13,7 @@ import { ROW_KEYS } from './row-keys';
   standalone: true,
   imports: [DialogComponent, FormsModule],
   template: `<assay-dialog
+    [busy]="busy()"
     kicker="Datasets"
     title="Import a dataset"
     [primaryLabel]="busy() ? 'Importing…' : 'Import'"

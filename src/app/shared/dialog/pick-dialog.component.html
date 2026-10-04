@@ -1,4 +1,5 @@
 <assay-dialog
+  [busy]="busy()"
   [kicker]="kicker()"
   [title]="title()"
   [primaryLabel]="busy() ? 'Saving…' : submitLabel()(picked().length)"

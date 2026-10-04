@@ -7,6 +7,7 @@ import { DialogComponent } from './dialog.component';
   standalone: true,
   imports: [DialogComponent, FormsModule],
   template: `<assay-dialog
+    [busy]="busy()"
     [kicker]="kicker()"
     [title]="title()"
     [primaryLabel]="busy() ? 'Saving…' : submitLabel()"
