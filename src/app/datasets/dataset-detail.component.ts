@@ -1,194 +1,231 @@
-import { Component, inject, input, signal, computed, effect, untracked } from '@angular/core';
-import { ActionRunner } from '../shared/action-runner';
+import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
 import { DatasetsApiService } from '../api/datasets-api.service';
 import { TestsApiService } from '../api/tests-api.service';
 import { CatalogStore } from '../api/catalog.store';
-import { DataSetMetadata, DataSetRow, DataSetRowSchema } from '../api/models';
-import {
-  TestTypesStore,
-  needsReference,
-  configIssuesFor,
-  buildAssignments,
-} from '../api/test-types.store';
-import { rel, short, errText } from '../shared/format';
-import { TestTypePickerComponent } from '../shared/test-type-picker.component';
-import { TestTypeConfigFieldsComponent } from '../shared/test-type-config-fields.component';
-import { DialogComponent } from '../shared/dialog/dialog.component';
+import { DataSetMetadata, DataSetRow, DataSetRowSchema, TestCaseRead } from '../api/models';
+import { ActionRunner } from '../shared/action-runner';
+import { Selection } from '../shared/selection';
+import { Paged } from '../shared/paged';
+import { ApiList } from '../shared/work/api-list';
+import { latestRunOf, refreshStandings } from '../api/latest';
+import { LatestStatusComponent } from '../shared/work/latest-status.component';
+import { counted, displayName, errText, short, shortDate } from '../shared/format';
+import { PagerComponent } from '../shared/pager.component';
+import { GuideHeadComponent } from '../shared/guide/guide-head.component';
+import { GuideSectionComponent } from '../shared/guide/guide-section.component';
+import { numbered } from '../shared/guide/guide-sections';
+import { CATALOG, CatalogColumn, idColumn } from '../shared/catalog';
+import { SmartFilterComponent } from '../shared/work/smart-filter.component';
+import { QuietAction, QuietActionsComponent } from '../shared/work/quiet-actions.component';
+import { BulkAction, BulkBarComponent } from '../shared/work/bulk-bar.component';
+import { BannerComponent } from '../shared/work/banner.component';
+import { NamedListComponent } from '../shared/work/named-list.component';
+import { inWords } from '../shared/work/sentences';
 import { NameDialogComponent } from '../shared/dialog/name-dialog.component';
 import { ConfirmDialogComponent } from '../shared/dialog/confirm-dialog.component';
-import { PagerComponent } from '../shared/pager.component';
+import { RowsDialogComponent } from './rows-dialog.component';
+import { EditRowDialogComponent } from './edit-row-dialog.component';
+import { MakeTests, MakeTestsDialogComponent, NumberedRow } from './make-tests-dialog.component';
+import { ROW_KEY } from './row-keys';
 
 type Dlg =
   null | 'rename' | 'delete' | 'addRows' | 'replace' | 'deleteRows' | 'toTests' | 'editRow';
-const EMPTY: DataSetRowSchema = { prompt: '', expected_output: '', model_output: '' };
 
-import { Selection } from '../shared/selection';
-
+/**
+ * A dataset's page, on the Guide's layout. Its top: the way back, its name, "Make tests from
+ * rows" and the quiet rest (Add rows · Replace rows · Rename · Delete), a lede and what a row
+ * holds. Then 01 its rows - found by their words, by the API (`ApiList`), ticked to make tests
+ * from or to delete - and 02 the tests made from it (`from_dataset`), each with the row it came
+ * from and how it stands.
+ */
 @Component({
   selector: 'assay-dataset-detail',
   standalone: true,
   imports: [
     RouterLink,
-    FormsModule,
-    DialogComponent,
+    GuideHeadComponent,
+    GuideSectionComponent,
+    CATALOG,
+    SmartFilterComponent,
+    QuietActionsComponent,
+    BulkBarComponent,
+    BannerComponent,
+    NamedListComponent,
+    PagerComponent,
     NameDialogComponent,
     ConfirmDialogComponent,
-    PagerComponent,
-    TestTypePickerComponent,
-    TestTypeConfigFieldsComponent,
+    RowsDialogComponent,
+    EditRowDialogComponent,
+    MakeTestsDialogComponent,
+    LatestStatusComponent,
   ],
   templateUrl: './dataset-detail.component.html',
-  styleUrls: ['../shared/page.css', './dataset-detail.component.css'],
+  styleUrls: [
+    '../shared/guide/guide.css',
+    '../shared/guide/head-aside.css',
+    '../shared/work/work.css',
+    './dataset-detail.component.css',
+  ],
 })
 export class DatasetDetailComponent {
   id = input.required<string>();
-  datasetsApi = inject(DatasetsApiService);
-  testsApi = inject(TestsApiService);
-  testTypesStore = inject(TestTypesStore);
-  store = inject(CatalogStore);
-  router = inject(Router);
-  rel = rel;
-  short = short;
+  private datasetsApi = inject(DatasetsApiService);
+  private testsApi = inject(TestsApiService);
+  private store = inject(CatalogStore);
+  private router = inject(Router);
+  rowKey = ROW_KEY;
+  displayName = displayName;
+  sections = numbered('dataset-', ['Rows', 'Tests made from it']);
+
   meta = signal<DataSetMetadata | null>(null);
-  rows = signal<DataSetRow[]>([]);
-  total = signal(0);
-  offset = signal(0);
-  limit = signal(25);
-  /** Checkbox bulk selection over the visible rows - see shared/selection.ts. */
-  selection = new Selection(() => this.rows());
+  name = computed(() => this.meta()?.name ?? short(this.id()));
+  /** Its rows, by number, as the API finds them by their words (prompt, expected and recorded
+   *  answer). */
+  rowsList = new ApiList<DataSetRow, never, { id: string; q: readonly string[] }>({
+    noun: 'row',
+    sort: '',
+    params: (_, q) => ({ id: this.id(), q }),
+    fetch: (p, o, l) => this.datasetsApi.datasetRows(p.id, o, l, p.q),
+  });
+  rows = this.rowsList.page.items;
+  /** How many rows it has - the dataset's, whatever the words. */
+  total = computed(() => this.meta()?.row_count ?? this.rowsList.page.total());
+  /** The page's rows, each with its number in the dataset (kept when others go). */
+  shown = computed<NumberedRow[]>(() => this.rows().map((row) => ({ no: row.number, row })));
+  /** The tests made from it, in the order of their rows - each with the row it came from and how
+   *  it stands. */
+  made = new Paged<TestCaseRead>(
+    (o, l) => this.testsApi.testsPage({ from_dataset: [this.id()], sort: 'dataset_row' }, o, l),
+    5,
+    errText,
+  );
+  madeRuns = computed(() => new Map(this.made.items().map((t) => [t.id, latestRunOf(t)])));
+  madeEmpty = computed(() =>
+    this.made.loading() || this.made.items().length
+      ? null
+      : 'No test was made from it yet - Make tests from rows makes some.',
+  );
+  selection = new Selection(() => this.shown().map((r) => r.row));
+  editing = signal<NumberedRow | null>(null);
+
+  lede = computed(() => {
+    const n = this.total();
+    const when = this.meta() ? ` Imported ${shortDate(this.meta()!.created_at)}.` : '';
+    if (!n) return `No rows yet: add some, to make tests from.${when}`;
+    const many =
+      n === 1 ? 'One question' : `${inWords(n).replace(/^./, (c) => c.toUpperCase())} questions`;
+    return `${many} with the answers they should get, to make tests from.${when}`;
+  });
+  quiet: QuietAction[] = [
+    { key: 'addRows', label: 'Add rows' },
+    { key: 'replace', label: 'Replace rows' },
+    { key: 'rename', label: 'Rename' },
+    { key: 'delete', label: 'Delete' },
+  ];
+  shownText = this.rowsList.shownText;
+  columns: CatalogColumn[] = [
+    { label: 'Prompt', width: 3 },
+    { label: 'Expected output', width: 3 },
+    { label: 'Model output', width: 3 },
+    idColumn(),
+    { label: '', width: 0.6 },
+  ];
+  rowsEmpty = computed(() => this.rowsList.empty('No rows yet - Add rows pastes them in.'));
+  madeColumns: CatalogColumn[] = [
+    { label: 'Test', width: 3.4 },
+    { label: 'From row', width: 1 },
+    { label: 'Latest verdict', width: 2.4 },
+    { label: 'Latest run', width: 2 },
+    idColumn(),
+  ];
+
+  /** The ticked rows, numbered - what "Make tests from N rows…" and "Delete…" act on. */
+  ticked = computed(() => this.shown().filter((r) => this.selection.has(r.row.id)));
+  tickedNames = computed(() =>
+    this.ticked().map((r) => ({ name: r.row.row_info.prompt, note: `row ${r.no}` })),
+  );
+  bulkActions = computed<BulkAction[]>(() => [
+    {
+      key: 'toTests',
+      label: `Make tests from ${counted(this.selection.ids().length, 'row')}…`,
+    },
+    { key: 'deleteRows', label: 'Delete…', red: true },
+  ]);
+  /** The rows the make-tests dialog was opened for: the ticked ones, or all (null). */
+  making = signal<NumberedRow[] | null>(null);
+  /** Every row, when they're all on this page - the make-tests dialog checks them. */
+  allRows = computed(() =>
+    !this.rowsList.narrowed() && this.total() <= this.rows().length ? this.rows() : null,
+  );
+
   dlg = signal<Dlg>(null);
-  /** Busy flag, dialog error and page banner for this page's API actions - see shared/action-runner.ts. */
   act = new ActionRunner({
     inDialog: () => !!this.dlg(),
     done: () => {
       this.dlg.set(null);
       this.load();
-      this.store.load();
+      this.store.loadDatasets();
     },
   });
-  jsonl = signal('');
-  typeNames = signal<string[]>([]);
-  /** Config values for the "Create tests from rows" batch - one shared value per field across
-   *  every row created, same shape as TestFormDialogComponent's per-test configs. */
-  batchConfig = signal<Record<string, Record<string, string>>>({});
-  /** Per-type answer_path for the batch - one value per type across every row created. */
-  batchAnswerPaths = signal<Record<string, string>>({});
-  /** What blocks "Create tests from rows": configIssuesFor (test-types.store.ts, shared with the
-   *  test form) over the batch-picked types, with reference fields skipped - every row already
-   *  carries its own expected_output via DataSetRowSchema, so a reference is always satisfied. */
-  configIssues = computed(() => {
-    const cfg = this.batchConfig();
-    return configIssuesFor(
-      this.typeNames(),
-      this.testTypesStore.byName(),
-      (type, key) => cfg[type]?.[key] ?? '',
-      null,
-      (type) => this.batchAnswerPaths()[type] ?? '',
-    );
-  });
-  /** Batch-picked type names that need a non-empty expected_output per row - informational only,
-   *  not part of configIssues() (which only blocks on things provably wrong from what's loaded
-   *  here). Unlike the single-test form, this dialog can't check every dataset row's own
-   *  expected_output without fetching the whole dataset just for this, so it can't say which
-   *  rows (if any) are actually empty - only that some selected type needs one. The backend now
-   *  rejects the create call outright (422, listing the offending row ids) if any row is
-   *  missing one - see docs/test_type_config/dev_notes.md note 10. */
-  referenceTypesInBatch = computed(() => {
-    const byName = this.testTypesStore.byName();
-    return this.typeNames().filter((name) => {
-      const t = byName.get(name);
-      return t && needsReference(t);
-    });
-  });
-  editing = signal<DataSetRow | null>(null);
-  draft = signal<DataSetRowSchema>({ ...EMPTY });
-  name = computed(() => this.meta()?.name ?? short(this.id()));
-  pageLabel = computed(() => (this.total() ? `${this.total()} rows` : '0 rows'));
-  parsedRows = computed<DataSetRowSchema[] | string>(() => {
-    const lines = this.jsonl()
-      .split(/\r?\n/)
-      .map((l) => l.trim())
-      .filter(Boolean);
-    const out: DataSetRowSchema[] = [];
-    for (let i = 0; i < lines.length; i++) {
-      try {
-        const o = JSON.parse(lines[i]);
-        if (
-          typeof o.prompt !== 'string' ||
-          typeof o.expected_output !== 'string' ||
-          typeof o.model_output !== 'string'
-        )
-          return `Line ${i + 1}: needs string prompt, expected_output, model_output`;
-        out.push({
-          prompt: o.prompt,
-          expected_output: o.expected_output,
-          model_output: o.model_output,
-        });
-      } catch {
-        return `Line ${i + 1}: invalid JSON`;
-      }
-    }
-    return out;
-  });
-  parseError = computed(() =>
-    typeof this.parsedRows() === 'string' ? (this.parsedRows() as string) : null,
-  );
-  parsedCount = computed(() =>
-    Array.isArray(this.parsedRows()) ? (this.parsedRows() as DataSetRowSchema[]).length : 0,
-  );
 
   constructor() {
+    // Its rows read again for another dataset (`rowsList`'s parameters hold its id); its own.
     effect(() => {
       this.id();
-      // untracked: load() reads this.offset()/this.limit() (this component's own pagination
-      // signals, not a Paged instance, but the same hazard) - see scopes-list.component.ts's
-      // identical comment. Without this, go()/size() writing those signals retriggered this
-      // effect, which reset offset back to 0 - Next silently did nothing on this page.
       untracked(() => {
-        this.offset.set(0);
-        this.load();
+        this.loadMeta();
+        this.made.reset();
       });
     });
+    effect(() => {
+      this.rows();
+      untracked(() => this.selection.clear());
+    });
+    refreshStandings(
+      () => this.made.items(),
+      () => {
+        if (!this.made.loading()) this.made.reload();
+      },
+    );
   }
+
+  /** It, its rows and its tests, again - after a change. */
   load() {
+    this.loadMeta();
+    this.rowsList.page.reload();
+    this.made.reload();
+  }
+  private loadMeta() {
     this.datasetsApi.dataset(this.id()).subscribe({
       next: (m) => this.meta.set(m),
       error: (e) => this.act.msg.set({ ok: false, text: errText(e) }),
     });
-    this.datasetsApi.datasetRows(this.id(), this.offset(), this.limit()).subscribe({
-      next: (p) => {
-        this.rows.set(p.items);
-        this.total.set(p.total);
-        this.selection.clear();
-      },
-      error: (e) => this.act.msg.set({ ok: false, text: errText(e) }),
-    });
   }
   go(offset: number) {
-    this.offset.set(offset);
-    this.load();
+    this.rowsList.page.go(offset);
   }
   size(limit: number) {
-    this.limit.set(limit);
-    this.offset.set(0);
-    this.load();
+    this.rowsList.page.size(limit);
   }
-  open(d: Dlg, row?: DataSetRow) {
+  open(d: Dlg) {
     this.act.err.set(null);
-    this.jsonl.set('');
-    this.typeNames.set([]);
-    this.batchConfig.set({});
-    this.batchAnswerPaths.set({});
-    if (row) {
-      this.editing.set(row);
-      this.draft.set({ ...row.row_info });
-    }
     this.dlg.set(d);
   }
-  setDraft<K extends keyof DataSetRowSchema>(k: K, v: string) {
-    this.draft.update((d) => ({ ...d, [k]: v }));
+  quietAct(key: string) {
+    this.open(key as Dlg);
+  }
+  bulk(key: string) {
+    if (key === 'toTests') this.makeTests(this.ticked());
+    else this.open('deleteRows');
+  }
+  makeTests(rows: NumberedRow[] | null) {
+    this.making.set(rows);
+    this.open('toTests');
+  }
+  edit(r: NumberedRow) {
+    this.editing.set(r);
+    this.open('editRow');
   }
 
   rename(n: string) {
@@ -196,46 +233,48 @@ export class DatasetDetailComponent {
   }
   remove() {
     this.act.run(this.datasetsApi.deleteDataset(this.id()), {
-      ok: (r) => `Deleted dataset (${r.deleted.n} rows).`,
       then: () => this.router.navigate(['/datasets']),
     });
   }
-  addRows() {
-    this.act.run(
-      this.datasetsApi.addDatasetRows(this.id(), this.parsedRows() as DataSetRowSchema[]),
-      { ok: (r) => `Added ${r.loaded.n} rows.` },
-    );
+  addRows(rows: DataSetRowSchema[]) {
+    this.act.run(this.datasetsApi.addDatasetRows(this.id(), rows), {
+      ok: (r) => `Added ${counted(r.loaded.n, 'row')}.`,
+    });
   }
-  replaceRows() {
-    this.act.run(
-      this.datasetsApi.replaceDatasetRows(this.id(), this.parsedRows() as DataSetRowSchema[]),
-      { ok: (r) => `Replaced all rows - ${r.loaded.n} loaded.` },
-    );
+  replaceRows(rows: DataSetRowSchema[]) {
+    this.act.run(this.datasetsApi.replaceDatasetRows(this.id(), rows), {
+      ok: (r) => `Replaced the rows: ${counted(r.loaded.n, 'row')} now.`,
+    });
   }
   deleteRows() {
     const ids = this.selection.ids();
     this.act.run(this.datasetsApi.deleteDatasetRows(ids), {
       ok: () =>
-        `Deleted ${ids.length} row${ids.length === 1 ? '' : 's'}. Tests referencing them are unlinked, not deleted.`,
+        `Deleted ${counted(ids.length, 'row')}. The tests made from them keep their content.`,
     });
   }
-  saveRow() {
-    const r = this.editing()!;
-    this.act.run(this.datasetsApi.updateDatasetRows([{ id: r.id, row_info: this.draft() }]), {
-      ok: () => 'Row updated.',
+  saveRow(info: DataSetRowSchema) {
+    const r = this.editing()!.row;
+    this.act.run(this.datasetsApi.updateDatasetRows([{ id: r.id, row_info: info }]), {
+      ok: () => `Saved row ${this.editing()!.no}.`,
     });
   }
-  toTests() {
-    if (this.configIssues().length) return;
-    const assignments = buildAssignments(
-      this.typeNames(),
-      this.testTypesStore.byName(),
-      this.batchConfig(),
-      this.batchAnswerPaths(),
+  /** Tests from the rows the dialog was opened for - the ticked ones, or every row - made as it
+   *  says; then Tests, showing those made from this dataset. */
+  toTests(m: MakeTests) {
+    const ticked = this.making();
+    this.act.run(
+      this.testsApi.createTestsFromDataset(this.id(), m.assignments, {
+        ...m.how,
+        ...(ticked ? { row_ids: ticked.map((r) => r.row.id) } : {}),
+      }),
+      {
+        ok: (r) => `Made ${counted(r.test_cases.length, 'test')} from this dataset.`,
+        then: () => {
+          this.store.loadTests();
+          this.router.navigate(['/tests'], { queryParams: { dataset: this.id() } });
+        },
+      },
     );
-    this.act.run(this.testsApi.createTestsFromDataset(this.id(), assignments), {
-      ok: (r) => `Created ${r.test_cases.length} tests from this dataset.`,
-      then: () => this.router.navigate(['/tests']),
-    });
   }
 }

@@ -1,78 +1,150 @@
-<div class="hero">
-  <div>
-    <div class="kicker">Catalog</div>
-    <h1>{{ title() }}</h1>
-  </div>
-  <div class="hero-actions">
-    <button class="btn btn-primary" (click)="act.err.set(null); dlg.set(true)">
-      New {{ single() }}
-    </button>
-  </div>
-</div>
-<section class="cell">
-  <div class="toolbar">
-    <input
-      class="input"
-      placeholder="Filter…"
-      [ngModel]="filter.query()"
-      (ngModelChange)="filter.query.set($event)"
-    /><span class="small">{{
-      filter.query() ? rows().length + ' shown on this page' : page.total() + ' total'
-    }}</span>
-  </div>
-  <table class="table">
-    <colgroup>
-      <col />
-      <col style="width: 120px" />
-      <col style="width: 140px" />
-      <col style="width: 160px" />
-    </colgroup>
-    <thead>
-      <tr>
-        <th>{{ isSet() ? 'Test set' : 'Test plan' }}</th>
-        <th>{{ containedLabel() }}</th>
-        <th>Executions</th>
-        <th class="sortable" (click)="sort.toggle()">
-          Created<span class="sort-arrow">{{ sort.dir() === 'desc' ? ' ↓' : ' ↑' }}</span>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (r of rows(); track r.id) {
-        <tr>
-          <td class="strong">
-            <a class="plain arrow" [routerLink]="['/', kind(), r.id]">{{ r.name }}</a>
-          </td>
-          <td class="num">{{ r.contained }}</td>
-          <td class="num">{{ r.execs }}</td>
-          <td class="muted"><assay-rel-time [iso]="r.created_at" /></td>
-        </tr>
-      } @empty {
-        @if (!page.loading()) {
-          <tr>
-            <td colspan="4" class="empty">No {{ title().toLowerCase() }} yet.</td>
-          </tr>
-        }
-      }
-    </tbody>
-  </table>
+<div class="g-wrap">
+  <assay-guide-head kicker="Work" [title]="copy().title" [lede]="copy().lede">
+    <div class="page-aside" guideHeadAside>
+      <button type="button" class="btn btn-primary" (click)="open('new')">
+        New {{ copy().one }}
+      </button>
+    </div>
+    <assay-catalog-index
+      label="Show only one latest verdict"
+      selectedText="Showing only these"
+      [items]="tiles()"
+      [across]="4"
+      [selected]="tile()"
+      (selectedChange)="pickTile($event)"
+    />
+  </assay-guide-head>
+
+  <assay-banner [msg]="act.msg()" />
+
+  <assay-smart-filter
+    [label]="'Filter the ' + copy().title.toLowerCase()"
+    [placeholder]="copy().placeholder"
+    [itemsLabel]="copy().title"
+    [facets]="facets()"
+    [items]="items()"
+    [shown]="list.shownText()"
+    [sortOptions]="sortOptions"
+    [(query)]="list.words.query"
+    [(words)]="list.words.kept"
+    [(chosen)]="list.choice"
+    [(sort)]="list.sort"
+  />
+
+  <assay-catalog-table
+    class="list"
+    [label]="copy().title"
+    [selectAll]="'Select every ' + copy().one + ' shown'"
+    [columns]="columns()"
+    [selection]="selection"
+    [empty]="emptyText()"
+  >
+    @for (s of rows(); track s.id) {
+      @let v = s.latest_batch;
+      @let r = latestRuns().get(s.id);
+      <assay-catalog-row
+        [name]="s.name"
+        [link]="['/', kind(), s.id]"
+        [tags]="tagsOf(s)"
+        [expandable]="false"
+        [selection]="selection"
+        [rowId]="s.id"
+      >
+        <assay-catalog-cell [caption]="copy().holds"
+          ><span class="num">{{ holds(s) }}</span></assay-catalog-cell
+        >
+        <assay-catalog-cell caption="Latest verdict">
+          <assay-latest-status
+            [of]="v?.status ?? null"
+            [at]="v?.created_at ?? null"
+            none="Not yet"
+            noneWhen="never run with statistics"
+          />
+        </assay-catalog-cell>
+        <assay-catalog-cell caption="Latest run">
+          <assay-latest-status [counts]="r?.counts ?? null" [at]="r?.at ?? null" none="Never run" />
+        </assay-catalog-cell>
+        <assay-catalog-cell caption="Runs"
+          ><span class="num">{{ s.execution_count }}</span></assay-catalog-cell
+        >
+        <assay-catalog-cell caption="Created"
+          ><span class="when"><assay-rel-time [iso]="s.created_at" /></span
+        ></assay-catalog-cell>
+        <assay-catalog-cell caption="ID" [copyId]="s.id" />
+      </assay-catalog-row>
+    }
+  </assay-catalog-table>
   <assay-pager
     [total]="page.total()"
     [offset]="page.offset()"
     [limit]="page.limit()"
-    (offsetChange)="page.go($event)"
-    (limitChange)="page.size($event)"
+    (offsetChange)="go($event)"
+    (limitChange)="size($event)"
   />
-</section>
-@if (dlg()) {
-  <assay-name-dialog
-    [kicker]="title()"
-    [title]="'New ' + single()"
-    [submitLabel]="'Create ' + single()"
-    [placeholder]="isSet() ? 'Regression Suite' : 'Release 2.5 gate'"
-    [busy]="act.busy()"
-    [error]="act.err()"
-    (confirm)="create($event)"
-    (closed)="dlg.set(false)"
+</div>
+
+@if (selection.ids().length) {
+  <assay-bulk-bar
+    [label]="'With the selected ' + copy().title.toLowerCase()"
+    [count]="selection.ids().length"
+    [actions]="bulkActions()"
+    (act)="bulk($event)"
+    (clear)="selection.clear()"
   />
+}
+
+@switch (dlg()) {
+  @case ('new') {
+    <assay-name-dialog
+      [kicker]="copy().title"
+      [title]="'New ' + copy().one"
+      submitLabel="Create"
+      [placeholder]="isSet() ? 'Support Chatbot - Billing' : 'Release 2.5 gate'"
+      [help]="copy().help"
+      [busy]="act.busy()"
+      [error]="act.err()"
+      (confirm)="create($event)"
+      (closed)="dlg.set(null)"
+    />
+  }
+  @case ('link') {
+    <assay-pick-dialog
+      kicker="Test sets"
+      [title]="
+        'Add ' +
+        selection.ids().length +
+        (selection.ids().length === 1 ? ' test set' : ' test sets') +
+        ' to a test plan'
+      "
+      noun="test plans"
+      emptyText="No test plans yet."
+      [rows]="planRows()"
+      [submitLabel]="linkLabel"
+      [busy]="act.busy()"
+      [error]="act.err()"
+      (confirm)="linkToPlans($event)"
+      (closed)="dlg.set(null)"
+    />
+  }
+  @case ('delete') {
+    @let d = deletable();
+    <assay-confirm-dialog
+      [kicker]="copy().title"
+      [title]="deleteTitle()"
+      [body]="deleteBody()"
+      [confirmLabel]="deleteLabel()"
+      [blocked]="!d.go.length"
+      [busy]="act.busy()"
+      [error]="act.err()"
+      (confirm)="remove()"
+      (closed)="dlg.set(null)"
+    >
+      @if (d.go.length) {
+        <assay-named-list caption="Deleted" [items]="d.go" />
+      }
+      @if (d.kept.length) {
+        <assay-named-list caption="Kept - their runs need them" [items]="d.kept" [kept]="true" />
+      }
+    </assay-confirm-dialog>
+  }
 }

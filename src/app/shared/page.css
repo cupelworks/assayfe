@@ -1,55 +1,10 @@
 /* Shared layout vocabulary for every page. Colors/type come from styles.css tokens. */
-.hero {
-  padding: 48px 40px 24px;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 32px;
-  align-items: end;
-  border-bottom: 2px solid var(--color-divider);
-}
 .kicker {
   font-size: 11px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-accent);
   margin-bottom: 12px;
-}
-.hero h1 {
-  font-size: 44px;
-  line-height: 1.05;
-  letter-spacing: -0.02em;
-  margin: 0;
-  text-wrap: pretty;
-  overflow-wrap: anywhere;
-}
-.hero-actions {
-  display: flex;
-  gap: 12px;
-  align-items: end;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-.hero-note {
-  font-size: 13px;
-  color: var(--color-neutral-600);
-  max-width: 300px;
-  margin: 0;
-  text-wrap: pretty;
-}
-.crumbs {
-  display: flex;
-  gap: 10px;
-  padding: 14px 40px;
-  font-size: 12px;
-  border-bottom: 1px solid var(--color-divider);
-  color: var(--color-neutral-600);
-}
-.crumbs a {
-  color: inherit;
-  text-decoration: none;
-}
-.crumbs .cur {
-  color: var(--color-text);
 }
 .msg {
   padding: 14px 40px;
@@ -159,14 +114,6 @@
 .table tbody tr:hover {
   background: var(--color-surface);
 }
-.crumbs a {
-  text-decoration: underline;
-  text-decoration-color: var(--color-neutral-400);
-  text-underline-offset: 3px;
-}
-.crumbs a:hover {
-  color: var(--color-accent);
-}
 button {
   cursor: pointer;
 }
@@ -258,6 +205,15 @@ button {
   flex: 1;
 }
 .split > * {
+  min-width: 0;
+}
+/* Main content | side panel, on the same thirds as a 3-tile strip above it (Overview, Settings). */
+.main {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  flex: 1;
+}
+.main > * {
   min-width: 0;
 }
 .half {

@@ -1,464 +1,532 @@
-<div class="hero">
-  <div>
-    <div class="kicker">Guide</div>
-    <h1>How Assay works</h1>
-  </div>
-  <p class="hero-note text-muted">
-    The mental model behind datasets, tests, test sets, test plans and runs - and why the app
-    behaves the way it does.
-  </p>
+<div class="g-wrap">
+  <assay-guide-head
+    kicker="Guide"
+    title="How Assay works"
+    lede="The mental model behind datasets, tests, test sets, test plans and runs - and why the app behaves the way it does."
+    [sections]="sections"
+  />
+
+  <assay-guide-section [section]="sections[0]">
+    <div class="g-wide">
+      <p class="g-lead">
+        Four concepts, each built on the one before it. Everything else in the app is a view onto
+        these.
+      </p>
+      <div class="chain">
+        <div class="blk">
+          <h3>Dataset<assay-guide-arrow class="to" /></h3>
+          <p>
+            A named collection of prompt / expected-output / model-output rows, usually imported
+            from a <code>.jsonl</code> file. Source material for bulk test creation - never run
+            directly.
+          </p>
+        </div>
+        <div class="blk">
+          <h3>Test<assay-guide-arrow class="to" /></h3>
+          <p>
+            A live, always-editable input, an optional expected output, an optional recorded model
+            output, and a set of assigned test types. Leave the model output empty and a run asks
+            the application under test for its answer instead. Can be run on its own at any time.
+          </p>
+        </div>
+        <div class="blk">
+          <h3>Test set<assay-guide-arrow class="to" /></h3>
+          <p>
+            A named collection of frozen test snapshots ("entries"). Adding a test copies its
+            current state in - the set never re-syncs with the live test afterward.
+          </p>
+        </div>
+        <div class="blk">
+          <h3>Test plan</h3>
+          <p>
+            A named campaign made of test sets. Running a plan fans out over every entry in every
+            set currently linked to it.
+          </p>
+        </div>
+      </div>
+    </div>
+  </assay-guide-section>
+
+  <assay-guide-section [section]="sections[1]">
+    <div class="g-text">
+      <p class="g-lead">
+        The evaluation strategies a test is scored with - assigned per test, not fixed. A test with
+        none assigned can't be run.
+      </p>
+      <p class="g-p">
+        Each type belongs to a category, and some require a reference - an
+        <code>expected_output</code> to compare against - and can't score a test that doesn't have
+        one. Others take their own configuration instead, or as well: a numeric threshold the score
+        is checked against, or a custom rubric for an LLM-as-judge type to grade against. A test
+        can't be saved until every assigned type's required setup - reference or otherwise - is
+        actually filled in. Inactive types stay visible for history but can no longer be newly
+        assigned.
+      </p>
+    </div>
+    <aside class="g-note">
+      <span class="g-cap">The catalogue</span>
+      <p>
+        The current list of categories, costs, limitations, scoring engines and what each one is
+        best for - each type's card shows which engine scores it, its settings, and, for a
+        threshold-scored type, its range and when the score meets it.
+      </p>
+      <assay-guide-go label="Test types" link="/test-types" />
+    </aside>
+    <div class="g-wide">
+      <div class="tbl" role="table" aria-label="What a result looks like, by category">
+        <div class="tr t3 h" role="row">
+          <span class="g-cap" role="columnheader">Category</span
+          ><span class="g-cap" role="columnheader">What a result is</span
+          ><span class="g-cap" role="columnheader">Met when</span>
+        </div>
+        <div class="tr t3" role="row">
+          <span class="rh" role="cell">Deterministic</span
+          ><span role="cell">Met or not - there's no score, only whether the answer matched.</span
+          ><span role="cell">The answer matched.</span>
+        </div>
+        <div class="tr t3" role="row">
+          <span class="rh" role="cell">NLP metrics</span
+          ><span role="cell"
+            >A score on the metric's own scale: 0 to 1 for most, 0 to 100 for BLEU, -1 to 1 for
+            cosine similarity.</span
+          ><span role="cell">The score meets the threshold you set.</span>
+        </div>
+        <div class="tr t3" role="row">
+          <span class="rh" role="cell">LLM judges</span
+          ><span role="cell"
+            >A decision on whether the answer meets the rubric, with a written rationale.</span
+          ><span role="cell">The answer meets the rubric.</span>
+        </div>
+      </div>
+    </div>
+  </assay-guide-section>
+
+  <assay-guide-section [section]="sections[2]">
+    <div class="g-wide">
+      <p class="g-lead">
+        The one rule the whole app is built around: once a run exists against something, that
+        something stops changing. This is what makes a past run's record trustworthy months later.
+      </p>
+      <div class="steps">
+        <div class="fs">
+          <span class="fn">1</span>
+          <h4>Test created</h4>
+          <p>Freely editable, forever - even after it has standalone runs against it.</p>
+        </div>
+        <div class="fs">
+          <span class="fn">2</span>
+          <h4>Added to a test set</h4>
+          <p>
+            Its current input, expected output and test types are copied into a new entry. The live
+            test and the entry are now independent.
+          </p>
+        </div>
+        <div class="fs">
+          <span class="fn">3</span>
+          <h4>Entry still editable</h4>
+          <p>
+            You can fix a typo or adjust test types on the entry itself, same as any live test -
+            until step 4.
+          </p>
+        </div>
+        <div class="fs frz">
+          <span class="fn">4 · Frozen</span>
+          <h4>First run created</h4>
+          <p>
+            The moment any run references the entry - even while still <em>Pending</em> - it
+            freezes. No unfreeze path, ever.
+          </p>
+        </div>
+      </div>
+    </div>
+    <aside class="g-note g-gap">
+      <span class="g-cap">Still possible</span>
+      <p>
+        A frozen entry can still be <b>unlinked</b> from its set (it keeps its content and run
+        history, it just leaves the set's membership) or <b>deleted</b> along with the whole set -
+        but its content itself never changes again.
+      </p>
+    </aside>
+  </assay-guide-section>
+
+  <assay-guide-section [section]="sections[3]">
+    <div class="g-wide">
+      <p class="g-lead">
+        Every run is created one of these three ways. That choice decides what the run reads, and
+        whether it can be replayed later.
+      </p>
+      <div class="scroll">
+        <div class="tbl" role="table" aria-label="What each way of running reads">
+          <div class="tr t4 h" role="row">
+            <span class="g-cap" role="columnheader">Run</span
+            ><span class="g-cap" role="columnheader">Standalone</span
+            ><span class="g-cap" role="columnheader">Live</span
+            ><span class="g-cap" role="columnheader">Replay</span>
+          </div>
+          <div class="tr t4" role="row">
+            <span class="rh" role="cell">A test</span
+            ><span role="cell"
+              >Runs the test as it is right now. The run keeps a record of exactly what it checked,
+              so if you edit the test later, this run's history stays as it was. A direct run always
+              stands on its own; it isn't part of a test set or plan.</span
+            ><span class="na" role="cell">-</span><span class="na" role="cell">-</span>
+          </div>
+          <div class="tr t4" role="row">
+            <span class="rh" role="cell">A test set</span><span class="na" role="cell">-</span
+            ><span role="cell">Fans out over whichever entries are in the set right now.</span
+            ><span role="cell"
+              >Re-runs the exact same entries a past execution used, with their content exactly as
+              it was back then - even if the set's membership has changed since, or the live tests
+              they came from have since been edited.</span
+            >
+          </div>
+          <div class="tr t4" role="row">
+            <span class="rh" role="cell">A test plan</span><span class="na" role="cell">-</span
+            ><span role="cell"
+              >Same shape, one level up: fans out across every entry in every test set
+              <b>currently linked</b> to the plan.</span
+            ><span role="cell">The exact entries a past plan execution used.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </assay-guide-section>
+
+  <assay-guide-section [section]="sections[4]">
+    <div class="g-wide">
+      <p class="g-lead">
+        The building blocks above, combined into the three flows you'll actually use.
+      </p>
+      <div class="wfs">
+        <div class="wf">
+          <div>
+            <span class="kicker">Workflow 1</span>
+            <h4>Quick check on a single test</h4>
+            <p class="sit">
+              You're authoring or tweaking a test and want to see how it scores right now, with no
+              ceremony.
+            </p>
+          </div>
+          <div>
+            <assay-guide-flow [path]="flows.quick" />
+            <p class="after">
+              Reads the test at the instant it runs and keeps its own record of it from that moment
+              - editing the test again afterward doesn't touch that run's history, though the next
+              run you create will use the updated content. There's no live/replay pair here: with no
+              set or plan membership, there's nothing for those terms to distinguish.
+            </p>
+          </div>
+        </div>
+
+        <div class="wf">
+          <div>
+            <span class="kicker">Workflow 2</span>
+            <h4>Reproducible testing through a test set</h4>
+            <p class="sit">
+              You want a stable, comparable baseline - a fixed group of tests you can re-run over
+              and over, on demand or after a change, and trust that "the same test" means the same
+              input every time.
+            </p>
+          </div>
+          <div>
+            <assay-guide-flow [path]="flows.set" />
+            <p class="after">
+              The dataset step is optional - a test can be written by hand instead. What matters is
+              the moment it's <b>added to the set</b>: its content is copied into a frozen-eligible
+              entry, independent from the live test from then on. <b>Live</b> re-runs whatever
+              entries are in the set today. <b>Replay</b> re-runs the exact same entries a past
+              execution used, with their content exactly as it was back then. Nothing that happens
+              afterward can change what a replay sees.
+            </p>
+          </div>
+        </div>
+
+        <div class="wf">
+          <div>
+            <span class="kicker">Workflow 3</span>
+            <h4>Running a campaign across several sets</h4>
+            <p class="sit">
+              You want to execute multiple test sets together as one unit - a release check, say,
+              that spans several baselines at once - and track them as a single campaign over time.
+            </p>
+          </div>
+          <div>
+            <assay-guide-flow [path]="flows.plan" />
+            <p class="after">
+              One level up from workflow 2, same live/replay shape. A plan can link any number of
+              test sets, and one run fans out over <b>every entry in every set currently linked</b>
+              - live uses today's links, replay reuses exactly what a past plan execution touched.
+              The links themselves never freeze, so you can add or remove sets from the plan at any
+              time, even after it's been run.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </assay-guide-section>
+
+  <assay-guide-section [section]="sections[5]">
+    <div class="g-text">
+      <p class="g-lead">
+        A plan's connection to a test set is a pointer, not a snapshot - and that pointer never
+        freezes.
+      </p>
+      <p class="g-p">
+        You can link or unlink test sets to a plan at any time, even after the plan has been run -
+        this is the one relationship in the app that's exempt from the freeze rule above. What still
+        freezes, exactly as before, is the content each linked set's entries ran against. So
+        re-linking or unlinking sets never rewrites history: a past plan execution stays anchored to
+        whichever entries it actually used, no matter how the plan's membership changes afterward.
+      </p>
+    </div>
+    <aside class="g-note">
+      <span class="g-cap">Nothing is lost</span>
+      <p>
+        Unlinking a test set from a plan - or an entry from a set - never deletes anything or breaks
+        a past run's record. It only changes what a <em>future</em> live run will fan out over.
+      </p>
+    </aside>
+  </assay-guide-section>
+
+  <assay-guide-section [section]="sections[6]">
+    <div class="g-wide">
+      <p class="g-lead">
+        Every run moves through the same two lifecycle states, then lands on one of four outcomes -
+        a summary of how each check did in that run, not just "did it finish." An outcome is what
+        happened once: a GenAI application can answer differently each time, so one run is a signal,
+        not a verdict - repeat the run before concluding that something passes or fails.
+      </p>
+      <div class="marks">
+        <div class="mgrp">
+          <span class="g-cap">While it runs</span>
+          <assay-guide-mark of="Pending">Created, not yet picked up.</assay-guide-mark>
+          <assay-guide-mark of="Running">Currently executing.</assay-guide-mark>
+        </div>
+        <div class="mgrp">
+          <span class="g-cap">How it ended</span>
+          <assay-guide-mark of="Green">Every check was met in this run.</assay-guide-mark>
+          <assay-guide-mark of="Amber"
+            >Some checks were met in this run, some weren't.</assay-guide-mark
+          >
+          <assay-guide-mark of="Red">No check was met in this run.</assay-guide-mark>
+          <assay-guide-mark of="NotRan" label="Not Ran"
+            >The run couldn't be evaluated at all - something went wrong before any test type could
+            be checked (the model couldn't be reached, the application under test kept failing, or
+            the test's content couldn't be loaded). Unlike Red, no check was missed here - nothing
+            was checked.</assay-guide-mark
+          >
+        </div>
+      </div>
+    </div>
+    <div class="g-text">
+      <p class="g-p g-gap">
+        <b>What was actually scored.</b> Every finished run records the exact answer its checks
+        judged - the <em>evaluated output</em>. If the test had a recorded model output, that's what
+        was scored. If it had none, the run asked the application under test and scored its live
+        reply - which is why two runs of the same test can legitimately differ. The run's detail
+        page shows the evaluated output and labels which of the two it was.
+      </p>
+      <p class="g-p">
+        <b>One check that can't evaluate doesn't sink the run.</b> If a single check can't run - no
+        judge chosen for a judge check, say, or a judge that timed out - the run's page shows it as
+        "couldn't run", with the reason, and the rest still run. In the run's outcome it counts as
+        not met, so the run usually lands on Amber, not Not Ran. Not Ran is reserved for nothing
+        being checkable at all.
+      </p>
+    </div>
+  </assay-guide-section>
+
+  <assay-guide-section [section]="sections[7]">
+    <div class="g-wide">
+      <p class="g-lead">
+        One run is a signal; a verdict needs many. "Run with statistics" on a test, a test set or a
+        test plan runs it many times as one batch, then a statistical test decides each check, 95%
+        sure unless you choose otherwise. Each time is a full run, paid for like any other - the
+        page shows how many runs, application calls and judge calls before anything is created, and
+        what each verdict will take at that size.
+      </p>
+      <div class="marks">
+        <div class="mgrp">
+          <span class="g-cap">A batch, while it runs</span>
+          <assay-guide-mark of="Pending">Created, no run started yet.</assay-guide-mark>
+          <assay-guide-mark of="Running"
+            >Runs going. No verdicts until every run has finished.</assay-guide-mark
+          >
+          <assay-guide-mark of="Incomplete"
+            >Stopped before every run ran. What ran is kept.</assay-guide-mark
+          >
+          <assay-guide-mark of="Done"
+            >A trial finished: it shows how each check behaves, and gives no
+            verdict.</assay-guide-mark
+          >
+        </div>
+        <div class="mgrp">
+          <span class="g-cap">Its verdict</span>
+          <assay-guide-mark of="Passed">Every check reaches the target.</assay-guide-mark>
+          <assay-guide-mark of="Failed">At least one check falls short.</assay-guide-mark>
+          <assay-guide-mark of="Inconclusive"
+            >Every run finished, but there weren't enough runs to tell either way. A new, larger
+            batch would likely settle it - the result says about how large, or that it would take
+            more than a batch can run.</assay-guide-mark
+          >
+          <assay-guide-mark of="NotRan" label="Not Ran"
+            >No check could be decided: every run Not Ran, or every check errored.</assay-guide-mark
+          >
+        </div>
+      </div>
+    </div>
+    <div class="g-text">
+      <p class="g-p g-gap">
+        <b>What a verdict says.</b> "It passes at least 9 times in 10 (95% sure)": the runs leave a
+        range the real pass rate can be in. The check is Passed when the whole range is above the
+        target, Failed when it's below, Inconclusive when the target is inside it. A run stays
+        Green, Amber or Red; only a batch is Passed or Failed.
+      </p>
+      <figure
+        class="rng"
+        aria-label="Three ranges against a 9 in 10 target: Passed above it, Failed below it, Inconclusive across it"
+      >
+        <div class="rng-l">
+          <span><assay-mark of="Passed" size="md" />Passed</span>
+          <span><assay-mark of="Failed" size="md" />Failed</span>
+          <span><assay-mark of="Inconclusive" size="md" />Inconclusive</span>
+        </div>
+        <div>
+          <div class="trk">
+            <div class="tgt" style="left: 90%"><span>Target: 9 in 10</span></div>
+            <div class="row"><i class="rbar" style="left: 91.5%; width: 8.5%"></i></div>
+            <div class="row"><i class="rbar" style="left: 62%; width: 22%"></i></div>
+            <div class="row"><i class="rbar" style="left: 80%; width: 17%"></i></div>
+          </div>
+          <div class="axis"><span>0%</span><span>50%</span><span>100%</span></div>
+        </div>
+      </figure>
+      <p class="g-p g-gap">
+        <b>Did my change help?</b> Run a batch before the change and one after, then "Compare with…"
+        on the second: check by check, B is better, worse, or shows no clear difference at this
+        size.
+      </p>
+    </div>
+    <aside class="g-note g-gap">
+      <span class="g-cap">Statistical tests</span>
+      <p>
+        Every statistical test - what it asks, how many times it needs - and how to read the charts.
+      </p>
+      <assay-guide-go label="Statistical tests" link="/statistical-tests" />
+      <assay-guide-go label="Charts" link="/charts" />
+    </aside>
+  </assay-guide-section>
+
+  <assay-guide-section [section]="sections[8]">
+    <div class="g-wide">
+      <p class="g-lead">Short answers to the "why won't it let me do that?" moments.</p>
+      <div class="faq">
+        <div class="qa">
+          <span class="qn">09.1</span>
+          <h4>Why did renaming to the same name just work, instead of failing?</h4>
+          <p>
+            Resubmitting a dataset's, test set's, or test plan's own current name is always treated
+            as success - the uniqueness check only runs when the name actually changes.
+          </p>
+        </div>
+        <div class="qa">
+          <span class="qn">09.2</span>
+          <h4>Why won't this test save?</h4>
+          <p>
+            Every test type you assign has to have its own required setup actually filled in before
+            you can save - a reference (expected output) for types that compare against one, or that
+            type's own config otherwise (a numeric threshold, a rubric). Assigning a type doesn't
+            waive what it needs to run.
+          </p>
+        </div>
+        <div class="qa">
+          <span class="qn">09.3</span>
+          <h4>Why did two runs of the same test get different answers?</h4>
+          <p>
+            The test has no recorded model output, so each run asks the application under test live
+            and scores whatever it answers that time. Record a model output on the test if you want
+            every run to judge the same fixed answer.
+          </p>
+        </div>
+        <div class="qa">
+          <span class="qn">09.4</span>
+          <h4>Every run passed - why is the batch Inconclusive?</h4>
+          <p>
+            Too few runs to be sure. With a 90% target, 95% sure, it takes 29 passes out of 29: a
+            check that passes only 9 times in 10 would still pass 28 in a row more than 1 time in
+            20. The page shows the minimum before you start, and offers one spare time in case a run
+            is Not Ran.
+          </p>
+        </div>
+        <div class="qa">
+          <span class="qn">09.5</span>
+          <h4>One check shows an error message, but the run isn't Not Ran - why?</h4>
+          <p>
+            A check that can't evaluate - a regex that won't compile, a bad threshold - counts as
+            not met on its own, with the reason as its detail, and the other checks still run. Not
+            Ran only means nothing could be checked at all: the model or the application under test
+            was unreachable, or the content couldn't be loaded.
+          </p>
+        </div>
+        <div class="qa">
+          <span class="qn">09.6</span>
+          <h4>Why can't I delete this test?</h4>
+          <p>
+            A test is blocked while it's still snapshotted into any test set, or has any run -
+            standalone or otherwise - against it. Unlink or clean those up first.
+          </p>
+        </div>
+        <div class="qa">
+          <span class="qn">09.7</span>
+          <h4>Why can't I edit this entry anymore?</h4>
+          <p>
+            Once any run references a test set entry, it freezes for good. You can still unlink it
+            from the set (content and run history stay intact) or delete it outright if it's never
+            been run.
+          </p>
+        </div>
+        <div class="qa">
+          <span class="qn">09.8</span>
+          <h4>Why won't this test set or test plan delete?</h4>
+          <p>
+            A test set is blocked while any of its entries has ever been run. A test plan is blocked
+            once it has ever been executed at all - full stop, no "force delete." A plan's
+            <em>links</em> to its test sets are the one exception: those can always be added or
+            removed.
+          </p>
+        </div>
+        <div class="qa">
+          <span class="qn">09.9</span>
+          <h4>
+            I deleted a dataset (or some rows) I'd already used to create tests - did that break
+            those tests?
+          </h4>
+          <p>
+            No. A test owns a full copy of its own data from the moment it's created; deleting the
+            source dataset or rows only clears a traceability pointer, never the test's content.
+          </p>
+        </div>
+        <div class="qa">
+          <span class="qn">09.10</span>
+          <h4>
+            I selected several rows and the bulk action failed - why did nothing happen at all?
+          </h4>
+          <p>
+            Every bulk action (delete, unlink, add, link) is all-or-nothing. If any single selected
+            item fails a guard, the whole batch is rejected - there's no partial success.
+          </p>
+        </div>
+        <div class="qa">
+          <span class="qn">09.11</span>
+          <h4>Where do I point Assay at the application it should test?</h4>
+          <p>
+            The <a class="inl" routerLink="/settings">Settings</a> page (at the right of the header)
+            is where you set the application under test - URL, method, headers, request body, answer
+            path, timeout and retries. Use "Test connection" to try your changes before saving them;
+            a saved change applies from the next run.
+          </p>
+        </div>
+      </div>
+    </div>
+  </assay-guide-section>
 </div>
-
-<section class="cell cell-b">
-  <h2>The building blocks</h2>
-  <p class="section-lead">
-    Four concepts, each built on the one before it. Everything else in the app is a view onto these.
-  </p>
-  <div class="blocks">
-    <div class="block">
-      <span class="dot" style="background: var(--color-neutral-500)"></span>
-      <h3>Dataset</h3>
-      <p>
-        A named collection of prompt / expected-output / model-output rows, usually imported from a
-        <code>.jsonl</code> file. Source material for bulk test creation - never run directly.
-      </p>
-    </div>
-    <div class="block">
-      <span class="dot" style="background: var(--color-accent)"></span>
-      <h3>Test</h3>
-      <p>
-        A live, always-editable input, an optional expected output, an optional recorded model
-        output, and a set of assigned test types. Leave the model output empty and a run asks the
-        application under test for its answer instead. Can be run on its own at any time.
-      </p>
-    </div>
-    <div class="block">
-      <span class="dot" style="background: var(--color-accent-2)"></span>
-      <h3>Test set</h3>
-      <p>
-        A named collection of frozen test snapshots ("entries"). Adding a test copies its current
-        state in - the set never re-syncs with the live test afterward.
-      </p>
-    </div>
-    <div class="block">
-      <span class="dot" style="background: var(--color-neutral-800)"></span>
-      <h3>Test plan</h3>
-      <p>
-        A named campaign made of test sets. Running a plan fans out over every entry in every set
-        currently linked to it.
-      </p>
-    </div>
-  </div>
-</section>
-
-<section class="cell cell-b">
-  <h2>Test types</h2>
-  <p class="section-lead">
-    The evaluation strategies a test is scored with - assigned per test, not fixed. A test with none
-    assigned can't be run.
-  </p>
-  <p>
-    Each type belongs to a category, and some require a reference - an
-    <code>expected_output</code> to compare against - and can't score a test that doesn't have one.
-    Others take their own configuration instead, or as well: a numeric threshold the score has to
-    clear, or a custom rubric for an LLM-as-judge type to grade against. A test can't be saved until
-    every assigned type's required setup - reference or otherwise - is actually filled in. Inactive
-    types stay visible for history but can no longer be newly assigned.
-  </p>
-  <p>
-    What a result looks like depends on the category. <strong>Deterministic</strong> checks are
-    pass/fail - there's no score, only whether the answer matched.
-    <strong>NLP metrics</strong> produce a score on the metric's own scale (0 to 1 for most, 0 to
-    100 for BLEU, -1 to 1 for cosine similarity) and pass when it clears the threshold you set.
-    <strong>LLM judges</strong> return a verdict with a written rationale. Each type's card in the
-    catalogue shows which engine scores it, its settings, and - for a threshold-scored type - its
-    range and pass rule.
-  </p>
-  <div class="callout">
-    See the full <a routerLink="/test-types">test types catalogue</a> for the current list of
-    categories, costs, limitations, scoring engines and what each one is best for.
-  </div>
-</section>
-
-<section class="cell cell-b">
-  <h2>From editable to frozen</h2>
-  <p class="section-lead">
-    The one rule the whole app is built around: once a run exists against something, that something
-    stops changing. This is what makes a past run's record trustworthy months later.
-  </p>
-  <div class="stepper">
-    <div class="step">
-      <div class="n">1</div>
-      <div class="t">Test created</div>
-      <div class="d">Freely editable, forever - even after it has standalone runs against it.</div>
-    </div>
-    <div class="step">
-      <div class="n">2</div>
-      <div class="t">Added to a test set</div>
-      <div class="d">
-        Its current input, expected output and test types are copied into a new entry. The live test
-        and the entry are now independent.
-      </div>
-    </div>
-    <div class="step">
-      <div class="n">3</div>
-      <div class="t">Entry still editable</div>
-      <div class="d">
-        You can fix a typo or adjust test types on the entry itself, same as any live test - until
-        step 4.
-      </div>
-    </div>
-    <div class="step">
-      <div class="n">4</div>
-      <div class="t">First run created</div>
-      <div class="d">
-        The moment any run references the entry - even while still <em>Pending</em> - it freezes. No
-        unfreeze path, ever.
-      </div>
-    </div>
-  </div>
-  <div class="callout">
-    A frozen entry can still be <strong>unlinked</strong> from its set (it keeps its content and run
-    history, it just leaves the set's membership) or <strong>deleted</strong> along with the whole
-    set - but its content itself never changes again.
-  </div>
-</section>
-
-<section class="cell cell-b">
-  <h2>Standalone, live, and replay</h2>
-  <p class="section-lead">
-    Every run is created one of these three ways. That choice decides what the run reads, and
-    whether it can be replayed later.
-  </p>
-  <div class="modes">
-    <div class="mode">
-      <div class="badges"><span class="tag tag-neutral">Standalone</span></div>
-      <h4>Run a test directly</h4>
-      <p>
-        Runs the test as it is right now. The run keeps a record of exactly what it checked, so if
-        you edit the test later, this run's history stays as it was. A direct run always stands on
-        its own; it isn't part of a test set or plan.
-      </p>
-    </div>
-    <div class="mode">
-      <div class="badges">
-        <span class="tag tag-accent">Live</span><span class="tag tag-outline">Replay</span>
-      </div>
-      <h4>Run a test set</h4>
-      <p>
-        <strong>Live</strong> fans out over whichever entries are in the set right now.
-        <strong>Replay</strong> re-runs the exact same entries a past execution used, with their
-        content exactly as it was back then - even if the set's membership has changed since, or the
-        live tests they came from have since been edited.
-      </p>
-    </div>
-    <div class="mode">
-      <div class="badges">
-        <span class="tag tag-accent">Live</span><span class="tag tag-outline">Replay</span>
-      </div>
-      <h4>Run a test plan</h4>
-      <p>
-        Same live/replay shape, one level up: fans out across every entry in every test set
-        <strong>currently linked</strong> to the plan (live), or the exact entries a past plan
-        execution used (replay).
-      </p>
-    </div>
-  </div>
-</section>
-
-<section class="cell cell-b">
-  <h2>Putting it into practice</h2>
-  <p class="section-lead">
-    The building blocks above, combined into the three flows you'll actually use.
-  </p>
-
-  <div class="workflow">
-    <div class="workflow-head">
-      <div class="workflow-num">Workflow 1</div>
-      <h3>Quick check on a single test</h3>
-      <p>
-        You're authoring or tweaking a test and want to see how it scores right now, with no
-        ceremony. Each run keeps its own record of what it checked, so it won't drift if you edit
-        the test afterward - there's just no set or plan here to compare a "live" run against a
-        "replay" of one.
-      </p>
-    </div>
-    <div class="flow flow-center">
-      <div class="flow-step">
-        <span class="dot" style="background: var(--color-accent)"></span>Test
-      </div>
-      <div class="flow-arrow">
-        <span class="arrow-glyph">→</span><span class="arrow-label">run standalone</span>
-      </div>
-      <div class="flow-step">
-        <span class="dot" style="background: var(--color-text)"></span>Run
-      </div>
-    </div>
-    <p class="workflow-note">
-      Reads the test at the instant it runs and keeps its own record of it from that moment -
-      editing the test again afterward doesn't touch that run's history, though the next run you
-      create will use the updated content. There's no live/replay pair here, though: with no set or
-      plan membership, there's nothing for those terms to distinguish.
-    </p>
-  </div>
-
-  <div class="workflow">
-    <div class="workflow-head">
-      <div class="workflow-num">Workflow 2</div>
-      <h3>Reproducible testing through a test set</h3>
-      <p>
-        You want a stable, comparable baseline - a fixed group of tests you can re-run over and
-        over, on demand or after a change, and trust that "the same test" means the same input every
-        time.
-      </p>
-    </div>
-    <div class="flow flow-center">
-      <div class="flow-step">
-        <span class="dot" style="background: var(--color-neutral-500)"></span>Dataset
-      </div>
-      <div class="flow-arrow">
-        <span class="arrow-glyph">→</span><span class="arrow-label">import rows</span>
-      </div>
-      <div class="flow-step">
-        <span class="dot" style="background: var(--color-accent)"></span>Test
-      </div>
-      <div class="flow-arrow">
-        <span class="arrow-glyph">→</span><span class="arrow-label">add to set</span>
-      </div>
-      <div class="flow-step">
-        <span class="dot" style="background: var(--color-accent-2)"></span>Test set entry
-      </div>
-      <div class="flow-arrow">
-        <span class="arrow-glyph">→</span><span class="arrow-label">run live / replay</span>
-      </div>
-      <div class="flow-step">
-        <span class="dot" style="background: var(--color-text)"></span>Run
-      </div>
-    </div>
-    <p class="workflow-note">
-      The dataset step is optional - a test can be written by hand instead. What matters is the
-      moment it's <strong>added to the set</strong>: its content is copied into a frozen-eligible
-      entry, independent from the live test from then on. <strong>Live</strong> re-runs whatever
-      entries are in the set today. <strong>Replay</strong> re-runs the exact same entries a past
-      execution used, with their content exactly as it was back then - even if you've since edited
-      the live test, or the set's membership has changed. Nothing that happens afterward can change
-      what a replay sees.
-    </p>
-  </div>
-
-  <div class="workflow">
-    <div class="workflow-head">
-      <div class="workflow-num">Workflow 3</div>
-      <h3>Running a campaign across several sets</h3>
-      <p>
-        You want to execute multiple test sets together as one unit - a release check, say, that
-        spans several baselines at once - and track them as a single campaign over time.
-      </p>
-    </div>
-    <div class="flow flow-center">
-      <div class="flow-step">
-        <span class="dot" style="background: var(--color-accent-2)"></span>Test set
-      </div>
-      <div class="flow-arrow">
-        <span class="arrow-glyph">→</span><span class="arrow-label">link to plan</span>
-      </div>
-      <div class="flow-step">
-        <span class="dot" style="background: var(--color-neutral-800)"></span>Test plan
-      </div>
-      <div class="flow-arrow">
-        <span class="arrow-glyph">→</span><span class="arrow-label">run live / replay</span>
-      </div>
-      <div class="flow-step">
-        <span class="dot" style="background: var(--color-text)"></span>Run
-        <span class="small">&nbsp;× every entry, every linked set</span>
-      </div>
-    </div>
-    <p class="workflow-note">
-      One level up from workflow 2, same live/replay shape. A plan can link any number of test sets,
-      and one run fans out over <strong>every entry in every set currently linked</strong> - live
-      uses today's links, replay reuses exactly what a past plan execution touched. The links
-      themselves never freeze, so you can add or remove sets from the plan at any time, even after
-      it's been run.
-    </p>
-  </div>
-</section>
-
-<section class="cell cell-b">
-  <h2>Test plans link, they don't own</h2>
-  <p class="section-lead">
-    A plan's connection to a test set is a pointer, not a snapshot - and that pointer never freezes.
-  </p>
-  <p>
-    You can link or unlink test sets to a plan at any time, even after the plan has been run - this
-    is the one relationship in the app that's exempt from the freeze rule above. What still freezes,
-    exactly as before, is the content each linked set's entries ran against. So re-linking or
-    unlinking sets never rewrites history: a past plan execution stays anchored to whichever entries
-    it actually used, no matter how the plan's membership changes afterward.
-  </p>
-  <div class="callout">
-    Unlinking a test set from a plan - or an entry from a set - never deletes anything or breaks a
-    past run's record. It only changes what a <em>future</em> live run will fan out over.
-  </div>
-</section>
-
-<section class="cell cell-b">
-  <h2>Run lifecycle &amp; statuses</h2>
-  <p class="section-lead">
-    Every run moves through the same two lifecycle states, then lands on one of four outcomes - a
-    summary of how each assigned test type did, not just "did it finish."
-  </p>
-  <div class="status-grid" style="margin-bottom: 16px">
-    <div class="status">
-      <div class="label">
-        <span class="dot" style="background: var(--color-neutral-400)"></span>Pending
-      </div>
-      <div class="small">Created, not yet picked up.</div>
-    </div>
-    <div class="status">
-      <div class="label">
-        <span class="dot" style="background: var(--color-accent-400)"></span>Running
-      </div>
-      <div class="small">Currently executing.</div>
-    </div>
-    <div class="status">
-      <div class="label">
-        <span class="dot" style="background: var(--color-status-green)"></span>Green
-      </div>
-      <div class="small">Every assigned test type passed.</div>
-    </div>
-    <div class="status">
-      <div class="label">
-        <span class="dot" style="background: var(--color-status-amber)"></span>Amber
-      </div>
-      <div class="small">Some assigned test types passed, some didn't.</div>
-    </div>
-    <div class="status">
-      <div class="label"><span class="dot" style="background: var(--color-accent)"></span>Red</div>
-      <div class="small">Every assigned test type was checked, and none passed.</div>
-    </div>
-    <div class="status">
-      <div class="label">
-        <span class="dot" style="background: var(--color-neutral-800)"></span>Not Ran
-      </div>
-      <div class="small">
-        The run couldn't be evaluated at all - something went wrong before any test type could be
-        checked (e.g. the model couldn't be reached, the application under test kept failing, or the
-        test's content couldn't be loaded). Unlike Red, nothing here failed a check - nothing was
-        checked.
-      </div>
-    </div>
-  </div>
-  <p>
-    <strong>What was actually scored.</strong> Every finished run records the exact answer its
-    checks judged - the <em>evaluated output</em>. If the test had a recorded model output, that's
-    what was scored. If it had none, the run asked the application under test and scored its live
-    reply - which is why two runs of the same test can legitimately differ. The run's detail page
-    shows the evaluated output and labels which of the two it was.
-  </p>
-  <p>
-    <strong>One check failing isn't the run failing.</strong> If a single check can't evaluate - a
-    regex pattern that won't compile, say - only that check fails, with the reason as its detail,
-    and the rest still run. The run then usually lands on Amber, not Not Ran. Not Ran is reserved
-    for nothing being checkable at all.
-  </p>
-</section>
-
-<section class="cell">
-  <h2>Guardrails you'll bump into</h2>
-  <p class="section-lead">Short answers to the "why won't it let me do that?" moments.</p>
-  <div class="guards">
-    <div class="guard">
-      <div class="q">?</div>
-      <div class="a">
-        <strong>Why did renaming to the same name just work, instead of failing?</strong>
-        Resubmitting a dataset's, test set's, or test plan's own current name is always treated as
-        success - the uniqueness check only runs when the name actually changes.
-      </div>
-    </div>
-    <div class="guard">
-      <div class="q">?</div>
-      <div class="a">
-        <strong>Why won't this test save?</strong> Every test type you assign has to have its own
-        required setup actually filled in before you can save - a reference (expected output) for
-        types that compare against one, or that type's own config otherwise (a numeric threshold, a
-        rubric). Assigning a type doesn't waive what it needs to run.
-      </div>
-    </div>
-    <div class="guard">
-      <div class="q">?</div>
-      <div class="a">
-        <strong>Why did two runs of the same test get different answers?</strong> The test has no
-        recorded model output, so each run asks the application under test live and scores whatever
-        it answers that time. Record a model output on the test if you want every run to judge the
-        same fixed answer.
-      </div>
-    </div>
-    <div class="guard">
-      <div class="q">?</div>
-      <div class="a">
-        <strong>One check shows an error message, but the run isn't Not Ran - why?</strong> A check
-        that can't evaluate - a regex that won't compile, a bad threshold - fails on its own, with
-        the reason as its detail, and the other checks still run. Not Ran only means nothing could
-        be checked at all: the model or the application under test was unreachable, or the content
-        couldn't be loaded.
-      </div>
-    </div>
-    <div class="guard">
-      <div class="q">?</div>
-      <div class="a">
-        <strong>Why can't I delete this test?</strong> A test is blocked while it's still
-        snapshotted into any test set, or has any run - standalone or otherwise - against it. Unlink
-        or clean those up first.
-      </div>
-    </div>
-    <div class="guard">
-      <div class="q">?</div>
-      <div class="a">
-        <strong>Why can't I edit this entry anymore?</strong> Once any run references a test set
-        entry, it freezes for good. You can still unlink it from the set (content and run history
-        stay intact) or delete it outright if it's never been run.
-      </div>
-    </div>
-    <div class="guard">
-      <div class="q">?</div>
-      <div class="a">
-        <strong>Why won't this test set or test plan delete?</strong> A test set is blocked while
-        any of its entries has ever been run. A test plan is blocked once it has ever been executed
-        at all - full stop, no "force delete." A plan's <em>links</em> to its test sets are the one
-        exception: those can always be added or removed.
-      </div>
-    </div>
-    <div class="guard">
-      <div class="q">?</div>
-      <div class="a">
-        <strong
-          >I deleted a dataset (or some rows) I'd already used to create tests - did that break
-          those tests?</strong
-        >
-        No. A test owns a full copy of its own data from the moment it's created; deleting the
-        source dataset or rows only clears a traceability pointer, never the test's content.
-      </div>
-    </div>
-    <div class="guard">
-      <div class="q">?</div>
-      <div class="a">
-        <strong
-          >I selected several rows and the bulk action failed - why did nothing happen at
-          all?</strong
-        >
-        Every bulk action (delete, unlink, add, link) is all-or-nothing. If any single selected item
-        fails a guard, the whole batch is rejected - there's no partial success.
-      </div>
-    </div>
-    <div class="guard">
-      <div class="q">?</div>
-      <div class="a">
-        <strong>Where do I point Assay at the application it should test?</strong> The
-        <a routerLink="/settings">Settings</a> page (the gear beside the theme toggle) is where you
-        set the application under test - URL, method, headers, request body, answer path, timeout
-        and retries. Use "Test connection" to try your changes before saving them; a saved change
-        applies from the next run.
-      </div>
-    </div>
-  </div>
-</section>

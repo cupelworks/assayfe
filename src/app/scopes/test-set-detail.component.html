@@ -1,144 +1,162 @@
-<div class="crumbs">
-  <a routerLink="/test-sets">Test sets</a><span>/</span><span class="cur">{{ name() }}</span>
-</div>
-<div class="hero">
-  <div>
-    <div class="kicker">Test set</div>
-    <h1>{{ name() }}</h1>
-  </div>
-  <div class="hero-actions">
-    <button class="btn btn-ghost" (click)="open('rename')">Rename</button>
-    <button
-      class="btn btn-ghost"
-      (click)="open('delete')"
-      [disabled]="hasRuns()"
-      [title]="hasRuns() ? 'Blocked: entries have runs' : ''"
-    >
-      Delete
-    </button>
-    <button class="btn btn-secondary" (click)="open('add')">Add tests</button>
-    <button class="btn btn-primary" (click)="runLive()" [disabled]="act.busy() || !page.total()">
-      {{ act.busy() ? 'Working…' : 'Run live' }}
-    </button>
-  </div>
-</div>
-@if (act.msg(); as m) {
-  <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
-}
-<section class="split">
-  <div class="cell cell-r">
-    <div class="row-head">
-      <h2>Entries</h2>
-      <div class="tools">
-        @if (selection.ids().length) {
-          <button class="btn btn-ghost btn-sm" (click)="open('unlink')">
-            Unlink {{ selection.ids().length }}
-          </button>
-          <button class="btn btn-ghost btn-sm" (click)="open('deleteEntries')">
-            Delete {{ selection.ids().length }}
-          </button>
-        }
-        <span class="small">{{ page.total() }} entries</span>
-      </div>
+<div class="g-wrap">
+  <assay-guide-head
+    size="one"
+    kicker="Test set"
+    [crumbs]="[{ label: 'Test sets', link: '/test-sets' }]"
+    [copyId]="id()"
+    [title]="name()"
+    [lede]="lede()"
+  >
+    <div class="page-aside" guideHeadAside>
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="runLive()"
+        [disabled]="act.busy() || !canRun()"
+      >
+        {{ act.busy() ? 'Working…' : 'Run live' }}
+      </button>
+      @if (canRun()) {
+        <a
+          class="go new-tab"
+          routerLink="run-with-statistics"
+          target="_blank"
+          rel="noopener"
+          aria-label="Run with statistics, opens in a new tab"
+          >Run with statistics<assay-arrow-out
+        /></a>
+      } @else {
+        <button type="button" class="go" disabled>Run with statistics<assay-arrow-out /></button>
+      }
+      <assay-quiet-actions [actions]="quiet()" [why]="why()" (act)="quietAct($event)" />
     </div>
-    <table class="table">
-      <colgroup>
-        <col style="width: 36px" />
-        <col style="width: 28%" />
-        <col />
-        <col style="width: 24%" />
-        <col style="width: 60px" />
-      </colgroup>
-      <thead>
-        <tr>
-          <th>
-            <input
-              type="checkbox"
-              class="chk"
-              [checked]="selection.allChecked()"
-              (change)="selection.toggleAll()"
-            />
-          </th>
-          <th>Entry</th>
-          <th>Input</th>
-          <th>Test types</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (e of entries(); track e.id) {
-          <tr>
-            <td>
-              <input
-                type="checkbox"
-                class="chk"
-                [checked]="selection.ids().includes(e.id)"
-                (change)="selection.toggle(e.id)"
-              />
-            </td>
-            <td class="strong">
-              {{ displayName(e.name, e.id) }}
-              @if (frozenEntryIds().has(e.id)) {
-                <span class="tag tag-outline" title="Has a run - content can no longer be edited"
-                  >frozen</span
-                >
+    <div class="now">
+      <assay-latest-verdict [batch]="verdicts.newest()" [canRun]="canRun()" />
+      <assay-latest-run [kind]="kind" [id]="id()" [run]="execs.newest()" />
+    </div>
+  </assay-guide-head>
+
+  <assay-banner [msg]="act.msg()" />
+
+  <assay-guide-section [section]="sections[0]" sub="Each a copy, made when it was added">
+    <assay-catalog-table
+      label="Its tests"
+      selectAll="Select every test shown"
+      [columns]="columns"
+      [selection]="selection"
+      [empty]="entriesEmpty()"
+    >
+      @for (e of page.items(); track e.id) {
+        <assay-catalog-row
+          [name]="displayName(e.name, e.id)"
+          [tags]="tagsOf(e)"
+          [expandable]="false"
+          [selection]="selection"
+          [rowId]="e.id"
+        >
+          <assay-catalog-cell caption="Input"
+            ><span class="clamp">{{ e.input }}</span></assay-catalog-cell
+          >
+          <assay-catalog-cell caption="Checks">
+            <span class="chk-tags">
+              @for (c of checkTags(e); track c.text) {
+                <assay-catalog-tag [tag]="c" />
+              } @empty {
+                <span class="muted">None</span>
               }
-              <div class="small">
-                from
-                <a class="plain" [routerLink]="['/tests', e.test_case_id.id]"
-                  >test {{ short(e.test_case_id.id) }}</a
-                >
-              </div>
-            </td>
-            <td class="muted ellip" style="width: auto">{{ e.input }}</td>
-            <td>
-              <div class="tags">
-                @for (t of e.test_type_assignments ?? []; track t.name) {
-                  <span class="tag tag-outline">{{ t.name }}</span>
-                } @empty {
-                  <span class="small">none</span>
-                }
-              </div>
-            </td>
-            <td>
-              <button class="btn btn-ghost btn-sm" (click)="open('editEntry', e)">Edit</button>
-            </td>
-          </tr>
-        } @empty {
-          @if (!page.loading()) {
-            <tr>
-              <td colspan="5" class="empty">
-                No entries - live execution returns 409 until tests are added.
-              </td>
-            </tr>
-          }
-        }
-      </tbody>
-    </table>
+            </span>
+          </assay-catalog-cell>
+          <assay-catalog-cell caption="Entry ID" [copyId]="e.id" />
+          <assay-catalog-cell caption="">
+            @if (!e.has_runs) {
+              <button type="button" class="row-act" (click)="edit(e)">Edit</button>
+            }
+          </assay-catalog-cell>
+        </assay-catalog-row>
+      }
+    </assay-catalog-table>
     <assay-pager
       [total]="page.total()"
       [offset]="page.offset()"
       [limit]="page.limit()"
-      (offsetChange)="selection.clear(); page.go($event)"
-      (limitChange)="selection.clear(); page.size($event)"
+      (offsetChange)="go($event)"
+      (limitChange)="size($event)"
     />
-  </div>
-  <div class="cell">
-    <assay-executions-panel
-      kind="test-sets"
+    @if (anyFrozen()) {
+      <p class="note">
+        <b>Frozen: these copies have runs, so they stay as they were.</b> They can't be edited or
+        deleted any more. Unlink takes one out of the set and keeps its runs.
+      </p>
+    }
+    <div class="ends">
+      <button type="button" class="go" (click)="open('add')">Add tests…</button>
+    </div>
+  </assay-guide-section>
+
+  <assay-guide-section [section]="sections[1]" sub="Its batches, newest first">
+    <assay-verdicts-table
+      #verdicts
+      [scope]="statsScope()"
+      [version]="version()"
+      empty="No verdict yet. A verdict comes from running its tests many times with statistics: it says whether the set passes, not just how one run went."
+    />
+  </assay-guide-section>
+
+  <assay-guide-section [section]="sections[2]" sub="Each runs every test once">
+    <assay-executions-table
+      #execs
+      [kind]="kind"
       [id]="id()"
       [version]="version()"
       [busy]="act.busy()"
       (replay)="replay($event)"
     />
-  </div>
-</section>
+  </assay-guide-section>
+
+  <assay-guide-section [section]="sections[3]" sub="The plans that run it">
+    <assay-catalog-table
+      label="The test plans that run it"
+      [columns]="planColumns"
+      [empty]="plans()?.length ? null : plansEmpty()"
+    >
+      @for (p of plans() ?? []; track p.entry_id) {
+        @let r = planRuns().get(p.id);
+        <assay-catalog-row [name]="p.name" [link]="['/test-plans', p.id]" [expandable]="false">
+          <assay-catalog-cell caption="Holds">{{
+            counted(p.linked_set_count ?? 0, 'test set')
+          }}</assay-catalog-cell>
+          <assay-catalog-cell caption="Its latest run">
+            <assay-latest-status
+              [counts]="r?.counts ?? null"
+              [at]="r?.at ?? null"
+              none="Never run"
+            />
+          </assay-catalog-cell>
+          <assay-catalog-cell caption="Entry ID" [copyId]="p.entry_id" />
+        </assay-catalog-row>
+      }
+    </assay-catalog-table>
+    <div class="ends">
+      <button type="button" class="go" (click)="open('link')">Add to a test plan…</button>
+    </div>
+  </assay-guide-section>
+</div>
+
+@if (selection.ids().length) {
+  <assay-bulk-bar
+    label="With the selected tests"
+    [count]="selection.ids().length"
+    [actions]="bulkActions()"
+    (act)="bulk($event)"
+    (clear)="selection.clear()"
+  />
+}
 
 @switch (dlg()) {
   @case ('rename') {
     <assay-name-dialog
       [kicker]="name()"
-      title="Rename test set"
+      title="Rename the test set"
       submitLabel="Rename"
       [initial]="name()"
       [busy]="act.busy()"
@@ -151,8 +169,8 @@
     <assay-confirm-dialog
       [kicker]="name()"
       title="Delete this test set?"
-      body="Removes the set and its entries. Blocked (409) if any entry has ever been run."
-      confirmLabel="Delete test set"
+      body="It goes for good, with its copies. The tests it copied stay. Deleting can't be undone."
+      confirmLabel="Delete the test set"
       [busy]="act.busy()"
       [error]="act.err()"
       (confirm)="remove()"
@@ -162,10 +180,13 @@
   @case ('add') {
     <assay-pick-dialog
       [kicker]="name()"
-      title="Add tests to set"
-      [rows]="pickRows()"
-      [submitLabel]="pickLabel"
-      emptyText="No tests to add - create one first."
+      title="Add tests"
+      noun="tests"
+      placeholder="Names, inputs, checks…"
+      emptyText="No tests yet."
+      [rows]="testRows()"
+      [facets]="checkFacet()"
+      [submitLabel]="addLabel"
       [busy]="act.busy()"
       [error]="act.err()"
       (confirm)="add($event)"
@@ -177,47 +198,61 @@
       [kicker]="name()"
       [title]="
         'Unlink ' +
-        selection.ids().length +
-        ' entr' +
-        (selection.ids().length === 1 ? 'y' : 'ies') +
-        '?'
+        (selection.ids().length === 1 ? '1 test' : selection.ids().length + ' tests') +
+        ' from the set?'
       "
-      body="Non-destructive: clears membership in this set. Frozen content and any runs stay reachable through past executions."
+      [body]="unlinkBody()"
       confirmLabel="Unlink"
       [danger]="false"
       [busy]="act.busy()"
       [error]="act.err()"
       (confirm)="unlink()"
       (closed)="dlg.set(null)"
-    />
+    >
+      <assay-named-list [items]="tickedNames()" />
+    </assay-confirm-dialog>
   }
   @case ('deleteEntries') {
     <assay-confirm-dialog
       [kicker]="name()"
       [title]="
         'Delete ' +
-        selection.ids().length +
-        ' entr' +
-        (selection.ids().length === 1 ? 'y' : 'ies') +
+        (selection.ids().length === 1 ? '1 copy' : selection.ids().length + ' copies') +
         '?'
       "
-      body="Permanently removes the frozen snapshots. Blocked (409) if any has been run - unlink instead. The originating live tests are not affected."
-      confirmLabel="Delete entries"
+      body="The copies go for good; the tests they came from stay. Deleting can't be undone."
+      confirmLabel="Delete"
       [busy]="act.busy()"
       [error]="act.err()"
       (confirm)="deleteEntries()"
       (closed)="dlg.set(null)"
-    />
+    >
+      <assay-named-list caption="Deleted" [items]="tickedNames()" />
+    </assay-confirm-dialog>
   }
   @case ('editEntry') {
     <assay-test-form-dialog
       [kicker]="name()"
-      title="Edit frozen entry"
-      submitLabel="Save entry"
+      title="Edit the copy"
+      submitLabel="Save the copy"
       [initial]="editing()"
       [busy]="act.busy()"
       [error]="act.err()"
       (confirm)="saveEntry($event)"
+      (closed)="dlg.set(null)"
+    />
+  }
+  @case ('link') {
+    <assay-pick-dialog
+      [kicker]="name()"
+      title="Add to a test plan"
+      noun="test plans"
+      emptyText="No test plans yet."
+      [rows]="planRows()"
+      [submitLabel]="linkLabel"
+      [busy]="act.busy()"
+      [error]="act.err()"
+      (confirm)="link($event)"
       (closed)="dlg.set(null)"
     />
   }

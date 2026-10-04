@@ -6,23 +6,38 @@
   justify-content: center;
   padding-top: 8vh;
   z-index: 50;
+  /* A veil of ink in either theme: it darkens the page behind, never lightens it. */
+  background: rgb(0 0 0 / 0.42);
 }
+:host-context([data-theme='dark']) .wrap {
+  background: rgb(0 0 0 / 0.6);
+}
+/* Square and flat on the veil of ink: no card, no shadow - ruled in ink on top, in red when what
+   it does can't be undone. */
 .box {
-  width: min(640px, calc(100vw - 48px));
+  width: min(640px, calc(100vw - 32px));
   max-height: 84vh;
   display: flex;
   flex-direction: column;
+  gap: 0;
+  padding: 0;
   overflow: hidden;
+  background: var(--color-bg);
+  border-top: 4px solid var(--color-text);
+  box-shadow: none;
 }
 .box.wide {
-  width: min(960px, calc(100vw - 48px));
+  width: min(960px, calc(100vw - 32px));
+}
+.box.danger {
+  border-top-color: var(--color-accent);
 }
 .head {
-  padding: 24px 28px 16px;
-  border-bottom: 2px solid var(--color-divider);
+  padding: 22px 28px 0;
 }
 .kicker {
   font-size: 11px;
+  font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-accent);
@@ -30,31 +45,99 @@
   overflow-wrap: anywhere;
 }
 .head h2 {
-  font-size: 28px;
   margin: 0;
-  letter-spacing: -0.02em;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
 }
 .body {
-  padding: 20px 28px;
+  padding: 18px 28px 24px;
   overflow: auto;
+  /* Scrolling stops at its ends: it never passes on to the page behind. */
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 .err {
   margin: 0 28px 16px;
-  padding: 12px 14px;
-  background: var(--color-accent-100);
+  padding: 10px 0 10px 14px;
+  border-left: 4px solid var(--color-accent);
   color: var(--color-accent-700);
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 1.5;
   white-space: pre-wrap;
 }
 .foot {
-  padding: 16px 28px 24px;
-  border-top: 2px solid var(--color-divider);
   display: flex;
-  gap: 12px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 20px;
+  margin: 0;
+  padding: 16px 28px;
+  border-top: 1px solid color-mix(in srgb, var(--color-text) 25%, transparent);
 }
-.danger {
-  background: var(--color-accent-700);
+/* The buttons keep their own size however long the text beside them gets. */
+.foot .btn {
+  flex: none;
+  min-height: 44px;
+  padding: 0 20px;
+}
+.cancel {
+  all: unset;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-neutral-800);
+  cursor: pointer;
+}
+.cancel:hover:not(:disabled) {
+  color: var(--color-accent);
+}
+/* While its action is under way the dialog can't be closed. */
+.cancel:disabled {
+  color: var(--color-neutral-500);
+  cursor: default;
+}
+.cancel:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+/* Why the primary is disabled, beside it - never scrolled out of view. At most three lines;
+   a longer list scrolls inside, so the footer never grows past the buttons' row. */
+.blockers {
+  flex: 1;
+  min-width: 0;
+  max-height: calc(3 * 1.5em);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  line-height: 1.5;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent-700);
+}
+.blockers .strong {
+  font-weight: 700;
+}
+@media (max-width: 960px) {
+  .head {
+    padding: 20px 20px 0;
+  }
+  .body {
+    padding: 16px 20px 20px;
+  }
+  .err {
+    margin: 0 20px 16px;
+  }
+  .foot {
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    padding: 14px 20px;
+  }
 }

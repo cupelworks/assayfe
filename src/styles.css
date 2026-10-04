@@ -69,6 +69,10 @@
   --shadow-lg: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
 }
 
+/* The scrollbar's room is kept while a dialog locks the page, so nothing shifts sideways. */
+html {
+  scrollbar-gutter: stable;
+}
 body {
   background: var(--color-bg);
   color: var(--color-text);
@@ -248,6 +252,76 @@ figcaption {
   text-align: left;
 }
 
+/* - disclosure - an "Advanced ⌄" toggle: quiet, like a hint, since most users never need what it
+   hides (a test type's answer path). Pair with <assay-chevron [open]>. */
+.adv-toggle {
+  all: unset;
+  cursor: pointer;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+  font-size: 12px;
+  color: var(--color-neutral-600);
+}
+.adv-toggle:hover,
+.adv-toggle[aria-expanded='true'] {
+  color: var(--color-accent);
+}
+.adv-toggle:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* A filter or preset chip: a .tag (tag-accent when on, tag-outline when off) inside a bare button. */
+.chip-btn {
+  all: unset;
+  cursor: pointer;
+}
+.chip-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* A button that opens a new tab - "Run with statistics ↗": its arrow (<assay-arrow-out>) leans out
+   while it's hovered or focused, and a small ink label under it says where it goes. */
+.new-tab {
+  position: relative;
+}
+.new-tab:hover assay-arrow-out,
+.new-tab:focus-visible assay-arrow-out {
+  transform: translate(2px, -2px);
+}
+.new-tab::after {
+  content: 'Opens in a new tab';
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  padding: 6px 9px;
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.new-tab:hover::after,
+.new-tab:focus-visible::after {
+  opacity: 1;
+  transition-delay: 250ms;
+}
+/* At the bottom of the page (the footer's API documentation), the label opens above. */
+.new-tab.above::after {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+
 /* - forms - */
 .field > label {
   display: block;
@@ -341,6 +415,83 @@ textarea.input {
   outline-offset: -2px;
 }
 
+/* - line fields - the work's dialogs: a label in small capitals over a line, not a box (as the
+   lists' filter line); a help line under it. */
+.lfield {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.lfield > label,
+.lfield > .lfield-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-neutral-600);
+}
+.lfield input,
+.lfield textarea {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 0 7px;
+  border-bottom: 1px solid var(--color-divider);
+  font-family: inherit;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--color-text);
+  caret-color: var(--color-accent);
+  cursor: text;
+  overflow-wrap: anywhere;
+}
+.lfield textarea {
+  min-height: 52px;
+  font-size: 15px;
+  white-space: pre-wrap;
+  resize: vertical;
+}
+.lfield input:focus,
+.lfield textarea:focus {
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--color-accent);
+}
+.lfield input::placeholder,
+.lfield textarea::placeholder {
+  color: var(--color-neutral-500);
+}
+.lfield .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 14px;
+}
+/* A choice on a line, as a field is: its value, a small arrow at the line's end. */
+.lfield select {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 24px 7px 0;
+  border-bottom: 1px solid var(--color-divider);
+  background: transparent
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.5 3.5 5 7l3.5-3.5' fill='none' stroke='%237d7979' stroke-width='1.6'/%3E%3C/svg%3E")
+    right 2px center / 10px no-repeat;
+  font-family: inherit;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--color-text);
+  cursor: pointer;
+}
+.lfield select:focus {
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--color-accent);
+}
+.lfield-help {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-neutral-600);
+}
+
 /* - cards - */
 .card {
   display: flex;
@@ -412,28 +563,27 @@ textarea.input {
   color: var(--color-accent);
 }
 
-/* - navigation - */
-.nav {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 2px solid var(--color-divider);
+/* - the page grid - 12 columns and 24 px gutters inside the page's 40 px margins (16 px on a
+   phone), as every page's top and sections are laid: the header's bar and the footer. */
+.page-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: 24px;
+  padding-inline: 40px;
 }
-.nav-brand {
-  font-family: var(--font-heading);
-  font-weight: var(--font-heading-weight);
-  font-size: 18px;
-  margin-right: auto;
+@media (max-width: 960px) {
+  .page-grid {
+    padding-inline: 16px;
+  }
 }
-.nav a {
-  color: inherit;
-  text-decoration: none;
-  font-size: 14px;
-}
-.nav a:hover,
-.nav a[aria-current='page'] {
-  color: var(--color-accent);
+
+/* - small capitals - as the pages' kickers and captions: the header's Settings and theme, the
+   footer. */
+.small-caps {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 /* - tables - */

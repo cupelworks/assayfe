@@ -1,35 +1,7 @@
-.clamp {
-  font-size: 13px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  line-height: 1.4;
-}
-.mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
-  resize: vertical;
-}
-.ta {
-  resize: vertical;
-  font-family: inherit;
-}
-.two {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-.top {
-  vertical-align: top;
-}
-.note-warn {
-  font-size: 12px;
-  color: var(--color-accent-700);
-  margin: 6px 0 10px;
-}
-.note-info {
-  font-size: 12px;
-  color: var(--color-neutral-600);
-  margin: 6px 0 10px;
+/* The rows' own find line: across the section's body, over its table. */
+assay-smart-filter.rows-find {
+  grid-column: 1 / -1;
+  margin-bottom: 24px;
+  padding-top: 0;
+  border-top: 0;
 }

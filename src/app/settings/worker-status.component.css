@@ -1,0 +1,24 @@
+/* How the workers stand, across the body, over their table. */
+.state {
+  margin-bottom: 40px;
+}
+.broker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: -24px 0 32px;
+}
+.broker .cap {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-neutral-600);
+}
+/* A worker's missing tasks, under its problem. */
+.tasks {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--color-neutral-600);
+}

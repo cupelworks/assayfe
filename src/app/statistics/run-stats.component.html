@@ -1,0 +1,344 @@
+<div class="g-wrap">
+  <assay-guide-head
+    size="one"
+    kicker="Run with statistics"
+    [crumbs]="crumbs()"
+    title="Run with statistics"
+    [lede]="lede()"
+  >
+    <div class="page-aside" guideHeadAside>
+      @if (standing(); as st) {
+        <assay-status-line role="status" [tone]="st.tone" [title]="st.title" [text]="st.text" />
+      }
+    </div>
+  </assay-guide-head>
+  @if (loadError(); as e) {
+    <assay-banner [msg]="{ ok: false, text: e }" />
+  }
+
+  <assay-guide-section [section]="sec()['question']" sub="What you want to know, and how strictly">
+    <assay-choice-tiles
+      class="g-wide"
+      name="sp-question"
+      [labelledBy]="sec()['question'].id + '-title'"
+      [options]="questionTiles()"
+      [value]="choice()"
+      (choose)="pick($event)"
+    />
+    <div class="params g-wide">
+      @if (!hasTargetParam()) {
+        <div class="lfield">
+          <span class="lfield-label">Threshold</span>
+          <span class="plain">Each check’s own, as set on it.</span>
+        </div>
+      }
+      @for (r of mainParams(); track r.p.key) {
+        <assay-param-field
+          [row]="r"
+          [inline]="true"
+          [hint]="paramHint(r)"
+          (changed)="setParam(r.p.key, $event)"
+        />
+      }
+    </div>
+    @if (advParams().length) {
+      <div class="g-wide adv">
+        <button type="button" class="quiet" [attr.aria-expanded]="adv()" (click)="adv.set(!adv())">
+          Advanced {{ adv() ? '↑' : '↓' }}
+        </button>
+        @if (adv()) {
+          <div class="params">
+            @for (r of advParams(); track r.p.key) {
+              <assay-param-field [row]="r" [inline]="true" (changed)="setParam(r.p.key, $event)" />
+            }
+          </div>
+        }
+      </div>
+    }
+  </assay-guide-section>
+
+  @if (estimate(); as e) {
+    <div class="est" [class.stale]="estimating()">
+      @if (sec()['seen']; as s) {
+        <assay-guide-section [section]="s" [sub]="seenLead()">
+          <div class="tb g-wide" role="table" aria-label="Each check against its target">
+            <div class="tr h seen" [class.with-target]="showTargets()" role="row">
+              <span role="columnheader" class="g-cap">In</span>
+              <span role="columnheader" class="g-cap">Check</span>
+              <span role="columnheader" class="g-cap">Its last runs</span>
+              @if (showTargets()) {
+                <span role="columnheader" class="g-cap">Target</span>
+              }
+              <span role="columnheader" class="g-cap">Outlook</span>
+              <span role="columnheader" class="g-cap right">Alone, for {{ goalText() }}</span>
+            </div>
+            @for (r of seen(); track r.key) {
+              <div
+                class="tr seen"
+                [class.with-target]="showTargets()"
+                [class.off]="!r.included"
+                role="row"
+              >
+                <span role="cell"
+                  ><input
+                    type="checkbox"
+                    class="chk"
+                    [checked]="r.included"
+                    [attr.aria-label]="'Include ' + r.label + ' in this batch'"
+                    (change)="include(r.ref, $any($event.target).checked)"
+                /></span>
+                <span role="cell"
+                  ><span class="cell-nm">{{ r.label }}</span
+                  ><span class="small">{{ r.where }}</span></span
+                >
+                <span role="cell"
+                  ><span class="cc">Its last runs</span><span class="num">{{ r.seen }}</span></span
+                >
+                @if (showTargets()) {
+                  <span role="cell">
+                    <span class="cc">Target</span>
+                    @if (r.target != null && r.included) {
+                      <select
+                        class="tgt"
+                        [class.own]="r.own"
+                        [attr.aria-label]="'Target for ' + r.label"
+                        (change)="setTarget(r.ref, $any($event.target).value)"
+                      >
+                        <option value="" [selected]="!r.own">{{ r.batchText }}</option>
+                        @for (o of r.options; track o.value) {
+                          <option [value]="o.value" [selected]="r.own && +o.value === r.target">
+                            {{ o.text }} - its own
+                          </option>
+                        }
+                      </select>
+                    }
+                  </span>
+                }
+                <span role="cell">
+                  <span class="cc">Outlook</span>
+                  <span class="ow">
+                    @if (r.mark) {
+                      <assay-mark [of]="r.mark" size="md" />
+                    }
+                    {{ r.word }}</span
+                  >
+                  <span class="small">{{ r.line }}</span>
+                  @if (r.drives) {
+                    <span class="drive">Drives the size</span>
+                  }
+                </span>
+                <span role="cell" class="right"
+                  ><span class="cc">Alone, for {{ goalText() }}</span
+                  ><span class="fig">{{ r.size }}</span
+                  ><span class="small">{{ r.sizeCap }}</span></span
+                >
+              </div>
+            }
+          </div>
+          @if (goal(); as g) {
+            @if (g.out) {
+              <assay-goal-out class="g-wide" [best]="g.best" [text]="g.text" />
+            } @else if (g.text) {
+              <p class="concl g-wide">{{ g.text }}</p>
+            }
+          }
+        </assay-guide-section>
+      }
+
+      @if (sec()['once']; as s) {
+        <assay-guide-section [section]="s" sub="Recommended: many runs only repeat one result">
+          <assay-first-step
+            class="g-wide"
+            title="Every run gives the same result."
+            action="Run it once instead"
+            [busy]="starting()"
+            (act)="runOnce()"
+            >{{ onceLine() }}</assay-first-step
+          >
+        </assay-guide-section>
+      }
+
+      @if (trial(); as tr) {
+        <assay-guide-section [section]="sec()['trial']" [sub]="tr.lead">
+          <assay-first-step
+            class="g-wide"
+            [title]="tr.title"
+            [facts]="tr.facts"
+            [action]="'Run ' + tr.t.times + ' times first'"
+            [busy]="starting()"
+            (act)="runTrial()"
+          >
+            When it finishes, the trial shows
+            <span class="done"><assay-mark of="Done" />Done</span> with what it learned about each
+            check; then this page can say how likely each size is to answer.
+          </assay-first-step>
+        </assay-guide-section>
+      }
+
+      @if (sec()['cheaper']; as s) {
+        <assay-guide-section [section]="s" [sub]="cheaperSub()">
+          <div class="tb g-wide" role="table" [attr.aria-label]="s.label">
+            <div class="tr h opts" role="row">
+              <span role="columnheader" class="g-cap">Instead</span>
+              <span role="columnheader" class="g-cap">Size</span>
+              <span role="columnheader" class="g-cap">What it gets</span>
+              <span role="columnheader" class="g-cap"></span>
+            </div>
+            @for (c of cheaper(); track c.title) {
+              <div class="tr opts" role="row">
+                <span role="cell"
+                  ><span class="cell-nm">{{ c.title }}</span
+                  ><span class="small">{{ c.line }}</span></span
+                >
+                <span role="cell"
+                  ><span class="cc">Size</span><span class="fig">{{ c.fig }}</span
+                  ><span class="small">{{ c.cap }}</span></span
+                >
+                <span role="cell" class="marked">
+                  <assay-mark [of]="c.reach ? 'Passed' : 'Inconclusive'" size="md" />
+                  <span
+                    ><b>{{ c.gets }}</b>
+                    @if (c.note) {
+                      <span class="small">{{ c.note }}</span>
+                    }
+                  </span>
+                </span>
+                <span role="cell" class="right"
+                  ><button type="button" class="go" (click)="use(c.o)">Use this</button></span
+                >
+              </div>
+            }
+          </div>
+        </assay-guide-section>
+      }
+
+      @if (sec()['sizes']; as s) {
+        <assay-guide-section
+          [section]="s"
+          [sub]="
+            'The whole ' +
+            noun() +
+            ', each time' +
+            (e.goal != null
+              ? ' · goal: a ' + goalText() + ' chance that every check gets an answer'
+              : '')
+          "
+        >
+          <assay-size-picker
+            class="g-wide"
+            [sizes]="sizes()"
+            [labelledBy]="s.id + '-title'"
+            [other]="otherSize()"
+            [otherText]="customShown()"
+            [otherInvalid]="!!(timesIssue() || apiProblems()['times'])"
+            [untilText]="untilText()"
+            [chart]="chart()"
+            [noChart]="noChart()"
+            (size)="pickSize($event)"
+            (until)="pickUntil()"
+            (typed)="typeTimes($event)"
+          />
+          @if (timesIssue() ?? apiProblems()['times']; as issue) {
+            <p class="err g-wide">{{ issue }}</p>
+          }
+          <dl class="defs">
+            @if (!untilOn() && e.floor_explanation) {
+              <dt>The least that can answer</dt>
+              <dd>{{ e.floor_explanation }}</dd>
+            }
+            @if (takes(); as t) {
+              <dt>What it takes</dt>
+              <dd>{{ t }}</dd>
+            }
+            <dt>What it costs</dt>
+            <dd>Each time is a full run of the {{ noun() }}, paid for like any run.</dd>
+            @if (skipped().length) {
+              <dt>No verdict</dt>
+              <dd>
+                <span class="val">
+                  @for (c of skipped(); track c.entry + c.label; let last = $last) {
+                    <b>{{ c.label }}</b>
+                    @if (e.entries.length > 1) {
+                      · {{ c.entry }}
+                    }
+                    @if (c.reason) {
+                      - {{ c.reason }}
+                    }
+                    @if (!last) {
+                      <br />
+                    }
+                  }
+                </span>
+              </dd>
+            }
+          </dl>
+          @for (w of warnings(); track w.code) {
+            <p class="warn g-wide">{{ w.message }}</p>
+          }
+        </assay-guide-section>
+      }
+
+      @if (outcome(); as o) {
+        <assay-guide-section [section]="sec()['outcome']" [sub]="outLead()">
+          <p class="oc g-wide">{{ o.text }}</p>
+          @if (o.parts.length) {
+            <assay-status-tally
+              class="g-wide split"
+              [label]="o.text"
+              [parts]="o.parts"
+              [still]="true"
+            />
+          }
+          <!-- Until there's an answer: the suggested fixed size's ending, to weigh it against. -->
+          @if (o.alt; as a) {
+            <p class="alt g-wide">{{ a.text }}</p>
+            <assay-status-tally
+              class="g-wide split"
+              [label]="a.text"
+              [parts]="a.parts"
+              [still]="true"
+              [thin]="true"
+            />
+          }
+        </assay-guide-section>
+      }
+    </div>
+  } @else if (estimating()) {
+    <p class="waiting">Estimating…</p>
+  }
+
+  <assay-guide-section [section]="sec()['note']" sub="Optional">
+    <div class="lfield g-wide noted">
+      <label for="sp-note">What’s different this time</label>
+      <textarea
+        id="sp-note"
+        rows="2"
+        maxlength="500"
+        [ngModel]="note()"
+        (ngModelChange)="note.set($event)"
+        placeholder="e.g. prompt v2: shorter answers"
+      ></textarea>
+      <span class="lfield-help">Shown in the batch list and when comparing two batches.</span>
+    </div>
+  </assay-guide-section>
+</div>
+
+<!-- Start and Cancel, in view at the bottom of the window - and why Start can't go yet. -->
+<assay-dock
+  label="Start the batch"
+  [head]="costParts().head"
+  [rest]="costParts().rest"
+  [fix]="fixes()"
+>
+  <button
+    type="button"
+    class="btn"
+    [class.btn-primary]="!startQuiet()"
+    [class.btn-secondary]="startQuiet()"
+    [disabled]="primaryDisabled()"
+    (click)="start()"
+  >
+    {{ primaryLabel() }}
+  </button>
+  <button type="button" class="word" (click)="cancel()">Cancel</button>
+</assay-dock>

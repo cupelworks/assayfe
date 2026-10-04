@@ -1,0 +1,69 @@
+<assay-guide-section [section]="section()" [sub]="sub()">
+  <button type="button" class="quiet" sectionRail [disabled]="loading()" (click)="check()">
+    {{ loading() ? 'Checking…' : 'Check again' }}
+  </button>
+
+  @if (error(); as e) {
+    <p class="err wide">Couldn't check the workers: {{ e }}</p>
+  }
+  <p class="intro">
+    The broker queues runs and connection tests; workers pick them up and run them. A worker started
+    before the code changed has to be restarted to run the current code.
+  </p>
+
+  @if (health(); as h) {
+    @if (view(); as v) {
+      <assay-state-block
+        class="wide state"
+        role="status"
+        caption="Overall"
+        [of]="mark()"
+        [word]="v.label"
+        [say]="v.text"
+        [facts]="facts()"
+      />
+    }
+    @if (h.broker.error; as be) {
+      <p class="wide broker">
+        <span class="cap">Broker error</span><span class="mono">{{ be }}</span>
+      </p>
+    }
+    @if (h.workers.length) {
+      <assay-catalog-table class="wide workers" label="The workers" [columns]="columns">
+        @for (w of h.workers; track w.name) {
+          <assay-catalog-row [name]="w.name" [expandable]="false">
+            <assay-catalog-cell caption="Version"
+              ><span class="mono" [class.muted]="!w.version">{{
+                w.version ?? 'unknown'
+              }}</span></assay-catalog-cell
+            >
+            <assay-catalog-cell caption="State"
+              ><span class="st"
+                ><assay-mark [of]="w.problem ? 'Amber' : 'Green'" />{{
+                  w.problem ? 'Restart needed' : 'Up to date'
+                }}</span
+              ></assay-catalog-cell
+            >
+            <assay-catalog-cell caption="Problem">
+              <span [class.muted]="!w.problem">{{ w.problem ?? 'None' }}</span>
+              @if (w.missing_tasks.length) {
+                <span class="tasks mono">{{ w.missing_tasks.join(', ') }}</span>
+              }
+            </assay-catalog-cell>
+          </assay-catalog-row>
+        }
+      </assay-catalog-table>
+    } @else {
+      <p class="none-yet">
+        <b>{{ h.broker.reachable ? 'No workers.' : 'No broker.' }}</b
+        ><span>{{
+          h.broker.reachable
+            ? 'No worker is connected to the broker.'
+            : "Workers can't be listed while the broker is unreachable."
+        }}</span>
+      </p>
+    }
+  } @else if (!error()) {
+    <p class="wide muted">Checking…</p>
+  }
+</assay-guide-section>

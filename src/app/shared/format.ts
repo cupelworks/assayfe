@@ -1,4 +1,4 @@
-import { TestStatus } from '../api/models';
+import { RunCounts, TestStatus } from '../api/models';
 
 export function rel(iso?: string | null) {
   if (!iso) return '-';
@@ -10,6 +10,10 @@ export function rel(iso?: string | null) {
   return `${Math.round(h / 24)} d ago`;
 }
 export const short = (id?: string | null) => String(id ?? '').slice(0, 8);
+/** "1 type", "15 types": a count and its noun, plural unless it's 1 - "1 batch", "20 batches" given
+ *  the plural. */
+export const counted = (n: number, noun: string, plural = noun + 's') =>
+  `${n} ${n === 1 ? noun : plural}`;
 /** "Untitled · 1a2b3c4d" - the label for anything nameable that has no name. */
 export const untitled = (id?: string | null) => `Untitled · ${short(id)}`;
 /** A test's (or frozen entry's, or run's) display name: its own name, or `untitled(id)` when the
@@ -22,6 +26,11 @@ export const displayName = (name: string | null | undefined, id?: string | null)
 export function absTime(iso?: string | null) {
   if (!iso) return '';
   return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
+/** A day, for a sentence: "24 Sep" (in the reader's own order). */
+export function shortDate(iso?: string | null) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 }
 /** Best-effort clipboard write - false (never throws) if the Clipboard API is unavailable or
  *  permission is denied, so a caller can skip its "Copied" feedback rather than show it falsely. */
@@ -51,9 +60,22 @@ export const statusLabel = (s?: string) => STATUS.find((x) => x.key === s)?.labe
 /** Pending or Running - a run that hasn't settled yet, i.e. one a page still has to wait (poll)
  *  for. The one place this pair of statuses is spelled out. */
 export const isInFlight = (s?: string | null) => s === 'Pending' || s === 'Running';
+/** A run's statuses as the Guide groups them: how it ended, then what is still under way - the
+ *  Overview's tallies and Runs' tiles. */
+export const RUNS_ENDED = ['Green', 'Amber', 'Red', 'NotRan'];
+export const UNDER_WAY = ['Running', 'Pending'];
+/** "Contains", "Contains and Exact Match", "BLEU, ROUGE and METEOR": names in a sentence. */
+export const listed = (xs: readonly string[]) =>
+  xs.length < 2 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`;
 export function countByStatus(runs: { status: TestStatus }[]) {
   return STATUS.map((s) => ({ ...s, value: runs.filter((r) => r.status === s.key).length }));
 }
+/** One status's count, with its label and colour - a row of countByStatus. */
+export type StatusCount = ReturnType<typeof countByStatus>[number];
+/** The API's runs counted by status (`RunCounts` - an execution's `runs`, `GET /runs/facets`), as
+ *  rows - the statuses with none left out. */
+export const statusCountsOf = (counts: RunCounts | null | undefined): StatusCount[] =>
+  STATUS.map((s) => ({ ...s, value: counts?.[s.key] ?? 0 })).filter((s) => s.value > 0);
 /** A 422 entry's `loc` after FastAPI's own location segment ("body"/"query") - the part that
  *  names the field (["body","settings","url"] → ["settings","url"]). */
 const locPath = (x: any): string[] => (x?.loc ?? []).slice(1).map(String);

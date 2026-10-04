@@ -1,0 +1,120 @@
+<div class="g-wrap">
+  <assay-guide-head
+    kicker="Catalog"
+    title="Statistical tests"
+    lede="What a batch can ask, how many times it needs, and how to read its answer."
+  >
+    <assay-catalog-key [items]="key" />
+    <assay-catalog-index label="Kinds" [items]="index()" [(selected)]="kind" [link]="chartsLink" />
+    <assay-catalog-filter
+      placeholder="Name, question, what it reads, which checks…"
+      [shown]="total()"
+      [(query)]="filter.query"
+    />
+  </assay-guide-head>
+
+  @if (!store.items().length) {
+    <p class="cat-loading">Loading the catalogue…</p>
+  } @else {
+    @for (g of groups(); track g.key) {
+      <assay-guide-section [section]="g.section" [sub]="g.sub">
+        <assay-catalog-table [label]="g.label" [columns]="columns" [empty]="g.empty">
+          @for (t of g.tests; track t.id) {
+            <assay-catalog-row
+              [id]="t.id"
+              [name]="t.name"
+              [tags]="t.tags"
+              [open]="open.is(t.id)"
+              (toggle)="open.toggle(t.id)"
+            >
+              <assay-catalog-cell caption="What it asks">{{ t.question }}</assay-catalog-cell>
+              <assay-catalog-cell caption="Answers">
+                <span class="answers">
+                  @for (v of t.verdicts; track v) {
+                    <span class="answer"><assay-mark [of]="v" size="md" />{{ markLabel(v) }}</span>
+                  } @empty {
+                    <!-- The trial: no verdict - it ends Done, with what it learned. -->
+                    <span class="answer"
+                      ><assay-mark of="Done" size="md" />Done, with no verdict</span
+                    >
+                  }
+                </span>
+              </assay-catalog-cell>
+              <assay-catalog-cell caption="Fewest times"
+                ><assay-catalog-tag [tag]="t.floor"
+              /></assay-catalog-cell>
+              @if (open.is(t.id)) {
+                <assay-catalog-details>
+                  <div class="cat-split">
+                    <div class="cat-block">
+                      <span class="cat-cap">How many times</span>
+                      <p>{{ t.explanation }}</p>
+                      @if (t.examples; as ex) {
+                        <table class="ex">
+                          <thead>
+                            <tr>
+                              @for (h of ex.head; track $index) {
+                                <th>{{ h }}</th>
+                              }
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (r of ex.rows; track $index) {
+                              <tr>
+                                @for (c of r; track $index) {
+                                  <td>{{ c }}</td>
+                                }
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      }
+                    </div>
+                    <div>
+                      @if (t.params.length) {
+                        <div class="cat-block">
+                          <span class="cat-cap">Parameters</span>
+                          <ul class="cat-list">
+                            @for (p of t.params; track p.label) {
+                              <li>
+                                <b>{{ p.label }}</b
+                                ><span class="range">{{ p.range }}</span>
+                                <div class="cat-sm">{{ p.hint }}</div>
+                              </li>
+                            }
+                          </ul>
+                        </div>
+                      }
+                      @if (t.charts.length) {
+                        <div class="cat-block">
+                          <span class="cat-cap">Its charts</span>
+                          <div class="cat-go">
+                            @for (c of t.charts; track c.anchor) {
+                              <a routerLink="/charts" [fragment]="c.anchor">{{ c.label }} →</a>
+                            }
+                          </div>
+                        </div>
+                      }
+                      <!-- The method is the statistician's wording: there for whoever asks for it. -->
+                      <button
+                        type="button"
+                        class="adv-toggle calc-toggle"
+                        [attr.aria-expanded]="calc.is(t.id)"
+                        (click)="calc.toggle(t.id)"
+                      >
+                        How is this calculated? <assay-chevron [open]="calc.is(t.id)" />
+                      </button>
+                      @if (calc.is(t.id)) {
+                        <p class="calc">{{ t.method }}</p>
+                      }
+                    </div>
+                  </div>
+                </assay-catalog-details>
+              }
+            </assay-catalog-row>
+          }
+        </assay-catalog-table>
+      </assay-guide-section>
+    }
+  }
+</div>

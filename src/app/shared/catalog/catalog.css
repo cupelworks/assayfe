@@ -1,0 +1,100 @@
+/* A catalogue page's own content, which each catalogue page includes for what it projects: the
+   line it shows while it loads, and what goes in an open row's details (<assay-catalog-details>) -
+   captions in small capitals, either beside each value (cat-defs, a definition list) or over
+   blocks in two columns (cat-split, cat-block). */
+.cat-loading {
+  margin: 0;
+  padding: 24px 0;
+  font-size: 14px;
+  color: var(--color-neutral-600);
+}
+.cat-defs {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 10px 24px;
+  margin: 0;
+}
+.cat-defs dt,
+.cat-cap {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-neutral-600);
+}
+.cat-defs dt {
+  padding-top: 2px;
+}
+.cat-defs dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cat-cap {
+  display: block;
+  margin-bottom: 6px;
+}
+.cat-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 32px;
+}
+.cat-block + .cat-block {
+  margin-top: 18px;
+}
+.cat-block p {
+  margin: 0;
+  text-wrap: pretty;
+}
+/* A list of named things - a type's configuration, a test's parameters. */
+.cat-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cat-list b {
+  font-weight: 700;
+  color: var(--color-text);
+}
+.cat-sm {
+  font-size: 12px;
+  color: var(--color-neutral-600);
+}
+.cat-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+/* Links on to another page, one under the other. */
+.cat-go {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cat-go a {
+  width: fit-content;
+  font-weight: 700;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.cat-go a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 960px) {
+  .cat-defs,
+  .cat-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cat-defs {
+    gap: 2px;
+  }
+  .cat-defs dd {
+    margin-bottom: 12px;
+  }
+  .cat-split > * + * {
+    margin-top: 18px;
+  }
+}

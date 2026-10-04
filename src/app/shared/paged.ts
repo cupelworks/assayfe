@@ -17,11 +17,15 @@ export class Paged<T> {
   ) {
     this.limit = signal(limit);
   }
+  /** Bumped by each reload: an answer to an earlier one, landing late, is dropped. */
+  private seq = 0;
   reload() {
+    const n = ++this.seq;
     this.loading.set(true);
     this.error.set(null);
     this.fetch(this.offset(), this.limit()).subscribe({
       next: (p) => {
+        if (n !== this.seq) return;
         this.items.set(p.items);
         this.total.set(p.total);
         this.loading.set(false);
@@ -31,6 +35,7 @@ export class Paged<T> {
         }
       },
       error: (e) => {
+        if (n !== this.seq) return;
         this.loading.set(false);
         this.error.set(this.onError ? this.onError(e) : 'Request failed');
       },

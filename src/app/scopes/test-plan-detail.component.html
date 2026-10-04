@@ -1,76 +1,76 @@
-<div class="crumbs">
-  <a routerLink="/test-plans">Test plans</a><span>/</span><span class="cur">{{ name() }}</span>
-</div>
-<div class="hero">
-  <div>
-    <div class="kicker">Test plan</div>
-    <h1>{{ name() }}</h1>
-  </div>
-  <div class="hero-actions">
-    <button class="btn btn-ghost" (click)="open('rename')">Rename</button>
-    <button
-      class="btn btn-ghost"
-      (click)="open('delete')"
-      [disabled]="hasRuns()"
-      [title]="hasRuns() ? 'Blocked: plan has been executed' : ''"
-    >
-      Delete
-    </button>
-    <button class="btn btn-secondary" (click)="open('link')">Link test sets</button>
-    <button class="btn btn-primary" (click)="runLive()" [disabled]="act.busy() || !page.total()">
-      {{ act.busy() ? 'Working…' : 'Run live' }}
-    </button>
-  </div>
-</div>
-@if (act.msg(); as m) {
-  <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
-}
-<section class="split">
-  <div class="cell cell-r">
-    <div class="row-head">
-      <h2>Linked test sets</h2>
-      <span class="small">{{ linkedTotal() }} sets · live links, never frozen</span>
+<div class="g-wrap">
+  <assay-guide-head
+    size="one"
+    kicker="Test plan"
+    [crumbs]="[{ label: 'Test plans', link: '/test-plans' }]"
+    [copyId]="id()"
+    [title]="name()"
+    [lede]="lede()"
+  >
+    <div class="page-aside" guideHeadAside>
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="runLive()"
+        [disabled]="act.busy() || !canRun()"
+      >
+        {{ act.busy() ? 'Working…' : 'Run live' }}
+      </button>
+      @if (canRun()) {
+        <a
+          class="go new-tab"
+          routerLink="run-with-statistics"
+          target="_blank"
+          rel="noopener"
+          aria-label="Run with statistics, opens in a new tab"
+          >Run with statistics<assay-arrow-out
+        /></a>
+      } @else {
+        <button type="button" class="go" disabled>Run with statistics<assay-arrow-out /></button>
+      }
+      <assay-quiet-actions [actions]="quiet()" [why]="why()" (act)="quietAct($event)" />
     </div>
-    <table class="table">
-      <colgroup>
-        <col />
-        <col style="width: 110px" />
-        <col style="width: 120px" />
-        <col style="width: 90px" />
-      </colgroup>
-      <thead>
-        <tr>
-          <th>Test set</th>
-          <th>Entries</th>
-          <th>Created</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (l of links(); track l.id) {
-          <tr>
-            <td class="strong">
-              <a class="plain" [routerLink]="['/test-sets', l.test_set.id]">{{
-                l.test_set.name
-              }}</a>
-            </td>
-            <td class="num">{{ l.test_set.entry_count ?? '…' }}</td>
-            <td class="muted"><assay-rel-time [iso]="l.test_set.created_at" /></td>
-            <td>
-              <button class="btn btn-ghost btn-sm" (click)="open('unlink', l)">Remove</button>
-            </td>
-          </tr>
-        } @empty {
-          @if (!page.loading()) {
-            <tr>
-              <td colspan="4" class="empty">
-                No test sets linked - live execution returns 409 until at least one is.
-              </td>
-            </tr>
-          }
-        }
-      </tbody>
-    </table>
+    <div class="now">
+      <assay-latest-verdict [batch]="verdicts.newest()" [canRun]="canRun()" />
+      <assay-latest-run [kind]="kind" [id]="id()" [run]="execs.newest()" />
+    </div>
+  </assay-guide-head>
+
+  <assay-banner [msg]="act.msg()" />
+
+  <assay-guide-section [section]="sections[0]" sub="Linked as they are, never copied">
+    <assay-catalog-table label="Its test sets" [columns]="columns" [empty]="linksEmpty()">
+      @for (l of page.items(); track l.id) {
+        @let r = setRuns().get(l.test_set.id);
+        <assay-catalog-row
+          [name]="l.test_set.name"
+          [link]="['/test-sets', l.test_set.id]"
+          [expandable]="false"
+        >
+          <assay-catalog-cell caption="Tests"
+            ><span class="num">{{ l.test_set.entry_count ?? '…' }}</span></assay-catalog-cell
+          >
+          <assay-catalog-cell caption="Its latest run">
+            <assay-latest-status
+              [counts]="r?.counts ?? null"
+              [at]="r?.at ?? null"
+              none="Never run"
+            />
+          </assay-catalog-cell>
+          <assay-catalog-cell caption="Entry ID" [copyId]="l.id" />
+          <assay-catalog-cell caption="">
+            <button
+              type="button"
+              class="row-act"
+              [attr.aria-label]="'Remove ' + l.test_set.name + ' from the plan'"
+              (click)="askRemove(l)"
+            >
+              Remove
+            </button>
+          </assay-catalog-cell>
+        </assay-catalog-row>
+      }
+    </assay-catalog-table>
     <assay-pager
       [total]="page.total()"
       [offset]="page.offset()"
@@ -78,23 +78,41 @@
       (offsetChange)="page.go($event)"
       (limitChange)="page.size($event)"
     />
-  </div>
-  <div class="cell">
-    <assay-executions-panel
-      kind="test-plans"
+    <p class="note">
+      <b>A plan links each set itself, not a copy.</b> Its runs take the sets' tests as they are
+      then. Remove takes a set out of the plan; the set stays.
+    </p>
+    <div class="ends">
+      <button type="button" class="go" (click)="open('link')">Link test sets…</button>
+    </div>
+  </assay-guide-section>
+
+  <assay-guide-section [section]="sections[1]" sub="Its batches, newest first">
+    <assay-verdicts-table
+      #verdicts
+      [scope]="statsScope()"
+      [version]="version()"
+      empty="No verdict yet. A verdict comes from running its sets many times with statistics: it says whether the plan passes, not just how one run went."
+    />
+  </assay-guide-section>
+
+  <assay-guide-section [section]="sections[2]" sub="Each runs every test of its sets once">
+    <assay-executions-table
+      #execs
+      [kind]="kind"
       [id]="id()"
       [version]="version()"
       [busy]="act.busy()"
       (replay)="replay($event)"
     />
-  </div>
-</section>
+  </assay-guide-section>
+</div>
 
 @switch (dlg()) {
   @case ('rename') {
     <assay-name-dialog
       [kicker]="name()"
-      title="Rename test plan"
+      title="Rename the test plan"
       submitLabel="Rename"
       [initial]="name()"
       [busy]="act.busy()"
@@ -107,8 +125,8 @@
     <assay-confirm-dialog
       [kicker]="name()"
       title="Delete this test plan?"
-      body="Removes the plan and its links; linked test sets are untouched. Blocked (409) once the plan has been executed."
-      confirmLabel="Delete test plan"
+      body="It goes for good, with its links. The test sets it links stay. Deleting can't be undone."
+      confirmLabel="Delete the test plan"
       [busy]="act.busy()"
       [error]="act.err()"
       (confirm)="remove()"
@@ -119,9 +137,10 @@
     <assay-pick-dialog
       [kicker]="name()"
       title="Link test sets"
-      [rows]="pickRows()"
-      [submitLabel]="pickLabel"
-      emptyText="No test sets exist yet."
+      noun="test sets"
+      emptyText="No test sets yet."
+      [rows]="setRows()"
+      [submitLabel]="linkLabel"
       [busy]="act.busy()"
       [error]="act.err()"
       (confirm)="link($event)"
@@ -129,16 +148,18 @@
     />
   }
   @case ('unlink') {
-    <assay-confirm-dialog
-      [kicker]="name()"
-      [title]="'Remove “' + unlinkTarget()?.test_set?.name + '”?'"
-      body="Only the link is removed. The set, its entries, and any past executions of this plan are unaffected."
-      confirmLabel="Remove link"
-      [danger]="false"
-      [busy]="act.busy()"
-      [error]="act.err()"
-      (confirm)="unlink()"
-      (closed)="dlg.set(null)"
-    />
+    @if (unlinkTarget(); as l) {
+      <assay-confirm-dialog
+        [kicker]="name()"
+        [title]="'Remove ' + l.test_set.name + ' from the plan?'"
+        [body]="removeBody(l)"
+        confirmLabel="Remove"
+        [danger]="false"
+        [busy]="act.busy()"
+        [error]="act.err()"
+        (confirm)="unlink()"
+        (closed)="dlg.set(null)"
+      />
+    }
   }
 }

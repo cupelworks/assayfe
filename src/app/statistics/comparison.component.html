@@ -1,0 +1,193 @@
+<div class="g-wrap head-rule">
+  <assay-guide-head
+    size="one"
+    kicker="Comparison"
+    [crumbs]="crumbs()"
+    [copyId]="id()"
+    [title]="c()?.summary ?? ''"
+    [lede]="lede()"
+  >
+    @if (c()?.note; as n) {
+      <p class="head-note">“{{ n }}”</p>
+    }
+  </assay-guide-head>
+</div>
+@if (loadError(); as e) {
+  <div class="msg msg-err">{{ e }}</div>
+}
+@if (c(); as cmp) {
+  <section class="ab">
+    @for (s of sides(); track s.role) {
+      <div class="side">
+        <div class="label">{{ s.role }}</div>
+        <div class="side-top">
+          <span class="st"><assay-mark [of]="s.b.status" />{{ markLabel(s.b.status) }}</span>
+          <span class="muted">{{ s.when }} · {{ s.b.times_requested }} times</span>
+        </div>
+        @if (s.b.note) {
+          <div class="side-note">“{{ s.b.note }}”</div>
+        }
+        <a class="plain small" [routerLink]="s.link">Open the batch →</a>
+      </div>
+    }
+  </section>
+
+  <section class="stats">
+    @for (t of tiles(); track t.key) {
+      <div class="stat">
+        <div class="label"><assay-mark [of]="t.key" />{{ t.label }}</div>
+        <div class="mid num">{{ t.n }}</div>
+      </div>
+    }
+  </section>
+
+  @if (paired(); as p) {
+    <section class="cell cell-b">
+      <div class="row-head">
+        <h2>Paired by entry</h2>
+        <span class="verdict-inline"
+          ><assay-mark [of]="p.verdict ?? 'none'" />{{ markLabel(p.verdict ?? 'none') }}</span
+        >
+      </div>
+      <p class="muted reason">{{ p.reason }}</p>
+      <p class="small">{{ p.n_pairs }} pairs</p>
+      <div class="pairs">
+        @for (x of p.pairs; track x.name + x.label) {
+          <div class="pair-name">
+            {{ x.label }}<span class="small">{{ x.name }}</span>
+          </div>
+          <assay-dumbbell [a]="x.rate_a" [b]="x.rate_b" [mark]="x.cls" />
+          <div class="small num">{{ x.text }}</div>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="cell">
+    <div class="row-head">
+      <span class="head-with-link">
+        <h2>Checks</h2>
+        <a class="read-link" routerLink="/charts" fragment="chart-compare"
+          >How to read A against B →</a
+        >
+      </span>
+    </div>
+    <div class="cols th">
+      <span class="label">Check</span>
+      <div>
+        <span class="label">{{ valueAxis().pct ? 'Pass rate' : 'Score' }} · A → B</span>
+        <div class="ticks">
+          @for (t of valueAxis().ticks; track $index; let first = $first, last = $last) {
+            <span
+              [style.left.%]="((t - valueAxis().min) / (valueAxis().max - valueAxis().min)) * 100"
+              [class.first]="first"
+              [class.last]="last"
+              >{{
+                valueAxis().pct ? (t * 100 | number: '1.0-0') + '%' : (t | number: '1.0-2')
+              }}</span
+            >
+          }
+        </div>
+      </div>
+      <div>
+        <span class="label">B − A · its range</span>
+        <div class="ticks">
+          @for (t of diffAxis().ticks; track $index; let first = $first, last = $last) {
+            <span
+              [style.left.%]="((t - diffAxis().min) / (diffAxis().max - diffAxis().min)) * 100"
+              [class.first]="first"
+              [class.last]="last"
+              >{{ diffAxis().scores ? (t | number: '1.0-2') : (t * 100 | number: '1.0-0') }}</span
+            >
+          }
+        </div>
+      </div>
+      <span class="label">Verdict</span>
+    </div>
+    @for (r of shownRows(); track r.key) {
+      <div class="cols row">
+        <div class="check">
+          <span class="t">{{ r.label }}</span>
+          <span class="s">{{ r.entry ?? r.type ?? '' }}</span>
+        </div>
+        <div class="chart-cell">
+          <assay-dumbbell
+            [a]="r.a"
+            [b]="r.b"
+            [min]="valueAxis().min"
+            [max]="valueAxis().max"
+            [mark]="r.verdict"
+            ><span class="capn">{{ r.values }}</span></assay-dumbbell
+          >
+        </div>
+        <div class="chart-cell">
+          @if (r.diff) {
+            <assay-range-chart
+              [min]="diffAxis().min"
+              [max]="diffAxis().max"
+              [lower]="r.diff.lower"
+              [upper]="r.diff.upper"
+              [point]="r.diff.point"
+              [line]="cmp.parameters['margin'] != null ? -cmp.parameters['margin'] : 0"
+              [mark]="r.verdict"
+              [ticks]="diffAxis().ticks"
+            >
+              @if (r.diffCap; as d) {
+                <span class="capn"
+                  ><b>{{ d.main }}</b
+                  >{{ d.rest }}</span
+                >
+              }
+            </assay-range-chart>
+          } @else if (r.effect != null) {
+            <assay-range-chart
+              [min]="0"
+              [max]="1"
+              [point]="r.effect"
+              [line]="0.5"
+              [mark]="r.verdict"
+            >
+              @if (r.diffCap; as d) {
+                <span class="capn">{{ d.rest }}</span>
+              }
+            </assay-range-chart>
+          }
+        </div>
+        <div class="verdict">
+          <span class="w"><assay-mark [of]="r.verdict" />{{ r.word }}</span>
+          <span class="small">{{ r.reason }}</span>
+          @if (r.decide) {
+            <span class="small">{{ r.decide }}</span>
+          }
+        </div>
+      </div>
+    }
+    @if (foldable()) {
+      <button type="button" class="fold" (click)="showQuiet.set(!showQuiet())">
+        {{
+          showQuiet()
+            ? 'Show only the differences ↑'
+            : 'Show the ' +
+              quietCount() +
+              ' with ' +
+              (cmp.engine === 'no_worse' ? 'no worse' : 'no clear difference') +
+              ' ↓'
+        }}
+      </button>
+    }
+    @if (cmp.result.unmatched.length) {
+      <div class="unmatched">
+        <div class="label">In one batch only - not compared</div>
+        @for (u of cmp.result.unmatched; track $index) {
+          <div class="small">
+            <span class="strong">{{ u.label ?? u.name }}</span>
+            @if (u.label) {
+              · {{ u.name }}
+            }
+            - only in {{ u.only_in === 'a' ? 'A, the baseline' : 'B, the change' }}
+          </div>
+        }
+      </div>
+    }
+  </section>
+}

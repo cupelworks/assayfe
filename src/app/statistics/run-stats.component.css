@@ -1,0 +1,247 @@
+/* Run with statistics on the Guide's layout: its head, then each
+   step a section - its body on nine columns, across it with guide.css's .g-wide - and Start and
+   Cancel in the bar at the bottom of the window (<assay-dock>). The question's tiles, the goal
+   out of reach, a first step and the sizes are components of their own (<assay-choice-tiles>,
+   <assay-goal-out>, <assay-first-step>, <assay-size-picker>). Rules: the dividers' 40%, a table's
+   rows 25%. */
+.est.stale {
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
+.waiting {
+  margin: 0 0 40px;
+  color: var(--color-neutral-600);
+}
+.err {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-accent);
+}
+
+/* Its parameters on the same thirds. */
+.params {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 24px;
+  margin-top: 36px;
+}
+.plain {
+  padding-top: 6px;
+  font-size: 15px;
+  color: var(--color-neutral-800);
+}
+.adv {
+  margin-top: 20px;
+}
+.adv .params {
+  margin-top: 16px;
+}
+
+/* 02 and the options: the app's tables - ruled rows, headings in small capitals (.g-cap), a
+   row's name as a cell's (.cell-nm), a figure and its small line (stats-figures.css). */
+.tb {
+  min-width: 0;
+}
+.tr {
+  display: grid;
+  column-gap: 24px;
+  align-items: start;
+  padding: 16px 0 18px;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text) 25%, transparent);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-neutral-900);
+}
+.tr.h {
+  align-items: end;
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--color-text);
+}
+/* A row's name on its own line, over what it is. */
+.tr .cell-nm {
+  display: block;
+}
+.seen {
+  grid-template-columns:
+    16px minmax(0, 2.3fr) minmax(0, 1.4fr) minmax(0, 3.1fr)
+    minmax(0, 1.1fr);
+}
+.seen.with-target {
+  grid-template-columns:
+    16px minmax(0, 2.3fr) minmax(0, 1.4fr) minmax(0, 1.6fr) minmax(0, 3.1fr)
+    minmax(0, 1.1fr);
+}
+.opts {
+  grid-template-columns: minmax(0, 4.2fr) minmax(0, 1.2fr) minmax(0, 2.8fr) minmax(0, 0.9fr);
+}
+.cc {
+  display: none;
+  margin-bottom: 2px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-neutral-600);
+}
+.right {
+  justify-self: end;
+  text-align: right;
+}
+.chk {
+  width: 16px;
+  height: 16px;
+  margin: 3px 0 0;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+.tgt {
+  max-width: 100%;
+  padding: 2px 0 4px;
+  border: 0;
+  border-bottom: 1px solid var(--color-divider);
+  border-radius: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--color-text);
+  cursor: pointer;
+}
+.tgt.own {
+  font-weight: 700;
+}
+.ow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.drive {
+  display: block;
+  margin-top: 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+.tr.off .cell-nm,
+.tr.off .num,
+.tr.off .ow,
+.tr.off .fig {
+  color: var(--color-neutral-500);
+}
+.concl {
+  margin: 20px 0 0;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--color-text);
+  text-wrap: pretty;
+}
+.marked {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  column-gap: 10px;
+}
+.marked assay-mark {
+  margin-top: 6px;
+}
+.marked b {
+  font-weight: 700;
+  color: var(--color-text);
+}
+/* Start, in the bar: the page's big button, as a first step's (<assay-first-step>). */
+assay-dock .btn {
+  min-height: 44px;
+  padding: 0 20px;
+}
+/* In a trial's sentence: the Done it ends on, framed. */
+.done {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.defs {
+  margin-top: 40px;
+}
+.defs dd {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--color-neutral-900);
+}
+/* What the API warns of: an amber rule over it. */
+.warn {
+  max-width: 660px;
+  margin: 28px 0 0;
+  padding-top: 12px;
+  border-top: 2px solid var(--color-status-amber);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--color-neutral-900);
+}
+
+/* 05: how it would most likely end, in a sentence, then a ruled row per verdict with a bar for
+   its chance - as the Overview's summaries. */
+.oc {
+  margin: 0;
+  max-width: 880px;
+  font-size: 21px;
+  line-height: 1.45;
+  color: var(--color-text);
+  text-wrap: pretty;
+}
+.split {
+  margin-top: 28px;
+}
+.alt {
+  margin: 40px 0 0;
+  max-width: 880px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--color-neutral-800);
+  text-wrap: pretty;
+}
+.alt + .split {
+  margin-top: 14px;
+}
+
+/* 06: a note, as the dialogs' fields - a line. */
+.noted {
+  max-width: 660px;
+}
+
+@media (max-width: 960px) {
+  .params {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 20px;
+  }
+  .tr.h {
+    display: none;
+  }
+  .cc {
+    display: block;
+  }
+  .seen,
+  .seen.with-target,
+  .opts {
+    grid-template-columns: 16px minmax(0, 1fr);
+    row-gap: 10px;
+  }
+  .seen > :not(:first-child) {
+    grid-column: 2;
+  }
+  .opts > * {
+    grid-column: 1 / -1;
+  }
+  .right {
+    justify-self: start;
+    text-align: left;
+  }
+  .oc {
+    font-size: 17px;
+  }
+}

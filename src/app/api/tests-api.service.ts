@@ -2,16 +2,27 @@ import { Injectable } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { forkJoin, map } from 'rxjs';
 import * as M from './models';
-import { ApiBase, PAGE } from './api-base';
+import { ApiBase, PAGE, QUERY } from './api-base';
+import { ListParams } from '../shared/work/api-list';
 
 @Injectable({ providedIn: 'root' })
 export class TestsApiService extends ApiBase {
-  tests(offset = 0, limit = 100) {
-    return this.http.get<M.TestCasePage>(this.u('/tests'), { params: PAGE(offset, limit) });
+  /** The tests the parameters let through (API 2.0: search, filters, sort - `ListParams`). */
+  tests(offset = 0, limit = 100, params: ListParams = {}) {
+    return this.http.get<M.TestCasePage>(this.u('/tests'), {
+      params: QUERY({ ...params, offset, limit }),
+    });
+  }
+  /** The tests' counts beside each filter value, within the others chosen - the list's own
+   *  parameters, and the Created edges to count from. */
+  testFacets(params: ListParams, edges: readonly string[]) {
+    return this.http.get<M.FacetCounts>(this.u('/tests/facets'), {
+      params: QUERY({ ...params, sort: undefined, created_edges: edges }),
+    });
   }
   /** tests() normalised to the common Page shape (the API names the array `test_cases`). */
-  testsPage(offset = 0, limit = 100) {
-    return this.tests(offset, limit).pipe(
+  testsPage(params: ListParams, offset = 0, limit = 100) {
+    return this.tests(offset, limit, params).pipe(
       map(
         (p) =>
           ({
@@ -19,12 +30,18 @@ export class TestsApiService extends ApiBase {
             offset: p.offset,
             limit: p.limit,
             items: p.test_cases,
-          }) as M.Page<M.TestCase>,
+          }) as M.Page<M.TestCaseRead>,
       ),
     );
   }
   test(id: string) {
-    return this.http.get<M.TestCase>(this.u(`/tests/${id}`));
+    return this.http.get<M.TestCaseRead>(this.u(`/tests/${id}`));
+  }
+  /** The sets holding a copy of the test, by name - 500 at most, a test's sets all at once. */
+  setsHolding(id: string, offset = 0, limit = 500) {
+    return this.http.get<M.SetsHoldingTest>(this.u(`/tests/${id}/test-sets`), {
+      params: PAGE(offset, limit),
+    });
   }
   createTest(body: M.TestCaseBody) {
     return this.http.post<M.TestCase>(this.u('/tests'), body);
@@ -35,10 +52,18 @@ export class TestsApiService extends ApiBase {
   deleteTests(ids: string[]) {
     return this.http.delete<unknown>(this.u('/tests'), { body: this.ids(ids) });
   }
-  createTestsFromDataset(datasetId: string, test_type_assignments?: M.TestTypeAssignment[]) {
+  /** Tests from a dataset's rows - every row, or `row_ids` (used in row-number order) - each named
+   *  after its prompt or numbered, with its row's recorded answer or none (API 2.0), and every one
+   *  with the same checks. */
+  createTestsFromDataset(
+    datasetId: string,
+    test_type_assignments?: M.TestTypeAssignment[],
+    how: M.FromDatasetOptions = {},
+  ) {
     return this.http.post<{ id: string; test_cases: M.Ref[] }>(this.u('/tests/from-dataset'), {
       id: datasetId,
       ...(test_type_assignments?.length ? { test_type_assignments } : {}),
+      ...how,
     });
   }
 

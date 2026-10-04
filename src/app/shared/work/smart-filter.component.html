@@ -1,0 +1,145 @@
+<div class="find">
+  @if (!compact()) {
+    <span class="cap" [id]="id + '-cap'">{{ caption() }}</span>
+  }
+  <div class="line" (click)="box.focus()">
+    @for (k of tokens(); track k.key) {
+      <span class="tok"
+        >{{ k.facet }}: <b>{{ k.value }}</b
+        ><button
+          type="button"
+          [attr.aria-label]="'Take out ' + k.facet + ': ' + k.value"
+          (click)="removeToken(k.key); $event.stopPropagation()"
+        >
+          ×
+        </button></span
+      >
+    }
+    <input
+      #box
+      type="text"
+      role="combobox"
+      aria-autocomplete="list"
+      [attr.aria-label]="label()"
+      [attr.aria-expanded]="popOpen()"
+      [attr.aria-controls]="id + '-pop'"
+      [attr.aria-activedescendant]="activeId()"
+      [placeholder]="placeholder()"
+      [value]="query()"
+      (input)="type($any($event.target).value)"
+      (focus)="focused.set(true)"
+      (keydown)="key($event)"
+    />
+  </div>
+  @if (popOpen()) {
+    <div class="pop sugg" role="listbox" [id]="id + '-pop'" [attr.aria-label]="label()">
+      @for (g of groups(); track g.label) {
+        <div class="grp" role="group" [attr.aria-label]="g.label">
+          <span class="gl">{{ g.label }}</span>
+          @for (o of g.opts; track o.id) {
+            <button
+              type="button"
+              class="sg"
+              role="option"
+              tabindex="-1"
+              [id]="o.id"
+              [class.on]="o.id === activeId()"
+              [attr.aria-selected]="o.id === activeId()"
+              (mousedown)="$event.preventDefault()"
+              (click)="choose(o)"
+            >
+              <span class="ol"
+                >{{ o.before }}<b>{{ o.match }}</b
+                >{{ o.after }}</span
+              ><span class="oc">{{ o.count }}</span>
+            </button>
+          }
+        </div>
+      }
+      <div class="keys" aria-hidden="true">
+        <span><kbd>↑ ↓</kbd> to move</span><span><kbd>Enter</kbd> to choose</span
+        ><span><kbd>Backspace</kbd> takes out the last filter</span>
+      </div>
+    </div>
+  }
+</div>
+
+@if (!compact()) {
+  <div class="side">
+    <span class="shown">{{ shown() }}</span>
+    @if (sortOptions().length) {
+      <assay-sort [options]="sortOptions()" [(value)]="sort" />
+    }
+    @if (anything()) {
+      <button type="button" class="go" (click)="clearAll()">Clear all</button>
+    }
+  </div>
+
+  @if (facets().length) {
+    <button
+      type="button"
+      class="facet filters"
+      [attr.aria-expanded]="facetsShown()"
+      (click)="facetsShown.set(!facetsShown())"
+    >
+      Filters
+      @if (chosenTotal()) {
+        <span class="n">{{ chosenTotal() }}</span>
+      }
+      <svg
+        viewBox="0 0 10 10"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.6"
+        aria-hidden="true"
+      >
+        <path d="M1.5 3.5 5 7l3.5-3.5"></path>
+      </svg>
+    </button>
+
+    <div class="facets" [class.shown]="facetsShown()" role="group" aria-label="Narrow the list">
+      @for (f of facets(); track f.key) {
+        @let n = countOf(f.key);
+        @let open = openFacet() === f.key;
+        <div class="fwrap">
+          <button
+            type="button"
+            class="facet"
+            [class.on]="n > 0 || open"
+            [attr.aria-expanded]="open"
+            (click)="toggleFacet(f.key)"
+          >
+            {{ f.label }}
+            @if (n) {
+              <span class="n">{{ n }}</span>
+            }
+            <svg
+              viewBox="0 0 10 10"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              aria-hidden="true"
+            >
+              <path d="M1.5 3.5 5 7l3.5-3.5"></path>
+            </svg>
+          </button>
+          @if (open) {
+            @let vals = valuesOf(f);
+            <assay-facet-panel
+              class="pop"
+              [facet]="f"
+              [group]="id + f.key"
+              [values]="vals.shown"
+              [chosen]="chosen()[f.key] ?? []"
+              [more]="moreText(f)"
+              [(find)]="find"
+              (pick)="pick(f, $event)"
+              (clear)="clearFacet(f.key)"
+              (done)="openFacet.set(null)"
+            />
+          }
+        </div>
+      }
+    </div>
+  }
+}

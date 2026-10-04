@@ -1,20 +1,28 @@
-.stat:hover {
-  background: var(--color-surface);
-}
-.main {
+/* The two summaries side by side under the lede: the verdicts on the left half, the runs on the
+   right - one under the other on a phone. */
+.sums {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  flex: 1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 24px;
+  margin-top: 64px;
 }
-.main > * {
-  min-width: 0;
+/* A verdict's first word, a comparison's question: in ink, as the cell's lead. */
+b {
+  font-weight: 700;
+  color: var(--color-text);
 }
-.tile-foot {
-  display: flex;
-  justify-content: space-between;
+/* A comparison's sentence, over two of the table's columns. */
+.wide {
+  grid-column: span 2;
 }
-.go {
-  color: var(--color-accent);
-  white-space: nowrap;
-  margin-left: 8px;
+@media (max-width: 960px) {
+  .sums {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 32px;
+    margin-top: 48px;
+  }
+  /* A row is one column on a phone. */
+  .wide {
+    grid-column: auto;
+  }
 }

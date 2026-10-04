@@ -1,20 +1,30 @@
 import { Injectable } from '@angular/core';
 import * as M from './models';
-import { ApiBase, PAGE } from './api-base';
+import { ApiBase, QUERY } from './api-base';
+import { ListParams } from '../shared/work/api-list';
 
 @Injectable({ providedIn: 'root' })
 export class DatasetsApiService extends ApiBase {
-  datasets(offset = 0, limit = 100) {
+  /** The datasets the parameters let through (API 2.0: search, filters, sort - `ListParams`). */
+  datasets(offset = 0, limit = 100, params: ListParams = {}) {
     return this.http.get<M.Page<M.DataSetMetadata>>(this.u('/datasets'), {
-      params: PAGE(offset, limit),
+      params: QUERY({ ...params, offset, limit }),
+    });
+  }
+  /** The datasets' counts beside each filter value, within the others chosen - the list's own
+   *  parameters, and the Created edges to count from. */
+  datasetFacets(params: ListParams, edges: readonly string[]) {
+    return this.http.get<M.FacetCounts>(this.u('/datasets/facets'), {
+      params: QUERY({ ...params, sort: undefined, created_edges: edges }),
     });
   }
   dataset(id: string) {
     return this.http.get<M.DataSetMetadata>(this.u(`/datasets/${id}`));
   }
-  datasetRows(id: string, offset = 0, limit = 50) {
+  /** A dataset's rows by number - those whose prompt or answers hold every phrase of `q`. */
+  datasetRows(id: string, offset = 0, limit = 50, q: readonly string[] = []) {
     return this.http.get<M.DataSetRowPage>(this.u(`/datasets/${id}/rows`), {
-      params: PAGE(offset, limit),
+      params: QUERY({ offset, limit, q }),
     });
   }
   createDatasetFromPath(path: string, dataset_name: string) {
@@ -26,7 +36,7 @@ export class DatasetsApiService extends ApiBase {
   replaceDatasetRows(id: string, rows: M.DataSetRowSchema[]) {
     return this.http.put<M.DataSetImportResult>(this.u('/datasets/rows'), { id, rows });
   }
-  updateDatasetRows(rows: M.DataSetRow[]) {
+  updateDatasetRows(rows: Pick<M.DataSetRow, 'id' | 'row_info'>[]) {
     return this.http.patch<M.DataSetMutationResult>(this.u('/datasets/rows'), rows);
   }
   deleteDatasetRows(row_ids: string[]) {

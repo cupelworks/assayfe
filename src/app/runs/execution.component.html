@@ -1,134 +1,86 @@
-<div class="crumbs">
-  <a [routerLink]="['/', kind()]">{{ kindLabel() }}s</a><span>/</span
-  ><a [routerLink]="['/', kind(), id()]">{{ name() }}</a
-  ><span>/</span><span class="cur">{{ short(execId()) }}</span>
-</div>
-<div class="hero">
-  <div>
-    <div class="kicker">
-      {{ exec()?.replayed_execution_id ? 'Replay execution' : 'Live execution' }}
+<div class="g-wrap">
+  <assay-guide-head
+    size="one"
+    kicker="Run"
+    [crumbs]="crumbs()"
+    [copyId]="execId()"
+    [title]="title()"
+    [lede]="lede()"
+  >
+    <div class="page-aside" guideHeadAside>
+      <button type="button" class="btn btn-primary" (click)="replay()" [disabled]="act.busy()">
+        {{ act.busy() ? 'Starting…' : 'Replay' }}
+      </button>
+      <span class="why">Runs the same copies again</span>
     </div>
-    <h1>{{ name() }} · {{ short(execId()) }}</h1>
-    @if (exec(); as e) {
-      <p class="hero-note" style="margin-top: 12px" [title]="absTime(e.created_at)">
-        {{ rel(e.created_at) }}
-        @if (e.replayed_execution_id) {
-          · replayed
-          <a [routerLink]="['/', kind(), id(), 'executions', e.replayed_execution_id.id]">{{
-            short(e.replayed_execution_id.id)
-          }}</a>
+    <div class="now">
+      <div class="went">
+        <assay-status-tally
+          caption="How it went"
+          [detail]="'its ' + counted(tests(), 'test')"
+          noun="tests"
+          [parts]="testParts()"
+          [still]="true"
+        />
+        @if (facts(); as f) {
+          <p class="facts">{{ f }}</p>
         }
-      </p>
-    }
-  </div>
-  <div class="hero-actions">
-    <button class="btn btn-primary" (click)="replay()" [disabled]="act.busy()">
-      {{ act.busy() ? 'Enqueuing…' : 'Replay this execution' }}
-    </button>
-  </div>
-</div>
-@if (act.msg(); as m) {
-  <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
-}
-<section class="stats stats-6">
-  @for (s of statuses(); track s.key) {
-    <div class="stat">
-      <div class="label"><span class="dot" [style.background]="s.color"></span>{{ s.label }}</div>
-      <div class="big" style="font-size: 40px">{{ s.value }}</div>
-      <div class="small">on this page</div>
+        @if (replayedLink(); as l) {
+          <a class="go" [routerLink]="l">The run it replayed →</a>
+        }
+      </div>
+      <assay-status-tally
+        caption="Its checks"
+        [detail]="'in the ' + counted(tests(), 'test')"
+        noun="checks"
+        [parts]="checkParts()"
+        [still]="true"
+      />
     </div>
-  }
-</section>
-<section class="cell">
-  <table class="table">
-    <colgroup>
-      <col style="width: 140px" />
-      <col style="width: 160px" />
-      <col />
-      <col style="width: 120px" />
-      <col style="width: 120px" />
-      <col style="width: 140px" />
-      <col style="width: 140px" />
-    </colgroup>
-    <thead>
-      <tr>
-        <th>Status</th>
-        <th>Results</th>
-        <th>Name</th>
-        <th>Entry</th>
-        <th>Run</th>
-        <th class="sortable" (click)="toggleSort('created')">
-          Created
-          @if (sortKey() === 'created') {
-            <span class="sort-arrow">{{ sortDir() === 'desc' ? ' ↓' : ' ↑' }}</span>
-          }
-        </th>
-        <th class="sortable" (click)="toggleSort('executed')">
-          Executed
-          @if (sortKey() === 'executed') {
-            <span class="sort-arrow">{{ sortDir() === 'desc' ? ' ↓' : ' ↑' }}</span>
-          }
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (r of sortedRuns(); track r.id) {
-        <tr>
-          <td>
-            <span class="st"
-              ><span class="dot" [style.background]="statusColor(r.status)"></span
-              >{{ statusLabel(r.status) }}</span
-            >
-          </td>
-          <td>
-            @if (resultSummary(r.id); as s) {
-              <span class="result-cell" [title]="s.title">
-                <span class="result-bar">
-                  <span class="seg pass" [style.width]="s.passPct"></span>
-                  <span class="seg fail" [style.width]="s.failPct"></span>
-                </span>
-                <span class="small muted">{{ s.passed }}/{{ s.total }}</span>
-              </span>
-            } @else {
-              <span class="muted">-</span>
+  </assay-guide-head>
+
+  <assay-banner [msg]="act.msg() ?? loadMsg()" />
+
+  <assay-guide-section
+    [section]="sections[0]"
+    [sub]="
+      kind() === 'test-sets'
+        ? 'Each test of the set, run once - the set\'s copy, as it was'
+        : 'Each test of the plan\'s sets, run once - their copies, as they were'
+    "
+  >
+    <div class="listbar">
+      <span
+        ><b>{{ tests() }}</b> {{ tests() === 1 ? 'test' : 'tests' }}</span
+      >
+      <assay-sort [options]="sortOptions" [(value)]="sort" />
+    </div>
+    <assay-catalog-table label="Its tests" [columns]="columns" [empty]="emptyText()">
+      @for (v of rows(); track v.r.id) {
+        <assay-catalog-row
+          [name]="statusLabel(v.r.status)"
+          [mark]="v.r.status"
+          [expandable]="false"
+        >
+          <assay-catalog-cell caption="Test">
+            <a class="cell-nm" [routerLink]="v.link">{{ v.name }}</a>
+            @if (v.source) {
+              <span class="under"><assay-catalog-tag [tag]="{ text: v.source }" /></span>
             }
-          </td>
-          <td class="strong">
-            <a
-              class="plain"
-              [routerLink]="['/', kind(), id(), 'executions', execId(), 'runs', r.id]"
-              >{{ runNames()[r.id] ?? '…' }}</a
-            >
-          </td>
-          <td class="small">
-            @if (r.test_set_entry_id; as entry) {
-              <assay-copy-button [value]="entry.id" [label]="short(entry.id)" />
-            }
-          </td>
-          <td class="small"><assay-copy-button [value]="r.id" [label]="short(r.id)" /></td>
-          <td class="muted"><assay-rel-time [iso]="r.created_at" /></td>
-          <td class="muted">
-            @if (runExecutedAt()[r.id]; as executedAt) {
-              <assay-rel-time [iso]="executedAt" />
-            } @else {
-              -
-            }
-          </td>
-        </tr>
-      } @empty {
-        @if (!page.loading()) {
-          <tr>
-            <td colspan="7" class="empty">No runs.</td>
-          </tr>
-        }
+          </assay-catalog-cell>
+          <assay-catalog-cell caption="Its checks">
+            <assay-checks-met [checks]="v.checks" />
+          </assay-catalog-cell>
+          <assay-catalog-cell caption="Run ID" [copyId]="v.r.id" />
+        </assay-catalog-row>
       }
-    </tbody>
-  </table>
-  <assay-pager
-    [total]="page.total()"
-    [offset]="page.offset()"
-    [limit]="page.limit()"
-    (offsetChange)="page.go($event)"
-    (limitChange)="page.size($event)"
-  />
-</section>
+    </assay-catalog-table>
+    <assay-pager
+      [total]="page.total()"
+      [offset]="page.offset()"
+      [limit]="page.limit()"
+      (offsetChange)="page.go($event)"
+      (limitChange)="page.size($event)"
+    />
+  </assay-guide-section>
+</div>

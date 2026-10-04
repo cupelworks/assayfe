@@ -1,51 +1,42 @@
-<div class="hero">
-  <div>
-    <div class="kicker">Configuration</div>
-    <h1>Settings</h1>
-  </div>
-  <p class="hero-note text-muted">What Assay tests and how it's set up.</p>
+<div class="g-wrap">
+  <assay-guide-head
+    kicker="Settings"
+    title="What Assay tests, and who judges it"
+    lede="The application Assay asks for answers, the model that grades them, and what runs it all. A change applies from the next run; past runs keep what they scored."
+    navLabel="The settings"
+    [sections]="sections()"
+    [across]="4"
+  />
+
+  <assay-settings-group
+    [section]="sections()[0]"
+    [config]="target"
+    (loaded)="saved.target.set($event)"
+  />
+  <assay-settings-group
+    [section]="sections()[1]"
+    [config]="judge"
+    [context]="{ targetUrl: targetUrl() }"
+    (loaded)="saved.judge.set($event)"
+  />
+  <assay-worker-status [section]="sections()[2]" (loaded)="workers.set($event)" />
+
+  <assay-guide-section [section]="sections()[3]" sub="Read-only · read once when a process starts">
+    <p class="intro">
+      Changing one means restarting the API and/or the worker. Connection strings are never shown -
+      they can embed credentials.
+    </p>
+    <assay-catalog-table class="wide" label="Operations" [columns]="opColumns">
+      @for (o of operations; track o.label) {
+        <assay-catalog-row [name]="o.label" [expandable]="false">
+          <assay-catalog-cell caption="Value"
+            ><span [class.mono]="o.mono">{{ o.value }}</span></assay-catalog-cell
+          >
+          <assay-catalog-cell caption="What it is"
+            ><span class="muted">{{ o.hint }}</span></assay-catalog-cell
+          >
+        </assay-catalog-row>
+      }
+    </assay-catalog-table>
+  </assay-guide-section>
 </div>
-
-<assay-target-settings />
-
-<section class="cell cell-b col">
-  <div class="row-head">
-    <h2>LLM judge</h2>
-    <span class="tag tag-neutral">Not available yet</span>
-  </div>
-  <p class="muted intro">
-    Provider, model and API key for the LLM-as-judge test types - Toxicity, Relevance,
-    Hallucination, Correctness, Bias. Arrives with the evaluators' phase 7; nothing is configurable
-    yet. The judge is Assay's own examiner, separate from the application under test above.
-  </p>
-  <div class="placeholders">
-    @for (p of judge; track p.label) {
-      <div class="placeholder">
-        <div class="label">{{ p.label }}</div>
-        <div class="dash">—</div>
-        <div class="small">{{ p.note }}</div>
-      </div>
-    }
-  </div>
-</section>
-
-<section class="cell col">
-  <div class="row-head">
-    <h2>Operations</h2>
-    <span class="tag tag-neutral">Read-only</span>
-  </div>
-  <p class="muted intro">
-    Deployment-level values, read once when a process starts. Changing any of them means restarting
-    the API and/or the worker - they are shown so an operator can confirm what is running, never
-    edited here. Connection strings are never displayed: they can embed credentials.
-  </p>
-  <div class="ops">
-    @for (o of operations; track o.label) {
-      <div class="field-ro">
-        <div class="label">{{ o.label }}</div>
-        <div class="body" [class.mono]="o.mono">{{ o.value }}</div>
-        <div class="small">{{ o.hint }}</div>
-      </div>
-    }
-  </div>
-</section>

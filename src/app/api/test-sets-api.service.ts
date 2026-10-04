@@ -1,22 +1,37 @@
 import { Injectable } from '@angular/core';
 import * as M from './models';
-import { ApiBase, PAGE } from './api-base';
+import { ApiBase, PAGE, QUERY } from './api-base';
+import { ListParams } from '../shared/work/api-list';
 
 @Injectable({ providedIn: 'root' })
 export class TestSetsApiService extends ApiBase {
-  testSets(offset = 0, limit = 100) {
-    return this.http.get<M.Page<M.ScopeMetadata>>(this.u('/test-sets'), {
-      params: PAGE(offset, limit),
+  /** The sets the parameters let through (API 2.0: search, filters, sort - `ListParams`). */
+  testSets(offset = 0, limit = 100, params: ListParams = {}) {
+    return this.http.get<M.Page<M.ScopeRead>>(this.u('/test-sets'), {
+      params: QUERY({ ...params, offset, limit }),
+    });
+  }
+  /** The sets' counts beside each filter value, within the others chosen - the list's own
+   *  parameters, and the Created edges to count from. */
+  testSetFacets(params: ListParams, edges: readonly string[]) {
+    return this.http.get<M.FacetCounts>(this.u('/test-sets/facets'), {
+      params: QUERY({ ...params, sort: undefined, created_edges: edges }),
     });
   }
   testSet(id: string) {
-    return this.http.get<M.ScopeMetadata>(this.u(`/test-sets/${id}`));
+    return this.http.get<M.ScopeRead>(this.u(`/test-sets/${id}`));
+  }
+  /** The plans linking the set, by name - 500 at most, a set's plans all at once. */
+  plansLinking(id: string, offset = 0, limit = 500) {
+    return this.http.get<M.Page<M.PlanLinkingSet>>(this.u(`/test-sets/${id}/test-plans`), {
+      params: PAGE(offset, limit),
+    });
   }
   createTestSet(name: string) {
     return this.http.post<M.DataSetInfo>(this.u('/test-sets'), { name });
   }
   renameTestSet(id: string, name: string) {
-    return this.http.patch<M.ScopeMetadata>(this.u(`/test-sets/${id}`), { name });
+    return this.http.patch<M.ScopeRead>(this.u(`/test-sets/${id}`), { name });
   }
   deleteTestSet(id: string) {
     return this.http.delete<unknown>(this.u(`/test-sets/${id}`));

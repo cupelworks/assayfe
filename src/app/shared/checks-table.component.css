@@ -1,0 +1,244 @@
+/* The checks table: one grid for every row - Type | Name | Settings | Remove - ruled like the
+   app's other tables. */
+.ct-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.ct-head label {
+  font-size: 12px;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+.hint {
+  color: var(--color-neutral-500);
+}
+.ct-table {
+  border-top: 2px solid var(--color-divider);
+  border-bottom: 2px solid var(--color-divider);
+}
+.cols {
+  display: grid;
+  grid-template-columns: minmax(110px, 150px) minmax(0, 220px) minmax(0, 1fr) auto;
+  column-gap: 14px;
+  align-items: start;
+}
+.th {
+  padding: 8px 0 6px;
+}
+.group {
+  border-top: 1px solid var(--color-divider);
+  padding: 4px 0 6px;
+}
+.row {
+  padding: 8px 0;
+}
+/* Every cell starts below the same label line (the settings' small labels), so the type, the
+   name, every setting's input and Remove share one baseline: the 36px input line. */
+.under {
+  padding-top: 18px;
+}
+.line {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+}
+.type {
+  color: var(--color-text);
+}
+.none {
+  font-size: 13px;
+  color: var(--color-neutral-500);
+}
+.mini {
+  display: block;
+  height: 15px;
+  line-height: 15px;
+  margin-bottom: 3px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-neutral-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.opt {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.cfg {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.cfg-field {
+  flex: 1;
+  min-width: 0;
+}
+/* A box sized to its text - or to its example when empty, so a default rubric shows whole - from
+   one line up to eight (`rows`, recomputed as you type); past that it scrolls, and the corner
+   drags it taller. Not `field-sizing: content`, which ignores the example. */
+.grow {
+  min-height: 36px;
+  resize: vertical;
+  display: block;
+}
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+}
+.fh {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--color-neutral-500);
+}
+.err {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--color-accent-700);
+}
+.invalid {
+  border-color: var(--color-accent);
+}
+.reads {
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--color-accent-700);
+}
+.reads .mono {
+  font-size: 11px;
+}
+.adv-toggle {
+  margin-top: 4px;
+}
+.path {
+  margin-top: 4px;
+  max-width: 440px;
+}
+.fl {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 5px;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+/* The red text buttons start exactly on their column's edge. */
+.another,
+.add-type {
+  padding-left: 0;
+}
+.another {
+  grid-column: 2 / span 2;
+  justify-self: start;
+  white-space: nowrap;
+}
+.empty-row {
+  padding: 14px 0;
+  font-size: 14px;
+  color: var(--color-neutral-500);
+}
+.ct-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 6px;
+}
+.add-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.link {
+  color: var(--color-accent);
+}
+
+/* The type picker: search on top; categories | types, the types in a fixed-height list. */
+.picker {
+  border-top: 1px solid var(--color-divider);
+  margin-top: 6px;
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.picker-bar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.picker-bar .input {
+  max-width: 360px;
+}
+.chk-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+  white-space: nowrap;
+}
+.picker-body {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  column-gap: 24px;
+  border-top: 2px solid var(--color-divider);
+}
+.cats {
+  display: flex;
+  flex-direction: column;
+  padding-top: 4px;
+}
+.cat {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 10px;
+  font-size: 13px;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text) 15%, transparent);
+}
+.cat:hover {
+  color: var(--color-accent);
+}
+.cat.on {
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+.cat:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+.types {
+  height: 300px;
+  overflow-y: auto;
+  border-left: 1px solid var(--color-divider);
+  padding-left: 20px;
+}
+.sec {
+  padding: 10px 0 4px;
+}
+.type-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text) 15%, transparent);
+}
+.type-row.inactive {
+  opacity: 0.6;
+}
+.type-txt {
+  flex: 1;
+  min-width: 0;
+}
+.type-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+.type-name .small {
+  font-weight: 400;
+}
+.none-match {
+  padding: 14px 0;
+}

@@ -1,151 +1,102 @@
-<div class="hero">
-  <div>
-    <div class="kicker">Catalog</div>
-    <h1>Test types</h1>
-  </div>
-  <p class="hero-note text-muted">The evaluation strategies a test can be assigned.</p>
-</div>
-
-<section class="stats">
-  @for (c of categories; track c.key) {
-    <button
-      type="button"
-      class="stat cat"
-      [class.active]="category() === c.key"
-      (click)="toggleCategory(c.key)"
-    >
-      <div class="label">{{ c.label }}</div>
-      <div class="big">{{ counts()[c.key] }}</div>
-      <div class="small blurb">{{ c.blurb }}</div>
-      <div class="small go">{{ category() === c.key ? 'Showing only this' : 'Show only →' }}</div>
-    </button>
-  }
-  <div class="stat legend">
-    <div class="label">Reading a card</div>
-    <div class="legend-rows">
-      <div>
-        <span class="tag tag-neutral">fast</span><span class="small">relative cost to compute</span>
-      </div>
-      <div>
-        <span class="tag tag-outline">needs setup</span
-        ><span class="small">requires input before it can be scored</span>
-      </div>
-      <div>
-        <span class="tag tag-outline">inactive</span
-        ><span class="small">kept for history, not offered</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="cell">
-  <div class="toolbar">
-    <input
-      class="input"
-      placeholder="Filter by name, description, best for, engine…"
-      [ngModel]="filter()"
-      (ngModelChange)="filter.set($event)"
+<div class="g-wrap">
+  <assay-guide-head
+    kicker="Catalog"
+    title="Test types"
+    lede="The evaluation strategies a test can be assigned."
+  >
+    <assay-catalog-key [items]="key" />
+    <assay-catalog-index
+      label="Categories"
+      selectedText="Showing only this"
+      [items]="index()"
+      [(selected)]="category"
     />
-    <label class="chk-row"
-      ><input
-        type="checkbox"
-        class="chk"
-        [checked]="showInactive()"
-        (change)="showInactive.set(!showInactive())"
-      />
-      Show inactive</label
+    <assay-catalog-filter
+      placeholder="Name, description, best for, engine…"
+      [shown]="total()"
+      [(query)]="filter.query"
     >
-    <span class="small">{{ total() }} shown</span>
-    <button class="btn btn-ghost btn-sm" (click)="store.load(true)">Refresh</button>
-  </div>
-  @if (store.loading() && !store.loaded()) {
-    <div class="empty">Loading catalogue…</div>
-  }
-  @for (g of groups(); track g.key) {
-    <div class="group">
-      <div class="row-head">
-        <h2>{{ g.label }}</h2>
-        <span class="small">{{ g.types.length }} type{{ g.types.length === 1 ? '' : 's' }}</span>
-      </div>
-      <div class="grid">
-        @for (t of g.types; track t.id) {
-          <article
-            class="card type"
-            [class.inactive]="!t.is_active"
-            [class.open]="openId() === t.id"
-            (click)="toggle(t)"
-          >
-            <div class="type-head">
-              <h3>{{ t.name }}</h3>
-              <div class="tags">
-                <span class="tag tag-neutral">{{ t.cost }}</span>
-                @if (needsSetup(t)) {
-                  <span class="tag tag-outline">needs setup</span>
-                }
-                @if (!t.is_active) {
-                  <span class="tag tag-outline">inactive</span>
-                }
-              </div>
-            </div>
-            <p class="desc">{{ t.description }}</p>
-            <dl>
-              <dt>Best for</dt>
-              <dd>{{ t.best_for }}</dd>
-              <dt>Limitations</dt>
-              <dd>{{ t.limitations }}</dd>
-              @if (openId() === t.id) {
-                <dt>Category</dt>
-                <dd>{{ g.label }}</dd>
-                <dt>Engine</dt>
-                <dd class="mono">{{ t.engine }}</dd>
-                @if (engineSettingsLabel(t.engine_settings); as settings) {
-                  <dt>Engine settings</dt>
-                  <dd class="mono">{{ settings }}</dd>
-                }
-                @if (defaultRubric(t.engine_settings); as rubric) {
-                  <dt>Default rubric</dt>
-                  <dd>{{ rubric }}</dd>
-                }
-                <dt>Configuration</dt>
-                <dd>
-                  @if (t.config_fields.length) {
-                    <ul class="config-fields">
-                      @for (f of t.config_fields; track f.key) {
-                        <li>
-                          {{ f.label }}
-                          <span class="small">
-                            ({{ f.required ? 'required' : 'optional'
-                            }}{{ f.kind === 'reference' ? ' - uses expected output' : '' }})
-                          </span>
-                          @if (numericFieldHint(f, t.comparison); as hint) {
-                            <div class="small">{{ hint }}</div>
+      <label class="inactive"
+        ><input
+          type="checkbox"
+          [checked]="showInactive()"
+          (change)="showInactive.set(!showInactive())"
+        />Show inactive</label
+      >
+      <button catalogFilterEnd type="button" class="refresh" (click)="store.load(true)">
+        Refresh
+      </button>
+    </assay-catalog-filter>
+  </assay-guide-head>
+
+  @if (!store.loaded()) {
+    @if (store.loading()) {
+      <p class="cat-loading">Loading catalogue…</p>
+    }
+  } @else {
+    @for (g of groups(); track g.key) {
+      <assay-guide-section [section]="g.section" [sub]="g.sub">
+        <assay-catalog-table [label]="g.label" [columns]="columns" [empty]="g.empty">
+          @for (v of g.types; track v.t.id) {
+            @let t = v.t;
+            <assay-catalog-row
+              [name]="t.name"
+              [tags]="v.tags"
+              [faded]="!t.is_active"
+              [open]="open.is(t.id)"
+              (toggle)="open.toggle(t.id)"
+            >
+              <assay-catalog-cell caption="What it checks">{{ t.description }}</assay-catalog-cell>
+              <assay-catalog-cell caption="Best for">{{ t.best_for }}</assay-catalog-cell>
+              <assay-catalog-cell caption="Limitations">{{ t.limitations }}</assay-catalog-cell>
+              @if (open.is(t.id)) {
+                <assay-catalog-details>
+                  <dl class="cat-defs">
+                    <dt>Engine</dt>
+                    <dd class="cat-mono">{{ t.engine }}</dd>
+                    @if (engineSettingsLabel(t.engine_settings); as settings) {
+                      <dt>Engine settings</dt>
+                      <dd class="cat-mono">{{ settings }}</dd>
+                    }
+                    @if (defaultRubric(t.engine_settings); as rubric) {
+                      <dt>Default rubric</dt>
+                      <dd>{{ rubric }}</dd>
+                    }
+                    <dt>Configuration</dt>
+                    <dd>
+                      @if (t.config_fields.length) {
+                        <ul class="cat-list">
+                          @for (f of t.config_fields; track f.key) {
+                            <li>
+                              <b>{{ f.label }}</b>
+                              <span class="cat-sm">
+                                ({{ f.required ? 'required' : 'optional'
+                                }}{{ f.kind === 'reference' ? ' - uses expected output' : '' }})
+                              </span>
+                              @if (numericFieldHint(f, t.comparison); as hint) {
+                                <div class="cat-sm">{{ hint }}</div>
+                              }
+                              @if (f.hint) {
+                                <div class="cat-sm">{{ f.hint }}</div>
+                              }
+                            </li>
                           }
-                          @if (f.hint) {
-                            <div class="small">{{ f.hint }}</div>
-                          }
-                        </li>
+                        </ul>
+                      } @else {
+                        <span class="cat-sm"
+                          >No configuration needed - scores the output on its own.</span
+                        >
                       }
-                    </ul>
-                  } @else {
-                    <span class="small"
-                      >No configuration needed - scores the output on its own.</span
-                    >
-                  }
-                </dd>
-                <dt>Added</dt>
-                <dd><assay-rel-time [iso]="t.created_at" /></dd>
+                    </dd>
+                    <dt>Added</dt>
+                    <dd><assay-rel-time [iso]="t.created_at" /></dd>
+                  </dl>
+                </assay-catalog-details>
               }
-            </dl>
-            <div class="more small">{{ openId() === t.id ? 'Less ↑' : 'More ↓' }}</div>
-          </article>
-        } @empty {
-          <div class="empty">
-            No {{ showInactive() ? '' : 'active ' }}types in this category{{
-              filter() ? ' match the filter' : ''
-            }}.
-          </div>
-        }
-      </div>
-    </div>
+            </assay-catalog-row>
+          }
+        </assay-catalog-table>
+      </assay-guide-section>
+    }
   }
-</section>
+</div>

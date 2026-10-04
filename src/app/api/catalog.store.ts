@@ -11,26 +11,25 @@ import {
   DataSetMetadata,
   ExecutionMetadata,
   Kind,
-  ScopeMetadata,
-  TestCase,
+  ScopeRead,
+  TestCaseRead,
 } from './models';
 
-/** How many of the newest test-set/test-plan executions the Overview table displays. */
-export const RECENT_EXECUTIONS_LIMIT = 10;
 /**
- * How many of the newest test-set/test-plan executions CatalogStore actually fetches -
- * independent of RECENT_EXECUTIONS_LIMIT (Overview only ever shows the first 10 of these).
+ * How many of the newest test-set/test-plan executions CatalogStore actually fetches - the
+ * Overview's latest runs take the first of each set and plan among them.
  * Feeds the hasRuns() delete-guard on test-set/test-plan detail pages and
  * ExecutionComponent's exec() lookup - both tolerate an incomplete sample (hasRuns() just
  * reads false, exec() just renders without the extra detail it would show), so there's no
  * hard requirement driving this number; 50 is a generous-but-cheap default. NOT used for any
  * displayed count anymore - the scopes list's "Executions" column moved to a per-row fetch
  * against the scoped endpoint instead, since this capped, recency-biased sample can never
- * give an accurate count for an arbitrary row (see dev_notes.md's "Scopes list 'Executions'
- * column moved off the global sample" note).
+ * give an accurate count for an arbitrary row (see `docs/basic_ui_implementation/dev_notes.md`
+ * note 12).
  */
 export const EXECUTIONS_SAMPLE_LIMIT = 50;
-/** How many of the newest runs (any origin) feed the "Run status" sample on the overview page. */
+/** How many of the newest runs (any origin, no batch's) the Overview counts by status - "Runs ·
+ *  the last 500" - and takes each test's latest run from. */
 export const RUN_STATUS_SAMPLE_LIMIT = 500;
 
 export interface ExecRow extends ExecutionMetadata {
@@ -55,11 +54,12 @@ export class CatalogStore {
   private testPlansApi = inject(TestPlansApiService);
   private runsApi = inject(RunsApiService);
   datasets = signal<DataSetMetadata[]>([]);
-  tests = signal<TestCase[]>([]);
-  sets = signal<ScopeMetadata[]>([]);
-  plans = signal<ScopeMetadata[]>([]);
+  tests = signal<TestCaseRead[]>([]);
+  sets = signal<ScopeRead[]>([]);
+  plans = signal<ScopeRead[]>([]);
   private rawExecutions = signal<AnyExecutionMetadata[]>([]);
-  /** Joins the raw GET /runs/executions rows against sets()/plans() for a display name - reactive to either changing. */
+  /** The raw GET /runs/executions rows, each with its set's or plan's name - its own (`name`), else
+   *  from sets()/plans(). */
   executions = computed<ExecRow[]>(() => this.rawExecutions().map((e) => this.toExecRow(e)));
   /** Independent of every other loading flag: true while the global executions sample is in flight. */
   executionsLoading = signal(true);
@@ -74,7 +74,7 @@ export class CatalogStore {
     return (kind === 'test-sets' ? this.sets() : this.plans()).find((x) => x.id === id);
   }
 
-  /** Everything - used only by OverviewComponent, which reads every field. */
+  /** Everything - what a page that changed the catalogue calls to refresh it. */
   load() {
     this.loadDatasets();
     this.loadTests();
@@ -106,7 +106,8 @@ export class CatalogStore {
 
   loadExecutions() {
     this.executionsLoading.set(true);
-    this.runsApi.latestExecutions(EXECUTIONS_SAMPLE_LIMIT).subscribe((executions) => {
+    // Ordinary executions only: one statistics batch alone would fill the sample.
+    this.runsApi.latestExecutions(EXECUTIONS_SAMPLE_LIMIT, 'none').subscribe((executions) => {
       this.rawExecutions.set(executions);
       this.executionsLoading.set(false);
     });
@@ -114,7 +115,7 @@ export class CatalogStore {
 
   loadRunStatus() {
     this.runsLoading.set(true);
-    this.runsApi.latestRuns(RUN_STATUS_SAMPLE_LIMIT).subscribe((runs) => {
+    this.runsApi.latestRuns(RUN_STATUS_SAMPLE_LIMIT, 'none').subscribe((runs) => {
       this.recentRuns.set(runs);
       this.runsLoading.set(false);
     });
@@ -125,16 +126,18 @@ export class CatalogStore {
     const kind: Kind = isSet ? 'test-sets' : 'test-plans';
     const parentId = (isSet ? e.test_set_id : e.test_plan_id)!.id;
     const replayed = isSet ? e.replayed_test_set_execution_id : e.replayed_test_plan_execution_id;
-    const name = (isSet ? this.sets() : this.plans()).find((x) => x.id === parentId)?.name;
+    const name =
+      e.name || (isSet ? this.sets() : this.plans()).find((x) => x.id === parentId)?.name;
     return {
       id: e.id,
       created_at: e.created_at,
       run_count: e.run_count,
+      runs: e.runs,
       replayed_execution_id: replayed ?? null,
       kind,
       parentId,
       scope: isSet ? 'Test set' : 'Test plan',
-      target: name ?? short(parentId),
+      target: name || short(parentId),
     };
   }
 }

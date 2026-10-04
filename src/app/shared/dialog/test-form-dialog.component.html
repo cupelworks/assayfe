@@ -1,10 +1,12 @@
 <assay-dialog
+  [busy]="busy()"
   [kicker]="kicker()"
   [title]="title()"
   [wide]="true"
   [primaryLabel]="busy() ? 'Saving…' : submitLabel()"
   [primaryDisabled]="!valid() || busy()"
   [error]="error()"
+  [blockers]="blockers()"
   (primary)="go()"
   (close)="closed.emit()"
 >
@@ -57,24 +59,6 @@
     </div>
   </div>
   <div class="field">
-    <label
-      >Test types
-      <span class="hint">- how the output is evaluated; a test with none can't be run</span></label
-    >
-    <assay-test-type-picker
-      [selected]="types()"
-      [hasReference]="hasReference()"
-      (selectedChange)="types.set($event)"
-    />
-    <assay-test-type-config-fields
-      [selected]="types()"
-      [value]="configs()"
-      (valueChange)="configs.set($event)"
-      [answerPaths]="answerPaths()"
-      (answerPathsChange)="answerPaths.set($event)"
-    />
-    @if (configIssues().length) {
-      <div class="note note-warn">Fix before saving: {{ configIssues().join(', ') }}</div>
-    }
+    <assay-checks-table [(checks)]="checks" [hasReference]="hasReference()" />
   </div>
 </assay-dialog>

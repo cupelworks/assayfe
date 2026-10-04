@@ -1,4 +1,5 @@
 <assay-dialog
+  [busy]="busy()"
   [kicker]="kicker()"
   [title]="title()"
   [primaryLabel]="busy() ? 'Saving…' : submitLabel()(picked().length)"
@@ -7,35 +8,48 @@
   (primary)="confirm.emit(picked())"
   (close)="closed.emit()"
 >
-  <div class="toolbar">
-    <input
-      class="input"
-      [ngModel]="filter()"
-      (ngModelChange)="filter.set($event)"
-      placeholder="Filter…"
-      autofocus
-    /><button class="btn btn-ghost btn-sm" type="button" (click)="all()">Toggle all</button
-    ><span class="hint">{{ picked().length }} selected</span>
+  <assay-smart-filter
+    [compact]="true"
+    [facets]="facets()"
+    [placeholder]="placeholder()"
+    [label]="'Filter the ' + (noun() || 'list')"
+    [(query)]="query"
+    [(words)]="words"
+    [(chosen)]="chosen"
+  />
+  <div class="meta">
+    <span
+      >{{ filtered() ? shown().length + ' of ' + rows().length : rows().length }} {{ noun() }} ·
+      {{ picked().length }} ticked</span
+    >
+    @if (open().length) {
+      <button type="button" class="all" (click)="all()">
+        {{ allPicked() ? 'Untick all' : 'Tick all ' + open().length }}
+      </button>
+    }
   </div>
-  <div class="list">
+  <div class="list" role="group" [attr.aria-label]="noun() || title()">
     @for (r of shown(); track r.id) {
-      <label class="row" [class.off]="r.disabled">
+      <label class="row" [class.off]="r.disabled" [class.on]="picked().includes(r.id)">
         <input
           type="checkbox"
+          class="chk"
           [checked]="picked().includes(r.id)"
           [disabled]="r.disabled"
           (change)="toggle(r.id)"
         />
         <span class="txt"
-          ><span class="nm" [class.dim]="r.dim">{{ r.name }}</span>
+          ><b class="nm" [class.dim]="r.dim">{{ r.name }}</b>
           @if (r.sub) {
             <span class="sub">{{ r.sub }}</span>
           }
         </span>
-        <span class="hint meta" [title]="r.meta">{{ r.meta }}</span>
+        @if (r.meta) {
+          <span class="m" [title]="r.meta">{{ r.meta }}</span>
+        }
       </label>
     } @empty {
-      <div class="empty">{{ emptyText() }}</div>
+      <div class="empty">{{ rows().length ? 'Nothing matches the filter.' : emptyText() }}</div>
     }
   </div>
 </assay-dialog>

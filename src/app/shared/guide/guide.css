@@ -1,0 +1,78 @@
+/* A guide page's content (the Guide, Charts): the page's margins, and what goes in an
+   <assay-guide-section>'s body - nine columns, the page's 4-12. Each guide page includes it for
+   the content it projects into its sections. */
+.g-wrap {
+  padding-inline: 40px;
+}
+/* A section's first words, across its body. */
+.g-lead {
+  grid-column: 1 / -1;
+  margin: 0;
+  max-width: 900px;
+  font-size: 20px;
+  line-height: 1.42;
+  letter-spacing: -0.005em;
+  text-wrap: pretty;
+}
+/* Across the body; its first six columns; a note in the last three, under a red rule. */
+.g-wide {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.g-text {
+  grid-column: 1 / 7;
+  min-width: 0;
+}
+.g-note {
+  grid-column: 7 / 10;
+  align-self: start;
+  min-width: 0;
+  padding-top: 12px;
+  border-top: 2px solid var(--color-accent);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--color-neutral-900);
+}
+.g-note > .g-cap {
+  color: var(--color-accent);
+}
+.g-note p {
+  margin: 8px 0 0;
+}
+.g-cap {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-neutral-600);
+}
+.g-p {
+  margin: 18px 0 0;
+  font-size: 15px;
+  line-height: 1.62;
+  color: var(--color-neutral-900);
+  text-wrap: pretty;
+}
+.g-p b,
+.g-note b {
+  font-weight: 700;
+  color: var(--color-text);
+}
+/* What follows something set across the body starts lower. */
+.g-gap {
+  margin-top: 34px;
+}
+@media (max-width: 960px) {
+  .g-wrap {
+    padding-inline: 16px;
+  }
+  .g-lead,
+  .g-wide,
+  .g-text,
+  .g-note {
+    grid-column: 1 / -1;
+  }
+  .g-note {
+    margin-top: 28px;
+  }
+}

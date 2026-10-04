@@ -1,130 +1,117 @@
-<div class="hero">
-  <div>
-    <div class="kicker">Evaluation overview</div>
-    <h1>What has been tested,<br />and what's waiting.</h1>
-  </div>
-  <div class="hero-actions">
-    <button class="btn btn-secondary" (click)="newTest.set(true)">New test</button>
-  </div>
+<div class="g-wrap">
+  <assay-guide-head
+    kicker="Work"
+    title="Overview"
+    lede="Whether your tests pass, decided by statistics over many runs, and how the single runs went."
+  >
+    <assay-workers-status guideHeadAside />
+    <div class="sums">
+      @if (batchesReady()) {
+        <assay-status-tally
+          caption="Verdicts"
+          detail="the last 100 batches"
+          noun="batches"
+          [parts]="verdictTally()"
+        />
+      }
+      @if (runsReady()) {
+        <assay-status-tally caption="Runs" detail="the last 500" noun="runs" [parts]="runTally()" />
+      }
+    </div>
+  </assay-guide-head>
+
+  <assay-guide-section [section]="sections[0]" [sub]="verdictsSub">
+    <assay-catalog-table
+      label="The latest verdicts"
+      [columns]="verdictColumns"
+      [empty]="verdictsEmpty()"
+    >
+      @for (v of verdictRows(); track v.b.id) {
+        <assay-catalog-row
+          [name]="v.b.scope.name"
+          [link]="v.link"
+          [tags]="v.tags"
+          [note]="v.b.note"
+          [expandable]="false"
+        >
+          <assay-catalog-cell caption="Verdict">
+            <assay-marked [of]="v.b.status">
+              <b>{{ v.label }}</b
+              >{{ v.text ? ': ' + v.text : '' }}
+              @if (v.progress; as p) {
+                <assay-progress-bar class="prog" [pct]="p.donePct" />
+              }
+              @if (v.again) {
+                <a
+                  class="again new-tab"
+                  [routerLink]="runAgainLink(v.b.scope)"
+                  [queryParams]="{ from: v.b.id }"
+                  target="_blank"
+                  rel="noopener"
+                  aria-label="Run again, opens in a new tab"
+                  >Run again<assay-arrow-out
+                /></a>
+              }
+            </assay-marked>
+          </assay-catalog-cell>
+          <assay-catalog-cell caption="Times"
+            ><span class="num">{{ v.times }}</span></assay-catalog-cell
+          >
+          <assay-catalog-cell caption="When"
+            ><span class="when"><assay-rel-time [iso]="v.b.created_at" /></span
+          ></assay-catalog-cell>
+        </assay-catalog-row>
+      }
+    </assay-catalog-table>
+    <assay-guide-go label="All batches" />
+  </assay-guide-section>
+
+  <assay-guide-section [section]="sections[1]" [sub]="runsSub">
+    <assay-catalog-table label="The latest runs" [columns]="runColumns" [empty]="runsEmpty()">
+      @for (r of runRows(); track r.id) {
+        <assay-catalog-row [name]="r.name" [link]="r.link" [tags]="r.tags" [expandable]="false">
+          <assay-catalog-cell caption="Its latest run"
+            ><assay-status-counts [counts]="r.counts"
+          /></assay-catalog-cell>
+          <assay-catalog-cell caption="Runs"
+            ><span class="num">{{ r.runs }}</span></assay-catalog-cell
+          >
+          <assay-catalog-cell caption="When"
+            ><span class="when"><assay-rel-time [iso]="r.at" /></span
+          ></assay-catalog-cell>
+        </assay-catalog-row>
+      }
+    </assay-catalog-table>
+    <assay-guide-go label="All runs" link="/runs" />
+  </assay-guide-section>
+
+  <assay-guide-section [section]="sections[2]" [sub]="comparisonsSub">
+    <assay-catalog-table
+      label="The latest comparisons"
+      [columns]="comparisonColumns"
+      [empty]="comparisonsEmpty()"
+    >
+      @for (r of comparisonRows(); track r.c.id) {
+        <assay-catalog-row
+          [name]="r.c.scope.name"
+          [link]="r.link"
+          [tags]="r.tags"
+          [expandable]="false"
+        >
+          <assay-catalog-cell class="wide" caption="What it showed">
+            <assay-marked [of]="r.c.outcome">
+              @if (r.question) {
+                <b>{{ r.question }}</b>
+              }
+              {{ r.c.summary }}
+            </assay-marked>
+          </assay-catalog-cell>
+          <assay-catalog-cell caption="When"
+            ><span class="when"><assay-rel-time [iso]="r.c.created_at" /></span
+          ></assay-catalog-cell>
+        </assay-catalog-row>
+      }
+    </assay-catalog-table>
+    <assay-guide-go label="All comparisons" />
+  </assay-guide-section>
 </div>
-@if (act.msg(); as m) {
-  <div class="msg" [class.msg-err]="!m.ok">{{ m.text }}</div>
-}
-<section class="stats">
-  <a routerLink="/datasets" class="stat plain tile"
-    ><div class="label">Datasets</div>
-    <div class="big">{{ store.datasets().length }}</div>
-    <div class="small tile-foot">
-      <span>source rows for tests</span><span class="go">View →</span>
-    </div></a
-  >
-  <a routerLink="/tests" class="stat plain tile"
-    ><div class="label">Tests</div>
-    <div class="big">{{ store.tests().length }}</div>
-    <div class="small tile-foot">
-      <span>live authoring surface</span><span class="go">View →</span>
-    </div></a
-  >
-  <a routerLink="/test-sets" class="stat plain tile"
-    ><div class="label">Test sets</div>
-    <div class="big">{{ store.sets().length }}</div>
-    <div class="small tile-foot">
-      <span>frozen snapshots</span><span class="go">View →</span>
-    </div></a
-  >
-  <a routerLink="/test-plans" class="stat plain tile"
-    ><div class="label">Test plans</div>
-    <div class="big">{{ store.plans().length }}</div>
-    <div class="small tile-foot">
-      <span>multi-set campaigns</span><span class="go">View →</span>
-    </div></a
-  >
-</section>
-<section class="main">
-  <div class="cell cell-r">
-    <div class="row-head">
-      <h2>Last {{ recentLimit }} test set / test plan executions</h2>
-    </div>
-    <table class="table">
-      <colgroup>
-        <col style="width: 110px" />
-        <col />
-        <col style="width: 90px" />
-        <col style="width: 70px" />
-        <col style="width: 120px" />
-      </colgroup>
-      <thead>
-        <tr>
-          <th>Scope</th>
-          <th>Target</th>
-          <th>Mode</th>
-          <th>Runs</th>
-          <th>Triggered</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (e of recent(); track e.id) {
-          <tr>
-            <td>
-              <span class="tag tag-neutral">{{ e.scope }}</span>
-            </td>
-            <td class="strong">
-              <a class="plain" [routerLink]="['/', e.kind, e.parentId, 'executions', e.id]">{{
-                e.target
-              }}</a>
-            </td>
-            <td>
-              <span
-                class="tag"
-                [class.tag-outline]="e.replayed_execution_id"
-                [class.tag-accent]="!e.replayed_execution_id"
-                >{{ e.replayed_execution_id ? 'Replay' : 'Live' }}</span
-              >
-            </td>
-            <td class="num">{{ e.run_count }}</td>
-            <td class="muted"><assay-rel-time [iso]="e.created_at" /></td>
-          </tr>
-        } @empty {
-          @if (!store.executionsLoading()) {
-            <tr>
-              <td colspan="5" class="empty">
-                No executions yet - open a test set or plan and run it live.
-              </td>
-            </tr>
-          }
-        }
-      </tbody>
-    </table>
-  </div>
-  <div class="cell">
-    <h2>Run status</h2>
-    <p class="hero-note" style="margin-bottom: 20px">
-      Status breakdown of the last {{ runStatusLimit }} runs, across every test, test set, and test
-      plan.
-    </p>
-    <div class="bar">
-      @for (b of bars(); track b.color) {
-        <div [style.width]="b.pct" [style.background]="b.color"></div>
-      }
-    </div>
-    <div class="status-grid">
-      @for (s of statuses(); track s.key) {
-        <a class="status plain tile" routerLink="/runs" [queryParams]="{ status: s.key }">
-          <div class="label">
-            <span class="dot" [style.background]="s.color"></span>{{ s.label }}
-          </div>
-          <div class="mid">{{ s.value }}</div>
-        </a>
-      }
-    </div>
-  </div>
-</section>
-@if (newTest()) {
-  <assay-test-form-dialog
-    kicker="Tests"
-    [busy]="act.busy()"
-    [error]="act.err()"
-    (confirm)="create($event)"
-    (closed)="newTest.set(false)"
-  />
-}

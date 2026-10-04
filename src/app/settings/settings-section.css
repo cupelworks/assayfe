@@ -1,14 +1,39 @@
-/* Shared by every section of the Settings page - the page itself and the sections that are their
-   own components (the application-under-test form). */
-.col {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-.col .row-head {
-  margin-bottom: 0;
-}
+/* What Settings' sections share - its page, its two editable
+   groups, its workers: each on the Guide's section, laid on the body's nine columns. */
+
+/* What a section is about, across the body, before what it holds. */
 .intro {
+  grid-column: 1 / -1;
+  margin: 0 0 32px;
   max-width: 760px;
-  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--color-neutral-800);
+  text-wrap: pretty;
+}
+/* Across the body: a message, a table, how it stands. */
+.wide {
+  grid-column: 1 / -1;
+}
+/* What went wrong, in red, where it went wrong. */
+.err {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-accent);
+  overflow-wrap: anywhere;
+}
+p.err {
+  margin: 0 0 16px;
+}
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+}
+/* A worker's state, an operation's value: as a run's word with its mark. */
+.st {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--color-text);
 }

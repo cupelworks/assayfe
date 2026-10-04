@@ -1,0 +1,250 @@
+<div class="ct">
+  <div class="ct-head">
+    <label
+      >Checks <span class="hint">- {{ hint() }}</span></label
+    >
+    <span class="small">{{ checks().length }} check{{ checks().length === 1 ? '' : 's' }}</span>
+  </div>
+
+  <div class="ct-table">
+    @if (checks().length) {
+      <div class="cols th">
+        <span class="label">Type</span><span class="label">Name</span
+        ><span class="label">Settings</span><span></span>
+      </div>
+    }
+    @for (g of groups(); track g.type) {
+      <div class="group">
+        @for (r of g.rows; track r.check.key; let first = $first) {
+          <div class="cols row">
+            <div class="under">
+              <div class="line">
+                @if (first) {
+                  <span class="label type">{{ g.type }}</span>
+                }
+              </div>
+            </div>
+
+            <div class="under">
+              <input
+                class="input"
+                [class.invalid]="r.dup"
+                [attr.aria-label]="'Name of the ' + g.type + ' check'"
+                [maxlength]="labelMax"
+                [placeholder]="r.label"
+                [ngModel]="r.check.label"
+                (ngModelChange)="setLabel(r.check, $event)"
+              />
+              @if (r.dup) {
+                <div class="err">Name already used</div>
+              }
+              @if (r.check.answerPath.trim(); as p) {
+                <div class="reads">
+                  reads <span class="mono">{{ p }}</span>
+                </div>
+              }
+            </div>
+
+            <div>
+              @if (!g.known) {
+                <div class="under">
+                  <div class="line none">
+                    Not in the catalogue - remove it, or keep it as it is.
+                  </div>
+                </div>
+              } @else if (!r.fields.length) {
+                <div class="under">
+                  <div class="line none">No settings - it scores the answer on its own.</div>
+                </div>
+              } @else {
+                <div class="cfg">
+                  @for (f of r.fields; track f.key) {
+                    <div class="cfg-field">
+                      <label class="mini" [for]="'ct-' + r.check.key + '-' + f.key"
+                        >{{ f.label }}
+                        @if (!f.required) {
+                          <span class="opt">- optional</span>
+                        }
+                      </label>
+                      @switch (f.kind) {
+                        @case ('numeric') {
+                          <input
+                            class="input"
+                            [id]="'ct-' + r.check.key + '-' + f.key"
+                            [assayNumber]="f.integer ? 'numeric' : ''"
+                            [placeholder]="f.placeholder ?? ''"
+                            [ngModel]="r.check.config[f.key] ?? ''"
+                            (ngModelChange)="setConfig(r.check, f.key, $event)"
+                          />
+                        }
+                        @case ('jsonpath') {
+                          <input
+                            class="input mono"
+                            [id]="'ct-' + r.check.key + '-' + f.key"
+                            spellcheck="false"
+                            [placeholder]="f.placeholder ?? ''"
+                            [ngModel]="r.check.config[f.key] ?? ''"
+                            (ngModelChange)="setConfig(r.check, f.key, $event)"
+                          />
+                        }
+                        @default {
+                          <textarea
+                            class="input grow"
+                            [class.mono]="isCode(f)"
+                            [id]="'ct-' + r.check.key + '-' + f.key"
+                            [attr.spellcheck]="isCode(f) ? 'false' : null"
+                            [rows]="rows(r.check.config[f.key], f.placeholder, r.fields.length)"
+                            [placeholder]="f.placeholder ?? ''"
+                            [ngModel]="r.check.config[f.key] ?? ''"
+                            (ngModelChange)="setConfig(r.check, f.key, $event)"
+                          ></textarea>
+                        }
+                      }
+                      @if (numericFieldHint(f, r.comparison); as nh) {
+                        <div class="fh">{{ nh }}</div>
+                      }
+                      @if (f.hint) {
+                        <div class="fh">{{ f.hint }}</div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+              <button
+                type="button"
+                class="adv-toggle"
+                [attr.aria-expanded]="isAdvancedOpen(r.check)"
+                (click)="toggleAdvanced(r.check)"
+              >
+                Advanced <assay-chevron [open]="isAdvancedOpen(r.check)" />
+              </button>
+              @if (isAdvancedOpen(r.check)) {
+                <div class="path">
+                  <label class="fl" [for]="'ct-' + r.check.key + '-path'"
+                    >{{ answerPath.label }} <span class="hint">- optional</span></label
+                  >
+                  <input
+                    class="input mono"
+                    [id]="'ct-' + r.check.key + '-path'"
+                    spellcheck="false"
+                    [placeholder]="answerPath.placeholder"
+                    [ngModel]="r.check.answerPath"
+                    (ngModelChange)="setPath(r.check, $event)"
+                  />
+                  <div class="fh">{{ answerPath.hint }}</div>
+                </div>
+              }
+            </div>
+
+            <div class="under">
+              <div class="line">
+                <button type="button" class="btn btn-ghost btn-sm" (click)="remove(r.check)">
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+        @if (g.known) {
+          <div class="cols">
+            <span></span>
+            <button type="button" class="btn btn-ghost btn-sm another" (click)="add(g.type)">
+              + Add another {{ g.type }}
+            </button>
+          </div>
+        }
+      </div>
+    } @empty {
+      <div class="empty-row">No checks yet - add a test type below.</div>
+    }
+  </div>
+
+  <div class="ct-foot">
+    <button
+      type="button"
+      class="btn btn-ghost btn-sm add-type"
+      [attr.aria-expanded]="pickerOpen()"
+      (click)="pickerOpen.set(!pickerOpen())"
+    >
+      + Add a test type <assay-chevron [open]="pickerOpen()" />
+    </button>
+    <a routerLink="/test-types" target="_blank" class="small link">Full catalogue →</a>
+  </div>
+
+  @if (pickerOpen()) {
+    <div class="picker">
+      <div class="picker-bar">
+        <input
+          class="input"
+          placeholder="Filter test types…"
+          aria-label="Filter test types"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+        />
+        <label class="chk-row"
+          ><input
+            type="checkbox"
+            class="chk"
+            [checked]="hideSetup()"
+            (change)="hideSetup.set(!hideSetup())"
+          />
+          Hide types needing setup</label
+        >
+      </div>
+      <div class="picker-body">
+        <div class="cats">
+          @for (k of categoryTabs(); track k.label) {
+            <button
+              type="button"
+              class="cat"
+              [class.on]="category() === k.key"
+              [attr.aria-pressed]="category() === k.key"
+              (click)="category.set(k.key)"
+            >
+              <span>{{ k.label }}</span
+              ><span class="small">{{ k.count }}</span>
+            </button>
+          }
+        </div>
+        <div class="types">
+          @for (s of sections(); track s.key) {
+            @if (!category()) {
+              <div class="label sec">{{ s.label }}</div>
+            }
+            @for (t of s.items; track t.id) {
+              <div class="type-row" [class.inactive]="!t.is_active">
+                <div class="type-txt">
+                  <div class="type-name">
+                    {{ t.name }}
+                    @if (inTest(t.name); as n) {
+                      <span class="small">· {{ n }} in this test</span>
+                    }
+                  </div>
+                  @if (t.best_for) {
+                    <div class="small">{{ t.best_for }}</div>
+                  }
+                </div>
+                @if (t.cost) {
+                  <span class="tag tag-neutral">{{ t.cost }}</span>
+                }
+                @if (needsAttention(t)) {
+                  <span class="tag tag-accent">needs setup</span>
+                }
+                @if (!t.is_active) {
+                  <span class="tag tag-outline">inactive</span>
+                }
+                <button type="button" class="btn btn-secondary btn-sm" (click)="add(t.name)">
+                  Add
+                </button>
+              </div>
+            }
+          } @empty {
+            <div class="small none-match">
+              {{ store.loading() ? 'Loading test types…' : 'No test types match these filters.' }}
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

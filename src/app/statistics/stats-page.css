@@ -1,0 +1,70 @@
+/* What a batch's page and a comparison's page share: the Guide's head, ruled off from the rest of
+   the page as the old head was, with its note under the lede; the heading with its "How to read"
+   link, the axis ticks under a heading, the verdict cell. */
+.head-rule {
+  border-bottom: 2px solid var(--color-divider);
+}
+/* The words it was started with, quoted, under the lede. */
+.head-note {
+  margin: 20px 0 0;
+  max-width: 760px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-text);
+  text-wrap: pretty;
+}
+.head-with-link {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.read-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.read-link:hover {
+  text-decoration: underline;
+}
+.th {
+  padding: 8px 0;
+  border-bottom: 2px solid var(--color-text);
+  align-items: end;
+}
+.ticks {
+  position: relative;
+  height: 16px;
+  margin-top: 2px;
+}
+.ticks span {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--color-neutral-500);
+  font-variant-numeric: tabular-nums;
+}
+.ticks span.first {
+  transform: none;
+}
+.ticks span.last {
+  transform: translateX(-100%);
+}
+.verdict {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  min-width: 0;
+}
+.verdict .w {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.verdict .small {
+  color: var(--color-neutral-600);
+  text-wrap: pretty;
+}

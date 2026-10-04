@@ -1,0 +1,149 @@
+/* A and B side by side, each with its status, size and note. */
+.ab {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-bottom: 2px solid var(--color-divider);
+}
+.side {
+  padding: 20px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+  min-width: 0;
+}
+.side + .side {
+  border-left: 1px solid var(--color-divider);
+}
+.side-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.st,
+.verdict-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.side-note {
+  font-size: 13px;
+  color: var(--color-neutral-600);
+  overflow-wrap: anywhere;
+}
+.reason {
+  margin: 0 0 4px;
+  max-width: 760px;
+}
+.cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 1.3fr);
+  gap: 0 24px;
+  align-items: center;
+}
+/* A row's charts fill the row's height, so the line at 0 runs unbroken from row to row: the
+   other cells carry the row's padding. */
+.row {
+  border-bottom: 1px solid var(--color-divider);
+}
+.row > :not(.chart-cell) {
+  padding: 12px 0;
+}
+.chart-cell {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+}
+.chart-cell > assay-range-chart,
+.chart-cell > assay-dumbbell {
+  flex: 1;
+}
+/* What a chart writes under its bar: B − A in bold, then its range. */
+.capn {
+  /* Over the chart's lines, the page shows behind the words so the line passes behind them. */
+  position: relative;
+  z-index: 2;
+  align-self: flex-start;
+  max-width: 100%;
+  padding-right: 4px;
+  background: var(--color-bg);
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--color-neutral-500);
+  font-variant-numeric: tabular-nums;
+}
+.capn b {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+.check {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.check .t {
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.check .s {
+  font-size: 12px;
+  color: var(--color-neutral-600);
+}
+.fold {
+  all: unset;
+  cursor: pointer;
+  display: block;
+  padding: 14px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent);
+}
+.fold:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.unmatched {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pairs {
+  display: grid;
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr) 220px;
+  gap: 0 20px;
+  border-top: 2px solid var(--color-divider);
+  margin-top: 12px;
+}
+.pairs > * {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-divider);
+  min-width: 0;
+}
+.pair-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+.pair-name .small {
+  display: block;
+  font-weight: 400;
+}
+@media (max-width: 900px) {
+  .cols,
+  .pairs,
+  .ab {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .th {
+    display: none;
+  }
+  .side + .side {
+    border-left: 0;
+    border-top: 1px solid var(--color-divider);
+  }
+}
