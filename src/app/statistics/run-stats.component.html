@@ -1,5 +1,11 @@
 <div class="g-wrap">
-  <assay-guide-head size="one" [crumbs]="crumbs()" title="Run with statistics" [lede]="lede()">
+  <assay-guide-head
+    size="one"
+    kicker="Run with statistics"
+    [crumbs]="crumbs()"
+    title="Run with statistics"
+    [lede]="lede()"
+  >
     <div class="page-aside" guideHeadAside>
       @if (standing(); as st) {
         <assay-status-line role="status" [tone]="st.tone" [title]="st.title" [text]="st.text" />

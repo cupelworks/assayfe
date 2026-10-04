@@ -11,9 +11,9 @@ export interface GuideCrumb {
  * The red line over a page's title: each page above it, by its title - the words its page is
  * headed with (a run has no name: its title is when it ran) - a link back, cut at 32 characters
  * with "…" (the whole name on hover, and what a screen reader reads); a grey slash between them;
- * then what this page is, in ink (`here`: "Test", "Statistics batch") - none when its title says
- * it ("Run with statistics", "Run of 1 Oct, 20:23"). On a phone, only the page just above, with
- * an arrow back: the whole trail doesn't fit a phone's line.
+ * then what this page is, in ink (`here`: "Test", "Run", "Statistics batch") - every page names
+ * itself, even when its title says it ("Run with statistics"). On a phone, only the page just
+ * above, with an arrow back: the whole trail doesn't fit a phone's line.
  */
 @Component({
   selector: 'assay-breadcrumb',

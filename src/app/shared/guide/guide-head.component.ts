@@ -17,11 +17,11 @@ import { GuideSection } from './guide-sections';
  * one.
  *
  * A page with pages above it (a test, a set's run, a batch) puts its breadcrumb in the kicker's
- * place (`crumbs`: "Tests / Password Reset Instructions", then `kicker` - what the page is, when
- * its title doesn't say it: "Statistics batch"); a page with nothing above it (the Overview, a
- * list, the Guide, a catalogue, Settings) has the kicker alone, naming its part of the app
- * ("Work"). A page of one thing's title is a name - `size="one"` sets it smaller, as names run
- * long.
+ * place (`crumbs`: "Tests / Password Reset Instructions", then `kicker` - what the page is, even
+ * when its title says it: "Statistics batch", "Run with statistics"); a page with nothing above
+ * it (the Overview, a list, the Guide, a catalogue, Settings) has the kicker alone, naming its
+ * part of the app ("Work"). A page of one thing's title is a name - `size="one"` sets it smaller,
+ * as names run long.
  */
 @Component({
   selector: 'assay-guide-head',

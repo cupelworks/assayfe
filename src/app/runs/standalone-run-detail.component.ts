@@ -32,7 +32,7 @@ import { allJudges, runLede, runOf } from './run-words';
   ],
   styleUrls: ['../shared/guide/guide.css', '../shared/guide/head-aside.css'],
   template: `<div class="g-wrap">
-    <assay-guide-head size="one" [crumbs]="crumbs()" [title]="title()" [lede]="lede()">
+    <assay-guide-head size="one" kicker="Run" [crumbs]="crumbs()" [title]="title()" [lede]="lede()">
       <div class="page-aside" guideHeadAside>
         <button type="button" class="btn btn-primary" (click)="runOnce()" [disabled]="act.busy()">
           {{ act.busy() ? 'Starting…' : 'Run once' }}

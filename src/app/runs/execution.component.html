@@ -1,5 +1,5 @@
 <div class="g-wrap">
-  <assay-guide-head size="one" [crumbs]="crumbs()" [title]="title()" [lede]="lede()">
+  <assay-guide-head size="one" kicker="Run" [crumbs]="crumbs()" [title]="title()" [lede]="lede()">
     <div class="page-aside" guideHeadAside>
       <button type="button" class="btn btn-primary" (click)="replay()" [disabled]="act.busy()">
         {{ act.busy() ? 'Starting…' : 'Replay' }}
