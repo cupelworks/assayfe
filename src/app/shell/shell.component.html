@@ -12,7 +12,11 @@
           >{{ l.label }}</a
         >
       }
-      <assay-reference-menu />
+      <span class="menus">
+        @for (m of menus; track m.label) {
+          <assay-bar-menu [menu]="m" />
+        }
+      </span>
     </nav>
     <div class="util">
       <a

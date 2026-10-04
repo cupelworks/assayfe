@@ -1,60 +1,64 @@
-import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, computed, inject, input, signal, viewChild } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
-import { ReferenceListComponent } from './reference-list.component';
-import { referencePageOf } from './nav';
+import { MenuListComponent } from './menu-list.component';
+import { NavMenu, menuPageOf } from './nav';
 import { dismissable } from '../shared/dismissable';
 
 /**
- * Reference in the header's bar: a button that opens a section of its own under the bar - its
- * title in the rail (columns 1-3), its pages from column 4 (`<assay-reference-list>`). On one of
- * those pages the button says which: the page's name on the bar's baseline, red with the red line
- * on the rule, and "Reference" over it in small red capitals; elsewhere, just "Reference". It
- * closes on the next page, a click outside it, or Escape (focus back on the button).
+ * A menu in the header's bar - Results, Reference: a button that opens a section of its own under
+ * the bar - its name and what it holds in the rail (columns 1-3), its pages from column 4
+ * (`<assay-menu-list>`). On one of those pages the button says which: the page's name on the bar's
+ * baseline, red with the red line on the rule, and the menu's name over it in small red capitals;
+ * elsewhere, just the menu's name. It closes on the next page, a click outside it - another menu's
+ * button too, so one is open at a time - or Escape (focus back on the button).
  */
 @Component({
-  selector: 'assay-reference-menu',
+  selector: 'assay-bar-menu',
   standalone: true,
-  imports: [ReferenceListComponent],
+  imports: [MenuListComponent],
   styleUrls: ['./bar.css'],
   template: `
     <button
       #button
       type="button"
-      class="bar-link ref"
+      class="bar-link"
       [class.on]="current()"
       [class.open]="open()"
       [attr.aria-expanded]="open()"
-      aria-controls="reference-panel"
+      [attr.aria-controls]="panelId()"
       (click)="open.set(!open())"
     >
       <span class="rl">
         @if (current(); as page) {
-          <span class="rc">Reference</span>{{ page.label }}
+          <span class="rc">{{ menu().label }}</span
+          >{{ page.label }}
         } @else {
-          Reference
+          {{ menu().label }}
         }
         <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" aria-hidden="true">
           <path d="M1.5 3.5 5 7l3.5-3.5" stroke-width="1.6" /></svg
       ></span>
     </button>
     @if (open()) {
-      <nav class="panel" id="reference-panel" aria-label="Reference">
+      <nav class="panel" [id]="panelId()" [attr.aria-label]="menu().label">
         <div class="rail">
-          <p class="title">Reference</p>
-          <p class="what">
-            What Assay can check and decide, how to read its charts, and how it all works.
-          </p>
+          <p class="title">{{ menu().label }}</p>
+          <p class="what">{{ menu().what }}</p>
         </div>
-        <assay-reference-list (picked)="open.set(false)" />
+        <assay-menu-list
+          [groups]="menu().groups"
+          [across]="menu().across"
+          [style.grid-column]="'4 / span ' + menu().cols"
+          (picked)="open.set(false)"
+        />
       </nav>
     }
   `,
   styles: `
     :host {
       display: flex;
-      margin-left: 12px;
     }
     .rl {
       position: relative;
@@ -113,13 +117,12 @@ import { dismissable } from '../shared/dismissable';
       line-height: 1.5;
       color: var(--color-neutral-600);
     }
-    assay-reference-list {
-      grid-column: 4 / 12;
-    }
   `,
 })
-export class ReferenceMenuComponent {
+export class BarMenuComponent {
+  menu = input.required<NavMenu>();
   open = signal(false);
+  panelId = computed(() => `${this.menu().label.toLowerCase()}-panel`);
   private button = viewChild.required<ElementRef<HTMLButtonElement>>('button');
   private router = inject(Router);
   private url = toSignal(
@@ -129,8 +132,8 @@ export class ReferenceMenuComponent {
     ),
     { initialValue: this.router.url },
   );
-  /** The Reference page you're on, if any. */
-  current = computed(() => referencePageOf(this.url()));
+  /** The menu's page you're on, if any. */
+  current = computed(() => menuPageOf(this.menu(), this.url()));
 
   constructor() {
     dismissable(

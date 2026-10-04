@@ -3,8 +3,8 @@
   display: flex;
   flex-direction: column;
 }
-/* The bar, on the page grid (the global .page-grid), above the page: Reference's panel opens
-   over it. */
+/* The bar, on the page grid (the global .page-grid), above the page: a menu's panel opens over
+   it. */
 .bar {
   position: relative;
   z-index: 10;
@@ -36,6 +36,12 @@
   gap: 28px;
   font-size: 14px;
 }
+/* The menus after the work, a little apart from it and a little closer to one another. */
+.menus {
+  display: flex;
+  gap: 24px;
+  margin-left: 12px;
+}
 .util {
   grid-column: 11 / -1;
   display: flex;
@@ -46,7 +52,10 @@
 assay-app-menu {
   display: none;
 }
-@media (max-width: 960px) {
+/* Below 1220 px the work and both menus no longer fit beside Settings and the theme (a menu on
+   its longest page - "Comparisons", "Statistical tests" - by up to 160 px at 961): the bar keeps
+   the brand and Menu, which holds them all. The pages' own phone layout starts at 960. */
+@media (max-width: 1219px) {
   .bar {
     display: flex;
     justify-content: space-between;
