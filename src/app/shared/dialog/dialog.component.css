@@ -97,8 +97,13 @@
   color: var(--color-neutral-800);
   cursor: pointer;
 }
-.cancel:hover {
+.cancel:hover:not(:disabled) {
   color: var(--color-accent);
+}
+/* While its action is under way the dialog can't be closed. */
+.cancel:disabled {
+  color: var(--color-neutral-500);
+  cursor: default;
 }
 .cancel:focus-visible {
   outline: 2px solid var(--color-accent);
