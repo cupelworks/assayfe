@@ -12,11 +12,9 @@
           >{{ l.label }}</a
         >
       }
-      <span class="menus">
-        @for (m of menus; track m.label) {
-          <assay-bar-menu [menu]="m" />
-        }
-      </span>
+      @for (m of menus; track m.label) {
+        <assay-bar-menu [menu]="m" />
+      }
     </nav>
     <div class="util">
       <a
