@@ -1,10 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
+import { forkJoin } from 'rxjs';
 import { TestSetsApiService } from '../api/test-sets-api.service';
 import { TestPlansApiService } from '../api/test-plans-api.service';
-import { StatisticsApiService } from '../api/statistics-api.service';
-import { LatestByRow } from '../api/latest';
+import { latestRunOf } from '../api/latest';
 import { typeCounts, typeTimes } from '../api/checks';
 import { TestCaseBody, TestSetEntry } from '../api/models';
 import { Paged } from '../shared/paged';
@@ -77,7 +76,6 @@ export class TestSetDetailComponent extends ScopePage<Dlg> {
   readonly one = 'test set';
   private setsApi = inject(TestSetsApiService);
   private plansApi = inject(TestPlansApiService);
-  private statsApi = inject(StatisticsApiService);
   sections = scopeSections('Tests', 'In test plans');
 
   page = new Paged<TestSetEntry>(
@@ -87,12 +85,8 @@ export class TestSetDetailComponent extends ScopePage<Dlg> {
   );
   selection = new Selection(() => this.page.items());
   editing = signal<TestSetEntry | null>(null);
-  /** Entry ids with a run against them - frozen for good: they can't be edited or deleted. The
-   *  API has no flag for it, so it's read from every run of every execution of the set (its own
-   *  and one of each statistics batch's: every time of a batch runs the same entries). */
-  frozen = signal<Set<string>>(new Set());
-  /** A test of it has run: it can't be deleted (a statistics batch's runs count). */
-  hasRuns = computed(() => this.frozen().size > 0);
+  /** A test of it has run - a statistics batch's or a plan's runs count: it can't be deleted. */
+  hasRuns = computed(() => !!this.meta()?.has_runs);
 
   // ---- the top ----
   plans = computed(() => {
@@ -151,7 +145,7 @@ export class TestSetDetailComponent extends ScopePage<Dlg> {
   tagsOf(e: TestSetEntry): CatalogTag[] {
     return [
       ...(e.model_output != null ? [{ text: 'Recorded answer', look: 'boxed' as const }] : []),
-      ...(this.frozen().has(e.id) ? [{ text: 'Frozen', look: 'boxed' as const }] : []),
+      ...(e.has_runs ? [{ text: 'Frozen', look: 'boxed' as const }] : []),
     ];
   }
   checkTags(e: TestSetEntry): CatalogTag[] {
@@ -159,7 +153,8 @@ export class TestSetDetailComponent extends ScopePage<Dlg> {
       text: typeTimes(c.name, c.count),
     }));
   }
-  anyFrozen = computed(() => this.page.items().some((e) => this.frozen().has(e.id)));
+  /** A copy that has run is frozen for good: it can't be edited or deleted. */
+  anyFrozen = computed(() => this.page.items().some((e) => e.has_runs));
   entriesEmpty = computed(() =>
     this.page.loading() || this.page.items().length
       ? null
@@ -173,7 +168,7 @@ export class TestSetDetailComponent extends ScopePage<Dlg> {
   tickedNames = computed(() =>
     this.ticked().map((e) => ({
       name: displayName(e.name, e.id),
-      note: this.frozen().has(e.id) ? 'frozen · has runs' : 'never run',
+      note: e.has_runs ? 'frozen · has runs' : 'never run',
     })),
   );
   unlinkBody = computed(() =>
@@ -182,7 +177,7 @@ export class TestSetDetailComponent extends ScopePage<Dlg> {
       : "Their copies leave the set; their runs stay, and so do the tests themselves. The set's past runs still show them.",
   );
   bulkActions = computed<BulkAction[]>(() => {
-    const frozen = this.ticked().some((e) => this.frozen().has(e.id));
+    const frozen = this.ticked().some((e) => e.has_runs);
     return [
       { key: 'unlink', label: 'Unlink…' },
       {
@@ -202,11 +197,8 @@ export class TestSetDetailComponent extends ScopePage<Dlg> {
     { label: 'Its latest run', width: 3.5 },
     idColumn('Entry ID'),
   ];
-  planRuns = new LatestByRow(
-    () => 'test-plans',
-    () => (this.plans() ?? []).map((p) => p.id),
-    { runs: true },
-  );
+  /** Each plan's latest run, counted, as the plans' list has it. */
+  planRuns = computed(() => new Map((this.plans() ?? []).map((p) => [p.id, latestRunOf(p)])));
   plansEmpty = computed(() =>
     this.plans() === null ? 'Reading the test plans…' : 'No test plan runs it.',
   );
@@ -264,7 +256,6 @@ export class TestSetDetailComponent extends ScopePage<Dlg> {
   reload() {
     this.selection.clear();
     this.page.reload();
-    this.loadFrozen();
     this.membership.loadPlans();
   }
   protected fetchMeta() {
@@ -275,43 +266,6 @@ export class TestSetDetailComponent extends ScopePage<Dlg> {
   }
   protected deleted() {
     return this.setsApi.deleteTestSet(this.id());
-  }
-
-  private loadFrozen() {
-    const id = this.id();
-    // The ordinary runs, and one run of each statistics batch: every time of a batch runs the
-    // same entries, so its first execution names them all.
-    const batchExecs = this.statsApi.batchesPage({ test_set_id: id }, 0, 100).pipe(
-      switchMap((p) =>
-        p.items.length
-          ? forkJoin(
-              p.items.map((b) =>
-                this.runsApi.executionsPage('test-sets', id, 0, 1, b.id).pipe(
-                  map((x) => x.items),
-                  catchError(() => of([])),
-                ),
-              ),
-            )
-          : of([]),
-      ),
-      map((lists) => lists.flat()),
-      catchError(() => of([])),
-    );
-    forkJoin([this.runsApi.executions('test-sets', id, 'none'), batchExecs])
-      .pipe(
-        map(([own, batches]) => [...own, ...batches]),
-        switchMap((execs) =>
-          execs.length
-            ? forkJoin(execs.map((e) => this.runsApi.executionRuns('test-sets', id, e.id)))
-            : of([]),
-        ),
-      )
-      .subscribe((runsPerExec) => {
-        const ids = new Set<string>();
-        for (const runs of runsPerExec)
-          for (const r of runs) if (r.test_set_entry_id) ids.add(r.test_set_entry_id.id);
-        this.frozen.set(ids);
-      });
   }
 
   quietAct(key: string) {

@@ -1,6 +1,5 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, forkJoin, map, of } from 'rxjs';
 import { CatalogStore } from '../api/catalog.store';
 import { DatasetsApiService } from '../api/datasets-api.service';
 import { DataSetMetadata } from '../api/models';
@@ -19,16 +18,10 @@ import { BannerComponent } from '../shared/work/banner.component';
 import { ImportDatasetDialogComponent } from './import-dataset-dialog.component';
 import { ROW_KEY } from './row-keys';
 
-/** A dataset's rows, as its row shows them: how many, and the first one's prompt. */
-interface RowsOf {
-  total: number;
-  first: string | null;
-}
-
 /**
  * Datasets, on the Guide's layout: the title with Import beside it, what a row holds, the smart
- * filter, then each dataset with how many rows and its first prompt (one call each per row - the
- * list has no count), and how it gets in. As on the other lists, only the page's words narrow it.
+ * filter, then each dataset with how many rows and its first prompt (as the list has them), and
+ * how it gets in. As on the other lists, only the page's words narrow it.
  */
 @Component({
   selector: 'assay-datasets-list',
@@ -56,8 +49,7 @@ export class DatasetsListComponent {
   rowKey = ROW_KEY;
 
   page = new Paged<DataSetMetadata>((o, l) => this.api.datasets(o, l), 10, errText);
-  rowsOf = signal<Record<string, RowsOf>>({});
-  filter = new TextFilter<DataSetMetadata>((d) => `${d.name} ${this.rowsOf()[d.id]?.first ?? ''}`);
+  filter = new TextFilter<DataSetMetadata>((d) => `${d.name} ${d.first_prompt ?? ''}`);
   sort = signal('Newest');
   sortOptions = ['Newest', 'Oldest', 'Name'];
   rows = computed(() => {
@@ -117,23 +109,6 @@ export class DatasetsListComponent {
   constructor() {
     this.page.reload();
     this.store.loadDatasets();
-    // Each shown dataset's row count and first prompt - one call each.
-    effect((onCleanup) => {
-      const items = this.page.items();
-      if (!items.length) return;
-      const sub = forkJoin(
-        items.map((d) =>
-          this.api.datasetRows(d.id, 0, 1).pipe(
-            map(
-              (p) =>
-                [d.id, { total: p.total, first: p.items[0]?.row_info.prompt ?? null }] as const,
-            ),
-            catchError(() => of([d.id, { total: 0, first: null }] as const)),
-          ),
-        ),
-      ).subscribe((pairs) => this.rowsOf.set(Object.fromEntries(pairs)));
-      onCleanup(() => sub.unsubscribe());
-    });
   }
 
   import(d: { name: string; path: string }) {

@@ -41,7 +41,7 @@
   <assay-guide-section [section]="sections[0]" sub="Linked as they are, never copied">
     <assay-catalog-table label="Its test sets" [columns]="columns" [empty]="linksEmpty()">
       @for (l of page.items(); track l.id) {
-        @let r = setRuns.runs()[l.test_set.id];
+        @let r = setRuns().get(l.test_set.id);
         <assay-catalog-row
           [name]="l.test_set.name"
           [link]="['/test-sets', l.test_set.id]"
@@ -52,7 +52,6 @@
           >
           <assay-catalog-cell caption="Its latest run">
             <assay-latest-status
-              [loading]="r === undefined"
               [counts]="r?.counts ?? null"
               [at]="r?.at ?? null"
               none="Never run"

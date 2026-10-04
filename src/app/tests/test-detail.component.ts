@@ -1,12 +1,12 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { catchError, forkJoin, map, of } from 'rxjs';
+import { forkJoin } from 'rxjs';
 import { TestsApiService } from '../api/tests-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { TestSetsApiService } from '../api/test-sets-api.service';
 import { CatalogStore } from '../api/catalog.store';
 import { MembershipStore } from '../api/membership.store';
-import { StandaloneRun, TestCase, TestCaseBody, TestSetEntry } from '../api/models';
+import { StandaloneRun, TestCase, TestCaseBody, TestCaseRead, TestSetEntry } from '../api/models';
 import { ActionRunner } from '../shared/action-runner';
 import { Paged } from '../shared/paged';
 import { counted, displayName, errText, isInFlight, rel, statusLabel } from '../shared/format';
@@ -89,7 +89,8 @@ export class TestDetailComponent {
   statusLabel = statusLabel;
   sections = numbered('test-', ['The test', 'Verdicts', 'Runs', 'In test sets']);
 
-  test = signal<TestCase | null>(null);
+  /** The test, as the API reads it - how it stands, its runs, its copies. */
+  test = signal<TestCaseRead | null>(null);
   name = computed(() => displayName(this.test()?.name, this.id()));
   /** Its runs started from here - a statistics batch's are on the batch's page. */
   runs = new Paged<StandaloneRun>(
@@ -100,8 +101,6 @@ export class TestDetailComponent {
   statsScope = computed(() => ({ test_id: this.id() }));
   /** Bumped after a run is started here: the tables read again. */
   version = signal(0);
-  /** Every run of it, a batch's included - one is enough to keep it from being deleted. */
-  allRuns = signal<number | null>(null);
   /** Its copies, each in its set; null while read. */
   copies = computed(() => {
     const all = this.membership.copies();
@@ -145,17 +144,19 @@ export class TestDetailComponent {
           : ` ${inWords(sets.length).replace(/^./, (c) => c.toUpperCase())} test sets hold a copy of it.`;
     return `${answer}, and ${checks}.${held}`;
   });
-  /** Why it can't be deleted - the API's rule: in a test set, or with runs. */
+  /** Why it can't be deleted - the API's rule, from its flags: a copy of it (in a test set, or
+   *  unlinked from one since), or runs (a batch's included). */
   private kept = computed(() => {
-    const inSet = !!this.copies()?.length;
-    const runs = !!this.allRuns();
-    return inSet && runs
-      ? "it's in a test set and has runs"
-      : inSet
-        ? "it's in a test set"
-        : runs
-          ? 'it has runs'
-          : null;
+    const t = this.test();
+    if (!t) return null;
+    const copy = t.test_set_count
+      ? "it's in a test set"
+      : t.copy_count
+        ? 'a copy unlinked from its set needs it'
+        : '';
+    if (copy && t.has_runs)
+      return t.test_set_count ? `${copy} and has runs` : `${copy}, and it has runs`;
+    return copy || (t.has_runs ? 'it has runs' : null);
   });
   quiet = computed<QuietAction[]>(() => [
     { key: 'edit', label: 'Edit' },
@@ -241,18 +242,15 @@ export class TestDetailComponent {
   }
 
   load() {
+    this.loadTest();
+    this.runs.reset();
+  }
+  /** The test, how it stands - again once a run of it starts (it has runs then). */
+  private loadTest() {
     this.testsApi.test(this.id()).subscribe({
       next: (t) => this.test.set(t),
       error: (e) => this.act.msg.set({ ok: false, text: errText(e) }),
     });
-    this.runs.reset();
-    this.runsApi
-      .standaloneRunsPage(this.id(), 0, 0)
-      .pipe(
-        map((p) => p.total),
-        catchError(() => of(null)),
-      )
-      .subscribe((n) => this.allRuns.set(n));
   }
 
   open(d: Dlg) {
@@ -270,7 +268,7 @@ export class TestDetailComponent {
       ok: () => 'Started a run: it shows under Runs, and here as its latest run.',
       then: () => {
         this.runs.reset();
-        this.allRuns.update((n) => (n ?? 0) + 1);
+        this.loadTest();
       },
     });
   }

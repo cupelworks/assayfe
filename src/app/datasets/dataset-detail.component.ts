@@ -82,11 +82,12 @@ export class DatasetDetailComponent {
   filter = new TextFilter<DataSetRow>(
     (r) => `${r.row_info.prompt} ${r.row_info.expected_output} ${r.row_info.model_output}`,
   );
-  /** The page's rows, numbered in the dataset, that the words leave. */
+  /** The page's rows, each with its number in the dataset (kept when others go), that the words
+   *  leave. */
   shown = computed<NumberedRow[]>(() => {
     const kept = new Set(this.filter.apply(this.rows()).map((r) => r.id));
     return this.rows()
-      .map((row, i) => ({ no: this.offset() + i + 1, row }))
+      .map((row) => ({ no: row.number, row }))
       .filter((r) => kept.has(r.row.id));
   });
   selection = new Selection(() => this.shown().map((r) => r.row));

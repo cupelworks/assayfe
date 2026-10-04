@@ -26,7 +26,7 @@ export class DatasetsApiService extends ApiBase {
   replaceDatasetRows(id: string, rows: M.DataSetRowSchema[]) {
     return this.http.put<M.DataSetImportResult>(this.u('/datasets/rows'), { id, rows });
   }
-  updateDatasetRows(rows: M.DataSetRow[]) {
+  updateDatasetRows(rows: Pick<M.DataSetRow, 'id' | 'row_info'>[]) {
     return this.http.patch<M.DataSetMutationResult>(this.u('/datasets/rows'), rows);
   }
   deleteDatasetRows(row_ids: string[]) {

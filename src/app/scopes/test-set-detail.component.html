@@ -68,7 +68,7 @@
           </assay-catalog-cell>
           <assay-catalog-cell caption="Entry ID" [copyId]="e.id" />
           <assay-catalog-cell caption="">
-            @if (!frozen().has(e.id)) {
+            @if (!e.has_runs) {
               <button type="button" class="row-act" (click)="edit(e)">Edit</button>
             }
           </assay-catalog-cell>
@@ -120,14 +120,13 @@
       [empty]="plans()?.length ? null : plansEmpty()"
     >
       @for (p of plans() ?? []; track p.entry_id) {
-        @let r = planRuns.runs()[p.id];
+        @let r = planRuns().get(p.id);
         <assay-catalog-row [name]="p.name" [link]="['/test-plans', p.id]" [expandable]="false">
           <assay-catalog-cell caption="Holds">{{
             counted(p.linked_set_count ?? 0, 'test set')
           }}</assay-catalog-cell>
           <assay-catalog-cell caption="Its latest run">
             <assay-latest-status
-              [loading]="r === undefined"
               [counts]="r?.counts ?? null"
               [at]="r?.at ?? null"
               none="Never run"

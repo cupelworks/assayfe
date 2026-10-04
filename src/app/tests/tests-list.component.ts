@@ -7,9 +7,9 @@ import { TestSetsApiService } from '../api/test-sets-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { StatisticsApiService } from '../api/statistics-api.service';
 import { MembershipStore } from '../api/membership.store';
-import { LatestByRow, firstOfEach } from '../api/latest';
+import { firstOfEach, latestRunOf, refreshStandings } from '../api/latest';
 import { typeCounts, typeTimes } from '../api/checks';
-import { BatchSummary, TestCase, TestCaseBody } from '../api/models';
+import { BatchSummary, TestCase, TestCaseBody, TestCaseRead } from '../api/models';
 import { ActionRunner } from '../shared/action-runner';
 import { Paged } from '../shared/paged';
 import { Selection } from '../shared/selection';
@@ -41,8 +41,9 @@ interface Kept extends NamedItem {
 /**
  * Tests, on the Guide's layout: the title with New test beside it, then a tile per latest verdict
  * (the quick filters), the smart filter, and the tests - each with its checks, its latest verdict
- * and its latest run (one call each per row, polled while one is under way). Ticked, a bar at the
- * foot adds them to a test set, runs each once, or deletes them - saying first which can't go.
+ * and its latest run, as the list has them (read again while one is under way). Ticked, a bar at
+ * the foot adds them to a test set, runs each once, or deletes them - saying first which can't go
+ * and why, from each test's own flags.
  *
  * What the API can't filter by yet is chosen but not applied: the tiles, the facets, the sort
  * (only the page's words narrow the list, as before) - see
@@ -80,9 +81,9 @@ export class TestsListComponent {
   private statsApi = inject(StatisticsApiService);
   private membership = inject(MembershipStore);
 
-  page = new Paged<TestCase>((o, l) => this.api.testsPage(o, l), 10, errText);
+  page = new Paged<TestCaseRead>((o, l) => this.api.testsPage(o, l), 10, errText);
   /** Names, inputs and checks - the page's words. */
-  filter = new TextFilter<TestCase>(
+  filter = new TextFilter<TestCaseRead>(
     (t) =>
       `${t.name ?? ''} ${t.input} ${(t.test_type_assignments ?? []).map((a) => `${a.name} ${a.label ?? ''}`).join(' ')}`,
   );
@@ -93,10 +94,8 @@ export class TestsListComponent {
       : rows;
   });
   selection = new Selection(() => this.rows());
-  latest = new LatestByRow(
-    () => 'tests',
-    () => this.page.items().map((t) => t.id),
-  );
+  /** Each shown test's latest run, as its cell shows it. */
+  latestRuns = computed(() => new Map(this.page.items().map((t) => [t.id, latestRunOf(t)])));
 
   /** The last 100 batches: the tiles' and the Verdict facet's counts. */
   batches = new Paged<BatchSummary>(
@@ -196,7 +195,7 @@ export class TestsListComponent {
         many: true,
         values: this.store.datasets().map((d) => ({ key: d.id, label: d.name })),
       },
-      createdFacet(null),
+      createdFacet(tests.map((t) => t.created_at)),
     ];
   });
   items = computed(() =>
@@ -271,25 +270,26 @@ export class TestsListComponent {
       for (const c of copies) held.set(c.set.id, (held.get(c.set.id) ?? new Set()).add(test));
     return held;
   });
-  /** The tests the delete dialog was opened for, and how many runs each has (null while read). */
-  private deleting = signal<TestCase[]>([]);
-  private deletingRuns = signal<number[] | null>(null);
-  /** Which of them can go, which can't - and why. Null while it's read. */
+  /** The tests the delete dialog was opened for. */
+  private deleting = signal<TestCaseRead[]>([]);
+  /** Which of them can go, which can't - and why, from each test's flags: its copies (one in a
+   *  set, or unlinked from it since) and its runs - what the API refuses. */
   deletable = computed(() => {
-    const runs = this.deletingRuns();
-    const copies = this.membership.copies();
-    if (!runs || !copies) return null;
     const go: Kept[] = [];
     const kept: Kept[] = [];
-    this.deleting().forEach((t, i) => {
-      const sets = new Set((copies.get(t.id) ?? []).map((c) => c.set.id)).size;
-      const why = [sets ? `in ${counted(sets, 'test set')}` : '', runs[i] ? 'has runs' : '']
+    this.deleting().forEach((t) => {
+      const unlinked = t.copy_count - t.test_set_count;
+      const why = [
+        t.test_set_count ? `in ${counted(t.test_set_count, 'test set')}` : '',
+        unlinked > 0 ? counted(unlinked, 'unlinked copy', 'unlinked copies') : '',
+        t.has_runs ? 'has runs' : '',
+      ]
         .filter(Boolean)
         .join(' · ');
       const item = {
         id: t.id,
         name: displayName(t.name, t.id),
-        note: why || 'no runs, in no test set',
+        note: why || 'no runs, no copies',
       };
       (why ? kept : go).push(item);
     });
@@ -298,24 +298,27 @@ export class TestsListComponent {
 
   addLabel = (n: number) => (n ? `Add to ${counted(n, 'test set')}` : 'Add to test sets');
   deleteLabel = computed(() => {
-    const n = this.deletable()?.go.length ?? 0;
+    const n = this.deletable().go.length;
     return n ? `Delete ${counted(n, 'test')}` : 'Delete';
   });
   deleteTitle = computed(() => {
     const d = this.deletable();
     const n = this.deleting().length;
-    if (!d || d.go.length === n) return `Delete ${n === 1 ? 'this test' : counted(n, 'test')}?`;
+    if (d.go.length === n) return `Delete ${n === 1 ? 'this test' : counted(n, 'test')}?`;
     if (!d.go.length)
       return n === 1 ? "This test can't be deleted" : `None of the ${n} tests can be deleted`;
     return `Delete ${d.go.length} of the ${n} tests?`;
   });
-  deleteBody = computed(() =>
-    this.deletable()
-      ? "A test that has run, or is in a test set, can't be deleted: its runs and its copies need it. Deleting can't be undone."
-      : 'Checking which of them can go…',
-  );
+  deleteBody =
+    "A test that has run, or has a copy - in a test set, or unlinked from one - can't be deleted: its runs and its copies need it. Deleting can't be undone.";
 
   constructor() {
+    refreshStandings(
+      () => this.page.items(),
+      () => {
+        if (!this.page.loading()) this.page.reload();
+      },
+    );
     this.page.reload();
     this.batches.reload();
     this.store.loadTests();
@@ -387,31 +390,18 @@ export class TestsListComponent {
         },
         then: () => {
           this.selection.clear();
-          this.latest.reload();
+          this.page.reload();
         },
       },
     );
   }
-  /** Opens the delete dialog, then reads which of the ticked tests can go: a test in a test set,
-   *  or with runs, can't (the API's rule - a copy that was unlinked keeps it too, which only the
-   *  API can tell: its answer then says so in the dialog). */
+  /** Opens the delete dialog for the ticked tests - which can go is in their flags. */
   askDelete() {
-    const tests = this.ticked();
-    this.deleting.set(tests);
-    this.deletingRuns.set(null);
+    this.deleting.set(this.ticked());
     this.open('delete');
-    this.membership.loadCopies();
-    forkJoin(
-      tests.map((t) =>
-        this.runsApi.standaloneRunsPage(t.id, 0, 0).pipe(
-          map((p) => p.total),
-          catchError(() => of(0)),
-        ),
-      ),
-    ).subscribe((runs) => this.deletingRuns.set(runs));
   }
   remove() {
-    const ids = this.deletable()?.go.map((t) => t.id) ?? [];
+    const ids = this.deletable().go.map((t) => t.id);
     if (!ids.length) return;
     this.act.run(this.api.deleteTests(ids), {
       ok: () => `Deleted ${counted(ids.length, 'test')}.`,

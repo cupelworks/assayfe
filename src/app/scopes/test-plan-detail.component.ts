@@ -1,8 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { catchError, map, of } from 'rxjs';
 import { TestPlansApiService } from '../api/test-plans-api.service';
-import { LatestByRow } from '../api/latest';
+import { latestRunOf, refreshStandings } from '../api/latest';
 import { TestPlanEntry } from '../api/models';
 import { Paged } from '../shared/paged';
 import { counted, errText } from '../shared/format';
@@ -72,14 +71,11 @@ export class TestPlanDetailComponent extends ScopePage<Dlg> {
     25,
     errText,
   );
-  /** Every run of it, a statistics batch's included - one is enough to keep it from being
-   *  deleted. */
-  allRuns = signal<number | null>(null);
-  hasRuns = computed(() => !!this.allRuns());
-  setRuns = new LatestByRow(
-    () => 'test-sets',
-    () => this.page.items().map((l) => l.test_set.id),
-    { runs: true },
+  /** It has run - a statistics batch's runs count - and can't be deleted. */
+  hasRuns = computed(() => !!this.meta()?.has_runs);
+  /** Each linked set's latest run, counted, as the entries list has it. */
+  setRuns = computed(
+    () => new Map(this.page.items().map((l) => [l.test_set.id, latestRunOf(l.test_set)])),
   );
   unlinkTarget = signal<TestPlanEntry | null>(null);
 
@@ -140,17 +136,16 @@ export class TestPlanDetailComponent extends ScopePage<Dlg> {
   constructor() {
     super();
     this.store.loadSets();
+    refreshStandings(
+      () => this.page.items().map((l) => l.test_set),
+      () => {
+        if (!this.page.loading()) this.page.reload();
+      },
+    );
   }
 
   reload() {
     this.page.reload();
-    this.runsApi
-      .executionsPage('test-plans', this.id(), 0, 0)
-      .pipe(
-        map((p) => p.total),
-        catchError(() => of(null)),
-      )
-      .subscribe((n) => this.allRuns.set(n));
   }
   protected fetchMeta() {
     return this.plansApi.testPlan(this.id());

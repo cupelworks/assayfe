@@ -19,12 +19,12 @@ export class TestsApiService extends ApiBase {
             offset: p.offset,
             limit: p.limit,
             items: p.test_cases,
-          }) as M.Page<M.TestCase>,
+          }) as M.Page<M.TestCaseRead>,
       ),
     );
   }
   test(id: string) {
-    return this.http.get<M.TestCase>(this.u(`/tests/${id}`));
+    return this.http.get<M.TestCaseRead>(this.u(`/tests/${id}`));
   }
   createTest(body: M.TestCaseBody) {
     return this.http.post<M.TestCase>(this.u('/tests'), body);

@@ -5,18 +5,18 @@ import { ApiBase, PAGE } from './api-base';
 @Injectable({ providedIn: 'root' })
 export class TestSetsApiService extends ApiBase {
   testSets(offset = 0, limit = 100) {
-    return this.http.get<M.Page<M.ScopeMetadata>>(this.u('/test-sets'), {
+    return this.http.get<M.Page<M.ScopeRead>>(this.u('/test-sets'), {
       params: PAGE(offset, limit),
     });
   }
   testSet(id: string) {
-    return this.http.get<M.ScopeMetadata>(this.u(`/test-sets/${id}`));
+    return this.http.get<M.ScopeRead>(this.u(`/test-sets/${id}`));
   }
   createTestSet(name: string) {
     return this.http.post<M.DataSetInfo>(this.u('/test-sets'), { name });
   }
   renameTestSet(id: string, name: string) {
-    return this.http.patch<M.ScopeMetadata>(this.u(`/test-sets/${id}`), { name });
+    return this.http.patch<M.ScopeRead>(this.u(`/test-sets/${id}`), { name });
   }
   deleteTestSet(id: string) {
     return this.http.delete<unknown>(this.u(`/test-sets/${id}`));

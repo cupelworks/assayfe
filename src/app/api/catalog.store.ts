@@ -12,7 +12,7 @@ import {
   ExecutionMetadata,
   Kind,
   ScopeMetadata,
-  TestCase,
+  TestCaseRead,
 } from './models';
 
 /**
@@ -54,7 +54,7 @@ export class CatalogStore {
   private testPlansApi = inject(TestPlansApiService);
   private runsApi = inject(RunsApiService);
   datasets = signal<DataSetMetadata[]>([]);
-  tests = signal<TestCase[]>([]);
+  tests = signal<TestCaseRead[]>([]);
   sets = signal<ScopeMetadata[]>([]);
   plans = signal<ScopeMetadata[]>([]);
   private rawExecutions = signal<AnyExecutionMetadata[]>([]);

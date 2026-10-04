@@ -7,8 +7,8 @@ import { TestPlansApiService } from '../api/test-plans-api.service';
 import { RunsApiService } from '../api/runs-api.service';
 import { StatisticsApiService } from '../api/statistics-api.service';
 import { MembershipStore } from '../api/membership.store';
-import { LatestByRow, firstOfEach } from '../api/latest';
-import { BatchSummary, Kind, ScopeMetadata } from '../api/models';
+import { firstOfEach, latestRunOf, refreshStandings } from '../api/latest';
+import { BatchSummary, Kind, ScopeMetadata, ScopeRead } from '../api/models';
 import { ActionRunner } from '../shared/action-runner';
 import { Paged } from '../shared/paged';
 import { Selection } from '../shared/selection';
@@ -63,8 +63,9 @@ const COPY = {
  * Test sets and Test plans, on the Guide's layout - one component for both: the title with New
  * beside it, a tile per latest verdict, the smart filter, then each set or plan with what it holds
  * (a set: in how many plans), its latest verdict, its latest run counted by status, how many runs
- * and when it was made. Ticked, a bar at the foot adds sets to a test plan, runs each live, or
- * deletes them - saying first which can't go.
+ * and when it was made - as the list has them, read again while one is under way. Ticked, a bar at
+ * the foot adds sets to a test plan, runs each live, or deletes them - saying first which can't
+ * go, from each one's own flags.
  *
  * As on Tests, only the page's words narrow the list; the tiles, facets and sort wait for the API
  * (docs/to_be_implemented_after_be_version_2/dev_notes.md).
@@ -106,12 +107,12 @@ export class ScopesListComponent {
   isSet = computed(() => this.kind() === 'test-sets');
   copy = computed(() => COPY[this.kind()]);
 
-  page = new Paged<ScopeMetadata>(
+  page = new Paged<ScopeRead>(
     (o, l) => (this.isSet() ? this.setsApi.testSets(o, l) : this.plansApi.testPlans(o, l)),
     10,
     errText,
   );
-  filter = new TextFilter<ScopeMetadata>((s) => s.name);
+  filter = new TextFilter<ScopeRead>((s) => s.name);
   sort = signal('Latest run');
   sortOptions = ['Latest run', 'Created', 'Name'];
   rows = computed(() => {
@@ -122,10 +123,8 @@ export class ScopesListComponent {
     return rows;
   });
   selection = new Selection(() => this.rows());
-  latest = new LatestByRow(
-    () => this.kind(),
-    () => this.page.items().map((s) => s.id),
-  );
+  /** Each shown set's or plan's latest run, counted, as its cell shows it. */
+  latestRuns = computed(() => new Map(this.page.items().map((s) => [s.id, latestRunOf(s)])));
 
   /** The last 100 batches: the tiles' and the Verdict facet's counts. */
   batches = new Paged<BatchSummary>(
@@ -279,28 +278,28 @@ export class ScopesListComponent {
   });
   linkLabel = (n: number) => (n ? `Add to ${counted(n, 'test plan')}` : 'Add to test plans');
 
-  private deleting = signal<ScopeMetadata[]>([]);
-  private deletingRuns = signal<number[] | null>(null);
+  private deleting = signal<ScopeRead[]>([]);
+  /** Which of them can go - one that has run can't (a statistics batch's runs count; a set's
+   *  tests run by a plan too) - from each one's flags. */
   deletable = computed(() => {
-    const runs = this.deletingRuns();
-    if (!runs) return null;
     const go: Named[] = [];
     const kept: Named[] = [];
-    this.deleting().forEach((s, i) => {
+    for (const s of this.deleting()) {
+      const runs = s.execution_count;
       const item = {
         id: s.id,
         name: s.name,
-        note: runs[i] ? `has ${counted(runs[i], 'run')}` : 'never run',
+        note: !s.has_runs ? 'never run' : runs ? `has ${counted(runs, 'run')}` : 'has runs',
       };
-      (runs[i] ? kept : go).push(item);
-    });
+      (s.has_runs ? kept : go).push(item);
+    }
     return { go, kept };
   });
   deleteTitle = computed(() => {
     const d = this.deletable();
     const n = this.deleting().length;
     const noun = (k: number) => counted(k, this.copy().one);
-    if (!d || d.go.length === n) return `Delete ${n === 1 ? `this ${this.copy().one}` : noun(n)}?`;
+    if (d.go.length === n) return `Delete ${n === 1 ? `this ${this.copy().one}` : noun(n)}?`;
     if (!d.go.length)
       return n === 1
         ? `This ${this.copy().one} can't be deleted`
@@ -308,16 +307,21 @@ export class ScopesListComponent {
     return `Delete ${d.go.length} of the ${noun(n)}?`;
   });
   deleteLabel = computed(() => {
-    const n = this.deletable()?.go.length ?? 0;
+    const n = this.deletable().go.length;
     return n ? `Delete ${counted(n, this.copy().one)}` : 'Delete';
   });
-  deleteBody = computed(() =>
-    this.deletable()
-      ? `A ${this.copy().one} that has run can't be deleted: its runs need it. Deleting can't be undone${this.isSet() ? ' - the tests it copied stay' : ' - the test sets it links stay'}.`
-      : 'Checking which of them can go…',
+  deleteBody = computed(
+    () =>
+      `A ${this.copy().one} that has run can't be deleted: its runs need it. Deleting can't be undone${this.isSet() ? ' - the tests it copied stay' : ' - the test sets it links stay'}.`,
   );
 
   constructor() {
+    refreshStandings(
+      () => this.page.items(),
+      () => {
+        if (!this.page.loading()) this.page.reload();
+      },
+    );
     this.store.loadSets();
     this.store.loadPlans();
     this.store.loadTests();
@@ -401,30 +405,18 @@ export class ScopesListComponent {
         },
         then: () => {
           this.selection.clear();
-          this.latest.reload();
+          this.page.reload();
         },
       },
     );
   }
-  /** Opens the delete dialog, then reads which of the ticked can go: one that has run can't (a
-   *  statistics batch's runs count). */
+  /** Opens the delete dialog for the ticked - which can go is in their flags. */
   askDelete() {
-    const kind = this.kind();
-    const scopes = this.ticked();
-    this.deleting.set(scopes);
-    this.deletingRuns.set(null);
+    this.deleting.set(this.ticked());
     this.open('delete');
-    forkJoin(
-      scopes.map((s) =>
-        this.runsApi.executionsPage(kind, s.id, 0, 0).pipe(
-          map((p) => p.total),
-          catchError(() => of(0)),
-        ),
-      ),
-    ).subscribe((runs) => this.deletingRuns.set(runs));
   }
   remove() {
-    const go = this.deletable()?.go ?? [];
+    const go = this.deletable().go;
     if (!go.length) return;
     const del = (id: string) =>
       this.isSet() ? this.setsApi.deleteTestSet(id) : this.plansApi.deleteTestPlan(id);

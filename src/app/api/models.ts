@@ -63,6 +63,10 @@ export interface DataSetMetadata {
   id: string;
   name: string;
   created_at: string;
+  /** How many rows it has, and its first row's prompt (the lowest number; null with none) - API
+   *  2.0. */
+  row_count: number;
+  first_prompt: string | null;
 }
 export interface DataSetRowSchema {
   prompt: string;
@@ -72,6 +76,11 @@ export interface DataSetRowSchema {
 export interface DataSetRow {
   id: string;
   row_info: DataSetRowSchema;
+  /** Its place in the dataset, from 1, kept when other rows are deleted (so numbers can skip) -
+   *  the number a test made from it gives (`dataset_row_number`) - API 2.0. */
+  number: number;
+  /** How many tests were made from it. */
+  test_count: number;
 }
 export interface DataSetRowPage extends Page<DataSetRow> {
   id: string;
@@ -130,11 +139,25 @@ export interface TestCaseBody {
 export interface TestCase extends TestCaseBody {
   id: string;
 }
+/** A test as `GET /tests` and `GET /tests/{id}` read it (API 2.0): when it was made, the dataset
+ *  row it came from (null when made by hand, or when the row went), how it stands - its latest
+ *  verdict and its latest run outside a batch - whether it has runs (a batch's included), its
+ *  copies (unlinked ones included: each keeps it from being deleted) and the sets holding one. */
+export interface TestCaseRead extends TestCase {
+  created_at: string;
+  dataset_row_id: string | null;
+  dataset_row_number: number | null;
+  latest_batch: LatestBatch | null;
+  latest_run: LatestStandaloneRun | null;
+  has_runs: boolean;
+  copy_count: number;
+  test_set_count: number;
+}
 export interface TestCasePage {
   total: number;
   offset: number;
   limit: number;
-  test_cases: TestCase[];
+  test_cases: TestCaseRead[];
 }
 export type ModifyTestCase = Partial<TestCaseBody>;
 
@@ -148,13 +171,46 @@ export interface ScopeMetadata {
   /** Test plans only - current linked-set count. */
   linked_set_count?: number;
 }
+/** A set or plan as the API reads it (its list, its page, a rename, a plan's sets - API 2.0): how
+ *  it stands - its latest verdict, its latest run outside a batch (counted) and how many it has
+ *  had - whether it has runs (a batch's included; a set's when any of its copies ran, a plan's
+ *  run included), and a set's plans. */
+export interface ScopeRead extends ScopeMetadata {
+  latest_batch: LatestBatch | null;
+  latest_execution: LatestExecution | null;
+  execution_count: number;
+  has_runs: boolean;
+  /** Test sets only - the plans linking it. */
+  test_plan_count?: number;
+}
 export interface TestSetEntry extends TestCaseBody {
   id: string;
   test_case_id: Ref;
+  /** It has run: frozen - it can't be edited or deleted (API 2.0; on its list, its page, an edit). */
+  has_runs?: boolean;
 }
 export interface TestPlanEntry {
   id: string;
-  test_set: ScopeMetadata;
+  test_set: ScopeRead;
+}
+/** An item's latest verdict: its newest statistics batch (API 2.0). */
+export interface LatestBatch {
+  id: string;
+  status: BatchStatus;
+  created_at: string;
+}
+/** A test's newest run outside a batch (API 2.0). */
+export interface LatestStandaloneRun {
+  id: string;
+  status: TestStatus;
+  created_at: string;
+}
+/** A set's or plan's newest run outside a batch, its runs counted (API 2.0). */
+export interface LatestExecution {
+  id: string;
+  created_at: string;
+  replayed: boolean;
+  runs: RunCounts;
 }
 
 // Runs

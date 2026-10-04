@@ -45,8 +45,8 @@
     [empty]="emptyText()"
   >
     @for (t of rows(); track t.id) {
-      @let v = latest.verdicts()[t.id];
-      @let r = latest.runs()[t.id];
+      @let v = t.latest_batch;
+      @let r = latestRuns().get(t.id);
       <assay-catalog-row
         [name]="displayName(t.name, t.id)"
         [link]="['/tests', t.id]"
@@ -69,7 +69,6 @@
         </assay-catalog-cell>
         <assay-catalog-cell caption="Latest verdict">
           <assay-latest-status
-            [loading]="v === undefined"
             [of]="v?.status ?? null"
             [at]="v?.created_at ?? null"
             none="Not yet"
@@ -77,12 +76,7 @@
           />
         </assay-catalog-cell>
         <assay-catalog-cell caption="Latest run">
-          <assay-latest-status
-            [loading]="r === undefined"
-            [of]="r?.status ?? null"
-            [at]="r?.at ?? null"
-            none="Never run"
-          />
+          <assay-latest-status [of]="r?.status ?? null" [at]="r?.at ?? null" none="Never run" />
         </assay-catalog-cell>
         <assay-catalog-cell caption="ID" [copyId]="t.id" />
       </assay-catalog-row>
@@ -142,25 +136,23 @@
     <assay-confirm-dialog
       kicker="Tests"
       [title]="deleteTitle()"
-      [body]="deleteBody()"
+      [body]="deleteBody"
       [confirmLabel]="deleteLabel()"
-      [blocked]="!d?.go?.length"
+      [blocked]="!d.go.length"
       [busy]="act.busy()"
       [error]="act.err()"
       (confirm)="remove()"
       (closed)="dlg.set(null)"
     >
-      @if (d) {
-        @if (d.go.length) {
-          <assay-named-list caption="Deleted" [items]="d.go" />
-        }
-        @if (d.kept.length) {
-          <assay-named-list
-            caption="Kept - their runs or copies need them"
-            [items]="d.kept"
-            [kept]="true"
-          />
-        }
+      @if (d.go.length) {
+        <assay-named-list caption="Deleted" [items]="d.go" />
+      }
+      @if (d.kept.length) {
+        <assay-named-list
+          caption="Kept - their runs or copies need them"
+          [items]="d.kept"
+          [kept]="true"
+        />
       }
     </assay-confirm-dialog>
   }

@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, catchError, expand, forkJoin, map, of, reduce, switchMap } from 'rxjs';
-import { Page, ScopeMetadata, TestPlanEntry, TestSetEntry } from './models';
+import { Page, ScopeMetadata, ScopeRead, TestPlanEntry, TestSetEntry } from './models';
 import { TestSetsApiService } from './test-sets-api.service';
 import { TestPlansApiService } from './test-plans-api.service';
 
@@ -9,11 +9,11 @@ export interface CopyInSet {
   set: ScopeMetadata;
   entry: TestSetEntry;
 }
-/** A plan that links a set, with the ID of its entry that links it. */
-export interface PlanOfSet extends ScopeMetadata {
+/** A plan that links a set, as the plans' list has it, with the ID of its entry that links it. */
+export interface PlanOfSet extends ScopeRead {
   entry_id: string;
 }
-type Link = { plan: ScopeMetadata; set: string; entry: string };
+type Link = { plan: ScopeRead; set: string; entry: string };
 
 /** Every item of a list, page after page (100 a page). */
 function all<T>(page: (offset: number) => Observable<Page<T>>): Observable<T[]> {

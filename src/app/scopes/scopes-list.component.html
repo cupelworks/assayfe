@@ -42,8 +42,8 @@
     [empty]="emptyText()"
   >
     @for (s of rows(); track s.id) {
-      @let v = latest.verdicts()[s.id];
-      @let r = latest.runs()[s.id];
+      @let v = s.latest_batch;
+      @let r = latestRuns().get(s.id);
       <assay-catalog-row
         [name]="s.name"
         [link]="['/', kind(), s.id]"
@@ -57,7 +57,6 @@
         >
         <assay-catalog-cell caption="Latest verdict">
           <assay-latest-status
-            [loading]="v === undefined"
             [of]="v?.status ?? null"
             [at]="v?.created_at ?? null"
             none="Not yet"
@@ -65,17 +64,10 @@
           />
         </assay-catalog-cell>
         <assay-catalog-cell caption="Latest run">
-          <assay-latest-status
-            [loading]="r === undefined"
-            [counts]="r?.counts ?? null"
-            [at]="r?.at ?? null"
-            none="Never run"
-          />
+          <assay-latest-status [counts]="r?.counts ?? null" [at]="r?.at ?? null" none="Never run" />
         </assay-catalog-cell>
         <assay-catalog-cell caption="Runs"
-          ><span class="num">{{
-            r === undefined ? '…' : (r?.total ?? 0)
-          }}</span></assay-catalog-cell
+          ><span class="num">{{ s.execution_count }}</span></assay-catalog-cell
         >
         <assay-catalog-cell caption="Created"
           ><span class="when"><assay-rel-time [iso]="s.created_at" /></span
@@ -143,19 +135,17 @@
       [title]="deleteTitle()"
       [body]="deleteBody()"
       [confirmLabel]="deleteLabel()"
-      [blocked]="!d?.go?.length"
+      [blocked]="!d.go.length"
       [busy]="act.busy()"
       [error]="act.err()"
       (confirm)="remove()"
       (closed)="dlg.set(null)"
     >
-      @if (d) {
-        @if (d.go.length) {
-          <assay-named-list caption="Deleted" [items]="d.go" />
-        }
-        @if (d.kept.length) {
-          <assay-named-list caption="Kept - their runs need them" [items]="d.kept" [kept]="true" />
-        }
+      @if (d.go.length) {
+        <assay-named-list caption="Deleted" [items]="d.go" />
+      }
+      @if (d.kept.length) {
+        <assay-named-list caption="Kept - their runs need them" [items]="d.kept" [kept]="true" />
       }
     </assay-confirm-dialog>
   }

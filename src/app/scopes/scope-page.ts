@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { CatalogStore } from '../api/catalog.store';
 import { MembershipStore } from '../api/membership.store';
 import { RunsApiService } from '../api/runs-api.service';
-import { Kind, ScopeMetadata, StatsScopeRef } from '../api/models';
+import { Kind, ScopeRead, StatsScopeRef } from '../api/models';
 import { ActionRunner } from '../shared/action-runner';
 import { counted, errText, short } from '../shared/format';
 import { numbered } from '../shared/guide/guide-sections';
@@ -26,7 +26,8 @@ export abstract class ScopePage<D extends string> {
   protected router = inject(Router);
   store = inject(CatalogStore);
 
-  meta = signal<ScopeMetadata | null>(null);
+  /** The set or plan, as the API reads it - how it stands, whether it has runs. */
+  meta = signal<ScopeRead | null>(null);
   name = computed(() => this.meta()?.name ?? short(this.id()));
   /** Bumped after a run is started here, or what it holds changed: the tables read again. */
   version = signal(0);
@@ -40,6 +41,7 @@ export abstract class ScopePage<D extends string> {
       this.dlg.set(null);
       this.version.update((v) => v + 1);
       this.membership.forget();
+      this.loadMeta();
       this.reload();
     },
   });
@@ -56,7 +58,7 @@ export abstract class ScopePage<D extends string> {
 
   /** Reads what the page shows of it - its own first section. */
   abstract reload(): void;
-  protected abstract fetchMeta(): Observable<ScopeMetadata>;
+  protected abstract fetchMeta(): Observable<ScopeRead>;
   protected abstract renamed(name: string): Observable<unknown>;
   protected abstract deleted(): Observable<unknown>;
 

@@ -2,12 +2,12 @@ import { Component, computed, inject, input, output, signal } from '@angular/cor
 import { DataSetRow, TestTypeAssignment } from '../api/models';
 import { TestTypesStore } from '../api/test-types.store';
 import { CheckDraft, checkIssues, toAssignments, typesNeedingReference } from '../api/checks';
-import { counted } from '../shared/format';
+import { counted, listed } from '../shared/format';
 import { DialogComponent } from '../shared/dialog/dialog.component';
 import { ChecksTableComponent } from '../shared/checks-table.component';
 import { StatusMarkComponent } from '../shared/status-mark.component';
 
-/** A row the dialog makes a test from, with its place in the dataset. */
+/** A row the dialog makes a test from, with its number in the dataset. */
 export interface NumberedRow {
   no: number;
   row: DataSetRow;
@@ -46,6 +46,11 @@ export interface NumberedRow {
           >
         }
       </div>
+    }
+    @if (madeAlready(); as line) {
+      <p class="ok">
+        <assay-mark of="Amber" /><span>{{ line }}</span>
+      </p>
     }
     <div>
       <span class="cap">Each row gives its test</span>
@@ -239,6 +244,19 @@ export class MakeTestsDialogComponent {
       (this.rows()?.[0]?.row ?? this.allRows()?.[0])?.row_info.prompt ??
       'How do I reset my password?',
   );
+  /** The rows at hand that tests were made from already - making them again makes one more each:
+   *  "Row 4 has a test already: this makes one more." Null when none has, or they aren't at hand. */
+  madeAlready = computed(() => {
+    const rows = this.rows() ?? this.allRows()?.map((row) => ({ no: row.number, row }));
+    const made = (rows ?? []).filter((r) => r.row.test_count > 0);
+    if (!made.length) return null;
+    if (made.length === 1) {
+      const r = made[0];
+      return `Row ${r.no} has ${counted(r.row.test_count, 'test')} already: this makes one more.`;
+    }
+    const nos = made.map((r) => String(r.no));
+    return `Rows ${made.length <= 5 ? listed(nos) : `${nos.slice(0, 5).join(', ')} and ${nos.length - 5} more`} have tests already: this makes one more of each.`;
+  });
   /** What keeps "Make" disabled - the checks' own (expected outputs come from each row). */
   issues = computed(() => checkIssues(this.checks(), this.types.byName(), null));
   needRef = computed(() => typesNeedingReference(this.checks(), this.types.byName()));
@@ -246,7 +264,7 @@ export class MakeTestsDialogComponent {
   missing = computed(() => {
     const ticked = this.rows();
     const all = this.allRows();
-    const rows = ticked ?? all?.map((row, i) => ({ no: i + 1, row }));
+    const rows = ticked ?? all?.map((row) => ({ no: row.number, row }));
     if (!rows) return null;
     return rows.filter((r) => !r.row.row_info.expected_output.trim()).map((r) => r.no);
   });
