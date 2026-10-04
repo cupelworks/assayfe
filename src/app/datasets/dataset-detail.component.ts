@@ -93,9 +93,10 @@ export class DatasetDetailComponent {
   total = computed(() => this.meta()?.row_count ?? this.rowsList.page.total());
   /** The page's rows, each with its number in the dataset (kept when others go). */
   shown = computed<NumberedRow[]>(() => this.rows().map((row) => ({ no: row.number, row })));
-  /** The tests made from it - each with the row it came from and how it stands. */
+  /** The tests made from it, in the order of their rows - each with the row it came from and how
+   *  it stands. */
   made = new Paged<TestCaseRead>(
-    (o, l) => this.testsApi.testsPage({ from_dataset: [this.id()], sort: 'name' }, o, l),
+    (o, l) => this.testsApi.testsPage({ from_dataset: [this.id()], sort: 'dataset_row' }, o, l),
     5,
     errText,
   );

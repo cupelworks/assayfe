@@ -1,7 +1,6 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { RunsApiService } from '../api/runs-api.service';
-import { CatalogStore } from '../api/catalog.store';
 import { ExecutionRun, Kind, RunDetails } from '../api/models';
 import { displayName, errText, isInFlight } from '../shared/format';
 import { pollWhile } from '../shared/poll';
@@ -89,7 +88,6 @@ export class RunDetailComponent {
   execId = input.required<string>();
   runId = input.required<string>();
   private api = inject(RunsApiService);
-  private store = inject(CatalogStore);
   run = signal<RunDetails | null>(null);
   err = signal<string | null>(null);
   refreshing = signal(false);
@@ -98,6 +96,8 @@ export class RunDetailComponent {
   private siblings = signal<ExecutionRun[]>([]);
   /** When the set's run started - its title, here in the breadcrumb. */
   private startedAt = signal<string | null>(null);
+  /** Its set's or plan's name, as the run read on its own gives it - in the breadcrumb. */
+  private scopeName = signal<string | null>(null);
   loadMsg = computed(() => {
     const e = this.err();
     return e ? { ok: false, text: e } : null;
@@ -105,12 +105,12 @@ export class RunDetailComponent {
   private list = computed(() => (this.kind() === 'test-sets' ? 'Test sets' : 'Test plans'));
   /** The pages above it: the list, the set or plan by its name, its run by when it ran. */
   crumbs = computed(() => {
-    const scope = this.store.parent(this.kind(), this.id());
+    const name = this.scopeName();
     const at = this.startedAt() ?? this.run()?.created_at;
     return [
       { label: this.list(), link: '/' + this.kind() },
-      ...(scope
-        ? [{ label: displayName(scope.name, scope.id), link: ['/', this.kind(), this.id()] }]
+      ...(name
+        ? [{ label: displayName(name, this.id()), link: ['/', this.kind(), this.id()] }]
         : []),
       ...(at
         ? [{ label: runOf(at), link: ['/', this.kind(), this.id(), 'executions', this.execId()] }]
@@ -143,8 +143,6 @@ export class RunDetailComponent {
   hasInFlight = computed(() => isInFlight(this.run()?.status));
   constructor() {
     effect(() => {
-      // This scope's own name (store.parent) - only sets or plans is needed, by kind.
-      this.kind() === 'test-sets' ? this.store.loadSets() : this.store.loadPlans();
       this.fetchRun();
     });
     effect(() => {
@@ -180,7 +178,10 @@ export class RunDetailComponent {
    *  call each. */
   private readRun(kind: Kind, id: string, execId: string) {
     this.api.execution(kind, id, execId).subscribe({
-      next: (e) => this.startedAt.set(e.created_at),
+      next: (e) => {
+        this.startedAt.set(e.created_at);
+        this.scopeName.set(e.name);
+      },
       error: () => this.startedAt.set(null),
     });
     this.api.executionRunsPage(kind, id, execId, 0, 500, 'worst_first').subscribe({

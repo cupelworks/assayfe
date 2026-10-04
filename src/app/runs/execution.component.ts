@@ -109,12 +109,13 @@ export class ExecutionComponent {
     return e ? { ok: false, text: e } : null;
   });
   private list = computed(() => (this.kind() === 'test-sets' ? 'Test sets' : 'Test plans'));
+  /** The pages above it: the list, and the set or plan by its name (the run's own `name`). */
   crumbs = computed(() => {
-    const scope = this.store.parent(this.kind(), this.id());
+    const name = this.exec()?.name;
     return [
       { label: this.list(), link: '/' + this.kind() },
-      ...(scope
-        ? [{ label: displayName(scope.name, scope.id), link: ['/', this.kind(), this.id()] }]
+      ...(name
+        ? [{ label: displayName(name, this.id()), link: ['/', this.kind(), this.id()] }]
         : []),
     ];
   });
@@ -196,8 +197,6 @@ export class ExecutionComponent {
         id = this.id(),
         execId = this.execId();
       untracked(() => {
-        // This scope's own name (store.parent) - only sets or plans is needed, by kind.
-        kind === 'test-sets' ? this.store.loadSets() : this.store.loadPlans();
         this.exec.set(null);
         this.read(kind, id, execId);
       });

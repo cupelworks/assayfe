@@ -1,4 +1,4 @@
-// Mirrors components.schemas in Assay's OpenAPI (v1.2.0).
+// Mirrors components.schemas in Assay's OpenAPI (v2.0.0).
 export interface Ref {
   id: string;
 }
@@ -262,6 +262,8 @@ export interface ExecutionMetadata {
  *  executions list's item, and the checks of its tests counted - runs still under way count only
  *  in `runs`. */
 export interface ExecutionDetails extends ExecutionMetadata {
+  /** Its set's or plan's name. */
+  name: string;
   checks: ExecutionChecks;
 }
 export interface ExecutionChecks {

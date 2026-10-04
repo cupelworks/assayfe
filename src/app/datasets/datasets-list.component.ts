@@ -16,13 +16,6 @@ import { BannerComponent } from '../shared/work/banner.component';
 import { ImportDatasetDialogComponent } from './import-dataset-dialog.component';
 import { ROW_KEY } from './row-keys';
 
-/** The Rows facet's ranges, one at a time, as the API's `rows_min` / `rows_max`. */
-const ROWS: Record<string, { rows_min?: number; rows_max?: number }> = {
-  few: { rows_min: 1, rows_max: 10 },
-  some: { rows_min: 11, rows_max: 100 },
-  many: { rows_min: 101 },
-};
-
 /**
  * Datasets, on the Guide's layout: the title with Import beside it, what a row holds, the smart
  * filter, then each dataset with how many rows and its first prompt (as the list has them), and
@@ -62,7 +55,7 @@ export class DatasetsListComponent {
     params: (c, q, sort) => ({
       q,
       made_into_tests: yesNo(c['used'], 'yes', 'no'),
-      ...ROWS[c['rows']?.[0] ?? ''],
+      rows: c['rows'],
       ...createdParams(c['created']),
       sort: sort.toLowerCase(),
     }),
@@ -88,11 +81,10 @@ export class DatasetsListComponent {
       {
         key: 'rows',
         label: 'Rows',
-        single: true,
         values: [
-          { key: 'few', label: '1 to 10', count: of('rows', '1-10') },
-          { key: 'some', label: '11 to 100', count: of('rows', '11-100') },
-          { key: 'many', label: 'Over 100', count: of('rows', '101+') },
+          { key: '1-10', label: '1 to 10', count: of('rows', '1-10') },
+          { key: '11-100', label: '11 to 100', count: of('rows', '11-100') },
+          { key: '101+', label: 'Over 100', count: of('rows', '101+') },
         ],
       },
       createdFacet(c?.['created']),

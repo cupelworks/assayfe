@@ -53,7 +53,7 @@ export class WorkerStatusComponent implements OnInit {
     const h = this.health();
     return h ? WORKER_MARK[h.status] : null;
   });
-  /** Under its title: "Read-only · checked just now · API 1.2.0". */
+  /** Under its title: "Read-only · checked just now · API 2.0.0". */
   sub = computed(() => {
     const h = this.health();
     return ['Read-only', h && `checked ${rel(h.checked_at)}`, h?.version && `API ${h.version}`]
