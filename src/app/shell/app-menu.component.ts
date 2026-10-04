@@ -1,20 +1,20 @@
 import { Component, ElementRef, signal, viewChild } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { ReferenceListComponent } from './reference-list.component';
+import { MenuListComponent } from './menu-list.component';
 import { ThemeSwitchComponent } from './theme-switch.component';
-import { WORK } from './nav';
+import { MENUS, WORK } from './nav';
 import { dismissable } from '../shared/dismissable';
 
 /**
- * The header below 960 px, where the bar keeps only the brand: Menu opens the whole bar as one
- * sheet under it - the work in large type, then Reference's pages (`<assay-reference-list>`, one
- * column), then Settings and the theme. It closes on the next page, a click outside it, or Escape
- * (focus back on Menu).
+ * The header below 1220 px, where the bar keeps only the brand: Menu opens the whole bar as one
+ * sheet under it - the work in large type, then each menu's pages under its name, Results then
+ * Reference (`<assay-menu-list>`, one column), then Settings and the theme. It closes on the next
+ * page, a click outside it, or Escape (focus back on Menu).
  */
 @Component({
   selector: 'assay-app-menu',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, ReferenceListComponent, ThemeSwitchComponent],
+  imports: [RouterLink, RouterLinkActive, MenuListComponent, ThemeSwitchComponent],
   template: `
     <button
       #button
@@ -47,8 +47,10 @@ import { dismissable } from '../shared/dismissable';
             >
           }
         </div>
-        <p class="title">Reference</p>
-        <assay-reference-list [stack]="true" (picked)="open.set(false)" />
+        @for (m of menus; track m.label) {
+          <p class="title">{{ m.label }}</p>
+          <assay-menu-list [groups]="m.groups" [stack]="true" (picked)="open.set(false)" />
+        }
         <div class="foot">
           <a
             class="settings small-caps"
@@ -93,6 +95,12 @@ import { dismissable } from '../shared/dismissable';
       overflow-y: auto;
       padding: 4px 16px 32px;
       background: var(--color-bg);
+    }
+    /* Wider than a phone (961-1219 px), on the page's margins, as the bar over it. */
+    @media (min-width: 961px) {
+      .sheet {
+        padding-inline: 40px;
+      }
     }
     .work {
       display: flex;
@@ -148,6 +156,7 @@ import { dismissable } from '../shared/dismissable';
 })
 export class AppMenuComponent {
   work = WORK;
+  menus = MENUS;
   open = signal(false);
   private button = viewChild.required<ElementRef<HTMLButtonElement>>('button');
 

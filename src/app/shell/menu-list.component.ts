@@ -1,27 +1,40 @@
 import { Component, input, output } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
-import { REFERENCE } from './nav';
+import { IsActiveMatchOptions, RouterLink, RouterLinkActive } from '@angular/router';
+import { MenuGroup } from './nav';
+
+/** A page is the one you're on by its path alone - whatever its query or fragment says. */
+const ON_ITS_PATH: IsActiveMatchOptions = {
+  paths: 'exact',
+  queryParams: 'ignored',
+  fragment: 'ignored',
+  matrixParams: 'ignored',
+};
 
 /**
- * Reference's pages, under their kickers - Catalog, Guide - each numbered in red with its line,
- * as a guide page's index; the page you're on under a thick red rule, as a catalogue's selected
- * tile. Two columns in the header's panel, one in the phone's menu (`stack`). Says `picked` when
- * one is followed, for the menu to close - also when it's the page already open.
+ * A bar menu's pages - Results', Reference's - under their kickers when they have them (Catalog,
+ * Guide), each numbered in red with its line, as a guide page's index; the page you're on under a
+ * thick red rule, as a catalogue's selected tile. `across` columns in the header's panel - a group
+ * each, or a page each when the menu has one group with no kicker; one column in the phone's menu
+ * (`stack`). Says `picked` when one is followed, for the menu to close - also when it's the page
+ * already open.
  */
 @Component({
-  selector: 'assay-reference-list',
+  selector: 'assay-menu-list',
   standalone: true,
   imports: [RouterLink, RouterLinkActive],
-  host: { '[class.stack]': 'stack()' },
+  host: { '[class.stack]': 'stack()', '[style.--across]': 'across()' },
   template: `
-    @for (g of groups; track g.label) {
-      <div class="grp">
-        <div class="cap">{{ g.label }}</div>
+    @for (g of groups(); track $index) {
+      <div class="grp" [class.bare]="!g.label">
+        @if (g.label) {
+          <div class="cap">{{ g.label }}</div>
+        }
         @for (p of g.pages; track p.path) {
           <a
             class="it"
             [routerLink]="p.path"
             routerLinkActive="on"
+            [routerLinkActiveOptions]="onItsPath"
             ariaCurrentWhenActive="page"
             (click)="picked.emit()"
             ><b>{{ p.no }}</b
@@ -35,9 +48,13 @@ import { REFERENCE } from './nav';
   styles: `
     :host {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(var(--across, 2), minmax(0, 1fr));
       column-gap: 24px;
       align-items: start;
+    }
+    /* One group with no kicker: its pages are the columns. */
+    :host(:not(.stack)) .bare {
+      display: contents;
     }
     :host(.stack) {
       grid-template-columns: minmax(0, 1fr);
@@ -91,9 +108,12 @@ import { REFERENCE } from './nav';
     }
   `,
 })
-export class ReferenceListComponent {
-  groups = REFERENCE;
+export class MenuListComponent {
+  groups = input.required<MenuGroup[]>();
+  /** Columns in the header's panel. */
+  across = input(2);
   /** One column, for the phone's menu. */
   stack = input(false);
   picked = output<void>();
+  onItsPath = ON_ITS_PATH;
 }

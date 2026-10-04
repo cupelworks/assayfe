@@ -1,14 +1,23 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import * as M from './models';
-import { ApiBase, PAGE } from './api-base';
+import { ApiBase, QUERY } from './api-base';
 
-/** The scope filter of a list: exactly one of the three ids (or a batch's, for comparisons). */
-const scopeParams = (params: HttpParams, filter: Record<string, string | undefined>) =>
-  Object.entries(filter).reduce((p, [k, v]) => (v ? p.set(k, v) : p), params);
+/** What a list of batches or comparisons is narrowed by (API 2.1.0): a test, set or plan - or
+ *  several, any of them. Different filters narrow together, so a test and a set match nothing: a
+ *  batch has one scope. */
+export type StatsScopeQuery = {
+  test_id?: string | readonly string[];
+  test_set_id?: string | readonly string[];
+  test_plan_id?: string | readonly string[];
+};
+/** Batches by status too: any of them. */
+export type BatchQuery = StatsScopeQuery & { status?: readonly string[] };
+/** Comparisons by outcome too (any of them), or by one batch, as A or B. */
+export type ComparisonQuery = StatsScopeQuery & { outcome?: readonly string[]; batch_id?: string };
 
 /** Run with statistics: the catalogue of statistical tests, the estimate, batches (created, read,
- *  stopped, listed per scope) and comparisons of two batches. */
+ *  stopped, listed and counted) and comparisons of two batches (listed and counted too). */
 @Injectable({ providedIn: 'root' })
 export class StatisticsApiService extends ApiBase {
   catalogue() {
@@ -21,9 +30,17 @@ export class StatisticsApiService extends ApiBase {
   createBatch(body: M.BatchRequest) {
     return this.http.post<M.Batch>(this.u('/statistics/batches'), body);
   }
-  batchesPage(scope: M.StatsScopeRef, offset = 0, limit = 10) {
+  /** Newest first. */
+  batchesPage(query: BatchQuery, offset = 0, limit = 10) {
     return this.http.get<M.Page<M.BatchSummary>>(this.u('/statistics/batches'), {
-      params: scopeParams(PAGE(offset, limit), { ...scope }),
+      params: QUERY({ ...query, offset, limit }),
+    });
+  }
+  /** The batches the query lets through, counted by status and by scope - each within the
+   *  others. In-progress ones are brought up to date first, as the list does. */
+  batchFacets(query: BatchQuery) {
+    return this.http.get<M.BatchFacets>(this.u('/statistics/batches/facets'), {
+      params: QUERY({ ...query }),
     });
   }
   /** `series: false` leaves out the per-run series and strips. */
@@ -38,9 +55,17 @@ export class StatisticsApiService extends ApiBase {
   createComparison(body: M.ComparisonRequest) {
     return this.http.post<M.Comparison>(this.u('/statistics/comparisons'), body);
   }
-  comparisonsPage(filter: M.StatsScopeRef & { batch_id?: string }, offset = 0, limit = 10) {
+  /** Newest first. */
+  comparisonsPage(query: ComparisonQuery, offset = 0, limit = 10) {
     return this.http.get<M.Page<M.ComparisonSummary>>(this.u('/statistics/comparisons'), {
-      params: scopeParams(PAGE(offset, limit), { ...filter }),
+      params: QUERY({ ...query, offset, limit }),
+    });
+  }
+  /** The comparisons the query lets through, counted by outcome and by scope - each within the
+   *  others. */
+  comparisonFacets(query: ComparisonQuery) {
+    return this.http.get<M.ComparisonFacets>(this.u('/statistics/comparisons/facets'), {
+      params: QUERY({ ...query }),
     });
   }
   comparison(id: string) {

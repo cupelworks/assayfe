@@ -1,0 +1,61 @@
+<div class="g-wrap">
+  <assay-guide-head
+    kicker="Results"
+    title="Batches"
+    lede="Every run with statistics: a test, set or plan run many times over, so a verdict can be given. The newest first."
+  >
+    <assay-catalog-index
+      label="Show only one verdict"
+      [items]="tiles()"
+      [groups]="tileGroups"
+      [across]="6"
+      [selected]="oneStatus()"
+      (selectedChange)="pickTile($event)"
+    />
+  </assay-guide-head>
+
+  <assay-smart-filter
+    label="Filter the batches"
+    placeholder="A test, set or plan - or type a verdict…"
+    [wordsIn]="null"
+    [order]="list.sort()"
+    [facets]="facets()"
+    [shown]="list.shownText()"
+    [chosen]="list.choice()"
+    (chosenChange)="choose($event)"
+  />
+
+  <assay-catalog-table class="list" label="Batches" [columns]="columns" [empty]="emptyText()">
+    @for (v of view(); track v.b.id) {
+      <assay-catalog-row
+        [name]="v.label"
+        [mark]="v.b.status"
+        [link]="['/statistics/batches', v.b.id]"
+        [linkLabel]="v.linkLabel"
+        [expandable]="false"
+      >
+        <assay-catalog-cell caption="Tested">
+          <assay-kind-name [kind]="v.kind" [name]="v.name" [link]="v.scopeLink" [lead]="true" />
+        </assay-catalog-cell>
+        <assay-catalog-cell caption="What it showed">
+          <assay-batch-verdict [batch]="v.b" [marked]="false" [note]="true" />
+        </assay-catalog-cell>
+        <assay-catalog-cell caption="Question">{{ v.question }}</assay-catalog-cell>
+        <assay-catalog-cell caption="Times"
+          ><span class="num">{{ v.times }}</span></assay-catalog-cell
+        >
+        <assay-catalog-cell caption="When"
+          ><span class="when"><assay-rel-time [iso]="v.b.created_at" /></span
+        ></assay-catalog-cell>
+        <assay-catalog-cell caption="ID" [copyId]="v.b.id" />
+      </assay-catalog-row>
+    }
+  </assay-catalog-table>
+  <assay-pager
+    [total]="list.page.total()"
+    [offset]="list.page.offset()"
+    [limit]="list.page.limit()"
+    (offsetChange)="list.page.go($event)"
+    (limitChange)="list.page.size($event)"
+  />
+</div>

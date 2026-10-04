@@ -1,6 +1,6 @@
 <div class="g-wrap">
   <assay-guide-head
-    kicker="Work"
+    kicker="Results"
     title="Runs"
     lede="Every run started one at a time: a test on its own, or a set or a plan, a test at a time. A statistics batch's runs are on the batch's page."
   >
@@ -46,10 +46,7 @@
         </assay-catalog-cell>
         <assay-catalog-cell caption="From">
           @if (v.scope; as s) {
-            <span class="from"
-              ><span class="k">{{ s.kind }}</span
-              ><a [routerLink]="s.link">{{ s.name }}</a></span
-            >
+            <assay-kind-name [kind]="s.kind" [name]="s.name" [link]="s.link" />
           } @else {
             <span class="muted">On its own</span>
           }

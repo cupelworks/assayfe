@@ -1,5 +1,4 @@
 import { Component, computed, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { CatalogStore, ExecRow } from '../api/catalog.store';
 import { StatisticalTestsStore, StatisticsApiService } from '../api/statistics-api.service';
 import { AnyRunMetadata, BatchSummary, ComparisonSummary } from '../api/models';
@@ -23,17 +22,9 @@ import { WorkersStatusComponent } from '../shared/workers-status.component';
 import { StatusTallyComponent } from '../shared/status-tally.component';
 import { StatusCountsComponent } from '../shared/status-counts.component';
 import { MarkedComponent } from '../shared/marked.component';
-import { ProgressBarComponent } from '../shared/progress-bar.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
-import { ArrowOutComponent } from '../shared/arrow-out.component';
-import {
-  BATCH_POLL_MS,
-  batchProgress,
-  runAgainLink,
-  scopePlace,
-  timesRun,
-  verdictLine,
-} from '../statistics/stats-format';
+import { BatchVerdictComponent } from '../statistics/batch-verdict.component';
+import { BATCH_POLL_MS, scopePlace, timesFigure } from '../statistics/stats-format';
 import { BATCH_SAMPLE, LATEST, RUNS_ENDED, VERDICTS_ENDED, tallyParts } from './overview';
 import { firstOfEach } from '../api/latest';
 
@@ -54,10 +45,11 @@ interface LatestRun {
 /**
  * The home page, on the Guide's layout. Its top: the title and, beside it, whether runs can start
  * (`<assay-workers-status>`); then the two summaries everyone should see without scrolling - the
- * last 100 batches by verdict and the last 500 runs by status (`<assay-status-tally>`), a run's
- * row leading to Runs at that status, a verdict's leading nowhere yet. Then three sections of the
- * latest 5, one row per test, set or plan: 01 its latest verdict ("Run again ↗" on a Failed or
- * Inconclusive one), 02 its latest run, 03 its latest comparison - each ending with "All … →".
+ * last 100 batches by verdict and the last 500 runs by status (`<assay-status-tally>`), a
+ * verdict's row leading to Batches at that verdict, a run's to Runs at that status. Then three
+ * sections of the latest 5, one row per test, set or plan: 01 its latest verdict ("Run again ↗"
+ * on a Failed or Inconclusive one), 02 its latest run, 03 its latest comparison - each ending with
+ * "All … →": Batches, Runs, Comparisons.
  *
  * Polls as the pages it summarises do: the runs every 2 seconds while one is pending or running
  * (as an execution's page), the batches every 3 while one is (as a test's statistics), and
@@ -67,7 +59,6 @@ interface LatestRun {
   selector: 'assay-overview',
   standalone: true,
   imports: [
-    RouterLink,
     GuideHeadComponent,
     GuideSectionComponent,
     GuideGoComponent,
@@ -76,9 +67,8 @@ interface LatestRun {
     StatusTallyComponent,
     StatusCountsComponent,
     MarkedComponent,
-    ProgressBarComponent,
     RelTimeComponent,
-    ArrowOutComponent,
+    BatchVerdictComponent,
   ],
   templateUrl: './overview.component.html',
   styleUrls: [
@@ -92,7 +82,6 @@ export class OverviewComponent {
   private statsApi = inject(StatisticsApiService);
   private statTests = inject(StatisticalTestsStore);
   store = inject(CatalogStore);
-  runAgainLink = runAgainLink;
   sections = numbered('overview-', ['Verdicts', 'Runs', 'Comparisons']);
   verdictsSub = `The latest ${LATEST} verdicts`;
   runsSub = `The latest ${LATEST} runs`;
@@ -140,6 +129,7 @@ export class OverviewComponent {
     tallyParts(
       this.batches.items().map((b) => b.status),
       VERDICTS_ENDED,
+      (status) => ({ link: ['/statistics/batches'], query: { status } }),
     ),
   );
   runTally = computed(() =>
@@ -154,22 +144,15 @@ export class OverviewComponent {
   verdictRows = computed(() =>
     firstOfEach(this.batches.items(), (b) => b.scope.kind + b.scope.id)
       .slice(0, LATEST)
-      .map(({ item: b, count }) => {
-        const running = isInFlight(b.status);
-        const progress = running ? batchProgress(b.progress) : null;
-        return {
-          b,
-          ...verdictLine(b),
-          progress,
-          link: ['/statistics/batches', b.id],
-          tags: [
-            { text: scopePlace(b.scope.kind).one },
-            { text: counted(count, 'batch', 'batches') },
-          ] as CatalogTag[],
-          times: running ? b.progress.times_requested : timesRun(b.progress),
-          again: b.status === 'Failed' || b.status === 'Inconclusive',
-        };
-      }),
+      .map(({ item: b, count }) => ({
+        b,
+        link: ['/statistics/batches', b.id],
+        tags: [
+          { text: scopePlace(b.scope.kind).one },
+          { text: counted(count, 'batch', 'batches') },
+        ] as CatalogTag[],
+        times: timesFigure(b),
+      })),
   );
 
   /** 02: the latest run of each test, and execution of each set or plan, newest first - each named

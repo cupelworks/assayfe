@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { Batch, BatchSummary, Comparison, StatsScopeRef } from '../api/models';
 import { StatisticalTestsStore, StatisticsApiService } from '../api/statistics-api.service';
 import { Paged } from '../shared/paged';
@@ -7,19 +7,10 @@ import { errText, isInFlight } from '../shared/format';
 import { pollWhile, whenTabShown } from '../shared/poll';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
-import { ArrowOutComponent } from '../shared/arrow-out.component';
-import { MarkedComponent } from '../shared/marked.component';
-import { ProgressBarComponent } from '../shared/progress-bar.component';
 import { CATALOG, CatalogColumn, idColumn } from '../shared/catalog';
 import { CompareDialogComponent } from './compare-dialog.component';
-import {
-  BATCH_POLL_MS,
-  batchProgress,
-  question,
-  runAgainLink,
-  timesText,
-  verdictLine,
-} from './stats-format';
+import { BatchVerdictComponent } from './batch-verdict.component';
+import { BATCH_POLL_MS, question, timesText } from './stats-format';
 
 /**
  * A test's, set's or plan's statistics batches, newest first, five a page, as a catalogue's table:
@@ -33,13 +24,10 @@ import {
   selector: 'assay-verdicts-table',
   standalone: true,
   imports: [
-    RouterLink,
     CATALOG,
     PagerComponent,
     RelTimeComponent,
-    ArrowOutComponent,
-    MarkedComponent,
-    ProgressBarComponent,
+    BatchVerdictComponent,
     CompareDialogComponent,
   ],
   styleUrls: ['../shared/guide/head-aside.css', '../shared/work/work.css'],
@@ -60,24 +48,7 @@ import {
           [expandable]="false"
         >
           <assay-catalog-cell caption="Verdict">
-            <assay-marked [of]="v.b.status">
-              <b class="lead">{{ v.label }}</b
-              >{{ v.text ? ': ' + v.text : '' }}
-              @if (v.progress; as p) {
-                <assay-progress-bar class="prog" [pct]="p.donePct" />
-              }
-              @if (v.again) {
-                <a
-                  class="again new-tab"
-                  [routerLink]="runAgainLink(v.b.scope)"
-                  [queryParams]="{ from: v.b.id }"
-                  target="_blank"
-                  rel="noopener"
-                  aria-label="Run again, opens in a new tab"
-                  >Run again<assay-arrow-out
-                /></a>
-              }
-            </assay-marked>
+            <assay-batch-verdict [batch]="v.b" />
           </assay-catalog-cell>
           <assay-catalog-cell caption="Times"
             ><span class="num">{{ v.times }}</span></assay-catalog-cell
@@ -122,7 +93,6 @@ export class VerdictsTableComponent {
   private api = inject(StatisticsApiService);
   private tests = inject(StatisticalTestsStore);
   private router = inject(Router);
-  runAgainLink = runAgainLink;
   columns: CatalogColumn[] = [
     { label: 'The question', width: 3 },
     { label: 'Verdict', width: 4 },
@@ -134,14 +104,7 @@ export class VerdictsTableComponent {
   /** The newest batch - undefined while it's read, null with none. */
   newest = signal<BatchSummary | null | undefined>(undefined);
   rows = computed(() =>
-    this.page.items().map((b) => ({
-      b,
-      ...verdictLine(b),
-      question: this.questionOf(b),
-      progress: isInFlight(b.status) ? batchProgress(b.progress) : null,
-      again: b.status === 'Failed' || b.status === 'Inconclusive',
-      times: timesText(b),
-    })),
+    this.page.items().map((b) => ({ b, question: this.questionOf(b), times: timesText(b) })),
   );
   emptyLine = computed(() =>
     this.page.loading() || this.page.items().length ? null : this.empty(),

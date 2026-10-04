@@ -1,4 +1,4 @@
-// Mirrors components.schemas in Assay's OpenAPI (v2.0.0).
+// Mirrors components.schemas in Assay's OpenAPI (v2.1.0).
 export interface Ref {
   id: string;
 }
@@ -1138,4 +1138,20 @@ export interface ComparisonSummary {
 }
 export interface Comparison extends ComparisonSummary {
   result: ComparisonResult;
+}
+/** A batches or comparisons list's counts by test, set and plan: only the ids with some. */
+export interface ScopeFacets {
+  test_id: Record<string, number>;
+  test_set_id: Record<string, number>;
+  test_plan_id: Record<string, number>;
+}
+/** GET /statistics/batches/facets (API 2.1.0): the batches the filters let through, by status
+ *  (all eight, 0 when none) and by scope - each counted within the other filters, never its own. */
+export interface BatchFacets extends ScopeFacets {
+  status: Record<BatchStatus, number>;
+}
+/** GET /statistics/comparisons/facets (API 2.1.0): the comparisons by outcome (all six, 0 when
+ *  none) and by scope, counted as the batches' are. */
+export interface ComparisonFacets extends ScopeFacets {
+  outcome: Record<ComparisonOutcome, number>;
 }

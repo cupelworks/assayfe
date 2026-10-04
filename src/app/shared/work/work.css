@@ -2,7 +2,6 @@
    they project into the Guide's head and sections - each page includes it, with guide.css and
    head-aside.css (what stands beside the title, and the red words). */
 
-.again:focus-visible,
 .row-act:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
@@ -139,11 +138,6 @@ assay-catalog-table.list {
   color: var(--color-neutral-500);
   cursor: default;
 }
-/* A cell's lead in ink: a verdict's first word, a comparison's question. */
-.lead {
-  font-weight: 700;
-  color: var(--color-text);
-}
 .num {
   color: var(--color-text);
   font-variant-numeric: tabular-nums;
@@ -219,24 +213,6 @@ a.cell-nm:focus-visible {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 12px;
-}
-/* Run again ↗, under a Failed or Inconclusive verdict: red, as a link on to another page, in a new
-   tab (the global .new-tab: the arrow leans out, "Opens in a new tab" under it). */
-.again {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: fit-content;
-  min-height: 32px;
-  margin-top: 2px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-accent);
-  text-decoration: none;
-}
-.prog {
-  max-width: 280px;
-  margin-top: 10px;
 }
 @media (max-width: 960px) {
   .now {

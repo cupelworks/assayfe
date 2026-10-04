@@ -35,24 +35,7 @@
           [expandable]="false"
         >
           <assay-catalog-cell caption="Verdict">
-            <assay-marked [of]="v.b.status">
-              <b>{{ v.label }}</b
-              >{{ v.text ? ': ' + v.text : '' }}
-              @if (v.progress; as p) {
-                <assay-progress-bar class="prog" [pct]="p.donePct" />
-              }
-              @if (v.again) {
-                <a
-                  class="again new-tab"
-                  [routerLink]="runAgainLink(v.b.scope)"
-                  [queryParams]="{ from: v.b.id }"
-                  target="_blank"
-                  rel="noopener"
-                  aria-label="Run again, opens in a new tab"
-                  >Run again<assay-arrow-out
-                /></a>
-              }
-            </assay-marked>
+            <assay-batch-verdict [batch]="v.b" />
           </assay-catalog-cell>
           <assay-catalog-cell caption="Times"
             ><span class="num">{{ v.times }}</span></assay-catalog-cell
@@ -63,7 +46,7 @@
         </assay-catalog-row>
       }
     </assay-catalog-table>
-    <assay-guide-go label="All batches" />
+    <assay-guide-go label="All batches" link="/statistics/batches" />
   </assay-guide-section>
 
   <assay-guide-section [section]="sections[1]" [sub]="runsSub">
@@ -112,6 +95,6 @@
         </assay-catalog-row>
       }
     </assay-catalog-table>
-    <assay-guide-go label="All comparisons" />
+    <assay-guide-go label="All comparisons" link="/statistics/comparisons" />
   </assay-guide-section>
 </div>

@@ -8,7 +8,7 @@ import { filter } from 'rxjs';
 export type DismissReason = 'escape' | 'outside' | 'navigation';
 
 /**
- * Closes a popover - the header's Reference panel, the phone's menu - while `isOpen()`: when the
+ * Closes a popover - a header menu's panel, the phone's menu - while `isOpen()`: when the
  * page changes, a click lands outside the component that calls it, or Escape is pressed. Call it
  * once from that component's constructor, as `pollWhile`: its listeners go with the component.
  */

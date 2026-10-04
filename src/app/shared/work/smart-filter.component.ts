@@ -54,10 +54,11 @@ function split(text: string, q: string) {
  * The smart filter of a work list: one line for words and filters. What's typed searches the
  * list's words (`query`) and is looked for in the facets' values, the list's things (`items`, to
  * open one) and the facets' names; Enter keeps the words as a token (`words`), so they stay while
- * filters are added. Each chosen filter is a token in the line - × (or Backspace on an empty line)
- * takes it out. Under the line, each facet opens its values with their counts; a facet with many
- * has a line to find one. Beside it: how many are shown, the sort, "Clear all". `compact` (a pick
- * dialog's) keeps only the line.
+ * filters are added - on a list with no words (`wordsIn` null), typing only finds what to filter
+ * by. Each chosen filter is a token in the line - × (or Backspace on an empty line) takes it out.
+ * Under the line, each facet opens its values with their counts; a facet with many has a line to
+ * find one. Beside it: how many are shown, the sort (or the one order there is), "Clear all".
+ * `compact` (a pick dialog's) keeps only the line.
  *
  * It holds the choice and nothing else: the page applies what it can (see filters.ts).
  */
@@ -79,14 +80,17 @@ export class SmartFilterComponent {
   items = input<FilterItem[]>([]);
   itemsLabel = input('Open');
   placeholder = input('');
-  /** Where the words are looked for, as the Words suggestion says it. */
-  wordsIn = input('the names and the inputs');
+  /** Where the words are looked for, as the Words suggestion says it - null for a list with no
+   *  words to look in (Batches, Comparisons): typing only finds what to filter by. */
+  wordsIn = input<string | null>('the names and the inputs');
   /** Over the line, in small capitals: "Filter", "Find a row". */
   caption = input('Filter');
   label = input('Filter');
   /** "62 shown", "3 of 25 shown". */
   shown = input('');
   sortOptions = input<string[]>([]);
+  /** With nothing to sort by, the one order there is: "Newest first". */
+  order = input<string | null>(null);
   /** Only the line - a pick dialog's. */
   compact = input(false);
 
@@ -169,19 +173,21 @@ export class SmartFilterComponent {
             facet: f,
           }));
     if (kinds.length) groups.push({ label: 'Filter by', opts: kinds });
-    groups.push({
-      label: 'Words',
-      opts: [
-        {
-          id: '',
-          kind: 'words',
-          before: 'Look for “',
-          match: raw,
-          after: `” in ${this.wordsIn()}`,
-          count: 'Enter',
-        },
-      ],
-    });
+    const wordsIn = this.wordsIn();
+    if (wordsIn)
+      groups.push({
+        label: 'Words',
+        opts: [
+          {
+            id: '',
+            kind: 'words',
+            before: 'Look for “',
+            match: raw,
+            after: `” in ${wordsIn}`,
+            count: 'Enter',
+          },
+        ],
+      });
     // Each option numbered in order, for the keyboard and aria-activedescendant.
     let n = 0;
     for (const g of groups) for (const o of g.opts) o.id = `${this.id}-o${n++}`;

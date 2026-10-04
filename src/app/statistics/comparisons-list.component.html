@@ -1,0 +1,75 @@
+<div class="g-wrap">
+  <assay-guide-head
+    kicker="Results"
+    title="Comparisons"
+    lede="Every comparison of two batches of the same test, set or plan - one before a change, one after: did it get better, worse, or stay as good. The newest first."
+  >
+    <assay-catalog-index
+      label="Show only one outcome"
+      [items]="tiles()"
+      [groups]="tileGroups"
+      [across]="6"
+      [selected]="oneOutcome()"
+      (selectedChange)="pickTile($event)"
+    />
+  </assay-guide-head>
+
+  <assay-smart-filter
+    label="Filter the comparisons"
+    placeholder="A test, set or plan - or type what it showed…"
+    [wordsIn]="null"
+    [order]="list.sort()"
+    [facets]="facets()"
+    [shown]="list.shownText()"
+    [chosen]="list.choice()"
+    (chosenChange)="choose($event)"
+  />
+
+  <assay-catalog-table class="list" label="Comparisons" [columns]="columns" [empty]="emptyText()">
+    @for (v of view(); track v.c.id) {
+      <assay-catalog-row
+        [name]="v.label"
+        [mark]="v.c.outcome"
+        [link]="['/statistics/comparisons', v.c.id]"
+        [linkLabel]="v.linkLabel"
+        [expandable]="false"
+      >
+        <assay-catalog-cell caption="Compared">
+          <assay-kind-name [kind]="v.kind" [name]="v.name" [link]="v.scopeLink" [lead]="true" />
+        </assay-catalog-cell>
+        <assay-catalog-cell caption="The answer">
+          {{ v.c.summary }}
+          @if (v.c.note; as n) {
+            <span class="quoted">“{{ n }}”</span>
+          }
+        </assay-catalog-cell>
+        <assay-catalog-cell caption="Question">{{ v.question }}</assay-catalog-cell>
+        <assay-catalog-cell caption="The two batches">
+          <span class="pair">
+            @for (s of v.sides; track s.ab) {
+              <a
+                class="bt"
+                [routerLink]="['/statistics/batches', s.b.id]"
+                [attr.aria-label]="s.aria"
+                ><span class="ab">{{ s.ab }}</span
+                ><assay-mark [of]="s.b.status" />{{ s.word
+                }}<span class="t">· {{ s.times }}</span></a
+              >
+            }
+          </span>
+        </assay-catalog-cell>
+        <assay-catalog-cell caption="When"
+          ><span class="when"><assay-rel-time [iso]="v.c.created_at" /></span
+        ></assay-catalog-cell>
+        <assay-catalog-cell caption="ID" [copyId]="v.c.id" />
+      </assay-catalog-row>
+    }
+  </assay-catalog-table>
+  <assay-pager
+    [total]="list.page.total()"
+    [offset]="list.page.offset()"
+    [limit]="list.page.limit()"
+    (offsetChange)="list.page.go($event)"
+    (limitChange)="list.page.size($event)"
+  />
+</div>

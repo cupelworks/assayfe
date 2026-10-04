@@ -1,5 +1,5 @@
-import { Component, computed, inject, input, linkedSignal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Component, computed, inject, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { CatalogStore } from '../api/catalog.store';
 import { RunQuery, RunsApiService } from '../api/runs-api.service';
 import { TestTypesStore } from '../api/test-types.store';
@@ -11,14 +11,11 @@ import { RelTimeComponent } from '../shared/rel-time.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { CATALOG, CatalogColumn, idColumn } from '../shared/catalog';
 import { SmartFilterComponent } from '../shared/work/smart-filter.component';
+import { KindNameComponent } from '../shared/work/kind-name.component';
 import { FilterChoice, FilterFacet, createdFacet, createdParams } from '../shared/work/filters';
+import { Several, addressChoice, several } from '../shared/work/address-choice';
 import { ChecksMetComponent, checksListed } from '../shared/work/checks-met.component';
 import { FROM_LABEL, RUN_TILE_GROUPS, fromFacet, runTiles, statusFacet } from './runs-list';
-
-/** A value of the address's ?status= or ?origin=: once, several times, or not there. */
-type Several<T> = T | T[] | undefined;
-const several = <T>(v: Several<T>): T[] => (v == null ? [] : Array.isArray(v) ? v : [v]);
-const same = (a: readonly string[], b: readonly string[]) => a.join(' ') === b.join(' ');
 
 /**
  * Runs, on the Guide's layout as the work's lists are: every run
@@ -41,12 +38,13 @@ const same = (a: readonly string[], b: readonly string[]) => a.join(' ') === b.j
     GuideHeadComponent,
     CATALOG,
     SmartFilterComponent,
+    KindNameComponent,
     ChecksMetComponent,
     PagerComponent,
     RelTimeComponent,
   ],
   templateUrl: './runs-list.component.html',
-  styleUrls: ['../shared/guide/guide.css', '../shared/work/work.css', './runs-list.component.css'],
+  styleUrls: ['../shared/guide/guide.css', '../shared/work/work.css'],
 })
 export class RunsListComponent {
   /** ?status= and ?origin= - once per value - bound by withComponentInputBinding(); none: every
@@ -54,24 +52,22 @@ export class RunsListComponent {
   status = input<Several<TestStatus>>();
   origin = input<Several<RunOrigin>>();
   private statuses = computed(() => several(this.status()));
-  private origins = computed(() => several(this.origin()));
+  /** The choice, its statuses and origins as the address says, the other facets kept as chosen. */
+  private addressed = addressChoice(
+    computed(() => ({ status: this.statuses(), from: several(this.origin()) })),
+    { status: 'status', from: 'origin' },
+  );
   private api = inject(RunsApiService);
   private store = inject(CatalogStore);
   private types = inject(TestTypesStore);
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
   statusLabel = statusLabel;
   sortOptions = ['Newest', 'Oldest'];
 
-  /** The runs as the API searches, filters, counts and sorts them - the choice, its statuses and
-   *  origins as the address says, the other facets kept as chosen. */
+  /** The runs as the API searches, filters, counts and sorts them. */
   list = new ApiList<AnyRunMetadata, RunFacets, RunQuery>({
     noun: 'run',
     sort: 'Newest',
-    choice: linkedSignal<{ status: TestStatus[]; origin: RunOrigin[] }, FilterChoice>({
-      source: () => ({ status: this.statuses(), origin: this.origins() }),
-      computation: (s, prev) => ({ ...(prev?.value ?? {}), status: s.status, from: s.origin }),
-    }),
+    choice: this.addressed.choice,
     params: (c, q, sort) => ({
       batch: 'none',
       status: c['status'],
@@ -155,18 +151,7 @@ export class RunsListComponent {
   /** The smart filter's choice: its statuses and origins go to the address, and with the rest to
    *  the API. */
   choose(c: FilterChoice) {
-    this.list.choice.set(c);
-    const status = c['status'] ?? [],
-      origin = c['from'] ?? [];
-    if (!same(status, this.statuses()) || !same(origin, this.origins()))
-      this.router.navigate([], {
-        relativeTo: this.route,
-        queryParams: {
-          status: status.length ? status : null,
-          origin: origin.length ? origin : null,
-        },
-        queryParamsHandling: 'merge',
-      });
+    this.addressed.choose(c);
   }
 
   /** The set or plan a run was started from: its kind, name and page. */
