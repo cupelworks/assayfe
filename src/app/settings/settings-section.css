@@ -15,14 +15,8 @@
 .wide {
   grid-column: 1 / -1;
 }
-/* What went wrong, in red, where it went wrong. */
-.err {
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--color-accent);
-  overflow-wrap: anywhere;
-}
-p.err {
+/* What went wrong (the global .err-line), on a line of its own: room under it. */
+p.err-line {
   margin: 0 0 16px;
 }
 .mono {

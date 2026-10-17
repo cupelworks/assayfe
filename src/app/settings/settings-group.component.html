@@ -33,7 +33,7 @@
   </div>
 
   @if (loadError(); as e) {
-    <p class="err wide">Couldn't load the settings: {{ e }}</p>
+    <p class="err-line wide">Couldn't load the settings: {{ e }}</p>
   }
   @if (act.msg(); as m) {
     <div class="wide msg"><assay-banner [msg]="m" /></div>
@@ -130,9 +130,9 @@
             }
           }
           @if (shownErrors()[f.key]; as e) {
-            <span class="err">{{ cap(e) }}</span>
+            <span class="err-line">{{ cap(e) }}</span>
           } @else if (warnings()[f.key]; as w) {
-            <span class="err">{{ w }}</span>
+            <span class="err-line">{{ w }}</span>
           }
           <span class="lfield-help">{{ f.hint }}</span>
         </div>
@@ -162,7 +162,7 @@
             (keydown.enter)="canCheck() && runCheck()"
           />
           @if (runner.fieldErrors.all()['input']; as e) {
-            <span class="err">{{ cap(e) }}</span>
+            <span class="err-line">{{ cap(e) }}</span>
           }
         </div>
       }
@@ -178,7 +178,7 @@
     }
 
     @if (runner.error(); as e) {
-      <p class="err">{{ e }}</p>
+      <p class="err-line">{{ e }}</p>
     } @else if (runner.check(); as c) {
       <div class="result" role="status">
         @if (c.status === 'completed') {
@@ -196,7 +196,7 @@
             <pre>{{ text }}</pre>
           }
         } @else if (runner.gaveUpMessage(); as m) {
-          <p class="err">{{ m }}</p>
+          <p class="err-line">{{ m }}</p>
         } @else {
           <span class="head"
             ><assay-mark [of]="c.status === 'running' ? 'Running' : 'Pending'" size="md" />{{
@@ -209,7 +209,7 @@
               : 'Waiting for a worker to pick it up…'
           }}</span>
           @if (runner.pollError(); as pe) {
-            <p class="err">Couldn't get the latest status ({{ pe }}) - still trying.</p>
+            <p class="err-line">Couldn't get the latest status ({{ pe }}) - still trying.</p>
           }
         }
       </div>

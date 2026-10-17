@@ -4,7 +4,7 @@
   </button>
 
   @if (error(); as e) {
-    <p class="err wide">Couldn't check the workers: {{ e }}</p>
+    <p class="err-line wide">Couldn't check the workers: {{ e }}</p>
   }
   <p class="intro">
     The broker queues runs and connection tests; workers pick them up and run them. A worker started
