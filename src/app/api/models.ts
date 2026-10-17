@@ -1,4 +1,4 @@
-// Mirrors components.schemas in Assay's OpenAPI (v2.2.0). Every timestamp (`…_at`) is UTC with a
+// Mirrors components.schemas in Assay's OpenAPI (v2.3.0). Every timestamp (`…_at`) is UTC with a
 // Z ("2026-09-27T12:36:59.928077Z", the fraction left out when it's zero): read it with `Date`.
 export interface Ref {
   id: string;
@@ -94,10 +94,22 @@ export interface DataSetInfo {
   id: string;
   name: string;
 }
+/** A dataset made or added to from rows: the dataset, and the rows that came in. */
 export interface DataSetImportResult {
   dataset: DataSetInfo;
   loaded: DataRowInfo;
-  path?: string;
+}
+/** GET /datasets/upload (API 2.3.0): the largest file POST /datasets/upload takes. */
+export interface DatasetUploadLimit {
+  max_bytes: number;
+}
+/** POST /datasets/upload's 422 when lines of the file aren't rows (API 2.3.0) - nothing was
+ *  imported: what it comes to ("3 lines aren't valid dataset rows. …"), how many in all, and the
+ *  first 100 in the file's order, each its line as an editor counts it and what's wrong with it. */
+export interface InvalidLines {
+  msg: string;
+  invalid_lines: number;
+  lines: { line: number; msg: string }[];
 }
 export interface DataSetDeletedData {
   dataset: DataSetInfo;

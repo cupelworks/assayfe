@@ -88,9 +88,6 @@
   color: var(--color-neutral-500);
   white-space: nowrap;
 }
-.lfield .invalid {
-  border-bottom-color: var(--color-accent);
-}
 /* A number with its unit after it: "60 seconds per call". */
 .unitw {
   display: flex;

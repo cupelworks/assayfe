@@ -5,14 +5,12 @@
     lede="Questions with the answers they should get, to make tests from - a test for each row."
   >
     <div class="page-aside" guideHeadAside>
-      <button type="button" class="btn btn-primary" (click)="act.err.set(null); dialog.set(true)">
+      <button type="button" class="btn btn-primary" (click)="dialog.set(true)">
         Import a dataset
       </button>
     </div>
     <assay-catalog-key [items]="rowKey" />
   </assay-guide-head>
-
-  <assay-banner [msg]="act.msg()" />
 
   <assay-smart-filter
     label="Filter the datasets"
@@ -53,17 +51,12 @@
     (limitChange)="page.size($event)"
   />
   <p class="note hint">
-    <b>A dataset is a file on the server</b>, one JSON object a line - each with its prompt,
-    expected output and model output. Import it by its path; then, on its page, make a test from
-    every row at once.
+    <b>A dataset is a .jsonl file</b>, one JSON object a line - each with its prompt, expected
+    output and model output. Import it from your computer; then, on its page, make a test from every
+    row at once.
   </p>
 </div>
 
 @if (dialog()) {
-  <assay-import-dataset-dialog
-    [busy]="act.busy()"
-    [error]="act.err()"
-    (confirm)="import($event)"
-    (closed)="dialog.set(false)"
-  />
+  <assay-import-dataset-dialog (imported)="imported($event)" (closed)="dialog.set(false)" />
 }

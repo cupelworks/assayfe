@@ -22,7 +22,10 @@
     </div>
     <div class="body"><ng-content /></div>
     @if (error(); as e) {
-      <div class="err">{{ e }}</div>
+      <div class="err">
+        <span>{{ e }}</span>
+        <ng-content select="[errDetail]" />
+      </div>
     }
     <div class="dialog-actions foot">
       <button class="btn btn-primary" (click)="primary.emit()" [disabled]="primaryDisabled()">

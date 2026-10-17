@@ -1,6 +1,6 @@
 import { Component, computed, input, model } from '@angular/core';
 import { DataSetRowSchema } from '../api/models';
-import { StatusMarkComponent } from '../shared/status-mark.component';
+import { LineCheck, LineChecksComponent } from './line-checks.component';
 
 /** One pasted line, read: its row, or what's wrong with it. */
 export interface PastedLine {
@@ -44,15 +44,16 @@ export function readLines(paste: string): PastedLine[] {
 
 /**
  * Rows to paste, one JSON object a line: the lines numbered beside a box that keeps them as typed,
- * then each line said back as it's read - its prompt beside a green mark, or what's wrong with it
- * beside a red one. Its `rows` are the rows to send, null while a line is wrong.
+ * then each line said back as it's read (`<assay-line-checks>`) - its prompt beside a green mark,
+ * or what's wrong with it beside a red one. Its `rows` are the rows to send, null while a line is
+ * wrong.
  */
 @Component({
   selector: 'assay-paste-rows',
   standalone: true,
-  imports: [StatusMarkComponent],
+  imports: [LineChecksComponent],
   template: `
-    <div class="paste">
+    <div class="paste ruled">
       <div class="nos" aria-hidden="true">
         @for (n of numbers(); track n) {
           <div>{{ n }}</div>
@@ -67,15 +68,8 @@ export function readLines(paste: string): PastedLine[] {
         (input)="text.set($any($event.target).value)"
       ></textarea>
     </div>
-    @if (lines().length) {
-      <ul class="checks" aria-live="polite">
-        @for (l of lines(); track l.no) {
-          <li [class.bad]="!l.row">
-            <assay-mark [of]="l.row ? 'Green' : 'Red'" /><span class="ln">Line {{ l.no }}</span
-            ><span class="t">{{ l.text }}</span>
-          </li>
-        }
-      </ul>
+    @if (checks().length) {
+      <assay-line-checks aria-live="polite" [lines]="checks()" />
     }
   `,
   styles: `
@@ -87,8 +81,6 @@ export function readLines(paste: string): PastedLine[] {
     .paste {
       display: grid;
       grid-template-columns: 32px minmax(0, 1fr);
-      border-top: 1px solid var(--color-text);
-      border-bottom: 1px solid var(--color-divider);
     }
     .paste:focus-within {
       border-bottom: 2px solid var(--color-accent);
@@ -120,45 +112,16 @@ export function readLines(paste: string): PastedLine[] {
     textarea::placeholder {
       color: var(--color-neutral-500);
     }
-    .checks {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-    li {
-      display: grid;
-      grid-template-columns: 8px 56px minmax(0, 1fr);
-      column-gap: 10px;
-      align-items: baseline;
-      padding: 5px 0;
-      border-bottom: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
-      font-size: 13px;
-      color: var(--color-neutral-900);
-    }
-    .ln {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--color-neutral-600);
-    }
-    .t {
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    li.bad .t {
-      color: var(--color-accent-700);
-      font-weight: 600;
-      white-space: normal;
-    }
   `,
 })
 export class PasteRowsComponent {
   text = model('');
   label = input('Rows, one JSON object a line');
   lines = computed(() => readLines(this.text()));
+  /** Each line said back: read as a row or not, and what it says. */
+  checks = computed<LineCheck[]>(() =>
+    this.lines().map((l) => ({ no: l.no, ok: !!l.row, text: l.text })),
+  );
   numbers = computed(() =>
     this.text()
       .split(/\r?\n/)

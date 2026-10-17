@@ -491,6 +491,24 @@ textarea.input {
   line-height: 1.45;
   color: var(--color-neutral-600);
 }
+/* What went wrong, in red, where it went wrong: under its field - the field's line red too
+   (.invalid) - or on a line of its own. Settings' fields and messages, the import dialog's file
+   and name. */
+.err-line {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-accent);
+  overflow-wrap: anywhere;
+}
+.lfield .invalid {
+  border-bottom-color: var(--color-accent);
+}
+/* A box ruled as a field is - ink above, the field's line below: the rows a dataset's page
+   takes as a paste, the file the import dialog takes. */
+.ruled {
+  border-top: 1px solid var(--color-text);
+  border-bottom: 1px solid var(--color-divider);
+}
 
 /* - cards - */
 .card {

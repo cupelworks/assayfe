@@ -27,8 +27,16 @@ export class DatasetsApiService extends ApiBase {
       params: QUERY({ offset, limit, q }),
     });
   }
-  createDatasetFromPath(path: string, dataset_name: string) {
-    return this.http.post<M.DataSetImportResult>(this.u('/datasets/path'), { path, dataset_name });
+  /** A .jsonl file from the reader's computer as a new dataset - all or nothing (API 2.3.0). */
+  uploadDataset(file: File, dataset_name: string) {
+    const body = new FormData();
+    body.append('file', file);
+    body.append('dataset_name', dataset_name);
+    return this.http.post<M.DataSetImportResult>(this.u('/datasets/upload'), body);
+  }
+  /** The largest file `uploadDataset` takes. */
+  uploadLimit() {
+    return this.http.get<M.DatasetUploadLimit>(this.u('/datasets/upload'));
   }
   addDatasetRows(id: string, rows: M.DataSetRowSchema[]) {
     return this.http.post<M.DataSetImportResult>(this.u('/datasets/rows'), { id, rows });

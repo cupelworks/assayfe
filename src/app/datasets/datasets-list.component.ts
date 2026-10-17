@@ -2,9 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CatalogStore } from '../api/catalog.store';
 import { DatasetsApiService } from '../api/datasets-api.service';
-import { DataSetMetadata, FacetCounts } from '../api/models';
-import { ActionRunner } from '../shared/action-runner';
-import { counted } from '../shared/format';
+import { DataSetImportResult, DataSetMetadata, FacetCounts } from '../api/models';
 import { PagerComponent } from '../shared/pager.component';
 import { RelTimeComponent } from '../shared/rel-time.component';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
@@ -12,7 +10,6 @@ import { CATALOG, CatalogColumn, idColumn } from '../shared/catalog';
 import { SmartFilterComponent } from '../shared/work/smart-filter.component';
 import { FilterFacet, createdFacet, createdParams, yesNo } from '../shared/work/filters';
 import { ApiList, countsWithCreated } from '../shared/work/api-list';
-import { BannerComponent } from '../shared/work/banner.component';
 import { ImportDatasetDialogComponent } from './import-dataset-dialog.component';
 import { ROW_KEY } from './row-keys';
 
@@ -29,7 +26,6 @@ import { ROW_KEY } from './row-keys';
     GuideHeadComponent,
     CATALOG,
     SmartFilterComponent,
-    BannerComponent,
     PagerComponent,
     RelTimeComponent,
     ImportDatasetDialogComponent,
@@ -103,19 +99,15 @@ export class DatasetsListComponent {
   ];
 
   dialog = signal(false);
-  act = new ActionRunner({ inDialog: () => this.dialog(), done: () => this.dialog.set(false) });
 
   constructor() {
     this.store.loadDatasets();
   }
 
-  import(d: { name: string; path: string }) {
-    this.act.run(this.api.createDatasetFromPath(d.path, d.name), {
-      ok: (r) => `Imported ${counted(r.loaded.n, 'row')} into “${r.dataset.name}”.`,
-      then: (r) => {
-        this.store.load();
-        this.router.navigate(['/datasets', r.dataset.id]);
-      },
-    });
+  /** A dataset came in (the import dialog uploads it): its page, with its rows. */
+  imported(r: DataSetImportResult) {
+    this.dialog.set(false);
+    this.store.load();
+    this.router.navigate(['/datasets', r.dataset.id]);
   }
 }
