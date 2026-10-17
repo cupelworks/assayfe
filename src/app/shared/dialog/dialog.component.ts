@@ -3,11 +3,12 @@ import { Component, OnDestroy, OnInit, computed, input, output } from '@angular/
 /** Dialogs open now - several can stack (a check's settings over the test form). */
 let open = 0;
 /** A dialog, square and flat on a veil of ink: where it is in the red kicker, what it does as the
- *  title, the body projected, then the footer - the one thing to do in red, Cancel in words and,
- *  while the primary is blocked, why, right beside them (in a long form the reason used to sit at
- *  the end of the body, scrolled out of view, leaving only a pale disabled button). The Esc key
- *  closes it as Cancel does. Ruled in ink on top - in red (`danger`) when what it does can't be
- *  undone. */
+ *  title, the body projected, then what went wrong (`error`, by a red rule - with, under its
+ *  sentence, anything projected as `errDetail`: the import's refused lines), then the footer - the
+ *  one thing to do in red, Cancel in words and, while the primary is blocked, why, right beside
+ *  them (in a long form the reason used to sit at the end of the body, scrolled out of view,
+ *  leaving only a pale disabled button). The Esc key closes it as Cancel does. Ruled in ink on top
+ *  - in red (`danger`) when what it does can't be undone. */
 @Component({
   selector: 'assay-dialog',
   standalone: true,

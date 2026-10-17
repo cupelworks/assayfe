@@ -10,6 +10,12 @@ export function rel(iso?: string | null) {
   return `${Math.round(h / 24)} d ago`;
 }
 export const short = (id?: string | null) => String(id ?? '').slice(0, 8);
+/** A file's size as a file browser says it: "820 KB", "2.4 MB", "10 MB". */
+export function bytesText(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  const mb = Math.round((bytes / (1024 * 1024)) * 10) / 10;
+  return `${Number.isInteger(mb) ? mb : mb.toFixed(1)} MB`;
+}
 /** "1 type", "15 types": a count and its noun, plural unless it's 1 - "1 batch", "20 batches" given
  *  the plural. */
 export const counted = (n: number, noun: string, plural = noun + 's') =>
@@ -90,13 +96,15 @@ const detailList = (e: any): any[] | null => {
   const d = e?.error?.detail;
   return Array.isArray(d) ? d.filter((x) => typeof x?.msg === 'string' && x.msg) : null;
 };
-/** FastAPI puts human messages in `detail` (string, {message}, or a 422 list). */
+/** FastAPI puts human messages in `detail` (string, {message} or {msg}, or a 422 list). */
 export function errText(e: any): string {
   const d = e?.error?.detail;
   if (typeof d === 'string') return d;
   const list = detailList(e);
   if (list) return list.map(locMsg).join('; ');
-  return d?.message ?? d?.detail ?? (d ? JSON.stringify(d) : (e?.message ?? 'Request failed'));
+  return (
+    d?.message ?? d?.msg ?? d?.detail ?? (d ? JSON.stringify(d) : (e?.message ?? 'Request failed'))
+  );
 }
 /** An API error split for a form: `byField` holds each 422 problem under the form field it names -
  *  the FIRST segment of its path (after FastAPI's location) that is one of `fields`, so
