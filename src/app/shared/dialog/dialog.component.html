@@ -28,7 +28,11 @@
       </div>
     }
     <div class="dialog-actions foot">
-      <button class="btn btn-primary" (click)="primary.emit()" [disabled]="primaryDisabled()">
+      <button
+        class="btn btn-primary btn-tall"
+        (click)="primary.emit()"
+        [disabled]="primaryDisabled()"
+      >
         {{ primaryLabel() }}
       </button>
       <button type="button" class="cancel" [disabled]="busy()" (click)="dismiss()">Cancel</button>

@@ -24,10 +24,16 @@
   <assay-guide-section [section]="sections()[3]" sub="Read-only · read once when a process starts">
     <p class="intro">
       Changing one means restarting the API and/or the worker. Connection strings are never shown -
-      they can embed credentials.
+      only what each connects to.
+      @if (ops() === null && !opsError()) {
+        This API doesn't report them: they show from API 2.4.0.
+      }
     </p>
+    @if (opsError(); as e) {
+      <p class="err-line wide">Couldn't read them: {{ e }}</p>
+    }
     <assay-catalog-table class="wide" label="Operations" [columns]="opColumns">
-      @for (o of operations; track o.label) {
+      @for (o of opRows(); track o.label) {
         <assay-catalog-row [name]="o.label" [expandable]="false">
           <assay-catalog-cell caption="Value"
             ><span [class.mono]="o.mono">{{ o.value }}</span></assay-catalog-cell

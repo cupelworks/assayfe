@@ -1,12 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { ASSAY_API_BASE } from '../api/api-base.token';
 import { ArrowOutComponent } from '../shared/arrow-out.component';
+import { version } from '../../../package.json';
 
 /**
  * The footer, as the header mirrored: its rule on top, 64 px, on the page grid, in small
  * capitals on one baseline - the copyright under the brand, the API's documentation from column
  * 4 where the work starts (a new tab, with "Run with statistics"'s arrow; its "Opens in a new
- * tab" opens above it, at the bottom of the page), the version at the right.
+ * tab" opens above it, at the bottom of the page), this front end's version at the right.
  */
 @Component({
   selector: 'assay-app-footer',
@@ -77,6 +78,7 @@ import { ArrowOutComponent } from '../shared/arrow-out.component';
 })
 export class AppFooterComponent {
   docs = inject(ASSAY_API_BASE).replace(/\/$/, '') + '/docs';
-  /** The API version this front end is built against. */
-  version = '2.3.0';
+  /** This front end's own version - package.json's, its semver since 2.4.0, apart from the API's
+   *  (the API it needs is package.json's `assay.api`). */
+  version = version;
 }

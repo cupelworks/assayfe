@@ -1,5 +1,6 @@
-// Mirrors components.schemas in Assay's OpenAPI (v2.3.0). Every timestamp (`…_at`) is UTC with a
-// Z ("2026-09-27T12:36:59.928077Z", the fraction left out when it's zero): read it with `Date`.
+// Mirrors components.schemas in Assay's OpenAPI - the version package.json's `assay.api` names.
+// Every timestamp (`…_at`) is UTC with a Z ("2026-09-27T12:36:59.928077Z", the fraction left out
+// when it's zero): read it with `Date`.
 export interface Ref {
   id: string;
 }
@@ -568,6 +569,27 @@ export type JudgeCheck = SettingsCheck<JudgeSettings>;
 // Worker health - GET /health/worker: the broker and the workers, as seen from the API. Always 200
 // (the API is up); takes about a second, so it's fetched on demand, never per request.
 export type WorkerHealthStatus = 'ready' | 'outdated' | 'no_worker' | 'broker_unreachable';
+/** A queue's connection as Operations says it (API 2.4.0): what it is - never where. */
+export interface QueueConnection {
+  /** Its URL's scheme, without Celery's prefix or a driver: `redis`, `sqlite`, `amqp`… */
+  kind: string;
+  /** Spoken over TLS (`rediss://`, `amqps://`). */
+  tls: boolean;
+}
+/** GET /settings/operations (API 2.4.0): how this deployment runs, read-only - the values the API
+ *  process started with, the workers set from the same ones. No connection string, nor its host:
+ *  only what each connects to. */
+export interface OperationsSettings {
+  api: { host: string; port: number; root_path: string };
+  cors_allowed_origins: string[];
+  logging: { level: string; format: string };
+  dataset_upload_max_mb: number;
+  worker_db_pool: { size: number; max_overflow: number };
+  reconciliation: { interval_minutes: number; pending_threshold_minutes: number };
+  database: { kind: string };
+  broker: QueueConnection;
+  result_backend: QueueConnection;
+}
 export interface WorkerHealthWorker {
   name: string;
   /** The Assay version it runs; null = too old to report one. */

@@ -7,7 +7,8 @@ export type SettingsGroup = 'target' | 'judge';
 
 /** /settings/<group>: read, save only what changed, reset to the environment's values, and run a
  *  check (a test call on a worker) with proposed changes that are never saved. One set of methods
- *  for every group, since every group has the same endpoints. */
+ *  for every group, since every group has the same endpoints - and how the deployment runs
+ *  (/settings/operations), read-only. */
 @Injectable({ providedIn: 'root' })
 export class SettingsApiService extends ApiBase {
   read<R>(group: SettingsGroup) {
@@ -28,5 +29,9 @@ export class SettingsApiService extends ApiBase {
   }
   check<S>(group: SettingsGroup, id: string) {
     return this.http.get<M.SettingsCheck<S>>(this.u(`/settings/${group}/checks/${id}`));
+  }
+  /** How this deployment runs - read-only, set when the server starts (API 2.4.0). */
+  operations() {
+    return this.http.get<M.OperationsSettings>(this.u('/settings/operations'));
   }
 }

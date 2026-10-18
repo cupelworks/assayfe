@@ -27,11 +27,11 @@ const ON_ITS_PATH: IsActiveMatchOptions = {
     @for (g of groups(); track $index) {
       <div class="grp" [class.bare]="!g.label">
         @if (g.label) {
-          <div class="cap">{{ g.label }}</div>
+          <div class="cap panel-cap">{{ g.label }}</div>
         }
         @for (p of g.pages; track p.path) {
           <a
-            class="it"
+            class="it panel-item"
             [routerLink]="p.path"
             routerLinkActive="on"
             [routerLinkActiveOptions]="onItsPath"
@@ -60,12 +60,9 @@ const ON_ITS_PATH: IsActiveMatchOptions = {
       grid-template-columns: minmax(0, 1fr);
       row-gap: 16px;
     }
+    /* The kicker and the item's rule are the panels' own (the global .panel-cap, .panel-item). */
     .cap {
       margin-bottom: 12px;
-      font-size: 11px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--color-accent);
     }
     :host(.stack) .cap {
       margin-bottom: 6px;
@@ -74,8 +71,6 @@ const ON_ITS_PATH: IsActiveMatchOptions = {
       display: grid;
       grid-template-columns: 28px minmax(0, 1fr);
       row-gap: 4px;
-      padding: 12px 0 16px;
-      border-top: 1px solid var(--color-divider);
       color: var(--color-text);
       text-decoration: none;
     }

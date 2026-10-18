@@ -14,10 +14,6 @@
 .page-aside assay-quiet-actions {
   align-items: flex-end;
 }
-.page-aside .btn {
-  min-height: 44px;
-  padding: 0 20px;
-}
 /* Under the red button, small: what it does ("Runs the same copies again"). */
 .page-aside .why {
   font-size: 12px;

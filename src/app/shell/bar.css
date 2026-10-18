@@ -1,8 +1,10 @@
-/* A link of the header's bar - the work, Settings, Reference's button. It takes the bar's whole
+/* A link of the header's bar - the work, Settings, a menu's button. It takes the bar's whole
    height, so the page you're on gets a red line on the bar's rule (only the red one shows there),
    and its words sit on the bar's one baseline, the brand's: centred, a smaller size's baseline
-   rides higher, so a 14 px word starts 4 px down and an 11 px capital 6 px. */
-:where(button).bar-link {
+   rides higher, so a 14 px word starts 4 px down and an 11 px capital 6 px. A button is reset with
+   no weight of its own (:where), so the small capitals (the global .small-caps - the one signed
+   in) set its size as they do a link's. */
+:where(button.bar-link) {
   appearance: none;
   background: none;
   border: 0;
