@@ -41,6 +41,9 @@ __screenshots__/
 # The design and development notes stay on the developer's machine, never in the repository.
 /docs/
 
+# Claude Code's instructions for this project stay local too, wherever one is added.
+CLAUDE.md
+
 # Environment / secrets
 .env
 .env.*
