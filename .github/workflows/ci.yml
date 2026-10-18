@@ -56,12 +56,14 @@ jobs:
           --build-arg REVISION="${GITHUB_SHA}"
           -t assay-fe:ci .
 
-      # It serves /healthz and the app's routes; no API is needed for either.
+      # It serves /healthz and the app's routes; no API is needed for either. A built file that
+      # isn't there is a 404, not the app - also when its hash holds "-" or "_".
       - name: Try it
         run: |
           docker run -d --name fe -p 8080:8080 -e ASSAY_API_URL=http://127.0.0.1:9 assay-fe:ci
           curl -fsS --retry 10 --retry-delay 1 --retry-connrefused --retry-all-errors http://localhost:8080/healthz
           curl -fsS http://localhost:8080/settings | grep -q '<app-root>'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/chunk-A_b-C1d2.js)" = 404
 
       # Without the API's address it stops at once, with exit code 1 (the step fails if it runs on).
       - name: It refuses to start without ASSAY_API_URL
