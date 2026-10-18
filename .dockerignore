@@ -1,0 +1,20 @@
+.git/
+node_modules/
+dist/
+.angular/
+coverage/
+.env
+.env.*
+CLAUDE.md
+Dockerfile
+.dockerignore
+docker-compose.yml
+# Not part of the image
+.github/
+.husky/
+.vscode/
+.idea/
+.playwright-mcp/
+docs/
+scripts/
+*.md

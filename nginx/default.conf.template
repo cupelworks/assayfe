@@ -1,0 +1,53 @@
+# Assay's front end: the built app, and /api forwarded to the API.
+# When the container starts, the image fills in the ASSAY_API_URL and ASSAY_UPLOAD_MAX_MB below
+# (only ASSAY_* variables); nginx's own variables stay as they are.
+
+server {
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+
+    server_tokens off;
+    absolute_redirect off;
+
+    # A dataset upload passes through here: one megabyte more than the API's own limit, for the
+    # form around the file.
+    client_max_body_size ${ASSAY_UPLOAD_MAX_MB}m;
+
+    gzip on;
+    gzip_vary on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    # For the platform's liveness and readiness probes.
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # The API, with /api taken off the path (proxy_pass ends in "/"). Every request header goes
+    # along, the sign-in's X-MS-CLIENT-PRINCIPAL* among them. Over HTTPS the API is reached by
+    # its own name (SNI and Host). The API's answers keep their own headers: its docs page loads
+    # its scripts from elsewhere, which the app's policy below would block.
+    location /api/ {
+        proxy_pass ${ASSAY_API_URL}/;
+        proxy_ssl_server_name on;
+        proxy_set_header Host $proxy_host;
+    }
+
+    # Built files carry a hash in their name and never change: cached for a year. A missing one is
+    # a 404, not the app - and not cached (no "always" on Cache-Control).
+    location ~* "-[a-z0-9]{8,10}\.(?:js|css|woff2)$" {
+        include /etc/nginx/assay/security-headers.conf;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+
+    # Everything else, the app's own routes included: the file if there is one, else index.html.
+    # Checked again on every visit (no-cache), so a release shows at once.
+    location / {
+        include /etc/nginx/assay/security-headers.conf;
+        add_header Cache-Control "no-cache" always;
+        try_files $uri /index.html;
+    }
+}

@@ -2,14 +2,13 @@
 // Copyright (C) 2026 Francesco Campanile
 import { ApplicationConfig } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
-import { ASSAY_API_BASE } from './api/api-base.token';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { signInInterceptor } from './api/sign-in.interceptor';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes, withComponentInputBinding()),
-    provideHttpClient(),
-    { provide: ASSAY_API_BASE, useValue: 'http://localhost:8000' },
+    provideHttpClient(withInterceptors([signInInterceptor])),
   ],
 };

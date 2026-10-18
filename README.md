@@ -1,55 +1,24 @@
 # Assay FE
 
-Angular 22 front-end for the Assay evaluation API. Modernist design system (Archivo, red/ink on light ground, zero radius, 2px rules); dark mode via `[data-theme="dark"]`.
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cupelworks/assay/main/.github/assets/assay-dark.png">
+    <img src="https://raw.githubusercontent.com/cupelworks/assay/main/.github/assets/assay-light.png" alt="Assay, cast by CupelWorks: write the test once, run it as often as you choose, get a verdict" width="100%">
+  </picture>
+</p>
 
-## Run
+Test how a GenAI-powered application behaves, and keep a reproducible record of it.
 
-```
-npm install
-npm start          # http://localhost:4200
-```
+Bring the prompts you send your application, the answers it gave and the answers you
+expected. Assay scores each case with the checks you assign — deterministic rules, NLP
+metrics against a threshold, LLM-as-judge verdicts against a rubric — organises cases into
+stable test sets and plans, and records every run's outcome.
 
-Backend must allow CORS from `http://localhost:4200`. API base is set in `src/app/app.config.ts` (`ASSAY_API_BASE`).
+See how Assay works, step by step, at [cupel.works/assay/how-it-works](https://cupel.works/assay/how-it-works).
 
-## Versions
-
-The front end has a version of its own, apart from the API's: `version` in `package.json` (semver,
-from 2.4.0), shown in the footer. `assay.api` there is the API it needs, as a semver range
-(`^2.4.0`: 2.4.0 or any later 2.x). A release is `develop` merged into `main`, tagged `vX.Y.Z`
-with the front end's version; the deploy pipeline pins that tag.
-
-## Screens → endpoints
-
-- **The header** (every page) - on the pages' 12-column grid: the brand over columns 1-3, the work from column 4 (Overview, Datasets, Tests, Test sets, Test plans), then **Reference** - the guidelines of the whole app, Catalog (Test types, Statistical tests) and Guide (Charts, Guide), numbered 01-04 in a panel under the bar; on one of those four pages its button names it ("REFERENCE" over "Charts"). Settings and Light · Dark sit at the right in small capitals - or, signed in (Azure, Entra ID: `/.auth/me`), Settings and the first name, opening a panel: who (name, username), the theme, Sign out. Every word sits on one baseline; the page you're on is red, with a red line on the bar's rule. Below 960 px: the brand and Menu, which opens it all as one sheet. The footer mirrors the bar: © 2026 Assay under the brand, the API documentation (a new tab, with Run with statistics's arrow) from column 4, the version at the right. The work's pages - Datasets, Tests, Test sets, Test plans - carry the kicker "Work", as Reference's carry "Catalog" and "Guide". Any other page's kicker is its breadcrumb: each page above it by its title, a red link back, then what it is in ink unless its title says it ("Tests / Password Reset Instructions / Statistics batch"); on a phone, only the page just above, with an arrow back.
-- **Overview** (`/`, the home page) - on the Guide's layout. Beside the title, flush right on the margin (as every page's actions are), whether runs can start, from the workers alone (`GET /health/worker`, read once on opening): green "Ready to run · N workers ready", else amber "Not ready to run · Ask your admin to restart the workers". Under the lede, the two summaries: the last 100 batches by verdict and the last 500 runs by status, each "How it ended" then "While it runs", a ruled row per status with a bar for its share and the figure - a run's row opens **Runs** at that status, a verdict's row does nothing yet, a status with none is plain text. Then three sections of the latest 5, one row per test, set or plan: 01 its latest verdict ("Run again ↗" on Failed and Inconclusive), 02 its latest run, 03 its latest comparison (its `outcome`'s mark, API 1.1.0), each ending "All … →" (only "All runs →" leads somewhere yet). Polls like the pages it summarises - runs every 2 s while one is in flight, batches every 3 s - and reloads when its tab comes back into view.
-- **Runs** (`/runs`) - every run started one at a time, on the Guide's layout as the work's lists: the kicker "Work", "Runs" at 96 px; a tile per status - "How it ended" over Green, Amber, Red, Not Ran, "While it runs" over Running and Pending - each with the API's total, picking one filters (`?status=`); the smart filter, whose Status and From (`?origin=`) the API applies and whose Test set, Test plan, Checks and Created are kept for when it can; a ruled row per run - its status (to its page), its test, where it was started from, its checks (a bar and "1 of 2 met - Regex Match wasn't", or a Not Ran run's error), when - each run read once, as `GET /runs?batch=none` lists ids only; 25 a page. A statistics batch's runs are on the batch's page.
-- **Datasets** - on the Guide's layout: _Import a dataset_ (a dialog, API 2.3.0: a .jsonl file dropped or chosen from your computer - up to the server's limit, `GET /datasets/upload`, refused before it's sent when over it - and its name, filled from the file's; what each line must hold, with an example; `POST /datasets/upload`, all or nothing - a taken name said under the name, lines that aren't rows listed, the first five and how many more), what a row holds, the smart filter (words over the shown page's names and first prompts; facets Made into tests / Rows / Created and the sort are chosen but not applied - the API can't filter), and each dataset with its rows and its first prompt (one `GET /datasets/{id}/rows?limit=1` per row). **Dataset page** - "Datasets / Dataset", its name, _Make tests from rows_ (`POST /tests/from-dataset`: every row - the ticked rows, names after the prompt and leaving the recorded answer out wait for the API), Add rows · Replace rows · Rename · Delete; 01 its rows (find a row by its words, tick to make tests or delete - `DELETE /datasets/rows`, Edit - `PATCH /datasets/rows`; a paste is read line by line as it's typed, `POST`/`PUT /datasets/rows`); 02 the tests made from it (not shown yet: a test's dataset row isn't in the API's schema).
-- **Tests** - on the Guide's layout: _New test_ (the test form, unchanged), the quick filters (a tile per latest verdict - Failed, Inconclusive, Passed, Not yet - counted from the last 100 batches), the smart filter (words over the page's names, inputs and checks; facets Checks / Verdict / Latest run / Answer / In a test set / From a dataset / Created with their counts, and the sort - chosen but not applied, the API can't filter yet), and each test with its checks, its latest verdict and its latest run (one call each per row, polled while one is under way). Ticked: _Add to a test set…_, _Run each once_, _Delete…_ (says first which can't go: in a test set, or with runs). **Test page** - "Tests / Test", its name, _Run once_ (`POST /runs/standalone/{id}`), _Run with statistics ↗_, Edit · Duplicate · Delete (pale, with why, while it's in a set or has runs); its latest verdict and latest run; 01 the test (its words, the recorded answer with _Clear_, its checks), 02 its batches, 03 its runs outside a batch → **Standalone run detail** (`GET /runs/standalone/{id}/test-runs[/{run}]`), 04 the test sets that hold a copy of it (read from every set's entries until the API can say).
-- **Test sets** and **Test plans** - one list for both, as Tests': tiles, the smart filter, each with what it holds (a set: in how many plans), its latest verdict, its latest run counted and its runs; ticked: _Add to a test plan…_ (sets), _Run each live_, _Delete…_ (only those never run). **Test set page** - Run live (`POST /runs/test-sets/{id}`), Run with statistics ↗, Add tests · Rename · Delete (pale once a test of it has run); 01 its tests - copies, "Frozen" once run (Edit only before; Unlink - `PATCH …/entries` - keeps their runs; Delete - `DELETE …/entries` - only never-run ones), _Add tests…_ (`POST …/entries`, with a Check filter); 02 its batches; 03 its runs (live or replay, counted, _Replay_ - `POST /runs/test-sets/{id}/executions/{exec}`); 04 the plans that run it. **Test plan page** - the same top (Link test sets · Rename · Delete, pale once it has run); 01 its sets, each with its latest run and _Remove_ (`DELETE …/entries`), _Link test sets…_ (`POST …/entries`); 02 its batches; 03 its runs.
-- **A run** - on the Guide's layout, its top under a breadcrumb: a test's run is titled by when it ran ("Run of Oct 1, 8:23 PM") under "Tests / <the test>", with Run once and Run with statistics ↗; a test in a set's run by its name under "Test sets / <the set> / Run of … / Test", with its place in the run and Previous / Next. Under the title, "This run" and "Its checks" ("2 of 3 met", which weren't), or what went wrong; then 01 Checks (not met first: the check, its type and kind, how it went - a score on its own scale with the threshold - and why, with what it was run with in sight when not met and the rest under Details), 02 The answer (said, as code, or empty; where it was read from; the whole reply folded), 03 The test, as it ran. **A set's or plan's run** - "Run of …" under "Test sets / <the set>", Replay; how it went and its checks as the Overview's tallies (nothing to click - the tests are listed below); 01 Tests, worst first, each with its checks; polls while a test is under way. Each run is read one call at a time, as the API has no roll-up.
-- **Statistics** - a test, set or plan run many times as one batch, and a verdict per check over those runs. _Run with statistics ↗_ (on the test, set and plan pages) opens its own page in a new tab - the arrow after the label, and a small label on hover, say so ("Opens in a new tab"; screen readers hear "Run with statistics, opens in a new tab") - at `/tests/:id/run-with-statistics` (likewise under `/test-sets` and `/test-plans`; a batch's _Run again ↗_ adds `?from=<batch id>` and starts from that batch's choices); the tab is titled "Run with statistics · <name>", Cancel closes it, and the page it came from lists the new batch when you come back to it; on the Guide's layout - the breadcrumb, how the goal stands beside the title (within reach, out of reach, can't tell yet, nothing can vary), each step a numbered section (the question, what Assay has seen, a trial or one run first, what reaches the goal for less, how many times with the chance of an answer drawn against the size, what will probably happen, a note) - with Start and Cancel in a bar kept at the bottom of the window beside what the size costs ("286 times × 2 entries · 572 application calls · no judge calls"); every number is `POST /statistics/estimate`'s (asked again 300 ms after each change, creating nothing): **1 What do you want to know?** - the three questions side by side (`GET /statistics/tests`, `kind: batch`; one that can't apply here is disabled with the API's reason; each says its question or reason in its first clause, whole on hover - the trial and "until there's an answer" aren't questions), then how often it must pass and how sure, the presets on the value's line and what it means in words ("At least 9 times in 10 - for every check, unless a check has its own target below.", "Wrong at most 1 time in 20."); **What Assay has seen** - a row per check: in this batch or left out, its last runs, its target (the batch's, or its own), its outlook (likely to pass or to fail, too close to call, certain, unknown) with the API's reason, the check that drives the size, and the size it needs alone; when the goal - a 90% chance that every check gets an answer - is out of reach, how close any size gets, in one figure and the API's sentence; **Every run gives the same result** - when every check can't vary (a recorded answer read by fixed checks), _Run it once instead_: one standalone run of the test, or one live run of the set or plan, opening its page; **Try them first** - when a check has never run, a trial of 10 times with no verdict, and Start becomes "Start without a trial"; **Get closer to the goal** - the API's options (a check at a lower target, one step less sure, checks left out), the ones that reach the goal first, each with _Use this_; **How many times** - the suggested sizes with their chance of an answer and their calls, or another size, beside the chance's curve (the goal in red, the picked size, the best any size gets), and **Until there's an answer** (`until_answer`): the batch runs in waves and stops as soon as every check has its answer, up to a limit - recommended, and picked, when no fixed size reaches the goal; picked, its row says how it goes ("Runs in waves - 42 times first, then 101 at a time…" and the API's sentence), and Start sends its catalogue row with the limit as `times`; **What will probably happen** - Passed, Inconclusive or Failed at that size, in a sentence and a bar (until there's an answer: where it most likely stops and how, with the suggested fixed size's ending beneath to weigh it against). A batch that runs until there's an answer shows its waves on its page ("wave 2 of up to 8", "143 of up to 750 times", and that it stopped early). _Start_ (`POST /statistics/batches`, with the checks' own targets, the checks left out and an optional note) opens the **batch page** in its place (Back then skips the form) (`/statistics/batches/:id`, `GET /statistics/batches/{id}` polled every 3 s while Pending/Running): while it runs, progress, calls spent so far and _Stop_ (`POST …/stop`, confirmed inline), and the runs grid from `progress.entries` - no verdicts until every run has finished; once finished, the outcome (the API's summary as the headline), the checks by verdict, the runs grid from `result.entries[].strip`, and per check: evaluated count, the range that decided it (`statistic.interval`) on a rate axis shared by every row (its two ends written under the bar, the target line unbroken from row to row) - a score check on its own scale, labelled with its threshold - the times as a strip and the verdict's sentence (`times_to_decide_message` when inconclusive); a row opens the met rate as the times added up, or every score, the spread and the average, plus the times not met, each linking to its run, and "The verdict was decided on this range (95% sure)." The pages leave out the maths - method names, t, degrees of freedom, p-values - for readers who aren't statisticians; the API still returns it. Sets and plans add where failures concentrate (`failures_by_entry`). _Compare with…_ picks the baseline (A) among the scope's other finished batches and a comparison test (`POST /statistics/comparisons`); the **comparison page** (`/statistics/comparisons/:id`) shows A and B with their notes, the outcomes as tiles, and per check A → B, B − A with its range and the verdict's sentence; checks with no clear difference fold (unless that's all of them), paired-by-entry adds its single verdict and pairs, unmatched checks are listed. The test, set and plan pages list their batches (02 Verdicts, `GET /statistics/batches?<scope>_id=`, 5 a page) with _Compare two of them…_, and show the newest as their latest verdict; a scope's comparisons are on each batch's page and the Overview.
-- **Statistical tests** (`/statistical-tests`, under Reference in the header) - the statistical tests a batch can run or two batches can be compared with, from `GET /statistics/tests` (a table on the API, like the check types), laid out like Test types on the Guide's layout (`shared/guide/`, `shared/catalog/`): the red "Catalog" kicker, the title and the lede; a key to the tags ("pass / fail" what it reads per run, "scored checks" which checks get a verdict, "from 29 times" the fewest times at its defaults); an index of the two kinds - decide a batch / compare two batches, numbered like their sections, with their counts (a tile shows only that kind; clicked again, everything) - and a tile that opens Charts; a filter (name, question, what it reads, which checks) and how many it shows. Then a section per kind, its tests in a ruled table: the test with its tags, what it asks, the answers it gives (the app's marks) and the fewest times (its own floor, else the API's worked example at its defaults, else its comfortable size; "no minimum" for comparisons that have none; "runs in waves" until there's an answer). More ↓ opens a row - one at a time, its red rule in place of the one above: how many times it needs (the API's explanation and its worked examples as a table), its parameters with defaults and ranges, links to the Charts sections its results are read on and, closed under "How is this calculated?", the API's method in a statistician's words. The pages say how sure as the API does - "95% sure" - never "confidence" or "proven". `#<test id>` opens and scrolls to that test's row: the compare dialog links each test ("About this test →", new tab - the dialog keeps what was typed), and the Guide's statistics section links the page.
-- **Charts** (`/charts`, under Reference in the header) - "How to read the charts", static, laid out like the Guide (both built from `shared/guide/`: a red kicker - "Guide" on both - the title, the lede, the red line's key, a numbered link per section; then each section's red number and title, its lead, its chart in six columns and how to read it beside it, in a note under a red rule): the range, the strip, the runs grid, the met rate over time, scores, A against B and the marks - each drawn by the app's own chart components with example data, its parts numbered in red. Every chart draws the line a result is judged against (the target, the threshold, 0) in red, unbroken from row to row; a range writes its two ends under its bar. `#chart-<section>` opens on that section: each Statistical tests card links its charts, a batch's page links its Checks heading to the range (or scores) section, a comparison's to A against B, and the Guide's statistics section links the page. No API calls.
-- **Test types** - catalogue from `GET /tests/types?test_category=…` (all three categories fetched in parallel), cached by `TestTypesStore` for reuse in the test forms and in run detail's config labels. Laid out like Statistical tests: a key to the tags (the cost in words - "very fast" - then "needs setup" and "inactive", boxed), an index of the three categories with their active-only counts and blurbs (a tile shows only that category; clicked again, everything), then the filter (name, description, best for, engine), "Show inactive", how many it shows and a page-scoped Refresh (force-reloads the type catalogue past its normal load-once cache). A section per category, its types in a ruled table - the type and its tags, what it checks, best for, limitations - whose rows open, one at a time, for the *Engine* and *Engine settings* that score it (two rows, mirroring the API's `engine` / `engine_settings`; the settings row is omitted when there are none), a judge's default rubric, every configuration field - with a numeric field's native range and pass rule ("0 to 100, met when score ≥ threshold") - and the date it was added.
-- **Guide** - static "How Assay works" explainer on the app's 12-column grid, laid out like Charts (the same `shared/guide/` head, sections and styles: numbered sections with a contents list, ruled tables and flows, the app's own status marks; `#guide-<NN>` opens on a section): the core dataset/test/test-set/test-plan model (incl. what a run does when a test has no recorded model output), what a result looks like per test-type category, the freeze-on-execution rule, standalone vs. live vs. replay runs, three concrete end-to-end workflows, test-plan linking, run statuses plus evaluated output and why one failing check isn't Not Ran, running with statistics (a batch's statuses with their marks, what a verdict says, comparing two batches - linking Statistical tests and Charts), and a guardrail FAQ (incl. why 28 passes out of 28 is Inconclusive). No API calls.
-- **Settings** (`/settings`, "Settings" at the right of the header) - what Assay tests and how it's set up, on the Guide's layout: "What Assay tests, and who judges it" at 96 px, a numbered link per section with what it holds now (the application's URL, the judge's provider and model, the workers' verdict, "8 values"); 01 the application under test and 02 the LLM judge - under each title where its values come from and, with changes, how many, which, Save changes and Discard (in view while the form scrolls), Reset to environment values; the fields as lines with their fallback variable and a "Changed" mark; Test connection beside them (Test, unsaved changes included and never saved, then what came back - "■ Answered", "HTTP 200 · 2.5 s", the answer); 03 Workers - how they stand as a big word and a row per worker, Check again; 04 Operations - how the deployment runs, read-only, from `GET /settings/operations` (API 2.4.0): the API's address, the allowed origins, logging, the dataset upload limit, the worker's pool, the reconciliation scan, and what the database, the broker and the result backend are (never a connection string, nor its host) - each with what it is.
-
-## Testing
-There's no automated FE suite: each feature is checked by hand in the browser, against a live API and worker.
-
-## Structure
-
-`api/` models + one-method-per-endpoint service (incl. `SettingsApiService`, `StatisticsApiService` with the `StatisticalTestsStore` catalogue) + root `CatalogStore` + `TestTypesStore` (with the pure display helpers `numericFieldHint` / `engineSettingsLabel` / `defaultRubric` shared by the catalogue, the config inputs and run detail - `defaultRubric` by the catalogue only) · `shared/` formatters (incl. `errText`, and `fieldErrors` to split an API error into per-field messages and the rest), page.css, `Paged`/`PagerComponent`, `ActionRunner`, `DateSort`, `TextFilter`, `Selection`, `FieldErrorStore`, `assayNumber` + `parseDecimal`, `pollWhile`, `<assay-rel-time>`, `<assay-copy-button>`, `<assay-chevron>`, dialogs (generic, name, confirm, pick, test form), `<assay-mark>` (the square for any status, verdict or outcome), `shared/guide/` (a guide page's layout: `<assay-guide-head>`, `<assay-guide-section>`, `guide.css`, `numbered()`), `shared/catalog/` (a catalogue page's pieces: its key, index, filter, table, rows, cells, details and tags, `catalog.css`, and `CATALOG` to import them), `OpenOne` (one row open at a time), `dismissable()` (closes a menu on the next page, a click outside or Escape) · one folder per area (`datasets`, `tests`, `scopes`, `runs`, `statistics` - its dialogs, pages (batch, comparison, the Statistical tests catalogue), panel and `charts/`, `test-types`, `charts` - the Charts page and its sections, `guide`, `settings`) · `shell/` the header - its links once, in `nav.ts`; `<assay-reference-menu>` and the `<assay-reference-list>` it shares with the phone's `<assay-app-menu>`; `<assay-theme-switch>`; `bar.css` - and the footer.
-
-## Notes
-
-- Checks: lists show what a test checks as one tag per type, with a count when it repeats ("Contains ×2"); the test page shows them as a read-only table - Type | Name | Settings, each setting on its own wrapping line (a very long one - a rubric - folds to two lines behind "More ↓"), the first five then "Show all N checks"; the form and a run's results, which give each check its own row, show check names. A test holds a list of checks - each a catalogue test type with its own name, settings and answer path - and a type can appear more than once (two Contains, two JSON Field Equals on different paths). Every form (new/edit test, edit entry, create tests from dataset) edits them in one table, `shared/checks-table.component` - Type | Name | Settings | Remove, checks of a type grouped with "+ Add another <type>" under them, and "+ Add a test type" opening the catalogue in place (search, "Hide types needing setup", the categories with their counts beside a fixed-height scrolling list of types with description, cost and "needs setup" tags, and Add). Name is optional: empty shows the name the API will give (the type's name, numbered past every name in use - "Contains", "Contains 2"); a name used twice, ignoring case, blocks saving. Editing sends every name back as it came, so a check keeps its identity and its results stay comparable across runs.
-- Settings are rendered from each type's `config_fields`, by `kind`, never by type name: a box that grows with its text - or with its example, so an empty rubric shows the whole default - for `multiline`/`rubric` and, in monospace without spell-check, `json`/`json_schema`/`regex`; a single-line monospace input for `jsonpath`; a number input for `numeric` (digits-only for an `integer` field). Each shows the API's `placeholder` and `hint`; a type with no settings says so. Saving is blocked, with the reason in the dialog's footer beside the disabled button ("3 things to fix: Required substring (Contains 2) · …", so it's never scrolled out of view), while Input or a required field is empty, a number is out of range or not whole, JSON doesn't parse or a JSONPath doesn't start with `$` (`checkIssues` in `api/checks.ts`); the API repeats its own checks on save (a regex is left to it - it uses Python's syntax).
-- Per-check answer path: each check has a collapsed "Advanced" with an optional "Read from (JSONPath)" (`answer_path`) - which part of the application's reply it reads instead of the default answer. Opened automatically when a path is set, and a "reads $.stop_reason" mark under the check's name shows it. Forms always send each check's `answer_path` back (`toAssignments`), because the API replaces the list on save and reads a missing key as the default. Run detail shows "read from $.x" under a check that used its own path, and the application's whole reply in a collapsed, pretty-printed "Full application reply".
-- Test form (new/edit test, edit entry): the Expected output label says live whether it's needed - "required by BLEU, Exact Match (whitespace-sensitive)" for every check's type that needs a reference, "optional" when none does - and Save stays blocked while a required one is empty.
-- Pagination: every list the API pages (`?offset&limit` + `total`) has a shared pager ("1–10 of 62 · ← Previous · Next → · 10 a page") - datasets, dataset rows, tests, test sets/plans, set entries, plan links, executions, execution runs, standalone runs, and the global runs list. `shared/paged.ts` holds the page state; `shared/pager.component.ts` renders it. The `CatalogStore` still preloads the first 100 of each catalog for counts and name lookups. Text filters apply to the current page only (the API has no search), and say so when nothing matches: "No test on this page matches "X". The filter only searches the page you're on - use Previous or Next to search the other pages, or clear the filter." - plain text (`shared/filter-miss.ts`, on the work's lists); on a single page, "No test matches "X". Clear the filter to see them all." The execution page's status tiles summarise the current page (no aggregate endpoint). Runs are enqueue-only - status stays `Pending` until the worker runs; the pages showing one (execution detail, both run detail variants, a test's runs, a set's or plan's runs, the work lists' latest runs) poll every 2 s while they're showing a Pending/Running row and stop the instant it settles (`shared/poll.ts`); batches every 3 s. The Overview polls too - its runs every 2 s while one is in flight, its batches every 3 s - and reloads when its tab comes back into view. Nothing else auto-refreshes - the global runs list and every catalogue page still just reload on next visit (or the test types page's own manual Refresh button).
-- Delete is pale, with why, where the API would 409: a test in a set or with runs, a set one of whose tests has run, a plan that has run (a statistics batch's runs included), a frozen copy; the delete dialogs of the lists say first which of the ticked can go and delete only those. A 409 the page can't foresee (a test's unlinked copy) shows in the dialog.
-- Statistics vocabulary: a run stays Green / Amber / Red ("met / not met" per check) - Passed and Failed are a statistics batch's words, with Inconclusive (a hollow square: not enough to decide, not a warning), Incomplete (half-filled: stopped) and Done (framed - a closed square with a filled centre: a finished trial, which learns how the checks behave and gives no verdict). One colour map for both, `shared/status-mark.component.ts`.
+**This repository is Assay's front end**: the web interface for Assay's API, which is
+[cupelworks/assay](https://github.com/cupelworks/assay). It runs as one container: the built
+app, served by nginx, which also forwards `/api` to the API.
 
 ## License
 
@@ -66,3 +35,160 @@ others to use over a network, the AGPL asks you to offer them its source code.
 
 The Archivo typeface, served with the app from `@fontsource-variable/archivo`, is Copyright 2020
 The Archivo Project Authors, under the [SIL Open Font License 1.1](https://openfontlicense.org).
+
+## Contributing
+
+Assay is open source, but it doesn't accept pull requests or other code contributions.
+Issues are welcome: open one to report a bug or suggest an idea. See
+[CONTRIBUTING.md](CONTRIBUTING.md). Report security vulnerabilities privately, as
+[SECURITY.md](SECURITY.md) explains, never in a public issue.
+
+## Contents
+
+- [What it does](#what-it-does)
+- [Getting started](#getting-started)
+- [Configuration](#configuration)
+- [Pages](#pages)
+- [API](#api)
+- [Development](#development)
+
+## What it does
+
+- **Overview.** Whether runs can start, from the workers, and how the last 100 batches and the
+  last 500 runs ended.
+- **Datasets.** Import a `.jsonl` file from your computer, up to the server's limit; see its
+  rows, and make tests from them.
+- **Tests.** Write a test with the checks it needs. Each check's settings come from what the API
+  says the check takes. Filter your tests by their latest verdict, their checks and more.
+- **Test sets and test plans.** Group tests into sets, and sets into plans; run any of them live.
+- **Runs.** Every run as it happens: its status, the answer it got, and what each check judged.
+- **Run with statistics.** Run a test, a set or a plan many times as one batch, and get a verdict
+  per check: Passed, Failed or Inconclusive. Compare two batches.
+- **Reference.** The check types, the statistical tests, how to read the charts, and a guide to
+  how Assay works.
+- **Settings.** The application under test and the LLM judge, with a connection test before you
+  save; whether the workers are ready; how the deployment runs, read-only.
+- **Who is signed in.** Behind a sign-in, the header shows your name, with Sign out.
+- **Light and dark.** A theme switch, or your system's.
+
+## Getting started
+
+### Try it: Docker Compose
+
+Requires [Docker](https://docs.docker.com/get-docker/), and Assay's API on port 8000:
+`docker compose up --build` in a clone of [cupelworks/assay](https://github.com/cupelworks/assay)
+starts it. Then, from this repository's root:
+
+```bash
+docker compose up --build
+```
+
+This builds the app and serves it with nginx, which forwards `/api` to the API on your machine.
+Open <http://localhost:8080>. The image is about 90 MB. If you run the API by hand with uvicorn
+instead, set `ASSAY_ROOT_PATH=/api` in its `.env`, so its docs page works through this container.
+
+For another API, or another upload limit, put `ASSAY_API_URL` or `ASSAY_UPLOAD_MAX_MB` in a
+`.env` file next to `docker-compose.yml`, as `NAME=value` lines (see
+[Configuration](#configuration)).
+
+Ctrl+C stops it and keeps the image for the next `docker compose up`. Add `-d` to run it in the
+background instead, and `docker compose stop` stops it. To clean up, from the same folder:
+
+| Command | Removes |
+|---|---|
+| `docker compose down` | The container; the image is kept |
+| `docker compose down --rmi all` | The container and the image; the next `docker compose up --build` builds it again |
+
+### Develop: Node on your machine
+
+Requires Node 26 (or 22.22.3+, or 24.15+), and Assay's API on <http://localhost:8000>.
+
+```bash
+npm ci
+npm start    # ng serve, with /api forwarded to the API
+```
+
+Open <http://localhost:4200>. `ng serve` forwards `/api` to <http://localhost:8000> without the
+`/api`, and `/openapi.json` for the API's docs page (`proxy.conf.json`), so the API needs no CORS
+for it. For an API elsewhere, change the target there.
+
+### Deploy: Azure
+
+Assay deploys to Azure Container Apps with Terraform, from the API's repository: see its
+[infra/azure/README.md](https://github.com/cupelworks/assay/blob/main/infra/azure/README.md). This
+front end is the only public app, behind Entra ID sign-in; the API has no public address, and
+nginx forwards `/api` to it. A release is `develop` merged into `main` and tagged `vX.Y.Z` with
+`package.json`'s version (CI checks that they match). The deploy pipeline builds the image from
+that tag, once `scripts/check-api-version.mjs` has checked the API's version.
+
+## Configuration
+
+The container reads these when it starts, and stops at once when one is missing or wrong:
+
+| Variable | Default | What it sets |
+|---|---|---|
+| `ASSAY_API_URL` | none: required; with Docker Compose, the API on your machine | The API's address, such as `https://assay-api.internal.example`. nginx forwards `/api/...` there, without the `/api` |
+| `ASSAY_UPLOAD_MAX_MB` | `11` | The largest request nginx lets through, in MB: one more than the API's `ASSAY_DATASET_UPLOAD_MAX_MB` (10 by default), for the form around the file |
+
+The rest is fixed in the image (`nginx/`): `/healthz` answers the platform's probes, every app
+route serves the app, built files are cached for a year (their names change with their content),
+and every page carries security headers, a content security policy among them. With Docker
+Compose, the variables go in a `.env` file next to `docker-compose.yml`. `ng serve` doesn't read
+them: in development, `proxy.conf.json` sets where `/api` goes.
+
+## Pages
+
+| Page | Path | What it shows |
+|---|---|---|
+| Overview | `/` | Whether runs can start, and how the last batches and runs ended |
+| Datasets | `/datasets` | Your datasets; a dataset's page has its rows |
+| Tests | `/tests` | Your tests; a test's page has its checks and its runs |
+| Test sets, Test plans | `/test-sets`, `/test-plans` | Your sets and plans; each one's page runs it |
+| A run | under its test, set or plan | The answer it got and what each check judged |
+| Runs | `/runs` | Every run started one at a time |
+| Batches, Comparisons | `/statistics/batches`, `/statistics/comparisons` | The runs with statistics, and two batches compared |
+| Run with statistics | `/tests/:id/run-with-statistics`, also under `/test-sets` and `/test-plans` | A batch's setup: the goal, its size, a trial first. Opens in a new tab |
+| Test types | `/test-types` | Every check the API offers |
+| Statistical tests | `/statistical-tests` | The statistical tests a batch can use |
+| Charts | `/charts` | How to read the charts |
+| Guide | `/guide` | How Assay works |
+| Settings | `/settings` | The application under test, the LLM judge, the workers and the deployment |
+
+## API
+
+The app calls Assay's API at `/api`, on its own origin: in the container nginx forwards it to
+`ASSAY_API_URL`, and in development `ng serve` forwards it to <http://localhost:8000>. The footer
+links the API's own reference, at `/api/docs`.
+
+`assay.api` in `package.json` is the API this front end works with, as a range: `^2.4.0` means
+2.4.0 or any later 2.x. To check a version:
+
+```bash
+node scripts/check-api-version.mjs 2.4.1    # exit 0 in the range, 1 outside it
+```
+
+The front end has a version of its own, apart from the API's: `version` in `package.json`, which
+the footer shows.
+
+## Development
+
+```bash
+npm start               # the dev server, on http://localhost:4200
+npx ng build            # a production build, in dist/AssayFE/browser
+npm run format:check    # Prettier, over src/
+npm run check:license   # the licence notice in every source file
+```
+
+The pre-commit hook runs the last two. There's no automated test suite: each change is checked
+by hand in the browser, against a live API and worker. CI (`.github/workflows/ci.yml`) runs the
+checks and the build, and builds and tries the container image.
+
+**Layout:** `src/app/` holds the API client (`api/`: the models, one service per area, the
+catalogue stores, the `/api` base and the sign-in interceptor), the shell (`shell/`: the header,
+the footer, who is signed in), one folder per area (`overview`, `datasets`, `tests`, `scopes` for
+test sets and plans, `runs`, `statistics`, `test-types`, `charts`, `guide`, `settings`, `theme`)
+and the pieces they share (`shared/`: the pager, dialogs, filters, status marks, and the layouts
+of a guide page and a catalogue page). `src/styles.css` holds the design system: Archivo, red and
+ink on a light ground, square corners, 2 px rules, and dark mode through `[data-theme="dark"]`.
+`nginx/` and the `Dockerfile` build the container; `scripts/` holds the licence and API-version
+checks.
