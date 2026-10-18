@@ -571,8 +571,9 @@ export type JudgeCheck = SettingsCheck<JudgeSettings>;
 export type WorkerHealthStatus = 'ready' | 'outdated' | 'no_worker' | 'broker_unreachable';
 /** A queue's connection as Operations says it (API 2.4.0): what it is - never where. */
 export interface QueueConnection {
+  /** Its URL's scheme, without Celery's prefix or a driver: `redis`, `sqlite`, `amqp`… */
   kind: string;
-  /** Spoken over TLS (`rediss://`). */
+  /** Spoken over TLS (`rediss://`, `amqps://`). */
   tls: boolean;
 }
 /** GET /settings/operations (API 2.4.0): how this deployment runs, read-only - the values the API

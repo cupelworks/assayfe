@@ -191,6 +191,7 @@ const KINDS: Record<string, string> = {
   postgresql: 'PostgreSQL',
   sqlite: 'SQLite',
   redis: 'Redis',
+  amqp: 'AMQP',
 };
 const kindOf = (kind: string) => KINDS[kind] ?? kind;
 const queue = (q: QueueConnection) => kindOf(q.kind) + (q.tls ? ' · TLS' : '');
