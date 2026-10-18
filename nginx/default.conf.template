@@ -2,6 +2,13 @@
 # When the container starts, the image fills in the ASSAY_API_URL and ASSAY_UPLOAD_MAX_MB below
 # (only ASSAY_* variables); nginx's own variables stay as they are.
 
+# Who is signed in, as the sign-in in front tells it: X-MS-CLIENT-PRINCIPAL, base64 JSON. Kept only
+# when it's base64 and nothing else, as /.assay/me puts it into a JSON string.
+map $http_x_ms_client_principal $signed_in_principal {
+    "~^[A-Za-z0-9+/=]+$" $http_x_ms_client_principal;
+    default "";
+}
+
 server {
     listen 8080;
     server_name _;
@@ -9,6 +16,10 @@ server {
 
     server_tokens off;
     absolute_redirect off;
+
+    # The sign-in adds its X-MS-CLIENT-PRINCIPAL headers to every request. For someone in many
+    # groups one can pass nginx's 8 KB default, and every request of theirs would be refused.
+    large_client_header_buffers 4 32k;
 
     # A dataset upload passes through here: one megabyte more than the API's own limit, for the
     # form around the file.
@@ -23,6 +34,17 @@ server {
         access_log off;
         default_type text/plain;
         return 200 "ok\n";
+    }
+
+    # Who is signed in, for the header's name and Sign out: the sign-in's X-MS-CLIENT-PRINCIPAL as
+    # the platform sent it, or "" with no sign-in in front (locally). For display only - where the
+    # platform isn't in front, anyone can send that header. Never logged, never cached.
+    location = /.assay/me {
+        access_log off;
+        default_type application/json;
+        include /etc/nginx/assay/security-headers.conf;
+        add_header Cache-Control "no-store" always;
+        return 200 '{"principal":"$signed_in_principal"}';
     }
 
     # The API, with /api taken off the path (proxy_pass ends in "/"). Every request header goes
