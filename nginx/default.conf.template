@@ -49,11 +49,15 @@ server {
 
     # The API, with /api taken off the path (proxy_pass ends in "/"). Every request header goes
     # along, the sign-in's X-MS-CLIENT-PRINCIPAL* among them. Over HTTPS the API is reached by
-    # its own name (SNI and Host). The API's answers keep their own headers: its docs page loads
-    # its scripts from elsewhere, which the app's policy below would block.
+    # its own name (SNI and Host), and its certificate is checked against the image's CA bundle.
+    # The API's answers keep their own headers: its docs page loads its scripts from elsewhere,
+    # which the app's policy below would block.
     location /api/ {
         proxy_pass ${ASSAY_API_URL}/;
         proxy_ssl_server_name on;
+        proxy_ssl_verify on;
+        proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
+        proxy_ssl_verify_depth 3;
         proxy_set_header Host $proxy_host;
     }
 
