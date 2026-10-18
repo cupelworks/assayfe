@@ -12,7 +12,7 @@ import { Component, input, output } from '@angular/core';
       <p class="facts">{{ facts() }}</p>
     }
     <p><ng-content /></p>
-    <button type="button" class="btn btn-primary" [disabled]="busy()" (click)="act.emit()">
+    <button type="button" class="btn btn-primary btn-tall" [disabled]="busy()" (click)="act.emit()">
       {{ action() }}
     </button>
   `,
@@ -42,11 +42,9 @@ import { Component, input, output } from '@angular/core';
       font-size: 13px;
       color: var(--color-neutral-600);
     }
-    /* The page's big button. */
+    /* The page's big button (the global .btn-tall), a little apart. */
     .btn {
-      min-height: 44px;
       margin-top: 10px;
-      padding: 0 20px;
     }
   `,
 })

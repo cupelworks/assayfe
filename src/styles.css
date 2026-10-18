@@ -245,6 +245,13 @@ figcaption {
   height: 36px;
   padding: 0;
 }
+/* The one thing to do, a touch target tall (44 px): beside a page's title, in a dialog's footer,
+   Sign out. */
+.btn-tall,
+.page-aside .btn {
+  min-height: 44px;
+  padding: 0 20px;
+}
 .btn-block {
   width: 100%;
   margin-top: var(--space-2);

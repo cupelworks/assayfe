@@ -8,7 +8,12 @@
             <span class="which">{{ which }}</span>
           }
           <span class="row">
-            <button type="button" class="btn btn-primary" [disabled]="act.busy()" (click)="save()">
+            <button
+              type="button"
+              class="btn btn-primary btn-tall"
+              [disabled]="act.busy()"
+              (click)="save()"
+            >
               {{ act.busy() && !confirmReset() ? 'Saving…' : 'Save changes' }}
             </button>
             <button type="button" class="word" [disabled]="act.busy()" (click)="discard()">

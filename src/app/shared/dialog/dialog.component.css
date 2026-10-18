@@ -83,8 +83,6 @@
 /* The buttons keep their own size however long the text beside them gets. */
 .foot .btn {
   flex: none;
-  min-height: 44px;
-  padding: 0 20px;
 }
 .cancel {
   all: unset;

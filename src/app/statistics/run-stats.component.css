@@ -151,11 +151,6 @@
   font-weight: 700;
   color: var(--color-text);
 }
-/* Start, in the bar: the page's big button, as a first step's (<assay-first-step>). */
-assay-dock .btn {
-  min-height: 44px;
-  padding: 0 20px;
-}
 /* In a trial's sentence: the Done it ends on, framed. */
 .done {
   display: inline-flex;
