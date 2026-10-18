@@ -117,9 +117,11 @@ for it. For an API elsewhere, change the target there.
 Assay deploys to Azure Container Apps with Terraform, from the API's repository: see its
 [infra/azure/README.md](https://github.com/cupelworks/assay/blob/main/infra/azure/README.md). This
 front end is the only public app, behind Entra ID sign-in; the API has no public address, and
-nginx forwards `/api` to it. A release is `develop` merged into `main` and tagged `vX.Y.Z` with
-`package.json`'s version (CI checks that they match). The deploy pipeline builds the image from
-that tag, once `scripts/check-api-version.mjs` has checked the API's version.
+nginx forwards `/api` to it. When the sign-in expires, the app's next request goes through the
+login and comes back to the page. A release is `develop` merged into `main` and tagged `vX.Y.Z`
+with `package.json`'s version (CI checks that they match). The deploy pipeline builds the image
+from that tag, once `scripts/check-api-version.mjs` has checked the API's version. A tab left open
+across a release picks up the new build at the first page it hasn't opened yet.
 
 ## Configuration
 
@@ -189,7 +191,8 @@ catalogue stores, the `/api` base and the sign-in interceptor), the shell (`shel
 the footer, who is signed in), one folder per area (`overview`, `datasets`, `tests`, `scopes` for
 test sets and plans, `runs`, `statistics`, `test-types`, `charts`, `guide`, `settings`, `theme`)
 and the pieces they share (`shared/`: the pager, dialogs, filters, status marks, and the layouts
-of a guide page and a catalogue page). `src/styles.css` holds the design system: Archivo, red and
-ink on a light ground, square corners, 2 px rules, and dark mode through `[data-theme="dark"]`.
-`nginx/` and the `Dockerfile` build the container; `scripts/` holds the licence and API-version
-checks.
+of a guide page and a catalogue page). Beside the routes, `full-load.ts` loads a page in full when
+the sign-in has expired or the page's code doesn't load. `src/styles.css` holds the design system:
+Archivo, red and ink on a light ground, square corners, 2 px rules, and dark mode through
+`[data-theme="dark"]`. `nginx/` and the `Dockerfile` build the container; `scripts/` holds the
+licence and API-version checks.
