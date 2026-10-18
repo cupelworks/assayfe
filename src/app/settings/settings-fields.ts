@@ -1,7 +1,9 @@
+import { OperationsSettings, QueueConnection } from '../api/models';
+
 /** The Settings page's content, as data, grouped the way the backend groups it. Each editable
  *  group's VALUES come from GET /settings/<group>; what lives here is how each field is presented
- *  (label, kind, hint, unit, options). The operations tiles are static - no endpoint exposes
- *  that group. */
+ *  (label, kind, hint, unit, options). The operations' values come from GET /settings/operations
+ *  (API 2.4.0); here, how each reads. */
 
 export type SettingKind = 'url' | 'text' | 'select' | 'number' | 'json' | 'headers';
 
@@ -175,50 +177,79 @@ export const JUDGE_SETTING_FIELDS: SettingField[] = [
   },
 ];
 
-export interface ReadOnlySetting {
+/** A read-only value of how Assay runs, as Operations lists it: its name, what it is, and how
+ *  it reads from the API's answer (`GET /settings/operations`, API 2.4.0). */
+export interface OperationRow {
   label: string;
-  value: string;
   hint: string;
   mono?: boolean;
+  value: (o: OperationsSettings) => string;
 }
 
+/** What a connection connects to, by its name: "PostgreSQL" - as sent when it's another. */
+const KINDS: Record<string, string> = {
+  postgresql: 'PostgreSQL',
+  sqlite: 'SQLite',
+  redis: 'Redis',
+};
+const kindOf = (kind: string) => KINDS[kind] ?? kind;
+const queue = (q: QueueConnection) => kindOf(q.kind) + (q.tls ? ' · TLS' : '');
+
 /** Group D - operations. Deployment-level, restart-required, shown so an operator can confirm
- *  what is running and never edited here. The three connection strings can embed credentials,
- *  so they're shown only as "Configured" - by construction, not by remembering to redact. */
-export const OPERATIONS: ReadOnlySetting[] = [
-  { label: 'API address', value: '127.0.0.1:8000', hint: 'Host · port', mono: true },
+ *  what is running and never edited here. A connection is said by what it connects to, never
+ *  its string nor its host - the API doesn't send them. */
+export const OPERATIONS: OperationRow[] = [
+  {
+    label: 'API',
+    hint: "Where the API process listens (inside its container), and the path it's served under",
+    mono: true,
+    value: ({ api }) =>
+      `${api.host}:${api.port}` + (api.root_path ? ` · under ${api.root_path}` : ''),
+  },
   {
     label: 'Allowed origins',
-    value: 'http://localhost:4200',
     hint: 'CORS - the front-ends this API answers',
     mono: true,
+    value: (o) => o.cors_allowed_origins.join(', ') || 'None - same origin',
   },
-  { label: 'Logging', value: 'INFO · text', hint: 'Level · format (text or json)', mono: true },
+  {
+    label: 'Logging',
+    hint: 'Level · format (text or json)',
+    mono: true,
+    value: ({ logging }) => `${logging.level} · ${logging.format}`,
+  },
+  {
+    label: 'Dataset upload limit',
+    hint: 'The largest .jsonl file Import takes',
+    mono: true,
+    value: (o) => `${o.dataset_upload_max_mb} MB`,
+  },
   {
     label: 'Worker DB pool',
-    value: '10 + 10 overflow',
     hint: 'Connections the worker may hold',
     mono: true,
+    value: ({ worker_db_pool: p }) => `${p.size} + ${p.max_overflow} overflow`,
   },
   {
     label: 'Reconciliation scan',
-    value: 'every 60 min',
-    hint: 'Re-publishes Pending runs older than 15 min',
+    hint: 'Re-publishes runs left Pending too long',
     mono: true,
+    value: ({ reconciliation: r }) =>
+      `every ${r.interval_minutes} min · Pending over ${r.pending_threshold_minutes} min`,
   },
   {
     label: 'Database',
-    value: 'Configured',
     hint: 'Where Assay keeps everything - datasets, tests, runs and their results',
+    value: (o) => kindOf(o.database.kind),
   },
   {
     label: 'Message broker',
-    value: 'Configured',
     hint: 'The queue that hands runs and connection tests to the workers',
+    value: (o) => queue(o.broker),
   },
   {
     label: 'Result backend',
-    value: 'Configured',
     hint: "Where the workers note whether each job finished or failed - a run's results go to the database",
+    value: (o) => queue(o.result_backend),
   },
 ];

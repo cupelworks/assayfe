@@ -1,5 +1,12 @@
-import { Component, computed, signal } from '@angular/core';
-import { SettingsSource, TargetSettingsRead, WorkerHealth } from '../api/models';
+import { Component, computed, inject, signal } from '@angular/core';
+import {
+  OperationsSettings,
+  SettingsSource,
+  TargetSettingsRead,
+  WorkerHealth,
+} from '../api/models';
+import { SettingsApiService } from '../api/settings-api.service';
+import { errText } from '../shared/format';
 import { CATALOG, CatalogColumn } from '../shared/catalog';
 import { GuideHeadComponent } from '../shared/guide/guide-head.component';
 import { GuideSectionComponent } from '../shared/guide/guide-section.component';
@@ -16,8 +23,9 @@ import { WORKER_MARK, WORKER_STATUS, workersToRestart } from './worker-status';
  *  editable groups - the application under test and the LLM judge - are the same
  *  SettingsGroupComponent, each with its own config (settings-groups.ts), since every group has
  *  the same endpoints (/settings/<group>) and lifecycle; each reports what it loaded or saved so
- *  the index stays current. The read-only operations are static content from
- *  `settings-fields.ts` - no endpoint exposes that group - and never show a connection string. */
+ *  the index stays current. The read-only operations are the API's (`GET /settings/operations`,
+ *  API 2.4.0, read once), each read as `settings-fields.ts`'s OPERATIONS says - never a
+ *  connection string, only what each connects to. */
 @Component({
   selector: 'assay-settings',
   standalone: true,
@@ -34,7 +42,21 @@ import { WORKER_MARK, WORKER_STATUS, workersToRestart } from './worker-status';
 export class SettingsComponent {
   target = TARGET_GROUP;
   judge = JUDGE_GROUP;
-  operations = OPERATIONS;
+  private api = inject(SettingsApiService);
+  /** How the deployment runs - undefined while it's read, null when the API doesn't say: an API
+   *  older than 2.4.0 (a 404), or one that couldn't be read (`opsError`). */
+  ops = signal<OperationsSettings | null | undefined>(undefined);
+  opsError = signal<string | null>(null);
+  /** Each operation with its value as it reads - "…" while it's read, "-" when it isn't said. */
+  opRows = computed(() => {
+    const o = this.ops();
+    return OPERATIONS.map((r) => ({
+      label: r.label,
+      hint: r.hint,
+      mono: !!r.mono,
+      value: o ? r.value(o) : o === undefined ? '…' : '-',
+    }));
+  });
   opColumns: CatalogColumn[] = [
     { label: 'Setting', width: 2.4 },
     { label: 'Value', width: 3 },
@@ -45,6 +67,16 @@ export class SettingsComponent {
     judge: signal<SettingsSource | null>(null),
   };
   workers = signal<WorkerHealth | null>(null);
+  constructor() {
+    this.api.operations().subscribe({
+      next: (o) => this.ops.set(o),
+      error: (e) => {
+        this.ops.set(null);
+        this.opsError.set(e?.status === 404 ? null : errText(e));
+      },
+    });
+  }
+
   /** The application under test's saved URL - the judge group warns when its URL is this one. */
   targetUrl = computed(() => (this.saved.target() as TargetSettingsRead | null)?.url ?? null);
 
