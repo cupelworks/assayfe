@@ -338,7 +338,7 @@ export class RunStatsComponent {
         }),
     );
   });
-  /** Step 2's lead, as the canvas has it: what the table says about the checks as a whole. */
+  /** Step 2's lead: what the table says about the checks as a whole. */
   seenLead = computed(() => {
     const e = this.estimate();
     if (this.allCertain()) return 'Nothing here can vary';
@@ -532,7 +532,7 @@ export class RunStatsComponent {
   /** "Until there's an answer" picked (true), a fixed size (false), or neither yet (null). */
   private untilPicked = signal<boolean | null>(null);
   /** Whether the batch runs until there's an answer: picked, or - with no size asked for - the
-   *  default when no fixed size reaches the goal, as the canvas recommends. */
+   *  default when no fixed size reaches the goal, as recommended. */
   untilOn = computed(() => {
     if (!this.until() || this.apiProblems()['times']) return false;
     const picked = this.untilPicked();

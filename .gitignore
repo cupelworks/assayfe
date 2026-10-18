@@ -26,7 +26,6 @@ yarn-error.log
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-!.vscode/mcp.json
 .history/*
 
 # Miscellaneous
@@ -38,6 +37,9 @@ yarn-error.log
 testem.log
 /typings
 __screenshots__/
+
+# The design and development notes stay on the developer's machine, never in the repository.
+/docs/
 
 # Environment / secrets
 .env

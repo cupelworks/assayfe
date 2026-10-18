@@ -35,21 +35,7 @@ with the front end's version; the deploy pipeline pins that tag.
 - **Settings** (`/settings`, "Settings" at the right of the header) - what Assay tests and how it's set up, on the Guide's layout: "What Assay tests, and who judges it" at 96 px, a numbered link per section with what it holds now (the application's URL, the judge's provider and model, the workers' verdict, "8 values"); 01 the application under test and 02 the LLM judge - under each title where its values come from and, with changes, how many, which, Save changes and Discard (in view while the form scrolls), Reset to environment values; the fields as lines with their fallback variable and a "Changed" mark; Test connection beside them (Test, unsaved changes included and never saved, then what came back - "■ Answered", "HTTP 200 · 2.5 s", the answer); 03 Workers - how they stand as a big word and a row per worker, Check again; 04 Operations - how the deployment runs, read-only, from `GET /settings/operations` (API 2.4.0): the API's address, the allowed origins, logging, the dataset upload limit, the worker's pool, the reconciliation scan, and what the database, the broker and the result backend are (never a connection string, nor its host) - each with what it is.
 
 ## Testing
-There's no automated FE suite; each feature folder's `test_checklist.md` under `docs/` is its manual UI checklist, run against a live API + worker (the **Setup** is in `docs/basic_ui_implementation/test_checklist.md`).
-
-## Docs
-
-Laid out like the API repo's `docs/`: one behavioral reference, then a folder per feature with its numbered design notes (`dev_notes.md`: what was asked, considered and decided, appended over time) and its manual checks (`test_checklist.md`).
-
-- **`docs/current_implementation.md`** - every screen and shared building block as built today: what it does, what it guards against client-side, how it calls the API.
-- **`docs/basic_ui_implementation/`** - the foundation: the API client and catalogue store, pagination, the shell, Overview, datasets, tests and the test form, test sets and plans, the shared pieces (`ActionRunner`, `TextFilter`, the chevron); its checklist holds the **Setup** every other checklist starts from, the Guide and the cross-cutting checks.
-- **`docs/run_execution/`** - runs and their results: the runs list, an execution's page, a run's detail, statuses and their labels, polling, frozen copies, what each check judged and how it scored.
-- **`docs/test_type_config/`** - a check's settings, rendered from each type's `config_fields` by kind, and the answer path.
-- **`docs/evaluators/`** - the test types catalogue as the API's evaluators grew: new types, metrics scoring for real, the LLM judges.
-- **`docs/settings/`** - the Settings page: the application under test, the LLM judge, the workers.
-- **`docs/statistics/`** - Run with statistics (a page in its own tab), batches, comparisons, the Statistical tests page and the Charts page.
-- **`docs/improvement_ui/`** - audits, code reviews and UX passes across the app (notes only).
-- **`docs/to_be_implemented_after_be_version_2/`** - what the work's pages show but can't do until the API's next version (filters, latest per item, who holds what, tests from some rows), and what they read the long way until then.
+There's no automated FE suite: each feature is checked by hand in the browser, against a live API and worker.
 
 ## Structure
 
