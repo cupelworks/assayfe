@@ -615,7 +615,7 @@ export interface WorkerHealth {
 }
 
 // Statistics - "Run with statistics": a test, set or plan run many times as one batch, and a
-// statistical test's verdict per check over those runs (see docs/statistics in the API repo).
+// statistical test's verdict per check over those runs.
 /** The arithmetic in code a statistical test runs - a fixed set. Branch on this, never on a
  *  test's id: the catalogue is a table, and several tests can share one engine. */
 export type StatisticalEngine =
