@@ -20,5 +20,8 @@ Include what you can of:
   shows - and how the front end was served: the container image and its tag, or `ng serve`;
   the browser; and whether a sign-in sat in front of it.
 
+Please describe the problem rather than send a fix: the maintainer writes every fix
+independently.
+
 You'll get an answer within a week. Once the problem is confirmed, we'll agree on a date to
 publish it together with the fix, and credit you unless you'd rather not be named.
