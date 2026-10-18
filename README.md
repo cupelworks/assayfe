@@ -50,3 +50,17 @@ There's no automated FE suite: each feature is checked by hand in the browser, a
 - Pagination: every list the API pages (`?offset&limit` + `total`) has a shared pager ("1–10 of 62 · ← Previous · Next → · 10 a page") - datasets, dataset rows, tests, test sets/plans, set entries, plan links, executions, execution runs, standalone runs, and the global runs list. `shared/paged.ts` holds the page state; `shared/pager.component.ts` renders it. The `CatalogStore` still preloads the first 100 of each catalog for counts and name lookups. Text filters apply to the current page only (the API has no search), and say so when nothing matches: "No test on this page matches "X". The filter only searches the page you're on - use Previous or Next to search the other pages, or clear the filter." - plain text (`shared/filter-miss.ts`, on the work's lists); on a single page, "No test matches "X". Clear the filter to see them all." The execution page's status tiles summarise the current page (no aggregate endpoint). Runs are enqueue-only - status stays `Pending` until the worker runs; the pages showing one (execution detail, both run detail variants, a test's runs, a set's or plan's runs, the work lists' latest runs) poll every 2 s while they're showing a Pending/Running row and stop the instant it settles (`shared/poll.ts`); batches every 3 s. The Overview polls too - its runs every 2 s while one is in flight, its batches every 3 s - and reloads when its tab comes back into view. Nothing else auto-refreshes - the global runs list and every catalogue page still just reload on next visit (or the test types page's own manual Refresh button).
 - Delete is pale, with why, where the API would 409: a test in a set or with runs, a set one of whose tests has run, a plan that has run (a statistics batch's runs included), a frozen copy; the delete dialogs of the lists say first which of the ticked can go and delete only those. A 409 the page can't foresee (a test's unlinked copy) shows in the dialog.
 - Statistics vocabulary: a run stays Green / Amber / Red ("met / not met" per check) - Passed and Failed are a statistics batch's words, with Inconclusive (a hollow square: not enough to decide, not a warning), Incomplete (half-filled: stopped) and Done (framed - a closed square with a filled centre: a finished trial, which learns how the checks behave and gives no verdict). One colour map for both, `shared/status-mark.component.ts`.
+
+## License
+
+Copyright (C) 2026 Francesco Campanile.
+
+Assay FE is free software: you can redistribute it and/or modify it under the terms of the
+[GNU Affero General Public License, version 3](LICENSE) (`AGPL-3.0-only`), as published by
+the Free Software Foundation. It is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See [LICENSE](LICENSE) for the full terms.
+
+If you run a modified Assay FE for others to use over a network, the AGPL asks you to offer them
+its source code.
+
