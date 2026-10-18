@@ -16,20 +16,20 @@ import { ThemeSwitchComponent } from './theme-switch.component';
   imports: [ThemeSwitchComponent],
   host: { '[class.stack]': 'stack()' },
   template: `
-    <div class="blk you">
-      <span class="cap">You</span>
+    <div class="blk you panel-item">
+      <span class="cap panel-cap">You</span>
       <span class="name">{{ user().name }}</span>
       <span class="username">{{ user().username }}</span>
     </div>
     @if (theme()) {
-      <div class="blk theme">
-        <span class="cap">Theme</span>
+      <div class="blk theme panel-item">
+        <span class="cap panel-cap">Theme</span>
         <assay-theme-switch />
         <span class="hint">Kept on this browser.</span>
       </div>
     }
-    <div class="blk out">
-      <span class="cap">Leave</span>
+    <div class="blk out panel-item">
+      <span class="cap panel-cap">Leave</span>
       <a class="btn btn-primary btn-tall" [href]="signOut">Sign out</a>
       <span class="hint">Out of Assay on this browser; signing in again takes you back.</span>
     </div>
@@ -42,13 +42,12 @@ import { ThemeSwitchComponent } from './theme-switch.component';
       column-gap: 24px;
       align-items: start;
     }
+    /* Each block an item of the panel, under its kicker (the global .panel-item, .panel-cap). */
     .blk {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
       gap: 4px;
-      padding: 12px 0 16px;
-      border-top: 1px solid var(--color-divider);
     }
     .you {
       grid-column: 1 / 5;
@@ -61,10 +60,6 @@ import { ThemeSwitchComponent } from './theme-switch.component';
     }
     .cap {
       margin-bottom: 6px;
-      font-size: 11px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--color-accent);
     }
     .name {
       font-size: 20px;

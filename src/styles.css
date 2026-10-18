@@ -510,6 +510,18 @@ textarea.input {
 .lfield .invalid {
   border-bottom-color: var(--color-accent);
 }
+/* What the bar's panels share - Results', Reference's (<assay-menu-list>), the one signed in's
+   (<assay-account>): a group's kicker, in red small capitals; an item under its rule. */
+.panel-cap {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+.panel-item {
+  padding: 12px 0 16px;
+  border-top: 1px solid var(--color-divider);
+}
 /* A box ruled as a field is - ink above, the field's line below: the rows a dataset's page
    takes as a paste, the file the import dialog takes. */
 .ruled {
