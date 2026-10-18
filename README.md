@@ -1,6 +1,6 @@
 # Assay FE
 
-Angular 22 front-end for the Assay evaluation API (v1.1.0). Modernist design system (Archivo, red/ink on light ground, zero radius, 2px rules); dark mode via `[data-theme="dark"]`.
+Angular 22 front-end for the Assay evaluation API. Modernist design system (Archivo, red/ink on light ground, zero radius, 2px rules); dark mode via `[data-theme="dark"]`.
 
 ## Run
 
@@ -10,6 +10,13 @@ npm start          # http://localhost:4200
 ```
 
 Backend must allow CORS from `http://localhost:4200`. API base is set in `src/app/app.config.ts` (`ASSAY_API_BASE`).
+
+## Versions
+
+The front end has a version of its own, apart from the API's: `version` in `package.json` (semver,
+from 2.4.0), shown in the footer. `assay.api` there is the API it needs, as a semver range
+(`^2.3.0`: 2.3.0 or any later 2.x). A release is `develop` merged into `main`, tagged `vX.Y.Z`
+with the front end's version; the deploy pipeline pins that tag.
 
 ## Screens → endpoints
 
