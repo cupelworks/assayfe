@@ -84,7 +84,8 @@ docker compose up --build
 ```
 
 This builds the app and serves it with nginx, which forwards `/api` to the API on your machine.
-Open <http://localhost:8080>. The image is about 90 MB.
+Open <http://localhost:8080>. The image is about 90 MB. If you run the API by hand with uvicorn
+instead, set `ASSAY_ROOT_PATH=/api` in its `.env`, so its docs page works through this container.
 
 For another API, or another upload limit, put `ASSAY_API_URL` or `ASSAY_UPLOAD_MAX_MB` in a
 `.env` file next to `docker-compose.yml`, as `NAME=value` lines (see
