@@ -1,6 +1,8 @@
-import { Component, ElementRef, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MenuListComponent } from './menu-list.component';
+import { AccountComponent } from './account.component';
+import { SessionService } from './session.service';
 import { ThemeSwitchComponent } from './theme-switch.component';
 import { MENUS, WORK } from './nav';
 import { dismissable } from '../shared/dismissable';
@@ -8,13 +10,20 @@ import { dismissable } from '../shared/dismissable';
 /**
  * The header below 1220 px, where the bar keeps only the brand: Menu opens the whole bar as one
  * sheet under it - the work in large type, then each menu's pages under its name, Results then
- * Reference (`<assay-menu-list>`, one column), then Settings and the theme. It closes on the next
- * page, a click outside it, or Escape (focus back on Menu).
+ * Reference (`<assay-menu-list>`, one column), then - signed in - who is (`<assay-account>`: the
+ * name, the username, Sign out), then Settings and the theme. It closes on the next page, a click
+ * outside it, or Escape (focus back on Menu).
  */
 @Component({
   selector: 'assay-app-menu',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, MenuListComponent, ThemeSwitchComponent],
+  imports: [
+    RouterLink,
+    RouterLinkActive,
+    MenuListComponent,
+    AccountComponent,
+    ThemeSwitchComponent,
+  ],
   template: `
     <button
       #button
@@ -50,6 +59,10 @@ import { dismissable } from '../shared/dismissable';
         @for (m of menus; track m.label) {
           <p class="title">{{ m.label }}</p>
           <assay-menu-list [groups]="m.groups" [stack]="true" (picked)="open.set(false)" />
+        }
+        @if (session.user(); as u) {
+          <p class="title">Signed in</p>
+          <assay-account [user]="u" [stack]="true" [theme]="false" />
         }
         <div class="foot">
           <a
@@ -157,6 +170,7 @@ import { dismissable } from '../shared/dismissable';
 export class AppMenuComponent {
   work = WORK;
   menus = MENUS;
+  session = inject(SessionService);
   open = signal(false);
   private button = viewChild.required<ElementRef<HTMLButtonElement>>('button');
 

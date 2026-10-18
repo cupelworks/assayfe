@@ -24,7 +24,21 @@
         ariaCurrentWhenActive="page"
         >Settings</a
       >
-      <assay-theme-switch />
+      @if (session.user(); as u) {
+        <assay-bar-dropdown
+          [label]="u.first"
+          [caps]="true"
+          [ariaLabel]="'Signed in as ' + u.name"
+          title="Signed in"
+          what="With your organization's Microsoft account - Assay knows you by it."
+          panelId="account-panel"
+          [nav]="false"
+        >
+          <assay-account [user]="u" />
+        </assay-bar-dropdown>
+      } @else {
+        <assay-theme-switch />
+      }
     </div>
     <assay-app-menu />
   </header>
