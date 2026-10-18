@@ -47,12 +47,13 @@ server {
         return 200 '{"principal":"$signed_in_principal"}';
     }
 
-    # The API, with /api taken off the path (proxy_pass ends in "/"). Every request header goes
-    # along, the sign-in's X-MS-CLIENT-PRINCIPAL* among them. Over HTTPS the API is reached by
-    # its own name (SNI and Host), and its certificate is checked against the image's CA bundle.
-    # The API's answers keep their own headers: its docs page loads its scripts from elsewhere,
-    # which the app's policy below would block.
-    location /api/ {
+    # The API, with /api taken off the path (proxy_pass ends in "/"), whatever a path's name: "^~"
+    # keeps the built-files rule below from ever taking one. Every request header goes along, the
+    # sign-in's X-MS-CLIENT-PRINCIPAL* among them. Over HTTPS the API is reached by its own name
+    # (SNI and Host), and its certificate is checked against the image's CA bundle. The API's
+    # answers keep their own headers: its docs page loads its scripts from elsewhere, which the
+    # app's policy below would block.
+    location ^~ /api/ {
         proxy_pass ${ASSAY_API_URL}/;
         proxy_ssl_server_name on;
         proxy_ssl_verify on;
@@ -61,9 +62,10 @@ server {
         proxy_set_header Host $proxy_host;
     }
 
-    # Built files carry a hash in their name and never change: cached for a year. A missing one is
-    # a 404, not the app - and not cached (no "always" on Cache-Control).
-    location ~* "-[a-z0-9]{8,10}\.(?:js|css|woff2)$" {
+    # Built files carry a hash in their name (letters, digits, "-" and "_") and never change:
+    # cached for a year. A missing one is a 404, not the app - and not cached (no "always" on
+    # Cache-Control).
+    location ~* "-[a-z0-9_-]{8,10}\.(?:js|css|woff2)$" {
         include /etc/nginx/assay/security-headers.conf;
         add_header Cache-Control "public, max-age=31536000, immutable";
         try_files $uri =404;
