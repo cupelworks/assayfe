@@ -64,3 +64,5 @@ PARTICULAR PURPOSE. See [LICENSE](LICENSE) for the full terms.
 If you run a modified Assay FE for others to use over a network, the AGPL asks you to offer them
 its source code.
 
+The Archivo typeface, served with the app from `@fontsource-variable/archivo`, is Copyright 2020
+The Archivo Project Authors, under the [SIL Open Font License 1.1](https://openfontlicense.org).
