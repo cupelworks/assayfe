@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, computed, input, output, viewChild } from '@angular/core';
 import { DataSetRowSchema } from '../api/models';
 import { counted } from '../shared/format';

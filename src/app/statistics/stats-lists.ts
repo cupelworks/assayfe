@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { BatchStatus, ComparisonOutcome, ScopeFacets, StatsScope } from '../api/models';
 import { CatalogStore } from '../api/catalog.store';
 import { CatalogIndexGroup, CatalogIndexItem } from '../shared/catalog';

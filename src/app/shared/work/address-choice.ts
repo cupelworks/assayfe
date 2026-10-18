@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Signal, WritableSignal, inject, linkedSignal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FilterChoice } from './filters';

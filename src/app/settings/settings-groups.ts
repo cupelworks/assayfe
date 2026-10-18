@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { SettingsGroup } from '../api/settings-api.service';
 import { JudgeSettingsRead, TargetSettingsRead } from '../api/models';
 import { SettingField, JUDGE_SETTING_FIELDS, TARGET_SETTING_FIELDS } from './settings-fields';

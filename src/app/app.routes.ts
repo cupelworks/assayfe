@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Routes } from '@angular/router';
 import { ShellComponent } from './shell/shell.component';
 

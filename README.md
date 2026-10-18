@@ -35,21 +35,7 @@ with the front end's version; the deploy pipeline pins that tag.
 - **Settings** (`/settings`, "Settings" at the right of the header) - what Assay tests and how it's set up, on the Guide's layout: "What Assay tests, and who judges it" at 96 px, a numbered link per section with what it holds now (the application's URL, the judge's provider and model, the workers' verdict, "8 values"); 01 the application under test and 02 the LLM judge - under each title where its values come from and, with changes, how many, which, Save changes and Discard (in view while the form scrolls), Reset to environment values; the fields as lines with their fallback variable and a "Changed" mark; Test connection beside them (Test, unsaved changes included and never saved, then what came back - "■ Answered", "HTTP 200 · 2.5 s", the answer); 03 Workers - how they stand as a big word and a row per worker, Check again; 04 Operations - how the deployment runs, read-only, from `GET /settings/operations` (API 2.4.0): the API's address, the allowed origins, logging, the dataset upload limit, the worker's pool, the reconciliation scan, and what the database, the broker and the result backend are (never a connection string, nor its host) - each with what it is.
 
 ## Testing
-There's no automated FE suite; each feature folder's `test_checklist.md` under `docs/` is its manual UI checklist, run against a live API + worker (the **Setup** is in `docs/basic_ui_implementation/test_checklist.md`).
-
-## Docs
-
-Laid out like the API repo's `docs/`: one behavioral reference, then a folder per feature with its numbered design notes (`dev_notes.md`: what was asked, considered and decided, appended over time) and its manual checks (`test_checklist.md`).
-
-- **`docs/current_implementation.md`** - every screen and shared building block as built today: what it does, what it guards against client-side, how it calls the API.
-- **`docs/basic_ui_implementation/`** - the foundation: the API client and catalogue store, pagination, the shell, Overview, datasets, tests and the test form, test sets and plans, the shared pieces (`ActionRunner`, `TextFilter`, the chevron); its checklist holds the **Setup** every other checklist starts from, the Guide and the cross-cutting checks.
-- **`docs/run_execution/`** - runs and their results: the runs list, an execution's page, a run's detail, statuses and their labels, polling, frozen copies, what each check judged and how it scored.
-- **`docs/test_type_config/`** - a check's settings, rendered from each type's `config_fields` by kind, and the answer path.
-- **`docs/evaluators/`** - the test types catalogue as the API's evaluators grew: new types, metrics scoring for real, the LLM judges.
-- **`docs/settings/`** - the Settings page: the application under test, the LLM judge, the workers.
-- **`docs/statistics/`** - Run with statistics (a page in its own tab), batches, comparisons, the Statistical tests page and the Charts page.
-- **`docs/improvement_ui/`** - audits, code reviews and UX passes across the app (notes only).
-- **`docs/to_be_implemented_after_be_version_2/`** - what the work's pages show but can't do until the API's next version (filters, latest per item, who holds what, tests from some rows), and what they read the long way until then.
+There's no automated FE suite: each feature is checked by hand in the browser, against a live API and worker.
 
 ## Structure
 
@@ -64,3 +50,19 @@ Laid out like the API repo's `docs/`: one behavioral reference, then a folder pe
 - Pagination: every list the API pages (`?offset&limit` + `total`) has a shared pager ("1–10 of 62 · ← Previous · Next → · 10 a page") - datasets, dataset rows, tests, test sets/plans, set entries, plan links, executions, execution runs, standalone runs, and the global runs list. `shared/paged.ts` holds the page state; `shared/pager.component.ts` renders it. The `CatalogStore` still preloads the first 100 of each catalog for counts and name lookups. Text filters apply to the current page only (the API has no search), and say so when nothing matches: "No test on this page matches "X". The filter only searches the page you're on - use Previous or Next to search the other pages, or clear the filter." - plain text (`shared/filter-miss.ts`, on the work's lists); on a single page, "No test matches "X". Clear the filter to see them all." The execution page's status tiles summarise the current page (no aggregate endpoint). Runs are enqueue-only - status stays `Pending` until the worker runs; the pages showing one (execution detail, both run detail variants, a test's runs, a set's or plan's runs, the work lists' latest runs) poll every 2 s while they're showing a Pending/Running row and stop the instant it settles (`shared/poll.ts`); batches every 3 s. The Overview polls too - its runs every 2 s while one is in flight, its batches every 3 s - and reloads when its tab comes back into view. Nothing else auto-refreshes - the global runs list and every catalogue page still just reload on next visit (or the test types page's own manual Refresh button).
 - Delete is pale, with why, where the API would 409: a test in a set or with runs, a set one of whose tests has run, a plan that has run (a statistics batch's runs included), a frozen copy; the delete dialogs of the lists say first which of the ticked can go and delete only those. A 409 the page can't foresee (a test's unlinked copy) shows in the dialog.
 - Statistics vocabulary: a run stays Green / Amber / Red ("met / not met" per check) - Passed and Failed are a statistics batch's words, with Inconclusive (a hollow square: not enough to decide, not a warning), Incomplete (half-filled: stopped) and Done (framed - a closed square with a filled centre: a finished trial, which learns how the checks behave and gives no verdict). One colour map for both, `shared/status-mark.component.ts`.
+
+## License
+
+Copyright (C) 2026 Francesco Campanile.
+
+Assay FE is free software: you can redistribute it and/or modify it under the terms of the
+[GNU Affero General Public License, version 3](LICENSE) (`AGPL-3.0-only`), as published by
+the Free Software Foundation. It is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See [LICENSE](LICENSE) for the full terms.
+
+Every source file carries this notice in its first two lines. If you run a modified Assay FE for
+others to use over a network, the AGPL asks you to offer them its source code.
+
+The Archivo typeface, served with the app from `@fontsource-variable/archivo`, is Copyright 2020
+The Archivo Project Authors, under the [SIL Open Font License 1.1](https://openfontlicense.org).

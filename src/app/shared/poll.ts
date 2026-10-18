@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { DestroyRef, effect, inject } from '@angular/core';
 
 /**
@@ -14,7 +16,7 @@ import { DestroyRef, effect, inject } from '@angular/core';
  * `effect()` and the `DestroyRef.onDestroy()` cleanup need) - a poll never outlives the page that
  * started it, since nothing else in this app tears anything down and a raw `setInterval` won't
  * stop itself on navigation. One call replaces what used to be three copy-pasted parts per page
- * (a `startPolling` field, the effect that called it, and the stop check) - see `docs/improvement_ui/dev_notes.md` note 3.
+ * (a `startPolling` field, the effect that called it, and the stop check).
  */
 export function pollWhile(active: () => boolean, tick: () => void, intervalMs = 2000): void {
   let timer: ReturnType<typeof setInterval> | undefined;

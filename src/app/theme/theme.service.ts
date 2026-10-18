@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Injectable, computed, effect, signal } from '@angular/core';
 export type Theme = 'light' | 'dark' | 'system';
 const KEY = 'assay.theme';

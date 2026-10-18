@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, input } from '@angular/core';
 
 /** How a state stands: all good, something to do, or couldn't tell. */

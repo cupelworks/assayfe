@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { WritableSignal, computed, effect, signal, untracked } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { FacetCounts, Page } from '../../api/models';

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { RunCounts, TestStatus } from '../api/models';
 
 export function rel(iso?: string | null) {

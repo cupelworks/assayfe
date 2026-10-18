@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { StatisticalTest, StatisticalTestParameter } from '../api/models';
 import { parseDecimal } from '../shared/number';
 import { errText } from '../shared/format';

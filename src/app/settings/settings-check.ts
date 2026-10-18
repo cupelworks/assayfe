@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { computed, inject, signal } from '@angular/core';
 import { SettingsApiService, SettingsGroup } from '../api/settings-api.service';
 import { SettingsCheck } from '../api/models';

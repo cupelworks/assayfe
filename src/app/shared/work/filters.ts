@@ -1,9 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 /**
  * The smart filter's words: what a list can be narrowed by (a facet - "Checks", "Latest run"),
  * each facet's values, and which are chosen. The filter itself (`<assay-smart-filter>`) only
  * holds the choice; the page decides what it does with it. Runs sends all of it to the API; the
  * other lists apply their words to the page they show and keep the rest of the choice for when the
- * API takes it (see docs/to_be_implemented_after_be_version_2/dev_notes.md).
+ * API takes it.
  */
 
 /** One value of a facet: "Amber" with its mark and how many it would leave (null: not known). */

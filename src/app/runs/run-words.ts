@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { TestType, TestTypeAssignment } from '../api/models';
 import { counted, isInFlight, listed, shortDate } from '../shared/format';
 import { inWords } from '../shared/work/sentences';

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, input, output } from '@angular/core';
 
 /** A step to take before the batch, in Run with statistics - one run when nothing can vary, or a

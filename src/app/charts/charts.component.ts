@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component } from '@angular/core';
 import { Interval, ScoreSummary, SeriesPoint, StripPoint, TestStatus } from '../api/models';
 import { StatusMarkComponent, markLabel } from '../shared/status-mark.component';

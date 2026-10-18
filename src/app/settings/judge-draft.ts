@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { JudgeProvider, JudgeSettings } from '../api/models';
 import { FieldErrors, SettingsDraftSpec, blankToNull, parseNumberField } from './settings-draft';
 

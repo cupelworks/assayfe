@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+/* Copyright (C) 2026 Francesco Campanile */
 /* The rows' own find line: across the section's body, over its table. */
 assay-smart-filter.rows-find {
   grid-column: 1 / -1;

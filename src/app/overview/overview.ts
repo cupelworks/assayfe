@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { RUNS_ENDED } from '../shared/format';
 import { tallyParts } from '../shared/status-tally.component';
 

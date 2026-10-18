@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+/* Copyright (C) 2026 Francesco Campanile */
 /* Run with statistics on the Guide's layout: its head, then each
    step a section - its body on nine columns, across it with guide.css's .g-wide - and Start and
    Cancel in the bar at the bottom of the window (<assay-dock>). The question's tiles, the goal

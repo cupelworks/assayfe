@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component } from '@angular/core';
 
 /** An open catalogue row's details: under its cells, across every column but the name's, below a

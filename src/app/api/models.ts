@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 // Mirrors components.schemas in Assay's OpenAPI - the version package.json's `assay.api` names.
 // Every timestamp (`…_at`) is UTC with a Z ("2026-09-27T12:36:59.928077Z", the fraction left out
 // when it's zero): read it with `Date`.
@@ -615,7 +617,7 @@ export interface WorkerHealth {
 }
 
 // Statistics - "Run with statistics": a test, set or plan run many times as one batch, and a
-// statistical test's verdict per check over those runs (see docs/statistics in the API repo).
+// statistical test's verdict per check over those runs.
 /** The arithmetic in code a statistical test runs - a fixed set. Branch on this, never on a
  *  test's id: the catalogue is a table, and several tests can share one engine. */
 export type StatisticalEngine =

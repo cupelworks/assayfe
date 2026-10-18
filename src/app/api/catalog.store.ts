@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { DatasetsApiService } from './datasets-api.service';
 import { TestsApiService } from './tests-api.service';
@@ -24,8 +26,7 @@ import {
  * hard requirement driving this number; 50 is a generous-but-cheap default. NOT used for any
  * displayed count anymore - the scopes list's "Executions" column moved to a per-row fetch
  * against the scoped endpoint instead, since this capped, recency-biased sample can never
- * give an accurate count for an arbitrary row (see `docs/basic_ui_implementation/dev_notes.md`
- * note 12).
+ * give an accurate count for an arbitrary row.
  */
 export const EXECUTIONS_SAMPLE_LIMIT = 50;
 /** How many of the newest runs (any origin, no batch's) the Overview counts by status - "Runs ·

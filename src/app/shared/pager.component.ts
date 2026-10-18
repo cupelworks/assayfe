@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, input, output, computed } from '@angular/core';
 /** Offset/limit pager matching the API's `?offset&limit` + `total` contract: where you are
  *  ("1–10 of 62"), the way on in red words ("← Previous", "Next →") and how many a page. */

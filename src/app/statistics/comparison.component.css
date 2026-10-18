@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+/* Copyright (C) 2026 Francesco Campanile */
 /* A and B side by side, each with its status, size and note. */
 .ab {
   display: grid;

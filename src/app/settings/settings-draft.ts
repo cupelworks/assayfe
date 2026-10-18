@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { parseDecimal } from '../shared/number';
 
 /** Per-field problems, keyed by the API's field name. */

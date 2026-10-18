@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, input, model } from '@angular/core';
 
 /** "Sort: Newest ↓" - how a list is ordered, a select that reads as words (the smart filter's, a

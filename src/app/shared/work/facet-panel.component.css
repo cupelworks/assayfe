@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+/* Copyright (C) 2026 Francesco Campanile */
 /* What a facet's panel holds - its sheet (.pop) is the smart filter's: its name, the line to
    find a value, the values to tick with their marks and counts, how many more, Clear and Done. */
 :host {

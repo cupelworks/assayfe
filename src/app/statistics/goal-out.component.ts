@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, input } from '@angular/core';
 
 /** The goal out of reach, closing Run with statistics' "What Assay has seen": how far it gets at

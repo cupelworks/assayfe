@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Directive, input } from '@angular/core';
 
 /** A plain decimal number as a person would type it - "60", "0.75", "-1", ".5" - or null.

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NumberInputDirective } from '../shared/number';
@@ -57,7 +59,7 @@ import { ParamRow } from './stats-params';
     </div>
   `,
   styleUrl: './stats-form.css',
-  /* Inline - Run with statistics, as its canvas draws it: the name in small capitals, the value
+  /* Inline, as Run with statistics sets it: the name in small capitals, the value
      big on a line with its unit, the usual values beside it in small capitals (the picked one
      red), what the value means under it. */
   styles: `

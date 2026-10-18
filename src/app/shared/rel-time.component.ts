@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, input } from '@angular/core';
 import { rel, absTime } from './format';
 
@@ -5,7 +7,7 @@ import { rel, absTime } from './format';
  * A relative timestamp ("4 d ago") with the exact date/time as its hover tooltip - the one
  * display shape every list/detail page in the app uses for a plain date, extracted here so it
  * can't silently drift out of sync page to page. One page (the test sets/plans list) was missing
- * the tooltip half of this entirely before this existed - see `docs/improvement_ui/dev_notes.md` note 1.
+ * the tooltip half of this entirely before this existed.
  *
  * Renders unstyled (a bare inline span) - the caller's own wrapping element supplies `.muted`/
  * `.small`/etc., which this inherits normally. For a date that needs a text prefix ("snapshot

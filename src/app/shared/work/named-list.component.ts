@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, input } from '@angular/core';
 
 /** A thing a dialog acts on: its name, and a note at the right ("in 2 test sets · has runs"). */

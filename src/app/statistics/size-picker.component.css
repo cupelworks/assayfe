@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+/* Copyright (C) 2026 Francesco Campanile */
 /* Run with statistics' sizes as ruled rows to pick from, on five of the body's columns; beside
    them, on four, the chance of an answer against the size. Its figures: stats-figures.css. */
 :host {

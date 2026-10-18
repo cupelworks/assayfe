@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, input, output } from '@angular/core';
 
 /** One of the other things to do with a page's thing: "Edit", "Rename", "Delete". */
