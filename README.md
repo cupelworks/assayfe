@@ -132,9 +132,10 @@ The container reads these when it starts, and stops at once when one is missing 
 
 The rest is fixed in the image (`nginx/`): `/healthz` answers the platform's probes, every app
 route serves the app, built files are cached for a year (their names change with their content),
-and every page carries security headers, a content security policy among them. With Docker
-Compose, the variables go in a `.env` file next to `docker-compose.yml`. `ng serve` doesn't read
-them: in development, `proxy.conf.json` sets where `/api` goes.
+and every page carries security headers, a content security policy among them. `/.assay/me` tells
+the app who is signed in, from the sign-in's own header, and an API on HTTPS must show a valid
+certificate. With Docker Compose, the variables go in a `.env` file next to `docker-compose.yml`.
+`ng serve` doesn't read them: in development, `proxy.conf.json` sets where `/api` goes.
 
 ## Pages
 
