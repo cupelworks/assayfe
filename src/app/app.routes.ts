@@ -4,7 +4,8 @@ import { Routes } from '@angular/router';
 import { ShellComponent } from './shell/shell.component';
 
 // Every page loads the first time it's opened, in a file of its own: the app's first download is
-// the shell (the bar and the frame), and a page comes with what only it uses.
+// the shell (the bar and the frame), and a page comes with what only it uses. When a page's file
+// doesn't load, the page is loaded in full instead (full-load.ts).
 const runStats = () => import('./statistics/run-stats.component').then((m) => m.RunStatsComponent);
 const scopesList = () =>
   import('./scopes/scopes-list.component').then((m) => m.ScopesListComponent);
