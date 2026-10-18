@@ -1,0 +1,28 @@
+# Assay's front end on your machine in one command: the app, built and served by nginx, which
+# forwards /api to Assay's API.
+#
+#   docker compose up --build
+#
+# Then open http://localhost:8080. It needs Assay's API on this machine, on port 8000:
+# `docker compose up --build` in cupelworks/assay starts it.
+#
+# Settings: put ASSAY_API_URL (another API) or ASSAY_UPLOAD_MAX_MB in a `.env` file next to this
+# one, as NAME=value lines. Stop with `docker compose down` (add `--rmi all` to delete the image
+# too).
+
+name: assay-fe
+
+services:
+  fe:
+    build: .
+    image: assay-fe
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      ASSAY_API_URL: ${ASSAY_API_URL:-http://host.docker.internal:8000}
+    ports:
+      - "8080:8080"
+    # host.docker.internal is this machine: Docker Desktop names it, Linux needs it named here
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

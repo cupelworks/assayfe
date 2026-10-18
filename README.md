@@ -73,26 +73,30 @@ Issues are welcome: open one to report a bug or suggest an idea. See
 
 ## Getting started
 
-### Try it: the container
+### Try it: Docker Compose
 
 Requires [Docker](https://docs.docker.com/get-docker/), and Assay's API on port 8000:
 `docker compose up --build` in a clone of [cupelworks/assay](https://github.com/cupelworks/assay)
-starts it. From this repository's root:
+starts it. Then, from this repository's root:
 
 ```bash
-docker build -t assay-fe .
-docker run --rm -p 8080:8080 -e ASSAY_API_URL=http://host.docker.internal:8000 assay-fe
+docker compose up --build
 ```
 
-Open <http://localhost:8080>. The image is about 90 MB. On Linux, add
-`--add-host=host.docker.internal:host-gateway` to `docker run`, so the container can reach the
-API on your machine.
+This builds the app and serves it with nginx, which forwards `/api` to the API on your machine.
+Open <http://localhost:8080>. The image is about 90 MB.
 
-Ctrl+C stops it. To clean up:
+For another API, or another upload limit, put `ASSAY_API_URL` or `ASSAY_UPLOAD_MAX_MB` in a
+`.env` file next to `docker-compose.yml`, as `NAME=value` lines (see
+[Configuration](#configuration)).
+
+Ctrl+C stops it and keeps the image for the next `docker compose up`. Add `-d` to run it in the
+background instead, and `docker compose stop` stops it. To clean up, from the same folder:
 
 | Command | Removes |
 |---|---|
-| `docker image rm assay-fe` | The image; the next `docker build` builds it again |
+| `docker compose down` | The container; the image is kept |
+| `docker compose down --rmi all` | The container and the image; the next `docker compose up --build` builds it again |
 
 ### Develop: Node on your machine
 
@@ -122,13 +126,14 @@ The container reads these when it starts, and stops at once when one is missing 
 
 | Variable | Default | What it sets |
 |---|---|---|
-| `ASSAY_API_URL` | none: required | The API's address, such as `https://assay-api.internal.example`. nginx forwards `/api/...` there, without the `/api` |
+| `ASSAY_API_URL` | none: required; with Docker Compose, the API on your machine | The API's address, such as `https://assay-api.internal.example`. nginx forwards `/api/...` there, without the `/api` |
 | `ASSAY_UPLOAD_MAX_MB` | `11` | The largest request nginx lets through, in MB: one more than the API's `ASSAY_DATASET_UPLOAD_MAX_MB` (10 by default), for the form around the file |
 
 The rest is fixed in the image (`nginx/`): `/healthz` answers the platform's probes, every app
 route serves the app, built files are cached for a year (their names change with their content),
-and every page carries security headers, a content security policy among them. `ng serve`
-doesn't read these variables: in development, `proxy.conf.json` sets where `/api` goes.
+and every page carries security headers, a content security policy among them. With Docker
+Compose, the variables go in a `.env` file next to `docker-compose.yml`. `ng serve` doesn't read
+them: in development, `proxy.conf.json` sets where `/api` goes.
 
 ## Pages
 

@@ -8,6 +8,7 @@ coverage/
 CLAUDE.md
 Dockerfile
 .dockerignore
+docker-compose.yml
 # Not part of the image
 .github/
 .husky/
