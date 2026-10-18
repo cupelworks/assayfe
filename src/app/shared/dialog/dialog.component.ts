@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, OnDestroy, OnInit, computed, input, output } from '@angular/core';
 
 /** Dialogs open now - several can stack (a check's settings over the test form). */

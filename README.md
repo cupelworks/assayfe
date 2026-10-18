@@ -61,8 +61,8 @@ the Free Software Foundation. It is distributed in the hope that it will be usef
 WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE. See [LICENSE](LICENSE) for the full terms.
 
-If you run a modified Assay FE for others to use over a network, the AGPL asks you to offer them
-its source code.
+Every source file carries this notice in its first two lines. If you run a modified Assay FE for
+others to use over a network, the AGPL asks you to offer them its source code.
 
 The Archivo typeface, served with the app from `@fontsource-variable/archivo`, is Copyright 2020
 The Archivo Project Authors, under the [SIL Open Font License 1.1](https://openfontlicense.org).

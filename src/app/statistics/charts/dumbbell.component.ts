@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, computed, input } from '@angular/core';
 import { StatusMarkComponent } from '../../shared/status-mark.component';
 import { along } from './range-chart.component';

@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+/* Copyright (C) 2026 Francesco Campanile */
 /* What only the statistical tests have: the verdicts a test gives, with the app's marks; its
    worked examples, ruled; a parameter's range beside its name; its method, asked for. */
 .answers {

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import * as M from './models';

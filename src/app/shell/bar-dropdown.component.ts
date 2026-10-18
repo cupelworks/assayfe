@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, ElementRef, input, signal, viewChild } from '@angular/core';
 import { dismissable } from '../shared/dismissable';
 

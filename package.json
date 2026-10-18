@@ -12,7 +12,8 @@
     "test": "ng test",
     "format": "prettier --write \"src/**/*.{ts,html,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,html,css}\"",
-    "prepare": "husky"
+    "prepare": "husky",
+    "check:license": "node scripts/check-license-headers.mjs"
   },
   "private": true,
   "packageManager": "npm@12.0.2",

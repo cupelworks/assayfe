@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+/* Copyright (C) 2026 Francesco Campanile */
 /* The smart filter's sheets - its suggestions, a facet's panel (<assay-facet-panel>) - and the
    words beside its line: a value's label, cut with "…" when long, and its count; the red words
    ("Clear all", "Clear", "Done"). Both components include it. */

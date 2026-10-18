@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { LatestBatch, LatestExecution, LatestStandaloneRun } from './models';
 import { StatusCount, isInFlight, statusCountsOf } from '../shared/format';
 import { pollWhile, whenTabShown } from '../shared/poll';

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, inject } from '@angular/core';
 import { ASSAY_API_BASE } from '../api/api-base.token';
 import { ArrowOutComponent } from '../shared/arrow-out.component';

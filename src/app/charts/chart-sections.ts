@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 /** The Charts page's sections, in order - what the Statistical tests cards and the result pages
  *  link to. */
 export const CHART_SECTIONS = [

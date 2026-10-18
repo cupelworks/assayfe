@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { CatalogKeyItem } from '../shared/catalog';
 
 /** What each row of a dataset holds - its file's keys, their names on a page, what they mean. */

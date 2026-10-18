@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { OperationsSettings, QueueConnection } from '../api/models';
 
 /** The Settings page's content, as data, grouped the way the backend groups it. Each editable

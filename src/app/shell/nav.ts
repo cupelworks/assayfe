@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 /** A link of the header: where it goes, and its words; `exact` when only that path is it (the
  *  Overview's `/`). */
 export interface NavLink {

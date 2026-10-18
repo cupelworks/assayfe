@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { DatasetsApiService } from './datasets-api.service';
 import { TestsApiService } from './tests-api.service';

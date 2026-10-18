@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+/* Copyright (C) 2026 Francesco Campanile */
 /* A catalogue page's own content, which each catalogue page includes for what it projects: the
    line it shows while it loads, and what goes in an open row's details (<assay-catalog-details>) -
    captions in small capitals, either beside each value (cat-defs, a definition list) or over

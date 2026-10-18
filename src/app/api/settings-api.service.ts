@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Injectable } from '@angular/core';
 import * as M from './models';
 import { ApiBase } from './api-base';

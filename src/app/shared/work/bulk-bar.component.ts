@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, input, output } from '@angular/core';
 
 /** One thing to do with the ticked rows: "Add to a test set…", "Delete…" (in red). One that can't

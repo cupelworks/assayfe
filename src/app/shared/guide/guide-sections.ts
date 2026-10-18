@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 /** A section of a guide page (the Guide, Charts): its two-digit number, its label - the contents
  *  link and the section's title - and its element id, which a link's fragment lands on. */
 export interface GuideSection {

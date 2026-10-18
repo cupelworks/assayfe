@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { RunOrigin, TestStatus } from '../api/models';
 import { CatalogIndexGroup, CatalogIndexItem } from '../shared/catalog';
 import { RUNS_ENDED, UNDER_WAY, statusLabel } from '../shared/format';

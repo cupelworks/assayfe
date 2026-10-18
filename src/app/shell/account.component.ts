@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, input } from '@angular/core';
 import { SIGN_OUT_URL, SignedIn } from './session.service';
 import { ThemeSwitchComponent } from './theme-switch.component';

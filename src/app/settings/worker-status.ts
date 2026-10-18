@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { WorkerHealth, WorkerHealthStatus } from '../api/models';
 
 /** How each status reads - the verdict, its run-status dot and what the user should do. The

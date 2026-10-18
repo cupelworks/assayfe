@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { StatusCount, counted, isInFlight } from '../format';
 
 /** What a run's status means, as the Guide says it - a run of one test. */

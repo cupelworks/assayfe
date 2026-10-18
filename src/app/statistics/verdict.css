@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+/* Copyright (C) 2026 Francesco Campanile */
 /* A batch's verdict where it's listed or stands (`<assay-batch-verdict>`, `<assay-latest-verdict>`),
    and a comparison's answer in Comparisons: its first word in ink, as the line's lead; the note the
    user wrote, quoted under it; while it runs, a progress bar under it; on a Failed or Inconclusive

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, computed, inject } from '@angular/core';
 import { CatalogStore, ExecRow } from '../api/catalog.store';
 import { StatisticalTestsStore, StatisticsApiService } from '../api/statistics-api.service';

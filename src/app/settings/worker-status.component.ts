@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { HealthApiService } from '../api/health-api.service';
 import { WorkerHealth } from '../api/models';

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { signal, WritableSignal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Page } from '../api/models';

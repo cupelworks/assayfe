@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { CatalogCellComponent } from './catalog-cell.component';
 import { CatalogDetailsComponent } from './catalog-details.component';
 import { CatalogFilterComponent } from './catalog-filter.component';

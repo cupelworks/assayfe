@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 import { Component, computed, inject, input } from '@angular/core';
 import { CatalogStore } from '../api/catalog.store';
 import { BatchFacets, BatchStatus, BatchSummary } from '../api/models';

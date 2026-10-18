@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Francesco Campanile
 /**
  * The smart filter's words: what a list can be narrowed by (a facet - "Checks", "Latest run"),
  * each facet's values, and which are chosen. The filter itself (`<assay-smart-filter>`) only
