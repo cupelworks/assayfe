@@ -1,6 +1,6 @@
 {
   "name": "assay-fe",
-  "version": "2.5.2",
+  "version": "2.5.3",
   "assay": {
     "api": "^2.4.0"
   },
